@@ -34,7 +34,8 @@ var (
 	// dpgBin is the dpg-snapshot source built as an executable.
 	dpgBin string
 	// probeBin is a third-party source plugin: the echo plugin as a source,
-	// which reports the settings it receives.
+	// which reports the settings it receives. It fails unless it runs in the
+	// directory of dql.yaml.
 	probeBin string
 )
 
@@ -70,7 +71,7 @@ func setup(m *testing.M) int {
 		}
 	}
 	probeBin = filepath.Join(dir, "dql-plugin-probe")
-	if err := os.WriteFile(probeBin, []byte("#!/bin/sh\nexec "+echoBin+" -kind source \"$@\"\n"), 0o755); err != nil {
+	if err := os.WriteFile(probeBin, []byte("#!/bin/sh\n[ -f dql.yaml ] || { echo \"not run beside dql.yaml\" >&2; exit 3; }\nexec "+echoBin+" -kind source \"$@\"\n"), 0o755); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
@@ -246,11 +247,15 @@ func TestGenerateWriteFailures(t *testing.T) {
 }
 
 // A third-party source receives its whole sources entry, keys of its own
-// included, with the invocation and no flags.
+// included, with the invocation and no flags. It runs in the directory of
+// dql.yaml, which its relative path: is relative to.
 func TestGenerateHandsSettingsToThirdPartySources(t *testing.T) {
-	cfg := "sources:\n  - plugin: probe\n    path: " + probeBin + "\n    catalog: shop\n    dsn: env:PROBE_URL\n    pool: {size: 4}\n"
-	code, _, stderr := dql("generate", "-config", write(t, "dql.yaml", cfg))
-	want := "warning echo-settings: map[catalog:shop dsn:env:PROBE_URL path:" + probeBin + " plugin:probe pool:map[size:4]]\n"
+	dir := t.TempDir()
+	rel, _ := filepath.Rel(dir, probeBin)
+	cfg := "sources:\n  - plugin: probe\n    path: " + rel + "\n    catalog: shop\n    dsn: env:PROBE_URL\n    pool: {size: 4}\n"
+	os.WriteFile(filepath.Join(dir, "dql.yaml"), []byte(cfg), 0o644)
+	code, _, stderr := dql("generate", "-config", filepath.Join(dir, "dql.yaml"))
+	want := "warning echo-settings: map[catalog:shop dsn:env:PROBE_URL path:" + rel + " plugin:probe pool:map[size:4]]\n"
 	if code != 1 || !strings.Contains(stderr, want) {
 		t.Errorf("%d %q; want %q", code, stderr, want)
 	}

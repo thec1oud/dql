@@ -80,8 +80,18 @@ func TestLoad(t *testing.T) {
 	if err != nil || c.Sources[0].Catalog != "shop" {
 		t.Fatal(err)
 	}
-	// Paths in dql.yaml are relative to its directory.
+	// Paths in dql.yaml are relative to its directory, made absolute.
 	dir := filepath.Dir(path)
+	if c.Dir() != dir {
+		t.Errorf("dir: %s", c.Dir())
+	}
+	t.Chdir(dir)
+	if c, err := Load("dql.yaml"); err != nil || c.Dir() != dir || c.Resolve("shop.json") != filepath.Join(dir, "shop.json") {
+		t.Errorf("relative load: %v %v", c, err)
+	}
+	if c, _ := Parse(nil); c.Dir() != "" || c.Resolve("shop.json") != "shop.json" {
+		t.Errorf("parsed: %q", c.Dir())
+	}
 	if got := c.Resolve(filepath.Join("db", "shop.json")); got != filepath.Join(dir, "db", "shop.json") {
 		t.Errorf("relative: %s", got)
 	}

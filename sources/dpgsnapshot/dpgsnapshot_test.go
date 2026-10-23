@@ -84,7 +84,7 @@ func TestInProcess(t *testing.T) {
 
 func TestExecutable(t *testing.T) {
 	args := []string{"-snapshot", shop, "-namespaces", "app", "-default-namespace", "app"}
-	c, err := plugin.Start(context.Background(), bin, args, hello(), irv1.PluginKind_PLUGIN_KIND_SOURCE)
+	c, err := plugin.Start(context.Background(), bin, "", args, hello(), irv1.PluginKind_PLUGIN_KIND_SOURCE)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -45,10 +45,12 @@ func (c *inProcess) Invoke(ctx context.Context, in *irv1.Invoke) (*irv1.InvokeRe
 
 func (c *inProcess) Close() error { return nil }
 
-// Start runs the executable at path, speaks the stdio protocol with it and
+// Start runs the executable at path in dir, or in the core's working
+// directory when dir is empty, speaks the stdio protocol with it and
 // negotiates. A refused plugin is told why, and Start waits for it to exit.
-func Start(ctx context.Context, path string, args []string, hello *irv1.CoreHello, kind irv1.PluginKind) (Client, error) {
+func Start(ctx context.Context, path, dir string, args []string, hello *irv1.CoreHello, kind irv1.PluginKind) (Client, error) {
 	cmd := exec.CommandContext(ctx, path, args...)
+	cmd.Dir = dir
 	stdin, _ := cmd.StdinPipe()   // cannot fail: Stdin is unset
 	stdout, _ := cmd.StdoutPipe() // cannot fail: Stdout is unset
 	c := &process{cmd: cmd, w: stdin, r: stdout}

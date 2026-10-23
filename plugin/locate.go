@@ -20,6 +20,10 @@ type Target struct {
 	// Args are the executable's arguments. A plugin receives its settings
 	// with each invocation; the shipped executables also take them as flags.
 	Args []string
+	// Dir is the executable's working directory, the directory of dql.yaml,
+	// so relative paths in its settings resolve as dql.yaml means them.
+	// Empty means the core's own.
+	Dir string
 }
 
 // Locate resolves a plugin named in dql.yaml. An explicit path wins; then a
@@ -44,5 +48,5 @@ func Open(ctx context.Context, t Target, hello *irv1.CoreHello, kind irv1.Plugin
 	if t.Builtin != nil {
 		return InProcess(t.Builtin, hello, kind)
 	}
-	return Start(ctx, t.Path, t.Args, hello, kind)
+	return Start(ctx, t.Path, t.Dir, t.Args, hello, kind)
 }

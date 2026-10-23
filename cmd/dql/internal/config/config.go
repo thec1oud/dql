@@ -197,13 +197,20 @@ func Load(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.file, c.dir = filepath.Base(path), filepath.Dir(path)
+	// cannot fail: path was just read, so the working directory exists
+	c.dir, _ = filepath.Abs(filepath.Dir(path))
+	c.file = filepath.Base(path)
 	return c, nil
 }
 
-// Resolve returns a path written in dql.yaml, such as a snapshot's, as a
-// path relative to the working directory: relative paths in dql.yaml are
-// relative to its directory.
+// Dir is the absolute path of the directory holding the file Load read,
+// where plugin executables run so that relative paths in their settings
+// resolve as dql.yaml means them. It is "" for parsed content.
+func (c *Config) Dir() string { return c.dir }
+
+// Resolve returns a path written in dql.yaml, such as a snapshot's, as an
+// absolute path: relative paths in dql.yaml are relative to its directory.
+// For parsed content they stay relative.
 func (c *Config) Resolve(path string) string {
 	if path == "" || filepath.IsAbs(path) {
 		return path

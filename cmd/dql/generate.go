@@ -96,10 +96,11 @@ func runSource(ctx context.Context, c *config.Config, s config.Source) (catalog.
 	if build, ok := sources[s.Plugin]; ok {
 		builtins[s.Plugin] = build(c, s)
 	}
-	t, err := plugin.Locate(s.Plugin, s.Path, builtins)
+	t, err := plugin.Locate(s.Plugin, c.Resolve(s.Path), builtins)
 	if err != nil {
 		return catalog.SourceOutput{}, err
 	}
+	t.Dir = c.Dir()
 	if _, ok := sources[s.Plugin]; ok {
 		t.Args = flags(c, s)
 	}

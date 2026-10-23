@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -28,7 +29,7 @@ func TestEchoBothPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	executable, err := Start(ctx, echoBin, []string{"-features", "opaque-types"}, hello("opaque-types"), emitter)
+	executable, err := Start(ctx, echoBin, "", []string{"-features", "opaque-types"}, hello("opaque-types"), emitter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +74,7 @@ func TestRefusalBothPaths(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("in-process %s: got %v", c.name, err)
 		}
-		_, err = Start(ctx, echoBin, []string{"-min", c.min}, c.hello, emitter)
+		_, err = Start(ctx, echoBin, "", []string{"-min", c.min}, c.hello, emitter)
 		if err == nil || !strings.Contains(err.Error(), c.want) || !strings.Contains(err.Error(), "refused by the core") {
 			t.Errorf("executable %s: got %v", c.name, err)
 		}
@@ -81,14 +82,25 @@ func TestRefusalBothPaths(t *testing.T) {
 }
 
 func TestStartMissingExecutable(t *testing.T) {
-	_, err := Start(context.Background(), "/nonexistent/dql-plugin-x", nil, hello(), emitter)
+	_, err := Start(context.Background(), "/nonexistent/dql-plugin-x", "", nil, hello(), emitter)
 	if err == nil || !strings.Contains(err.Error(), "starting") {
 		t.Fatal(err)
 	}
 }
 
+// A relative path is relative to the directory the plugin runs in.
+func TestStartInDir(t *testing.T) {
+	c, err := Start(context.Background(), "./"+filepath.Base(echoBin), filepath.Dir(echoBin), nil, hello(), emitter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStartPluginExitsEarly(t *testing.T) {
-	_, err := Start(context.Background(), "true", nil, hello(), emitter)
+	_, err := Start(context.Background(), "true", "", nil, hello(), emitter)
 	if !errors.Is(err, io.EOF) {
 		t.Fatal(err)
 	}
