@@ -7,6 +7,10 @@
 //
 // Values are immutable; every operation returns a new Decimal. The zero value
 // is 0.
+//
+// A Decimal is always finite. Postgres numeric NaN and ±Infinity have no
+// Decimal: decoding one is a DecodeError with reason off_type (§13), as in
+// every emitter.
 package dec
 
 import (

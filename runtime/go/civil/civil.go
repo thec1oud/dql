@@ -10,6 +10,10 @@
 // writes it: years outside 0000 to 9999 have a sign and at least six digits,
 // fractional seconds drop trailing zeros, and offsets are ±HH:MM, with :SS
 // when they have seconds.
+//
+// The types hold finite values only. Postgres date and timestamp ±infinity
+// and time 24:00:00 have no civil value: decoding one is a DecodeError with
+// reason off_type (§13), as in every emitter.
 package civil
 
 import (
