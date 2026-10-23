@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -78,7 +79,7 @@ func (d *deriver) relations() {
 				q := member(r.qn, p.rel.GetName().GetStored())
 				d.errorf(CodeRelationCrossCatalog, q,
 					"relation `%s` crosses catalogs, and dialect `%s` cannot reference across catalogs; remove %s or keep both tables in one catalog",
-					dotted(q), dialectName(d.opts.Dialect), p.source)
+					diagnostics.Name(q), dialectName(d.opts.Dialect), p.source)
 			}
 		}
 	}
@@ -92,16 +93,16 @@ func (d *deriver) foreignKey(r *tableRef, fk *irv1.ForeignKey) {
 	if target == nil {
 		d.errorf(CodeRelationTargetMissing, via,
 			"foreign key `%s` references `%s`, which is not in the bundle; add its catalog or namespace to the sources",
-			dotted(via), dotted(fk.GetReferences().GetTable()))
+			diagnostics.Name(via), diagnostics.Name(fk.GetReferences().GetTable()))
 		return
 	}
 	l := &link{
 		owner: r, target: target, cols: fk.GetColumns(), refs: fk.GetReferences().GetColumns(),
 		via: via, origin: irv1.RelationOrigin_RELATION_ORIGIN_FOREIGN_KEY,
 		uniqueNullable: fk.GetMatch() != irv1.ForeignKeyMatch_FOREIGN_KEY_MATCH_PARTIAL,
-		source:         "foreign key `" + dotted(via) + "`",
-		fix:            "rename it with a relation-name annotation on foreign key `" + dotted(via) + "`",
-		inverseFix:     "rename it with an inverse-name annotation on foreign key `" + dotted(via) + "`",
+		source:         "foreign key `" + diagnostics.Name(via) + "`",
+		fix:            "rename it with a relation-name annotation on foreign key `" + diagnostics.Name(via) + "`",
+		inverseFix:     "rename it with an inverse-name annotation on foreign key `" + diagnostics.Name(via) + "`",
 	}
 	anns := fk.GetAnnotations()
 	if a := find(anns, keyRelationName); a != nil {
@@ -125,7 +126,7 @@ func (d *deriver) annotationWords(target *irv1.QualifiedName, a *irv1.Annotation
 	w, ok := valueWords(a.GetValue())
 	if !ok {
 		d.errorf(CodeAnnotationValueInvalid, target,
-			"%s on `%s` needs a word list, such as %s: [user, profile]", key, dotted(target), key)
+			"%s on `%s` needs a word list, such as %s: [user, profile]", key, diagnostics.Name(target), key)
 	}
 	return w
 }
@@ -154,7 +155,7 @@ func (d *deriver) policy(via *irv1.QualifiedName, anns []*irv1.Annotation, nulla
 			p.Collection = irv1.CollectionPolicy_COLLECTION_POLICY_APPEND
 		default:
 			d.errorf(CodeAnnotationValueInvalid, via,
-				"collection-policy on `%s` must be merge, replace or append", dotted(via))
+				"collection-policy on `%s` must be merge, replace or append", diagnostics.Name(via))
 		}
 	}
 	if a := find(anns, keyRemoval); a != nil {
@@ -165,11 +166,11 @@ func (d *deriver) policy(via *irv1.QualifiedName, anns []*irv1.Annotation, nulla
 			if !nullable {
 				d.errorf(CodeRemovalUnlinkNotNullable, via,
 					"removal unlink on `%s` sets the foreign key to NULL, but its columns are NOT NULL; use removal delete or make the columns nullable",
-					dotted(via))
+					diagnostics.Name(via))
 			}
 			p.Removal = irv1.Removal_REMOVAL_UNLINK
 		default:
-			d.errorf(CodeAnnotationValueInvalid, via, "removal on `%s` must be delete or unlink", dotted(via))
+			d.errorf(CodeAnnotationValueInvalid, via, "removal on `%s` must be delete or unlink", diagnostics.Name(via))
 		}
 	}
 	return p
@@ -277,7 +278,7 @@ func (d *deriver) annotated(r *tableRef, c *irv1.Column, a *irv1.Annotation) {
 	invalid := func(why string) {
 		d.errorf(CodeRelationAnnotationInvalid, at,
 			"relation annotation on `%s` %s; write it as relation: { to: catalog.namespace.table.column, name: [words], inverse-name: [words] }",
-			dotted(at), why)
+			diagnostics.Name(at), why)
 	}
 	st := a.GetValue().GetStruct()
 	if st == nil {
@@ -288,9 +289,9 @@ func (d *deriver) annotated(r *tableRef, c *irv1.Column, a *irv1.Annotation) {
 		owner: r, cols: []string{c.GetName().GetStored()},
 		origin: irv1.RelationOrigin_RELATION_ORIGIN_ANNOTATED, uniqueNullable: true,
 		anns:       []*irv1.Annotation{a},
-		source:     "the relation annotation on `" + dotted(at) + "`",
-		fix:        "rename it with name in the relation annotation on `" + dotted(at) + "`",
-		inverseFix: "rename it with inverse-name in the relation annotation on `" + dotted(at) + "`",
+		source:     "the relation annotation on `" + diagnostics.Name(at) + "`",
+		fix:        "rename it with name in the relation annotation on `" + diagnostics.Name(at) + "`",
+		inverseFix: "rename it with inverse-name in the relation annotation on `" + diagnostics.Name(at) + "`",
 	}
 	var to string
 	for _, k := range sortedKeys(st.GetFields()) {
@@ -310,7 +311,7 @@ func (d *deriver) annotated(r *tableRef, c *irv1.Column, a *irv1.Annotation) {
 			// but the record does not define the form of that annotation.
 			d.errorf(CodeRelationThroughUnsupported, at,
 				"relation annotation on `%s` names through, which is not supported yet; remove through and declare the junction's relations instead",
-				dotted(at))
+				diagnostics.Name(at))
 			return
 		default:
 			invalid("has unknown field " + k)
@@ -336,11 +337,11 @@ func (d *deriver) annotated(r *tableRef, c *irv1.Column, a *irv1.Annotation) {
 	if target == nil {
 		d.errorf(CodeRelationTargetMissing, at,
 			"relation annotation on `%s` references `%s`, which is not in the bundle; add its catalog or namespace to the sources",
-			dotted(at), dotted(member(ref, "")))
+			diagnostics.Name(at), diagnostics.Name(member(ref, "")))
 		return
 	}
 	if column(target.t, ref.GetMember()) == nil {
-		invalid("references column `" + dotted(ref) + "`, which does not exist")
+		invalid("references column `" + diagnostics.Name(ref) + "`, which does not exist")
 		return
 	}
 	l.target, l.refs = target, []string{ref.GetMember()}
@@ -378,7 +379,7 @@ func (d *deriver) junction(r *tableRef) {
 			// Rule 5 on a junction uses the far foreign key's columns, which
 			// tell two junctions to the same table apart.
 			suffix: stripID(t, farFK.GetColumns()),
-			source: "junction table `" + dotted(r.qn) + "`",
+			source: "junction table `" + diagnostics.Name(r.qn) + "`",
 			fix:    "an inferred many-to-many relation takes the far table's words, so rename the colliding column or relation with a name, relation-name or inverse-name annotation",
 			rel: &irv1.Relation{
 				Owner:        cloneQN(owner.qn),
@@ -420,9 +421,9 @@ func sortedKeys[V any](m map[string]V) []string {
 func compareRelations(a, b *irv1.Relation) int {
 	return cmp.Or(
 		strings.Compare(a.GetName().GetStored(), b.GetName().GetStored()),
-		compareQN(a.GetVia(), b.GetVia()),
-		compareQN(a.GetThrough(), b.GetThrough()),
-		compareQN(a.GetTo().GetTable(), b.GetTo().GetTable()),
+		diagnostics.CompareNames(a.GetVia(), b.GetVia()),
+		diagnostics.CompareNames(a.GetThrough(), b.GetThrough()),
+		diagnostics.CompareNames(a.GetTo().GetTable(), b.GetTo().GetTable()),
 		slices.Compare(a.GetFrom().GetColumns(), b.GetFrom().GetColumns()),
 		cmp.Compare(a.GetKind(), b.GetKind()),
 	)

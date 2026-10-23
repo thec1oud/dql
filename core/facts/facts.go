@@ -9,11 +9,10 @@
 package facts
 
 import (
-	"cmp"
-	"fmt"
 	"slices"
 	"strings"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -62,7 +61,7 @@ func Derive(catalogs []*irv1.Catalog, opts Options) []*irv1.Diagnostic {
 	d.keys()
 	d.relations()
 	d.overloads(catalogs)
-	SortDiagnostics(d.diags)
+	diagnostics.Sort(d.diags)
 	return d.diags
 }
 
@@ -110,7 +109,7 @@ func (d *deriver) index(catalogs []*irv1.Catalog) {
 			}
 		}
 	}
-	slices.SortFunc(d.order, func(a, b *tableRef) int { return compareQN(a.qn, b.qn) })
+	slices.SortFunc(d.order, func(a, b *tableRef) int { return diagnostics.CompareNames(a.qn, b.qn) })
 }
 
 func (d *deriver) addNamed(c *irv1.Catalog, ns *irv1.Namespace, name *irv1.Identifier) {
@@ -123,30 +122,11 @@ func (d *deriver) lookup(qn *irv1.QualifiedName) *tableRef {
 }
 
 func (d *deriver) errorf(code string, target *irv1.QualifiedName, format string, args ...any) {
-	d.add(irv1.Severity_SEVERITY_ERROR, code, target, format, args...)
+	d.diags = append(d.diags, diagnostics.Errorf(code, target, format, args...))
 }
 
 func (d *deriver) warnf(code string, target *irv1.QualifiedName, format string, args ...any) {
-	d.add(irv1.Severity_SEVERITY_WARNING, code, target, format, args...)
-}
-
-func (d *deriver) add(sev irv1.Severity, code string, target *irv1.QualifiedName, format string, args ...any) {
-	d.diags = append(d.diags, &irv1.Diagnostic{
-		Severity: sev, Code: code, Target: target, Message: fmt.Sprintf(format, args...),
-	})
-}
-
-// SortDiagnostics sorts diagnostics by severity, then qualified name, then
-// code (§3.2), and by message to make the order total.
-func SortDiagnostics(ds []*irv1.Diagnostic) {
-	slices.SortStableFunc(ds, func(a, b *irv1.Diagnostic) int {
-		return cmp.Or(
-			cmp.Compare(a.GetSeverity(), b.GetSeverity()),
-			compareQN(a.GetTarget(), b.GetTarget()),
-			strings.Compare(a.GetCode(), b.GetCode()),
-			strings.Compare(a.GetMessage(), b.GetMessage()),
-		)
-	})
+	d.diags = append(d.diags, diagnostics.Warningf(code, target, format, args...))
 }
 
 // member returns qn with its member replaced.
@@ -158,27 +138,6 @@ func member(qn *irv1.QualifiedName, m string) *irv1.QualifiedName {
 // the IR carries, so the key is unambiguous.
 func qnKey(qn *irv1.QualifiedName) string {
 	return qn.GetCatalog() + "\x00" + qn.GetNamespace() + "\x00" + qn.GetObject() + "\x00" + qn.GetMember()
-}
-
-func compareQN(a, b *irv1.QualifiedName) int {
-	return cmp.Or(
-		strings.Compare(a.GetCatalog(), b.GetCatalog()),
-		strings.Compare(a.GetNamespace(), b.GetNamespace()),
-		strings.Compare(a.GetObject(), b.GetObject()),
-		strings.Compare(a.GetMember(), b.GetMember()),
-	)
-}
-
-// dotted writes a qualified name for messages, leaving out an implicit
-// namespace (§5.1).
-func dotted(qn *irv1.QualifiedName) string {
-	var parts []string
-	for _, p := range []string{qn.GetCatalog(), qn.GetNamespace(), qn.GetObject(), qn.GetMember()} {
-		if p != "" {
-			parts = append(parts, p)
-		}
-	}
-	return strings.Join(parts, ".")
 }
 
 // dialectName is the dialect as diagnostics name it: DIALECT_POSTGRES is

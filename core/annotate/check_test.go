@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -286,7 +287,7 @@ func TestMessagesNameTheTargetAndTheFix(t *testing.T) {
 	if got := ds[0].GetMessage(); got != want {
 		t.Errorf("message = %q\nwant      %q", got, want)
 	}
-	if got := display(ds[0].GetTarget()); got != "shop.app.users.c" {
+	if got := diagnostics.Name(ds[0].GetTarget()); got != "shop.app.users.c" {
 		t.Errorf("target = %s", got)
 	}
 	ds = Check(column(nil, true), []*irv1.Annotation{comment("core.version", nil)})
@@ -307,31 +308,6 @@ func TestCheckSortsDiagnostics(t *testing.T) {
 	wantCodes(t, ds, CodeUnknown, CodeUnknown, CodeWrongTarget, CodeBoundWithVersion, CodeRedundant)
 	if ds[0].GetMessage() > ds[1].GetMessage() {
 		t.Error("equal codes are not ordered by message")
-	}
-}
-
-func TestSortDiagnostics(t *testing.T) {
-	d := func(sev irv1.Severity, object, code string) *irv1.Diagnostic {
-		return &irv1.Diagnostic{Severity: sev, Target: q(object, ""), Code: code}
-	}
-	warn, fail := irv1.Severity_SEVERITY_WARNING, irv1.Severity_SEVERITY_ERROR
-	ds := []*irv1.Diagnostic{
-		d(warn, "a", "x"),
-		d(fail, "b", "y"),
-		d(fail, "b", "x"),
-		d(fail, "a", "z"),
-		{Severity: fail, Target: &irv1.QualifiedName{Catalog: "billing"}, Code: "z"},
-		{Severity: fail, Target: &irv1.QualifiedName{Catalog: "shop", Namespace: "a"}, Code: "z"},
-		{Severity: fail, Target: q("a", "m"), Code: "a"},
-	}
-	SortDiagnostics(ds)
-	var got []string
-	for _, x := range ds {
-		got = append(got, display(x.GetTarget())+"/"+x.GetCode())
-	}
-	want := "billing/z shop.a/z shop.app.a/z shop.app.a.m/a shop.app.b/x shop.app.b/y shop.app.a/x"
-	if strings.Join(got, " ") != want {
-		t.Errorf("order = %s\nwant    %s", strings.Join(got, " "), want)
 	}
 }
 

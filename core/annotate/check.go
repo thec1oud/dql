@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -71,7 +72,7 @@ var subsumedBy = map[string][]string{
 // diagnostics, sorted (§3.2, rule 5). Plugin keys pass untouched. Superseded
 // annotations are not checked, because they have no effect.
 func Check(t Target, anns []*irv1.Annotation) []*irv1.Diagnostic {
-	c := &checker{t: t, at: display(t.Name)}
+	c := &checker{t: t, at: diagnostics.Name(t.Name)}
 	for _, a := range anns {
 		c.has = append(c.has, a.GetKey())
 	}
@@ -84,7 +85,7 @@ func Check(t Target, anns []*irv1.Annotation) []*irv1.Diagnostic {
 		c.errorf(CodeBoundWithVersion,
 			"%s is annotated both bound and version; a scope-supplied column cannot be a version counter, so remove one of them", c.at)
 	}
-	SortDiagnostics(c.ds)
+	diagnostics.Sort(c.ds)
 	return c.ds
 }
 
@@ -98,11 +99,11 @@ type checker struct {
 func (c *checker) present(name string) bool { return slices.Contains(c.has, CorePrefix+name) }
 
 func (c *checker) errorf(code, format string, args ...any) {
-	c.ds = append(c.ds, errorf(code, c.t.Name, format, args...))
+	c.ds = append(c.ds, diagnostics.Errorf(code, c.t.Name, format, args...))
 }
 
 func (c *checker) redundant(format string, args ...any) {
-	c.ds = append(c.ds, warnf(CodeRedundant, c.t.Name, format, args...))
+	c.ds = append(c.ds, diagnostics.Warningf(CodeRedundant, c.t.Name, format, args...))
 }
 
 func (c *checker) wrongTarget(k Key, why string) {

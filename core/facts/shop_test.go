@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -304,7 +305,7 @@ func subset(want, got any, path string) (string, bool) {
 func diagLines(ds []*irv1.Diagnostic) []string {
 	var out []string
 	for _, d := range ds {
-		out = append(out, fmt.Sprintf("%s %s %s", strings.TrimPrefix(d.GetSeverity().String(), "SEVERITY_"), d.GetCode(), dotted(d.GetTarget())))
+		out = append(out, fmt.Sprintf("%s %s %s", strings.TrimPrefix(d.GetSeverity().String(), "SEVERITY_"), d.GetCode(), diagnostics.Name(d.GetTarget())))
 	}
 	return out
 }

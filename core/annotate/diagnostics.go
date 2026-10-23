@@ -1,14 +1,5 @@
 package annotate
 
-import (
-	"cmp"
-	"fmt"
-	"slices"
-	"strings"
-
-	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
-)
-
 // Diagnostic codes. They are stable: tools and tests match on them
 // (implementation guide §7, rule 13).
 const (
@@ -37,44 +28,3 @@ const (
 	// (§7.1: every annotation records where it came from).
 	CodeOriginMissing = "annotation-origin-missing"
 )
-
-func diag(sev irv1.Severity, code string, target *irv1.QualifiedName, format string, args ...any) *irv1.Diagnostic {
-	return &irv1.Diagnostic{Severity: sev, Code: code, Target: target, Message: fmt.Sprintf(format, args...)}
-}
-
-func errorf(code string, target *irv1.QualifiedName, format string, args ...any) *irv1.Diagnostic {
-	return diag(irv1.Severity_SEVERITY_ERROR, code, target, format, args...)
-}
-
-func warnf(code string, target *irv1.QualifiedName, format string, args ...any) *irv1.Diagnostic {
-	return diag(irv1.Severity_SEVERITY_WARNING, code, target, format, args...)
-}
-
-// SortDiagnostics sorts by severity, then qualified name, then code (§3.2,
-// rule 5). The message breaks remaining ties so the order is total. Strings
-// compare bytewise, never by locale (§3.2, rule 4).
-func SortDiagnostics(ds []*irv1.Diagnostic) {
-	slices.SortStableFunc(ds, func(a, b *irv1.Diagnostic) int {
-		return cmp.Or(
-			cmp.Compare(a.GetSeverity(), b.GetSeverity()),
-			strings.Compare(a.GetTarget().GetCatalog(), b.GetTarget().GetCatalog()),
-			strings.Compare(a.GetTarget().GetNamespace(), b.GetTarget().GetNamespace()),
-			strings.Compare(a.GetTarget().GetObject(), b.GetTarget().GetObject()),
-			strings.Compare(a.GetTarget().GetMember(), b.GetTarget().GetMember()),
-			strings.Compare(a.GetCode(), b.GetCode()),
-			strings.Compare(a.GetMessage(), b.GetMessage()),
-		)
-	})
-}
-
-// display writes a qualified name as messages show it, as in §5.3:
-// its non-empty parts joined by dots.
-func display(q *irv1.QualifiedName) string {
-	var parts []string
-	for _, p := range []string{q.GetCatalog(), q.GetNamespace(), q.GetObject(), q.GetMember()} {
-		if p != "" {
-			parts = append(parts, p)
-		}
-	}
-	return strings.Join(parts, ".")
-}

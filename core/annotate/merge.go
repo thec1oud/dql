@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -45,9 +46,9 @@ func Merge(target *irv1.QualifiedName, anns []*irv1.Annotation) ([]*irv1.Annotat
 	for _, a := range anns {
 		a = proto.CloneOf(a)
 		if rank(a) == 0 {
-			ds = append(ds, errorf(CodeOriginMissing, target,
+			ds = append(ds, diagnostics.Errorf(CodeOriginMissing, target,
 				"annotation %s on %s does not say where it was read; the source plugin must set its origin (§7.1)",
-				a.GetKey(), display(target)))
+				a.GetKey(), diagnostics.Name(target)))
 		}
 		if _, seen := groups[a.GetKey()]; !seen {
 			keys = append(keys, a.GetKey())
@@ -66,19 +67,19 @@ func Merge(target *irv1.QualifiedName, anns []*irv1.Annotation) ([]*irv1.Annotat
 				continue
 			}
 			if proto.Equal(lost.GetValue(), win.GetValue()) {
-				ds = append(ds, warnf(CodeDuplicate, target,
+				ds = append(ds, diagnostics.Warningf(CodeDuplicate, target,
 					"%s is given twice on %s, at %s and %s; remove one of them",
-					k, display(target), win.GetOrigin().GetLocation(), lost.GetOrigin().GetLocation()))
+					k, diagnostics.Name(target), win.GetOrigin().GetLocation(), lost.GetOrigin().GetLocation()))
 			} else {
-				ds = append(ds, errorf(CodeConflict, target,
+				ds = append(ds, diagnostics.Errorf(CodeConflict, target,
 					"%s is given twice on %s with different values, at %s and %s; keep only the one you mean",
-					k, display(target), win.GetOrigin().GetLocation(), lost.GetOrigin().GetLocation()))
+					k, diagnostics.Name(target), win.GetOrigin().GetLocation(), lost.GetOrigin().GetLocation()))
 			}
 		}
 		win.Superseded = append(win.Superseded, g[1:]...)
 		slices.SortStableFunc(win.Superseded, byPrecedence)
 		out = append(out, win)
 	}
-	SortDiagnostics(ds)
+	diagnostics.Sort(ds)
 	return out, ds
 }
