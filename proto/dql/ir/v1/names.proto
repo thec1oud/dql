@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// An identifier as the database stores it, with its word split (§4.1, §4.2).
+message Identifier {
+  // Exactly as the database stores it: case, spaces and unusual characters included.
+  string stored = 1;
+  // Lower-case word split, computed once by the core (§4.2).
+  repeated string words = 2;
+}
+
+// A reference to an object or one of its members, stored exactly as found (§4.1).
+message QualifiedName {
+  string catalog = 1;
+  string namespace = 2;
+  string object = 3;
+  // Column, constraint or attribute; empty for objects.
+  string member = 4;
+}
