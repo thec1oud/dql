@@ -5,6 +5,7 @@ go 1.25
 require (
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/pganalyze/pg_query_go/v6 v6.2.5
+	github.com/thec1oud/dql/core v0.0.0
 	github.com/thec1oud/dql/proto v0.0.0
 	github.com/thec1oud/dql/testkit v0.0.0
 	google.golang.org/protobuf v1.36.6
@@ -18,6 +19,7 @@ require (
 )
 
 replace (
+	github.com/thec1oud/dql/core => ../core
 	github.com/thec1oud/dql/proto => ../proto
 	github.com/thec1oud/dql/testkit => ../testkit
 )

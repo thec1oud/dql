@@ -1,0 +1,1769 @@
+{
+  "name": {
+    "stored": "shop"
+  },
+  "provenance": {
+    "source": "pg-live",
+    "sourceVersion": "1.0.0",
+    "inputFingerprint": "sha256:a06d8854fb2fa4bbe9c789ec8c8b8cce0ad8e7e6b7f9b897fa020e28f71e579f",
+    "fidelity": "SOURCE_FIDELITY_FULL"
+  },
+  "namespaces": [
+    {
+      "name": {
+        "stored": "app"
+      },
+      "tables": [
+        {
+          "name": {
+            "stored": "post_tags"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "post_id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "tag_id"
+              },
+              "ordinal": 2,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "post_tags_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "post_id",
+                "tag_id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "post_tags_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX post_tags_pkey ON app.post_tags USING btree (post_id, tag_id)"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "post_tags_post_id_fkey"
+              },
+              "columns": [
+                "post_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "posts"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+              "onDelete": "FOREIGN_KEY_ACTION_NO_ACTION"
+            },
+            {
+              "name": {
+                "stored": "post_tags_tag_id_fkey"
+              },
+              "columns": [
+                "tag_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "tags"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+              "onDelete": "FOREIGN_KEY_ACTION_NO_ACTION"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "posts"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_BY_DEFAULT",
+                "sequence": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "posts_id_seq"
+                }
+              }
+            },
+            {
+              "name": {
+                "stored": "author_id"
+              },
+              "ordinal": 2,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "editor_id"
+              },
+              "ordinal": 3,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "title"
+              },
+              "ordinal": 4,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "slug"
+              },
+              "ordinal": 5,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "generation": {
+                "kind": "GENERATION_STORED",
+                "native": "lower(replace(title, ' '::text, '-'::text))"
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "status"
+              },
+              "ordinal": 6,
+              "type": {
+                "named": {
+                  "enum": {
+                    "catalog": "shop",
+                    "namespace": "app",
+                    "object": "post_status"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "post_status"
+                  },
+                  "raw": "app.post_status"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_CONSTANT",
+                "native": "'draft'::app.post_status",
+                "value": {
+                  "string": "draft"
+                }
+              }
+            },
+            {
+              "name": {
+                "stored": "price"
+              },
+              "ordinal": 7,
+              "type": {
+                "named": {
+                  "composite": {
+                    "catalog": "shop",
+                    "namespace": "app",
+                    "object": "money_amount"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "money_amount"
+                  },
+                  "raw": "app.money_amount"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "labels"
+              },
+              "ordinal": 8,
+              "type": {
+                "array": {
+                  "element": {
+                    "text": {}
+                  },
+                  "elementNullable": true,
+                  "dimensions": 1
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "_text"
+                  },
+                  "raw": "text[]"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "published_at"
+              },
+              "ordinal": 9,
+              "type": {
+                "instant": {
+                  "precision": 6
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "timestamptz"
+                  },
+                  "raw": "timestamp with time zone"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "constraints": [
+            {
+              "name": "posts_published_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "columns": [
+                "published_at",
+                "status"
+              ],
+              "opaque": {
+                "native": "CHECK (((published_at IS NULL) OR (status <> 'draft'::app.post_status)))"
+              }
+            },
+            {
+              "name": "posts_title_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "columns": [
+                "title"
+              ],
+              "portable": {
+                "length": {
+                  "min": 1,
+                  "max": 200,
+                  "unit": "LENGTH_UNIT_CHARACTERS"
+                }
+              },
+              "clientValidated": true
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "posts_one_published_slug",
+              "kind": "UNIQUENESS_INDEX",
+              "columns": [
+                "slug"
+              ],
+              "predicate": {
+                "native": "(status = 'published'::app.post_status)"
+              },
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "posts_one_published_slug",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX posts_one_published_slug ON app.posts USING btree (slug) WHERE (status = 'published'::app.post_status)"
+                }
+              ]
+            },
+            {
+              "name": "posts_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "posts_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX posts_pkey ON app.posts USING btree (id)"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "posts_author_id_fkey"
+              },
+              "columns": [
+                "author_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+              "onDelete": "FOREIGN_KEY_ACTION_NO_ACTION"
+            },
+            {
+              "name": {
+                "stored": "posts_editor_id_fkey"
+              },
+              "columns": [
+                "editor_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+              "onDelete": "FOREIGN_KEY_ACTION_NO_ACTION"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "profiles"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "user_id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "bio"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "birthday"
+              },
+              "ordinal": 3,
+              "type": {
+                "date": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "date"
+                  },
+                  "raw": "date"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "profiles_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "user_id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "profiles_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX profiles_pkey ON app.profiles USING btree (user_id)"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "profiles_user_id_fkey"
+              },
+              "columns": [
+                "user_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+              "onDelete": "FOREIGN_KEY_ACTION_NO_ACTION",
+              "annotations": [
+                {
+                  "key": "core.inverse-name",
+                  "value": {
+                    "string": "user_profile"
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON CONSTRAINT profiles_user_id_fkey ON app.profiles"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@inverse-name(user_profile)"
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "published_posts"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "annotations": [
+                {
+                  "key": "core.nonnull",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON COLUMN app.published_posts.id"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@nonnull"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "title"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              },
+              "annotations": [
+                {
+                  "key": "core.nonnull",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON COLUMN app.published_posts.title"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@nonnull"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "author_id"
+              },
+              "ordinal": 3,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "published_at"
+              },
+              "ordinal": 4,
+              "type": {
+                "instant": {
+                  "precision": 6
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "timestamptz"
+                  },
+                  "raw": "timestamp with time zone"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "posts"
+            }
+          ],
+          "annotations": [
+            {
+              "key": "core.logical-key",
+              "value": {
+                "string": "id"
+              },
+              "origin": {
+                "kind": "ORIGIN_DB_COMMENT",
+                "plugin": "pg-live",
+                "location": "COMMENT ON VIEW app.published_posts"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "@logical-key(id)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": " SELECT id,\n    title,\n    author_id,\n    published_at\n   FROM app.posts\n  WHERE (status = 'published'::app.post_status);"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "tags"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_ALWAYS",
+                "sequence": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "tags_id_seq"
+                }
+              }
+            },
+            {
+              "name": {
+                "stored": "name"
+              },
+              "ordinal": 2,
+              "type": {
+                "named": {
+                  "domain": {
+                    "catalog": "shop",
+                    "namespace": "app",
+                    "object": "slug_text"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "slug_text"
+                  },
+                  "raw": "app.slug_text"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "tags_name_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "name"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "tags_name_key",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX tags_name_key ON app.tags USING btree (name)"
+                }
+              ]
+            },
+            {
+              "name": "tags_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "tags_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX tags_pkey ON app.tags USING btree (id)"
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "tenants"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "uuid": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "uuid"
+                  },
+                  "raw": "uuid"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_EXPRESSION",
+                "native": "gen_random_uuid()"
+              }
+            },
+            {
+              "name": {
+                "stored": "name"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "tenants_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "tenants_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX tenants_pkey ON app.tenants USING btree (id)"
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "users"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_ALWAYS",
+                "sequence": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users_id_seq"
+                }
+              }
+            },
+            {
+              "name": {
+                "stored": "tenant_id"
+              },
+              "ordinal": 2,
+              "type": {
+                "uuid": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "uuid"
+                  },
+                  "raw": "uuid"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "annotations": [
+                {
+                  "key": "core.bound",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON COLUMN app.users.tenant_id"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@bound"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "email"
+              },
+              "ordinal": 3,
+              "type": {
+                "named": {
+                  "domain": {
+                    "catalog": "shop",
+                    "namespace": "app",
+                    "object": "email_address"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "email_address"
+                  },
+                  "raw": "app.email_address"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "display_name"
+              },
+              "ordinal": 4,
+              "type": {
+                "varchar": {
+                  "length": 80,
+                  "unit": "LENGTH_UNIT_CHARACTERS"
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "varchar"
+                  },
+                  "modifiers": [
+                    {
+                      "int": 80
+                    }
+                  ],
+                  "raw": "character varying(80)"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "password_hash"
+              },
+              "ordinal": 5,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              },
+              "annotations": [
+                {
+                  "key": "core.sensitive",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON COLUMN app.users.password_hash"
+                  }
+                },
+                {
+                  "key": "core.write-only",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON COLUMN app.users.password_hash"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@write-only @sensitive"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "created_at"
+              },
+              "ordinal": 6,
+              "type": {
+                "instant": {
+                  "precision": 6
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "timestamptz"
+                  },
+                  "raw": "timestamp with time zone"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_EXPRESSION",
+                "native": "now()"
+              },
+              "annotations": [
+                {
+                  "key": "core.immutable",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON COLUMN app.users.created_at"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@immutable"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "updated_at"
+              },
+              "ordinal": 7,
+              "type": {
+                "instant": {
+                  "precision": 6
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "timestamptz"
+                  },
+                  "raw": "timestamp with time zone"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_EXPRESSION",
+                "native": "now()"
+              },
+              "annotations": [
+                {
+                  "key": "core.db-updated",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON COLUMN app.users.updated_at"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@db-updated"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "version"
+              },
+              "ordinal": 8,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_CONSTANT",
+                "native": "1",
+                "value": {
+                  "int": "1"
+                }
+              },
+              "annotations": [
+                {
+                  "key": "core.version",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON COLUMN app.users.version"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@version"
+                }
+              ]
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "users_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "users_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX users_pkey ON app.users USING btree (id)"
+                }
+              ]
+            },
+            {
+              "name": "users_tenant_email_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "tenant_id",
+                "email"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "users_tenant_email_key",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX users_tenant_email_key ON app.users USING btree (tenant_id, email)"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "users_tenant_id_fkey"
+              },
+              "columns": [
+                "tenant_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "tenants"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+              "onDelete": "FOREIGN_KEY_ACTION_NO_ACTION"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": {
+            "stored": "post_status"
+          },
+          "labels": [
+            "draft",
+            "published",
+            "archived"
+          ],
+          "origin": "ENUM_ORIGIN_NATIVE",
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "domains": [
+        {
+          "name": {
+            "stored": "email_address"
+          },
+          "base": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          },
+          "nullable": true,
+          "collation": {
+            "name": "default",
+            "caseSensitive": "TRISTATE_TRUE",
+            "accentSensitive": "TRISTATE_TRUE",
+            "padSpace": "TRISTATE_FALSE",
+            "deterministic": "TRISTATE_TRUE",
+            "clientFold": "CLIENT_FOLD_NONE"
+          },
+          "constraints": [
+            {
+              "name": "email_address_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "portable": {
+                "length": {
+                  "max": 320,
+                  "unit": "LENGTH_UNIT_CHARACTERS"
+                }
+              },
+              "clientValidated": true
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "slug_text"
+          },
+          "base": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          },
+          "nullable": true,
+          "collation": {
+            "name": "default",
+            "caseSensitive": "TRISTATE_TRUE",
+            "accentSensitive": "TRISTATE_TRUE",
+            "padSpace": "TRISTATE_FALSE",
+            "deterministic": "TRISTATE_TRUE",
+            "clientFold": "CLIENT_FOLD_NONE"
+          },
+          "constraints": [
+            {
+              "name": "slug_text_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "portable": {
+                "pattern": {
+                  "regex": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                }
+              },
+              "clientValidated": true
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "composites": [
+        {
+          "name": {
+            "stored": "money_amount"
+          },
+          "attributes": [
+            {
+              "name": {
+                "stored": "amount"
+              },
+              "ordinal": 1,
+              "type": {
+                "decimal": {
+                  "precision": 12,
+                  "scale": 2
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "numeric"
+                  },
+                  "modifiers": [
+                    {
+                      "int": 12
+                    },
+                    {
+                      "int": 2
+                    }
+                  ],
+                  "raw": "numeric(12,2)"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "currency"
+              },
+              "ordinal": 2,
+              "type": {
+                "char": {
+                  "length": 3,
+                  "unit": "LENGTH_UNIT_CHARACTERS"
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "bpchar"
+                  },
+                  "modifiers": [
+                    {
+                      "int": 3
+                    }
+                  ],
+                  "raw": "character(3)"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_TRUE",
+                "deterministic": "TRISTATE_TRUE"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "sequences": [
+        {
+          "name": {
+            "stored": "posts_id_seq"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "9223372036854775807",
+          "ownedBy": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts",
+            "member": "id"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "tags_id_seq"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "9223372036854775807",
+          "ownedBy": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags",
+            "member": "id"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "users_id_seq"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "9223372036854775807",
+          "ownedBy": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users",
+            "member": "id"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "routines": [
+        {
+          "name": {
+            "stored": "post_score"
+          },
+          "overloads": [
+            {
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "arguments": [
+                {
+                  "name": {
+                    "stored": "p_id"
+                  },
+                  "type": {
+                    "int64": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "int8"
+                      },
+                      "raw": "bigint"
+                    }
+                  },
+                  "mode": "ARG_MODE_IN"
+                }
+              ],
+              "returns": {
+                "scalar": {
+                  "type": {
+                    "decimal": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "numeric"
+                      },
+                      "raw": "numeric"
+                    }
+                  },
+                  "nullable": true
+                }
+              },
+              "nullBehavior": "NULL_BEHAVIOR_STRICT",
+              "volatility": "VOLATILITY_STABLE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON FUNCTION app.post_score(bigint)"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@public"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+                  "role": "dql_fixture_owner"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "parallel": "UNSAFE"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "sql",
+                  "body": " SELECT 0::numeric "
+                }
+              ]
+            },
+            {
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "arguments": [
+                {
+                  "name": {
+                    "stored": "p_id"
+                  },
+                  "type": {
+                    "int64": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "int8"
+                      },
+                      "raw": "bigint"
+                    }
+                  },
+                  "mode": "ARG_MODE_IN"
+                },
+                {
+                  "name": {
+                    "stored": "window_days"
+                  },
+                  "type": {
+                    "int32": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "int4"
+                      },
+                      "raw": "integer"
+                    }
+                  },
+                  "mode": "ARG_MODE_IN"
+                }
+              ],
+              "returns": {
+                "scalar": {
+                  "type": {
+                    "decimal": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "numeric"
+                      },
+                      "raw": "numeric"
+                    }
+                  },
+                  "nullable": true
+                }
+              },
+              "nullBehavior": "NULL_BEHAVIOR_STRICT",
+              "volatility": "VOLATILITY_STABLE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON FUNCTION app.post_score(bigint, integer)"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@public"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+                  "role": "dql_fixture_owner"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "parallel": "UNSAFE"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "sql",
+                  "body": " SELECT 0::numeric "
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "extensions": [
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+          "role": "dql_fixture_owner"
+        }
+      ]
+    }
+  ],
+  "defaultNamespace": "app",
+  "extensions": [
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.Database",
+      "encoding": "UTF8",
+      "localeProvider": "libc",
+      "collate": "C",
+      "ctype": "C"
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.InstalledExtension",
+      "name": "plpgsql",
+      "version": "1.0",
+      "namespace": "pg_catalog"
+    }
+  ]
+}

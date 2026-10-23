@@ -1,0 +1,2224 @@
+{
+  "name": {
+    "stored": "fixture"
+  },
+  "provenance": {
+    "source": "pg-live",
+    "sourceVersion": "1.0.0",
+    "inputFingerprint": "sha256:650698aa1f2120b30fa6425d2706bf9d831d8772043e1c093804ccbdde1d31ae",
+    "fidelity": "SOURCE_FIDELITY_FULL"
+  },
+  "namespaces": [
+    {
+      "name": {
+        "stored": "ext"
+      },
+      "extensions": [
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.BaseType",
+          "name": "citext",
+          "kind": "b",
+          "category": "S",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+          "role": "dql_fixture_owner"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext",
+          "kind": "FUNCTION",
+          "identityArguments": "boolean",
+          "result": "ext.citext",
+          "language": "internal",
+          "body": "booltext",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext",
+          "kind": "FUNCTION",
+          "identityArguments": "character",
+          "result": "ext.citext",
+          "language": "internal",
+          "body": "rtrim1",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext",
+          "kind": "FUNCTION",
+          "identityArguments": "inet",
+          "result": "ext.citext",
+          "language": "internal",
+          "body": "network_show",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_cmp",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "integer",
+          "language": "c",
+          "body": "citext_cmp",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_eq",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_eq",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_ge",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_ge",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_gt",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_gt",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_hash",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext",
+          "result": "integer",
+          "language": "c",
+          "body": "citext_hash",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_hash_extended",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, bigint",
+          "result": "bigint",
+          "language": "c",
+          "body": "citext_hash_extended",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_larger",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "ext.citext",
+          "language": "c",
+          "body": "citext_larger",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_le",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_le",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_lt",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_lt",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_ne",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_ne",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_pattern_cmp",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "integer",
+          "language": "c",
+          "body": "citext_pattern_cmp",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_pattern_ge",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_pattern_ge",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_pattern_gt",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_pattern_gt",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_pattern_le",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_pattern_le",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_pattern_lt",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "c",
+          "body": "citext_pattern_lt",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citext_smaller",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "ext.citext",
+          "language": "c",
+          "body": "citext_smaller",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citextin",
+          "kind": "FUNCTION",
+          "identityArguments": "cstring",
+          "result": "ext.citext",
+          "language": "internal",
+          "body": "textin",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citextout",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext",
+          "result": "cstring",
+          "language": "internal",
+          "body": "textout",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citextrecv",
+          "kind": "FUNCTION",
+          "identityArguments": "internal",
+          "result": "ext.citext",
+          "language": "internal",
+          "body": "textrecv",
+          "strict": true,
+          "volatility": "STABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "citextsend",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext",
+          "result": "bytea",
+          "language": "internal",
+          "body": "textsend",
+          "strict": true,
+          "volatility": "STABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "max",
+          "kind": "AGGREGATE",
+          "identityArguments": "ext.citext",
+          "result": "ext.citext",
+          "language": "internal",
+          "body": "aggregate_dummy",
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "min",
+          "kind": "AGGREGATE",
+          "identityArguments": "ext.citext",
+          "result": "ext.citext",
+          "language": "internal",
+          "body": "aggregate_dummy",
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_match",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "text[]",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_match( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_match",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, text",
+          "result": "text[]",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_match( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_matches",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "SETOF text[]",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_matches( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_matches",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, text",
+          "result": "SETOF text[]",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_matches( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_replace",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, text",
+          "result": "text",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, $2::pg_catalog.text, $3, 'i');\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_replace",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, text, text",
+          "result": "text",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, $2::pg_catalog.text, $3, CASE WHEN pg_catalog.strpos($4, 'c') = 0 THEN  $4 || 'i' ELSE $4 END);\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_split_to_array",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "text[]",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_split_to_array( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_split_to_array",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, text",
+          "result": "text[]",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_split_to_array( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_split_to_table",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "SETOF text",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_split_to_table( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "regexp_split_to_table",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, text",
+          "result": "SETOF text",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_split_to_table( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "replace",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, ext.citext",
+          "result": "text",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, pg_catalog.regexp_replace($2::pg_catalog.text, '([^a-zA-Z_0-9])', E'\\\\\\\\\\\\1', 'g'), $3::pg_catalog.text, 'gi' );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "split_part",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, integer",
+          "result": "text",
+          "language": "sql",
+          "body": "\n    SELECT (pg_catalog.regexp_split_to_array( $1::pg_catalog.text, pg_catalog.regexp_replace($2::pg_catalog.text, '([^a-zA-Z_0-9])', E'\\\\\\\\\\\\1', 'g'), 'i'))[$3];\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "strpos",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "integer",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.strpos( pg_catalog.lower( $1::pg_catalog.text ), pg_catalog.lower( $2::pg_catalog.text ) );\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "texticlike",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "internal",
+          "body": "texticlike",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "texticlike",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, text",
+          "result": "boolean",
+          "language": "internal",
+          "body": "texticlike",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "texticnlike",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "internal",
+          "body": "texticnlike",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "texticnlike",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, text",
+          "result": "boolean",
+          "language": "internal",
+          "body": "texticnlike",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "texticregexeq",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "internal",
+          "body": "texticregexeq",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "texticregexeq",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, text",
+          "result": "boolean",
+          "language": "internal",
+          "body": "texticregexeq",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "texticregexne",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext",
+          "result": "boolean",
+          "language": "internal",
+          "body": "texticregexne",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "texticregexne",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, text",
+          "result": "boolean",
+          "language": "internal",
+          "body": "texticregexne",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "translate",
+          "kind": "FUNCTION",
+          "identityArguments": "ext.citext, ext.citext, text",
+          "result": "text",
+          "language": "sql",
+          "body": "\n    SELECT pg_catalog.translate( pg_catalog.translate( $1::pg_catalog.text, pg_catalog.lower($2::pg_catalog.text), $3), pg_catalog.upper($2::pg_catalog.text), $3);\n",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres",
+          "extension": "citext"
+        }
+      ]
+    },
+    {
+      "name": {
+        "stored": "fx"
+      },
+      "tables": [
+        {
+          "name": {
+            "stored": "base"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "a"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Unlogged"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "bookings"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_BY_DEFAULT",
+                "sequence": {
+                  "catalog": "fixture",
+                  "namespace": "fx",
+                  "object": "bookings_id_seq"
+                },
+                "native": "nextval('fx.bookings_id_seq'::regclass)"
+              }
+            },
+            {
+              "name": {
+                "stored": "room_id"
+              },
+              "ordinal": 2,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "code"
+              },
+              "ordinal": 3,
+              "type": {
+                "named": {
+                  "domain": {
+                    "catalog": "fixture",
+                    "namespace": "fx",
+                    "object": "code"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "fx",
+                    "object": "code"
+                  },
+                  "raw": "fx.code"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "fx.ci",
+                "caseSensitive": "TRISTATE_FALSE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "deterministic": "TRISTATE_FALSE"
+              }
+            },
+            {
+              "name": {
+                "stored": "label"
+              },
+              "ordinal": 4,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "fx.ci",
+                "caseSensitive": "TRISTATE_FALSE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "deterministic": "TRISTATE_FALSE"
+              },
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+                  "grantee": "dql_fixture_reader",
+                  "grantor": "dql_fixture_owner",
+                  "privileges": "w"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "nick"
+              },
+              "ordinal": 5,
+              "type": {
+                "opaque": {},
+                "native": {
+                  "name": {
+                    "namespace": "ext",
+                    "object": "citext"
+                  },
+                  "raw": "ext.citext"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default"
+              }
+            },
+            {
+              "name": {
+                "stored": "during"
+              },
+              "ordinal": 6,
+              "type": {
+                "range": {
+                  "element": {
+                    "instant": {
+                      "precision": 6
+                    }
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "tstzrange"
+                  },
+                  "raw": "tstzrange"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "readings"
+              },
+              "ordinal": 7,
+              "type": {
+                "array": {
+                  "element": {
+                    "range": {
+                      "element": {
+                        "float64": {}
+                      }
+                    }
+                  },
+                  "elementNullable": true,
+                  "dimensions": 1
+                },
+                "native": {
+                  "name": {
+                    "namespace": "fx",
+                    "object": "_float_range"
+                  },
+                  "raw": "fx.float_range[]"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "spans"
+              },
+              "ordinal": 8,
+              "type": {
+                "multirange": {
+                  "element": {
+                    "float64": {}
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "fx",
+                    "object": "float_multirange"
+                  },
+                  "raw": "fx.float_multirange"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "grid"
+              },
+              "ordinal": 9,
+              "type": {
+                "array": {
+                  "element": {
+                    "int32": {}
+                  },
+                  "elementNullable": true,
+                  "dimensions": 2
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "_int4"
+                  },
+                  "raw": "integer[]"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "ticket"
+              },
+              "ordinal": 10,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "default": {
+                "class": "DEFAULT_IDENTITY_BY_DEFAULT",
+                "sequence": {
+                  "catalog": "fixture",
+                  "namespace": "fx",
+                  "object": "tickets"
+                },
+                "native": "nextval('fx.tickets'::regclass)"
+              }
+            }
+          ],
+          "constraints": [
+            {
+              "name": "bookings_no_overlap",
+              "kind": "CONSTRAINT_KIND_EXCLUSION",
+              "columns": [
+                "during"
+              ],
+              "opaque": {
+                "native": "EXCLUDE USING gist (during WITH &&)"
+              },
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "no double booking"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "bookings_no_overlap",
+                  "method": "gist",
+                  "definition": "CREATE INDEX bookings_no_overlap ON fx.bookings USING gist (during)"
+                }
+              ]
+            },
+            {
+              "name": "bookings_room_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "columns": [
+                "room_id"
+              ],
+              "portable": {
+                "range": {
+                  "min": {
+                    "int": "0"
+                  }
+                }
+              },
+              "clientValidated": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.ConstraintOptions",
+                  "notValid": true
+                }
+              ]
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "bookings_code_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "code"
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "bookings_code_key",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX bookings_code_key ON fx.bookings USING btree (code) NULLS NOT DISTINCT"
+                }
+              ]
+            },
+            {
+              "name": "bookings_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "bookings_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX bookings_pkey ON fx.bookings USING btree (id)"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "bookings_room_id_fkey"
+              },
+              "columns": [
+                "room_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "fixture",
+                  "namespace": "fx",
+                  "object": "rooms"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_FULL",
+              "onUpdate": "FOREIGN_KEY_ACTION_CASCADE",
+              "onDelete": "FOREIGN_KEY_ACTION_SET_NULL",
+              "deferrable": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.ConstraintOptions",
+                  "initiallyDeferred": true,
+                  "onDeleteColumns": [
+                    "room_id"
+                  ]
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+              "grantee": "dql_fixture_owner",
+              "grantor": "dql_fixture_owner",
+              "privileges": "arwdDxt"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+              "grantee": "dql_fixture_reader",
+              "grantor": "dql_fixture_owner",
+              "privileges": "ar",
+              "grantable": "ar"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+              "name": "bookings_lower_idx",
+              "method": "btree",
+              "definition": "CREATE INDEX bookings_lower_idx ON fx.bookings USING btree (lower(during), room_id DESC) INCLUDE (label) WITH (fillfactor='70')",
+              "storageParameters": [
+                "fillfactor=70"
+              ],
+              "comment": "expression index"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Policy",
+              "name": "bookings_limit",
+              "command": "ALL",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using": "true",
+              "withCheck": "(room_id < 1000)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Policy",
+              "name": "bookings_read",
+              "command": "SELECT",
+              "permissive": true,
+              "roles": [
+                "dql_fixture_reader"
+              ],
+              "using": "(room_id > 0)",
+              "comment": "readers"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.RowSecurity",
+              "enabled": true,
+              "forced": true
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.StorageParameters",
+              "parameters": [
+                "fillfactor=90"
+              ]
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Trigger",
+              "name": "bookings_audit",
+              "timing": "AFTER",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "TRUNCATE"
+              ],
+              "level": "STATEMENT",
+              "function": {
+                "catalog": "fixture",
+                "namespace": "fx",
+                "object": "touch"
+              },
+              "enabled": "DISABLED",
+              "definition": "CREATE TRIGGER bookings_audit AFTER INSERT OR DELETE OR TRUNCATE ON fx.bookings FOR EACH STATEMENT EXECUTE FUNCTION fx.touch()"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Trigger",
+              "name": "bookings_touch",
+              "timing": "BEFORE",
+              "events": [
+                "UPDATE"
+              ],
+              "level": "ROW",
+              "function": {
+                "catalog": "fixture",
+                "namespace": "fx",
+                "object": "touch"
+              },
+              "enabled": "ORIGIN",
+              "definition": "CREATE TRIGGER bookings_touch BEFORE UPDATE ON fx.bookings FOR EACH ROW EXECUTE FUNCTION fx.touch()",
+              "comment": "keeps rows fresh"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "derived"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "a"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "b"
+              },
+              "ordinal": 2,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.PartitionOf",
+              "parent": {
+                "catalog": "fixture",
+                "namespace": "fx",
+                "object": "base"
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "events"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "happened"
+              },
+              "ordinal": 2,
+              "type": {
+                "date": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "date"
+                  },
+                  "raw": "date"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "events_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id",
+                "happened"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "events_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX events_pkey ON ONLY fx.events USING btree (id, happened)"
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Partition",
+              "namespace": "fx",
+              "bound": "FOR VALUES FROM ('2026-01-01') TO ('2027-01-01')",
+              "table": {
+                "name": {
+                  "stored": "events_2026"
+                },
+                "kind": "RELATION_KIND_TABLE",
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "id"
+                    },
+                    "ordinal": 1,
+                    "type": {
+                      "int64": {},
+                      "native": {
+                        "name": {
+                          "namespace": "pg_catalog",
+                          "object": "int8"
+                        },
+                        "raw": "bigint"
+                      }
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+                  },
+                  {
+                    "name": {
+                      "stored": "happened"
+                    },
+                    "ordinal": 2,
+                    "type": {
+                      "date": {},
+                      "native": {
+                        "name": {
+                          "namespace": "pg_catalog",
+                          "object": "date"
+                        },
+                        "raw": "date"
+                      }
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+                  }
+                ],
+                "uniqueness": [
+                  {
+                    "name": "events_2026_pkey",
+                    "kind": "UNIQUENESS_PRIMARY_KEY",
+                    "columns": [
+                      "id",
+                      "happened"
+                    ],
+                    "nullsDistinct": true,
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                        "name": "events_2026_pkey",
+                        "method": "btree",
+                        "definition": "CREATE UNIQUE INDEX events_2026_pkey ON fx.events_2026 USING btree (id, happened)"
+                      }
+                    ]
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+                    "role": "dql_fixture_owner"
+                  }
+                ]
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.PartitionKey",
+              "definition": "RANGE (happened)"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "room_counts"
+          },
+          "kind": "RELATION_KIND_MATERIALIZED_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "bookings"
+              },
+              "ordinal": 2,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "room_counts_id",
+              "kind": "UNIQUENESS_INDEX",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "room_counts_id",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX room_counts_id ON fx.room_counts USING btree (id)"
+                }
+              ]
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "fixture",
+              "namespace": "fx",
+              "object": "bookings"
+            },
+            {
+              "catalog": "fixture",
+              "namespace": "fx",
+              "object": "rooms"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": " SELECT r.id,\n    count(b.id) AS bookings\n   FROM (fx.rooms r\n     LEFT JOIN fx.bookings b ON ((b.room_id = r.id)))\n  GROUP BY r.id;"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "room_names"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "name"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "fixture",
+              "namespace": "fx",
+              "object": "rooms"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Trigger",
+              "name": "room_names_insert",
+              "timing": "INSTEAD OF",
+              "events": [
+                "INSERT"
+              ],
+              "level": "ROW",
+              "function": {
+                "catalog": "fixture",
+                "namespace": "fx",
+                "object": "room_names_insert"
+              },
+              "enabled": "ORIGIN",
+              "definition": "CREATE TRIGGER room_names_insert INSTEAD OF INSERT ON fx.room_names FOR EACH ROW EXECUTE FUNCTION fx.room_names_insert()"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": " SELECT id,\n    name\n   FROM fx.rooms;"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "rooms"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "name"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "rooms_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "rooms_pkey",
+                  "method": "btree",
+                  "definition": "CREATE UNIQUE INDEX rooms_pkey ON fx.rooms USING btree (id)"
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": {
+            "stored": "mood"
+          },
+          "labels": [
+            "sad",
+            "neutral",
+            "happy"
+          ],
+          "origin": "ENUM_ORIGIN_NATIVE",
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+              "grantee": "PUBLIC",
+              "grantor": "dql_fixture_owner",
+              "privileges": "U"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+              "grantee": "dql_fixture_owner",
+              "grantor": "dql_fixture_owner",
+              "privileges": "U"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+              "grantee": "dql_fixture_reader",
+              "grantor": "dql_fixture_owner",
+              "privileges": "U"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "domains": [
+        {
+          "name": {
+            "stored": "code"
+          },
+          "base": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          },
+          "default": {
+            "class": "DEFAULT_CONSTANT",
+            "native": "'none'::text",
+            "value": {
+              "string": "none"
+            }
+          },
+          "collation": {
+            "name": "fx.ci",
+            "caseSensitive": "TRISTATE_FALSE",
+            "accentSensitive": "TRISTATE_TRUE",
+            "deterministic": "TRISTATE_FALSE"
+          },
+          "constraints": [
+            {
+              "name": "code_ascii",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "portable": {
+                "pattern": {
+                  "regex": "^[ -~]*$"
+                }
+              },
+              "clientValidated": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.ConstraintOptions",
+                  "notValid": true
+                }
+              ]
+            },
+            {
+              "name": "code_length",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "portable": {
+                "length": {
+                  "max": 8,
+                  "unit": "LENGTH_UNIT_CHARACTERS"
+                }
+              },
+              "clientValidated": true,
+              "annotations": [
+                {
+                  "key": "core.length",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON CONSTRAINT code_length ON DOMAIN fx.code"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@length"
+                }
+              ]
+            },
+            {
+              "name": "code_lower",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "opaque": {
+                "native": "CHECK ((VALUE = lower(VALUE)))"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "a short code"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "composites": [
+        {
+          "name": {
+            "stored": "point3"
+          },
+          "attributes": [
+            {
+              "name": {
+                "stored": "x"
+              },
+              "ordinal": 1,
+              "type": {
+                "float64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "float8"
+                  },
+                  "raw": "double precision"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "y"
+              },
+              "ordinal": 2,
+              "type": {
+                "float64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "float8"
+                  },
+                  "raw": "double precision"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "label"
+              },
+              "ordinal": 3,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "fx.ci",
+                "caseSensitive": "TRISTATE_FALSE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "deterministic": "TRISTATE_FALSE"
+              },
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "attribute comment"
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        }
+      ],
+      "sequences": [
+        {
+          "name": {
+            "stored": "bookings_id_seq"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "9223372036854775807",
+          "ownedBy": {
+            "catalog": "fixture",
+            "namespace": "fx",
+            "object": "bookings",
+            "member": "id"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "tickets"
+          },
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          },
+          "start": "100",
+          "increment": "5",
+          "min": "10",
+          "max": "1000",
+          "cycle": true,
+          "ownedBy": {
+            "catalog": "fixture",
+            "namespace": "fx",
+            "object": "bookings",
+            "member": "ticket"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "dql_fixture_owner"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.SequenceCache",
+              "cache": "3"
+            }
+          ]
+        }
+      ],
+      "routines": [
+        {
+          "name": {
+            "stored": "reset"
+          },
+          "overloads": [
+            {
+              "kind": "ROUTINE_KIND_PROCEDURE",
+              "arguments": [
+                {
+                  "name": {
+                    "stored": "n"
+                  },
+                  "type": {
+                    "int32": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "int4"
+                      },
+                      "raw": "integer"
+                    }
+                  },
+                  "mode": "ARG_MODE_INOUT"
+                },
+                {
+                  "name": {
+                    "stored": "reason"
+                  },
+                  "type": {
+                    "text": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "text"
+                      },
+                      "raw": "text"
+                    }
+                  },
+                  "mode": "ARG_MODE_IN",
+                  "hasDefault": true
+                }
+              ],
+              "returns": {
+                "nothing": {}
+              },
+              "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+              "volatility": "VOLATILITY_VOLATILE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live",
+                    "location": "COMMENT ON PROCEDURE fx.reset(integer, text)"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@public"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+                  "role": "dql_fixture_owner"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "parallel": "UNSAFE",
+                  "argumentDefaults": [
+                    "'manual'::text"
+                  ]
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "plpgsql",
+                  "body": " BEGIN n := 0; END "
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "extensions": [
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Collation",
+          "name": "ci",
+          "provider": "icu",
+          "icuLocale": "und-u-ks-level2",
+          "owner": "dql_fixture_owner",
+          "comment": "case-insensitive"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+          "text": "fixture objects"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+          "grantee": "dql_fixture_owner",
+          "grantor": "dql_fixture_owner",
+          "privileges": "UC"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+          "grantee": "dql_fixture_reader",
+          "grantor": "dql_fixture_owner",
+          "privileges": "U"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+          "role": "dql_fixture_owner"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.RangeType",
+          "name": "float_range",
+          "subtype": {
+            "float64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "float8"
+              },
+              "raw": "double precision"
+            }
+          },
+          "multirange": "float_multirange",
+          "subtypeDiff": "float8mi",
+          "owner": "dql_fixture_owner",
+          "comment": "a range"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "float_multirange",
+          "kind": "FUNCTION",
+          "result": "fx.float_multirange",
+          "language": "internal",
+          "body": "multirange_constructor0",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "float_multirange",
+          "kind": "FUNCTION",
+          "identityArguments": "VARIADIC fx.float_range[]",
+          "result": "fx.float_multirange",
+          "language": "internal",
+          "body": "multirange_constructor2",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "float_multirange",
+          "kind": "FUNCTION",
+          "identityArguments": "fx.float_range",
+          "result": "fx.float_multirange",
+          "language": "internal",
+          "body": "multirange_constructor1",
+          "strict": true,
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "float_range",
+          "kind": "FUNCTION",
+          "identityArguments": "double precision, double precision",
+          "result": "fx.float_range",
+          "language": "internal",
+          "body": "range_constructor2",
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "float_range",
+          "kind": "FUNCTION",
+          "identityArguments": "double precision, double precision, text",
+          "result": "fx.float_range",
+          "language": "internal",
+          "body": "range_constructor3",
+          "volatility": "IMMUTABLE",
+          "parallel": "SAFE",
+          "owner": "postgres"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "room_ids",
+          "kind": "FUNCTION",
+          "result": "SETOF integer",
+          "language": "sql",
+          "body": "BEGIN ATOMIC\n SELECT rooms.id\n    FROM fx.rooms;\nEND",
+          "volatility": "STABLE",
+          "parallel": "SAFE",
+          "securityDefiner": true,
+          "owner": "dql_fixture_owner",
+          "grants": [
+            {
+              "grantee": "dql_fixture_owner",
+              "grantor": "dql_fixture_owner",
+              "privileges": "X"
+            },
+            {
+              "grantee": "dql_fixture_reader",
+              "grantor": "dql_fixture_owner",
+              "privileges": "X"
+            }
+          ]
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "room_list",
+          "kind": "FUNCTION",
+          "identityArguments": "min_id integer",
+          "result": "TABLE(id integer, name text)",
+          "language": "sql",
+          "body": " SELECT id, name FROM fx.rooms WHERE id >= min_id ",
+          "volatility": "STABLE",
+          "parallel": "UNSAFE",
+          "owner": "dql_fixture_owner",
+          "argumentDefaults": [
+            "0"
+          ]
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "room_names_insert",
+          "kind": "FUNCTION",
+          "result": "trigger",
+          "language": "plpgsql",
+          "body": " BEGIN RETURN NEW; END ",
+          "volatility": "VOLATILE",
+          "parallel": "UNSAFE",
+          "owner": "dql_fixture_owner"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "total",
+          "kind": "FUNCTION",
+          "identityArguments": "a integer, OUT total bigint, VARIADIC rest integer[]",
+          "result": "bigint",
+          "language": "sql",
+          "body": " SELECT a::bigint ",
+          "volatility": "IMMUTABLE",
+          "parallel": "UNSAFE",
+          "owner": "dql_fixture_owner",
+          "argumentDefaults": [
+            "'{}'::integer[]"
+          ]
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "touch",
+          "kind": "FUNCTION",
+          "result": "trigger",
+          "language": "plpgsql",
+          "body": " BEGIN RETURN NEW; END ",
+          "volatility": "VOLATILE",
+          "parallel": "UNSAFE",
+          "owner": "dql_fixture_owner"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Statistics",
+          "name": "bookings_expr",
+          "definition": "CREATE STATISTICS fx.bookings_expr ON lower(during) FROM fx.bookings",
+          "owner": "dql_fixture_owner"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Statistics",
+          "name": "bookings_stats",
+          "definition": "CREATE STATISTICS fx.bookings_stats (ndistinct, dependencies) ON room_id, code FROM fx.bookings",
+          "owner": "dql_fixture_owner",
+          "comment": "correlated"
+        }
+      ]
+    }
+  ],
+  "defaultNamespace": "public",
+  "extensions": [
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.Database",
+      "encoding": "UTF8",
+      "localeProvider": "libc",
+      "collate": "C",
+      "ctype": "C"
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.InstalledExtension",
+      "name": "citext",
+      "version": "1.6",
+      "namespace": "ext"
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.InstalledExtension",
+      "name": "plpgsql",
+      "version": "1.0",
+      "namespace": "pg_catalog"
+    }
+  ]
+}
