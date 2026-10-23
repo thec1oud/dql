@@ -50,6 +50,15 @@ func parseTypeName(text string) (*pg.TypeName, error) {
 	return def.GetTypeName(), nil
 }
 
+// parseDefault parses text as a column default expression.
+func parseDefault(text string) (*pg.Node, error) {
+	cmd, err := parseCmd("ALTER TABLE t ALTER COLUMN c SET DEFAULT " + text)
+	if err != nil {
+		return nil, err
+	}
+	return cmd.GetDef(), nil
+}
+
 // parseCheck parses text as a check constraint, either as the database prints
 // it ("CHECK (...)", possibly followed by NOT VALID or NO INHERIT) or as the
 // bare expression.
