@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -39,7 +40,7 @@ func (d *deriver) overloads(catalogs []*irv1.Catalog) {
 						keys = append(keys, k)
 					}
 					seen[k] = append(seen[k], named{
-						id: dotted(at) + "(" + strings.Join(o.GetSignature(), ", ") + ")", at: at, words: words,
+						id: diagnostics.Name(at) + "(" + strings.Join(o.GetSignature(), ", ") + ")", at: at, words: words,
 					})
 				}
 			}
@@ -72,7 +73,7 @@ func (d *deriver) overloadWords(at *irv1.QualifiedName, rt *irv1.Routine, o *irv
 		}
 		d.errorf(CodeAnnotationValueInvalid, at,
 			"name on overload `%s(%s)` needs a word list, such as name: [post, score, recent]",
-			dotted(at), strings.Join(o.GetSignature(), ", "))
+			diagnostics.Name(at), strings.Join(o.GetSignature(), ", "))
 	}
 	words := slices.Clone(rt.GetName().GetWords())
 	if len(rt.GetOverloads()) > 1 {
@@ -119,7 +120,7 @@ func (d *deriver) typeName(t *irv1.Type) string {
 	case *irv1.Type_Weak:
 		return "weak<" + d.typeName(k.Weak.GetAffinity()) + ">"
 	case *irv1.Type_Named:
-		return dotted(namedRef(k.Named))
+		return diagnostics.Name(namedRef(k.Named))
 	case *irv1.Type_Opaque:
 		return "opaque<" + t.GetNative().GetRaw() + ">"
 	}

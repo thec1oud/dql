@@ -3,6 +3,8 @@ package facts
 import (
 	"slices"
 	"strings"
+
+	"github.com/thec1oud/dql/core/diagnostics"
 )
 
 // name gives the relations of one entity their final names, stores them on
@@ -43,7 +45,7 @@ func (d *deriver) name(r *tableRef) {
 		if names := columns[k]; len(names) > 1 {
 			d.errorf(CodeColumnNameCollision, member(r.qn, names[0]),
 				"columns %s of `%s` all have the words [%s]; rename all but one with a name annotation",
-				quoteList(names), dotted(r.qn), strings.Join(strings.Split(k, "\x00"), " "))
+				quoteList(names), diagnostics.Name(r.qn), strings.Join(strings.Split(k, "\x00"), " "))
 		}
 	}
 
@@ -60,7 +62,7 @@ func (d *deriver) name(r *tableRef) {
 			q := member(r.qn, ps[i].rel.GetName().GetStored())
 			d.errorf(CodeRelationNameCollision, q,
 				"%d relations of `%s` are named `%s`, from %s; %s",
-				j-i, dotted(r.qn), ps[i].rel.GetName().GetStored(), strings.Join(from, ", "), ps[i].fix)
+				j-i, diagnostics.Name(r.qn), ps[i].rel.GetName().GetStored(), strings.Join(from, ", "), ps[i].fix)
 		}
 		i = j
 	}
@@ -71,7 +73,7 @@ func (d *deriver) name(r *tableRef) {
 			q := member(r.qn, p.rel.GetName().GetStored())
 			d.errorf(CodeRelationNameEqualsColumn, q,
 				"relation `%s` from %s has the same name as column `%s`; %s",
-				dotted(q), p.source, names[0], p.fix)
+				diagnostics.Name(q), p.source, names[0], p.fix)
 		}
 	}
 }

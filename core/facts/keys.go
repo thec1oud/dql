@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -101,7 +102,7 @@ func (d *deriver) logicalKey(r *tableRef) {
 		cols, ok := valueColumns(a.GetValue())
 		if !ok {
 			d.errorf(CodeAnnotationValueInvalid, r.qn,
-				"logical-key on `%s` needs a list of column names; write it as logical-key(col, ...)", dotted(r.qn))
+				"logical-key on `%s` needs a list of column names; write it as logical-key(col, ...)", diagnostics.Name(r.qn))
 			return
 		}
 		t.LogicalKey = &irv1.LogicalKey{Columns: cols, Origin: a.GetOrigin().GetKind()}
@@ -112,7 +113,7 @@ func (d *deriver) logicalKey(r *tableRef) {
 	}
 	if primaryKey(t) != nil {
 		d.errorf(CodeLogicalKeyWithPrimaryKey, r.qn,
-			"`%s` has a primary key, so it cannot also have a logical key; remove the logical-key annotation", dotted(r.qn))
+			"`%s` has a primary key, so it cannot also have a logical key; remove the logical-key annotation", diagnostics.Name(r.qn))
 		return
 	}
 	valid := true
@@ -121,12 +122,12 @@ func (d *deriver) logicalKey(r *tableRef) {
 		switch {
 		case c == nil:
 			d.errorf(CodeLogicalKeyUnknownColumn, r.qn,
-				"logical key of `%s` names column `%s`, which does not exist; name an existing column", dotted(r.qn), name)
+				"logical key of `%s` names column `%s`, which does not exist; name an existing column", diagnostics.Name(r.qn), name)
 			valid = false
 		case c.GetNullable():
 			d.errorf(CodeLogicalKeyNullable, member(r.qn, name),
 				"logical key of `%s` includes nullable column `%s`; only non-null columns identify rows (§11.1), so mark it nonnull or leave it out of the key",
-				dotted(r.qn), name)
+				diagnostics.Name(r.qn), name)
 			valid = false
 		}
 	}
@@ -135,6 +136,6 @@ func (d *deriver) logicalKey(r *tableRef) {
 	if valid && t.GetKind() == irv1.TableKind_RELATION_KIND_TABLE && !unique(t, lk.GetColumns(), false) {
 		d.warnf(CodeLogicalKeyNotUnique, r.qn,
 			"no primary key, unique constraint or unique index covers the logical key (%s) of `%s`; add a unique constraint on those columns",
-			strings.Join(lk.GetColumns(), ", "), dotted(r.qn))
+			strings.Join(lk.GetColumns(), ", "), diagnostics.Name(r.qn))
 	}
 }

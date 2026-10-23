@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -217,32 +218,12 @@ func TestAnnotatedRelationErrors(t *testing.T) {
 		inv.Columns[1].Annotations = []*irv1.Annotation{configured(keyRelation, "x", tc.value)}
 		c := catalogOf(inv, usersTable())
 		ds := Derive([]*irv1.Catalog{c}, postgres)
-		if len(ds) != 1 || ds[0].GetCode() != tc.code || dotted(ds[0].GetTarget()) != at || !strings.Contains(ds[0].GetMessage(), tc.msg) {
+		if len(ds) != 1 || ds[0].GetCode() != tc.code || diagnostics.Name(ds[0].GetTarget()) != at || !strings.Contains(ds[0].GetMessage(), tc.msg) {
 			t.Errorf("%s: %v", tc.name, ds)
 		}
 		if names(c) != nil {
 			t.Errorf("%s: relations %v", tc.name, names(c))
 		}
-	}
-}
-
-func TestSortDiagnostics(t *testing.T) {
-	q := func(o string) *irv1.QualifiedName { return &irv1.QualifiedName{Catalog: "c", Object: o} }
-	ds := []*irv1.Diagnostic{
-		{Severity: irv1.Severity_SEVERITY_WARNING, Code: "a", Target: q("a")},
-		{Severity: irv1.Severity_SEVERITY_ERROR, Code: "b", Target: q("b"), Message: "2"},
-		{Severity: irv1.Severity_SEVERITY_ERROR, Code: "b", Target: q("b"), Message: "1"},
-		{Severity: irv1.Severity_SEVERITY_ERROR, Code: "a", Target: q("b")},
-		{Severity: irv1.Severity_SEVERITY_ERROR, Code: "z", Target: q("a")},
-	}
-	SortDiagnostics(ds)
-	var got []string
-	for _, d := range ds {
-		got = append(got, d.GetSeverity().String()[9:]+" "+d.GetTarget().GetObject()+" "+d.GetCode()+d.GetMessage())
-	}
-	want := []string{"ERROR a z", "ERROR b a", "ERROR b b1", "ERROR b b2", "WARNING a a"}
-	if !slices.Equal(got, want) {
-		t.Errorf("got %v", got)
 	}
 }
 
