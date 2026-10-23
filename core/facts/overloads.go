@@ -25,10 +25,7 @@ func (d *deriver) overloads(catalogs []*irv1.Catalog) {
 			for _, rt := range ns.GetRoutines() {
 				at := &irv1.QualifiedName{Catalog: c.GetName().GetStored(), Namespace: ns.GetName().GetStored(), Object: rt.GetName().GetStored()}
 				for _, o := range rt.GetOverloads() {
-					o.Signature = nil
-					for _, a := range inputs(o) {
-						o.Signature = append(o.Signature, d.typeName(a.GetType()))
-					}
+					o.Signature = Signature(o)
 				}
 				slices.SortFunc(rt.Overloads, func(a, b *irv1.Overload) int { return slices.Compare(a.GetSignature(), b.GetSignature()) })
 				for _, o := range rt.GetOverloads() {
@@ -107,18 +104,29 @@ func (d *deriver) prefix(catalogs []*irv1.Catalog, c *irv1.Catalog, ns *irv1.Nam
 	return p
 }
 
+// Signature returns the logical type names of an overload's arguments, OUT
+// arguments left out, which identify the overload together with its
+// routine's qualified name, as in shop.app.post_score(int64) (§4.6).
+func Signature(o *irv1.Overload) []string {
+	var sig []string
+	for _, a := range inputs(o) {
+		sig = append(sig, typeName(a.GetType()))
+	}
+	return sig
+}
+
 // typeName is a logical type's name in a signature (§8.1): int64,
 // local_time, array<int64>, a named type's qualified name, or opaque<native>.
-func (d *deriver) typeName(t *irv1.Type) string {
+func typeName(t *irv1.Type) string {
 	switch k := t.GetKind().(type) {
 	case *irv1.Type_Array:
-		return "array<" + d.typeName(k.Array.GetElement()) + ">"
+		return "array<" + typeName(k.Array.GetElement()) + ">"
 	case *irv1.Type_Range:
-		return "range<" + d.typeName(k.Range.GetElement()) + ">"
+		return "range<" + typeName(k.Range.GetElement()) + ">"
 	case *irv1.Type_Multirange:
-		return "multirange<" + d.typeName(k.Multirange.GetElement()) + ">"
+		return "multirange<" + typeName(k.Multirange.GetElement()) + ">"
 	case *irv1.Type_Weak:
-		return "weak<" + d.typeName(k.Weak.GetAffinity()) + ">"
+		return "weak<" + typeName(k.Weak.GetAffinity()) + ">"
 	case *irv1.Type_Named:
 		return diagnostics.Name(namedRef(k.Named))
 	case *irv1.Type_Opaque:
