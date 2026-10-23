@@ -25,6 +25,9 @@ var (
 	// shopURL connects to a fresh database holding testdata/shop/schema.sql,
 	// the running example (§1.3).
 	shopURL string
+	// extrasURL connects to one holding the running example with
+	// testdata/extras.sql applied.
+	extrasURL string
 	// dpgBin is the dpg-snapshot source built as an executable.
 	dpgBin string
 )
@@ -55,17 +58,27 @@ func setup(m *testing.M) int {
 		return 1
 	}
 	admin, err := pgtest.Connect(ctx)
-	var db *pgtest.Database
-	if err == nil {
-		defer admin.Close(ctx)
-		db, err = pgtest.Create(ctx, admin, filepath.Join(shopDir, "schema.sql"))
-	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "FAIL: setting up the test database: %v\n", err)
+		fmt.Fprintf(os.Stderr, "FAIL: setting up the test databases: %v\n", err)
 		return 1
 	}
-	defer db.Drop(ctx)
-	shopURL = db.URL
+	defer admin.Close(ctx)
+	schema := filepath.Join(shopDir, "schema.sql")
+	for _, d := range []struct {
+		url   *string
+		files []string
+	}{
+		{&shopURL, []string{schema}},
+		{&extrasURL, []string{schema, filepath.Join("testdata", "extras.sql")}},
+	} {
+		db, err := pgtest.Create(ctx, admin, d.files...)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL: setting up the test databases: %v\n", err)
+			return 1
+		}
+		defer db.Drop(ctx)
+		*d.url = db.URL
+	}
 	return m.Run()
 }
 
