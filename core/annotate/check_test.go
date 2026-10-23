@@ -22,6 +22,7 @@ var (
 	attribute   = Target{Kind: KindAttribute, Name: q("money_amount", "amount"), Type: textType}
 	result      = Target{Kind: KindResult, Name: q("post_score", "")}
 	function    = Target{Kind: KindFunction, Name: q("post_score", "")}
+	scalarFunc  = Target{Kind: KindFunction, Name: q("post_score", ""), Type: textType}
 	procedure   = Target{Kind: KindProcedure, Name: q("archive_posts", "")}
 )
 
@@ -231,6 +232,15 @@ func TestBoundWithVersion(t *testing.T) {
 	wantCodes(t, Check(col, []*irv1.Annotation{comment("core.bound", nil), comment("core.sensitive", nil)}))
 }
 
+// §7.2: nonnull on a function narrows its one result value, so a function
+// returning a table or nothing has none to narrow.
+func TestFunctionNonNull(t *testing.T) {
+	run(t, map[string]checkCase{
+		"scalar or set-of result": {scalarFunc, comment("core.nonnull", nil), nil},
+		"table result":            {function, comment("core.nonnull", nil), []string{CodeWrongTarget}},
+	})
+}
+
 // §7.3: a redundant annotation is a warning.
 func TestRedundant(t *testing.T) {
 	generated := column(textType, false)
@@ -240,6 +250,7 @@ func TestRedundant(t *testing.T) {
 	run(t, map[string]checkCase{
 		"nonnull on a NOT NULL column":       {column(textType, true), comment("core.nonnull", nil), []string{CodeRedundant}},
 		"nonnull on a proven result":         {Target{Kind: KindResult, Name: q("f", ""), NotNull: true}, comment("core.nonnull", nil), []string{CodeRedundant}},
+		"nonnull on a never-null function":   {Target{Kind: KindFunction, Name: q("f", ""), Type: textType, NotNull: true}, comment("core.nonnull", nil), []string{CodeRedundant}},
 		"array-elements-nonnull, non-null":   {column(arrayType(false), false), comment("core.array-elements-nonnull", nil), []string{CodeRedundant}},
 		"name equal to the words":            {tableTarget, config("core.name", words("users")), []string{CodeRedundant}},
 		"name without words":                 {Target{Kind: KindTable, Name: q("t", "")}, config("core.name", words("t")), nil},

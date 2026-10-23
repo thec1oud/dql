@@ -21,7 +21,8 @@ type Target struct {
 	Words []string
 	// Type is the logical type of a column, attribute or result as the source
 	// read it, before annotations narrow it, with a domain resolved to its
-	// base type (§8.5).
+	// base type (§8.5). On a function it is the type of its scalar or set-of
+	// result, and nil when it returns a table or nothing.
 	Type *irv1.Type
 	// NotNull is set when the database guarantees, or the source proves, that
 	// a column, attribute or result is non-null, before any annotation
@@ -269,7 +270,12 @@ func (c *checker) rules(k Key, v *irv1.AnnotationValue) {
 				"use removal: delete, or make the foreign key's columns nullable")
 		}
 	case "nonnull":
-		if t.NotNull {
+		switch {
+		case t.Kind == KindFunction && t.Type == nil:
+			// A function's comment annotates its one result value; a table
+			// result narrows its columns one by one (§6.5, §7.2).
+			c.wrongTargetFix(k, "returns no single value", "annotate its result columns instead, or remove the annotation")
+		case t.NotNull:
 			c.redundant("%s on %s changes nothing: the database already guarantees it is non-null; remove the annotation (§7.3)", k.IR(), c.at)
 		}
 	case "name":
