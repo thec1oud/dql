@@ -1,3 +1,7 @@
 go 1.25
 
-use ./proto
+use (
+	./core
+	./proto
+	./testkit
+)
