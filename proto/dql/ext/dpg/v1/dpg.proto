@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+// What a dpg snapshot records beyond the catalog IR and the Postgres
+// extensions, carried losslessly as a typed extension in google.protobuf.Any
+// (design record §6.2, §6.3). The type URL uses the prefix "type.dql.dev/".
+// Only the dpg-snapshot source plugin writes it; the core passes it through
+// unchanged.
+package dql.ext.dpg.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ext/dpg/v1;dpgextv1";
+
+// The fields of one dpg snapshot record that nothing else in the IR carries,
+// such as a column's renamed_from or a table's name_maps, or a whole record
+// that has no place in the catalog, such as a role or an aggregate.
+message Record {
+  // The record's kind as the snapshot names it: an object kind such as
+  // "table", "role" or "aggregate", or a member kind: "column", "attribute",
+  // "constraint", "index", "trigger", "policy" or "partition".
+  string kind = 1;
+  // The record's name within the object that carries the extension: an
+  // object's key in the snapshot's objects map, such as "app.users" or
+  // "app.post_score(bigint)", or a member's name, such as "posts_title_idx".
+  // Empty on the record of the object or member the extension is on.
+  string name = 2;
+  // The fields under dpg's JSON names, with their values as the snapshot
+  // holds them. An integer that a double cannot hold exactly is a string.
+  google.protobuf.Struct fields = 3;
+}
