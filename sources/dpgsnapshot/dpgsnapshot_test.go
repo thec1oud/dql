@@ -52,7 +52,7 @@ func hello() *irv1.CoreHello { return &irv1.CoreHello{IrVersion: bundle.Version(
 // catalog, which the same snapshot and settings produce.
 func check(t *testing.T, c plugin.Client) {
 	t.Helper()
-	res, err := c.Invoke(context.Background(), &irv1.Bundle{Version: bundle.Version()})
+	res, err := c.Invoke(context.Background(), &irv1.Invoke{Bundle: &irv1.Bundle{Version: bundle.Version()}})
 	if err != nil {
 		t.Fatal(err)
 	}

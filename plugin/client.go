@@ -16,8 +16,9 @@ import (
 type Client interface {
 	// Handshake is what the plugin declared.
 	Handshake() *irv1.PluginHandshake
-	// Invoke hands the plugin a bundle and returns its result.
-	Invoke(ctx context.Context, b *irv1.Bundle) (*irv1.InvokeResult, error)
+	// Invoke hands the plugin a bundle and its settings, and returns its
+	// result.
+	Invoke(ctx context.Context, in *irv1.Invoke) (*irv1.InvokeResult, error)
 	// Close ends the session; for an executable it waits for it to exit.
 	Close() error
 }
@@ -38,8 +39,8 @@ type inProcess struct {
 
 func (c *inProcess) Handshake() *irv1.PluginHandshake { return c.hs }
 
-func (c *inProcess) Invoke(ctx context.Context, b *irv1.Bundle) (*irv1.InvokeResult, error) {
-	return c.p.Invoke(ctx, &irv1.Invoke{Bundle: b})
+func (c *inProcess) Invoke(ctx context.Context, in *irv1.Invoke) (*irv1.InvokeResult, error) {
+	return c.p.Invoke(ctx, in)
 }
 
 func (c *inProcess) Close() error { return nil }
@@ -94,8 +95,8 @@ func (c *process) handshake(hello *irv1.CoreHello, kind irv1.PluginKind) error {
 
 func (c *process) Handshake() *irv1.PluginHandshake { return c.hs }
 
-func (c *process) Invoke(_ context.Context, b *irv1.Bundle) (*irv1.InvokeResult, error) {
-	if err := WriteMessage(c.w, &irv1.CoreMessage{Kind: &irv1.CoreMessage_Invoke{Invoke: &irv1.Invoke{Bundle: b}}}); err != nil {
+func (c *process) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, error) {
+	if err := WriteMessage(c.w, &irv1.CoreMessage{Kind: &irv1.CoreMessage_Invoke{Invoke: in}}); err != nil {
 		return nil, err
 	}
 	var msg irv1.PluginMessage

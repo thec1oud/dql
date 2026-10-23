@@ -17,8 +17,8 @@ type Target struct {
 	Name    string
 	Builtin Plugin
 	Path    string
-	// Args are the executable's arguments. The protocol carries no
-	// settings, so an executable takes them as flags.
+	// Args are the executable's arguments. A plugin receives its settings
+	// with each invocation; the shipped executables also take them as flags.
 	Args []string
 }
 

@@ -33,6 +33,9 @@ var (
 	driftlessURL string
 	// dpgBin is the dpg-snapshot source built as an executable.
 	dpgBin string
+	// probeBin is a third-party source plugin: the echo plugin as a source,
+	// which reports the settings it receives.
+	probeBin string
 )
 
 // The running example's files.
@@ -54,10 +57,21 @@ func setup(m *testing.M) int {
 	}
 	defer os.RemoveAll(dir)
 	dpgBin = filepath.Join(dir, "dql-plugin-dpg-snapshot")
-	build := exec.Command("go", "build", "-o", dpgBin, "github.com/thec1oud/dql/sources/dpgsnapshot/cmd/dql-plugin-dpg-snapshot")
-	build.Stderr = os.Stderr
-	if err := build.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "FAIL: building dql-plugin-dpg-snapshot: %v\n", err)
+	echoBin := filepath.Join(dir, "dql-plugin-echo")
+	for bin, pkg := range map[string]string{
+		dpgBin:  "github.com/thec1oud/dql/sources/dpgsnapshot/cmd/dql-plugin-dpg-snapshot",
+		echoBin: "github.com/thec1oud/dql/plugin/cmd/dql-plugin-echo",
+	} {
+		build := exec.Command("go", "build", "-o", bin, pkg)
+		build.Stderr = os.Stderr
+		if err := build.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL: building %s: %v\n", filepath.Base(bin), err)
+			return 1
+		}
+	}
+	probeBin = filepath.Join(dir, "dql-plugin-probe")
+	if err := os.WriteFile(probeBin, []byte("#!/bin/sh\nexec "+echoBin+" -kind source \"$@\"\n"), 0o755); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	admin, err := pgtest.Connect(ctx)
@@ -231,8 +245,19 @@ func TestGenerateWriteFailures(t *testing.T) {
 	}
 }
 
-// An executable takes the settings of its sources entry as flags, with the
-// snapshot relative to dql.yaml.
+// A third-party source receives its whole sources entry, keys of its own
+// included, with the invocation and no flags.
+func TestGenerateHandsSettingsToThirdPartySources(t *testing.T) {
+	cfg := "sources:\n  - plugin: probe\n    path: " + probeBin + "\n    catalog: shop\n    dsn: env:PROBE_URL\n    pool: {size: 4}\n"
+	code, _, stderr := dql("generate", "-config", write(t, "dql.yaml", cfg))
+	want := "warning echo-settings: map[catalog:shop dsn:env:PROBE_URL path:" + probeBin + " plugin:probe pool:map[size:4]]\n"
+	if code != 1 || !strings.Contains(stderr, want) {
+		t.Errorf("%d %q; want %q", code, stderr, want)
+	}
+}
+
+// A shipped plugin's executable takes the settings of its sources entry as
+// flags, with the snapshot relative to dql.yaml.
 func TestFlags(t *testing.T) {
 	c, err := config.Parse([]byte(""))
 	if err != nil {
