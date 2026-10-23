@@ -1,0 +1,47 @@
+names:
+  user_full shape-name-collision: shape user_full has the host name of a preset shape; rename it
+   shape-name-invalid: shape name "" is not lower-case words joined by underscores; rename it, such as user_summary
+  UserSummary shape-name-invalid: shape name "UserSummary" is not lower-case words joined by underscores; rename it, such as user_summary
+unknown from:
+  a shape-unknown: shape a: from names "users.full", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  b shape-unknown: shape b: from names "user.fancy", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  c shape-unknown: shape c: from names "user.key.flat", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  d shape-unknown: shape d: from names "user.full.flat.for", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  e shape-unknown: shape e: from names "user.full.weird", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  f shape-unknown: shape f: from names "", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  g shape-unknown: shape g: from names ".full", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  h shape-unknown: shape h: from names "nothing", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  i shape-unknown: shape i: from names "post.draft.for.editor", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+cycle:
+  a shape-cycle: shape a depends on itself through a -> b -> a; break the cycle
+self nest:
+  post_tree shape-cycle: shape post_tree depends on itself through post_tree -> user_tree -> post_tree; break the cycle
+unknown and forbidden fields:
+  a shape-field-forbidden: shape a: pick names password_hash, which user.full leaves out (write-only); remove it from pick
+  c shape-field-forbidden: shape c: nullify names password_hash, which invite binds; remove it from nullify
+  a shape-field-unknown: shape a: pick names nope, which is not a field of user.full (shop.app.users); use the names of its fields
+  b shape-field-unknown: shape b: require names relation author, and require applies to columns only; remove it from require
+  derived invite
+operators not allowed:
+  a shape-operator-not-allowed: shape a: bind applies to write shapes only, and a derives from user.full; remove it
+  a shape-operator-not-allowed: shape a: optionalize applies to write shapes only, and a derives from user.full; remove it
+  a shape-operator-not-allowed: shape a: require applies to write shapes only, and a derives from user.full; remove it
+  b shape-operator-not-allowed: shape b: nest applies to Full, Draft and Partial shapes, and b derives from user.key; remove it
+conflicts:
+  a shape-operator-conflict: shape a: pick names id twice; name it once
+  b shape-operator-conflict: shape b: pick and omit both name id; keep one
+  c shape-operator-conflict: shape c: require and optionalize both name email; keep one
+  d shape-operator-conflict: shape d: nullify and nonnull both name email; keep one
+  e shape-operator-conflict: shape e: nonnull names email, which the shape drops or binds; keep the field or remove it from nonnull
+  f shape-operator-conflict: shape f: pick and nest both name posts_to_author; keep one
+nests:
+  c shape-nest-mismatch: shape c: relation author leads to shop.app.users, but tag.full is a shape of shop.app.tags; nest a shape of shop.app.users
+  d shape-nest-mismatch: shape d: a Full shape cannot nest user.draft, a Draft shape; nest a Full shape of shop.app.users
+  a shape-relation-unknown: shape a: nest names nope, which is not a relation of shop.app.posts; name one of author, editor, tags
+  b shape-relation-unknown: shape b: nest names posts, which is not a relation of shop.app.tags; it has no relations, so remove the entry
+  e shape-unknown: shape e: nest.author names "user.fancy", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+  h shape-unknown: shape h: from names "nothing", which is neither a preset nor a shape under shapes:; name a preset such as user.full or a custom shape
+write rule:
+  a write-shape-incomplete: shape derived from user.draft drops required field email; keep it or bind it
+  a write-shape-incomplete: shape derived from user.draft drops required field password_hash; keep it or bind it
+  b write-shape-incomplete: shape derived from post.draft.nested drops required field author_id; keep it or bind it
