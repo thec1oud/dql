@@ -2,16 +2,26 @@ syntax = "proto3";
 
 package dql.ir.v1;
 
+import "dql/ir/v1/annotations.proto";
 import "dql/ir/v1/names.proto";
+import "dql/ir/v1/objects.proto";
+import "dql/ir/v1/routines.proto";
+import "google/protobuf/any.proto";
 
 option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
 
-// One database (§5.1). Objects arrive with the catalog layer (M1).
+// One database (§5.1).
 message Catalog {
   Identifier name = 1;
   Provenance provenance = 2;
   // Sorted by stored name (§3.2).
   repeated Namespace namespaces = 3;
+  // The namespace whose objects get no namespace prefix (§4.3): the
+  // dialect's own unless config sets default-namespace.
+  string default_namespace = 4;
+  // Typed dialect extensions on the catalog itself, such as installed
+  // database extensions (§6.2).
+  repeated google.protobuf.Any extensions = 5;
 }
 
 // Names the source plugin, its version and a fingerprint of its input; never
@@ -23,15 +33,30 @@ message Provenance {
   // A snapshot file's hash, or a hash of the introspected catalog: "sha256:…".
   string input_fingerprint = 3;
   SourceFidelity fidelity = 4;
+  // What the source could not capture, when fidelity is not full. Sorted.
+  repeated string fidelity_limits = 5;
 }
 
 // How completely a source captured its input.
 enum SourceFidelity {
   SOURCE_FIDELITY_UNSPECIFIED = 0;
   SOURCE_FIDELITY_FULL = 1;
+  // The source documents what it does not capture in fidelity_limits.
+  SOURCE_FIDELITY_PARTIAL = 2;
 }
 
 // A schema (§5.1). On MySQL and SQLite the one implicit namespace is stored as "".
+// Every list is sorted by stored name (§3.2).
 message Namespace {
   Identifier name = 1;
+  // Tables, views and materialized views.
+  repeated Table tables = 2;
+  repeated Enum enums = 3;
+  repeated Domain domains = 4;
+  repeated Composite composites = 5;
+  repeated Sequence sequences = 6;
+  // Public functions and procedures only (§6.5).
+  repeated Routine routines = 7;
+  repeated Annotation annotations = 8;
+  repeated google.protobuf.Any extensions = 9;
 }
