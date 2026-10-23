@@ -19,7 +19,7 @@ import (
 )
 
 // sources are the shipped source plugins, which run in-process (ADR 0002).
-// The protocol carries no settings, so each is built from its sources entry.
+// Each is built from its sources entry and reads its settings from there.
 var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 	pglive.Name: func(_ *config.Config, s config.Source) plugin.Plugin {
 		return pglive.New(pglive.Settings{Catalog: s.Catalog, Connection: s.Connection,
@@ -96,17 +96,20 @@ func runSource(ctx context.Context, c *config.Config, s config.Source) (catalog.
 	if build, ok := sources[s.Plugin]; ok {
 		builtins[s.Plugin] = build(c, s)
 	}
-	t, err := plugin.Locate(s.Plugin, s.Path, builtins)
+	t, err := plugin.Locate(s.Plugin, c.Resolve(s.Path), builtins)
 	if err != nil {
 		return catalog.SourceOutput{}, err
 	}
-	t.Args = flags(c, s)
+	t.Dir = c.Dir()
+	if _, ok := sources[s.Plugin]; ok {
+		t.Args = flags(c, s)
+	}
 	hello := &irv1.CoreHello{IrVersion: bundle.Version()}
 	client, err := plugin.Open(ctx, t, hello, irv1.PluginKind_PLUGIN_KIND_SOURCE)
 	if err != nil {
 		return catalog.SourceOutput{}, err
 	}
-	res, err := client.Invoke(ctx, &irv1.Bundle{Version: bundle.Version()})
+	res, err := client.Invoke(ctx, &irv1.Invoke{Bundle: &irv1.Bundle{Version: bundle.Version()}, Settings: s.Settings})
 	if cerr := client.Close(); err == nil {
 		err = cerr
 	}
@@ -120,8 +123,9 @@ func runSource(ctx context.Context, c *config.Config, s config.Source) (catalog.
 	}, nil
 }
 
-// flags are the settings of a sources entry as an executable takes them,
-// as the shipped source executables do: -catalog shop -namespaces app,audit.
+// flags are the settings of a shipped plugin's sources entry as its
+// executable takes them: -catalog shop -namespaces app,audit. Any other
+// executable reads its settings from the invocation.
 func flags(c *config.Config, s config.Source) []string {
 	var args []string
 	for _, f := range [][2]string{

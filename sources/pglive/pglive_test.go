@@ -64,7 +64,7 @@ func hello() *irv1.CoreHello { return &irv1.CoreHello{IrVersion: bundle.Version(
 // catalog, which the same schema and settings produce.
 func check(t *testing.T, c plugin.Client) {
 	t.Helper()
-	res, err := c.Invoke(context.Background(), &irv1.Bundle{Version: bundle.Version()})
+	res, err := c.Invoke(context.Background(), &irv1.Invoke{Bundle: &irv1.Bundle{Version: bundle.Version()}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestInProcess(t *testing.T) {
 func TestExecutable(t *testing.T) {
 	t.Setenv("DQL_TEST_SHOP_URL", shopURL)
 	args := []string{"-catalog", "shop", "-connection", "env:DQL_TEST_SHOP_URL", "-namespaces", "app", "-default-namespace", "app"}
-	c, err := plugin.Start(context.Background(), bin, args, hello(), irv1.PluginKind_PLUGIN_KIND_SOURCE)
+	c, err := plugin.Start(context.Background(), bin, "", args, hello(), irv1.PluginKind_PLUGIN_KIND_SOURCE)
 	if err != nil {
 		t.Fatal(err)
 	}

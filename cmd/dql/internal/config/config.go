@@ -9,8 +9,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 
+	"google.golang.org/protobuf/types/known/structpb"
 	"gopkg.in/yaml.v3"
 
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
@@ -38,7 +40,8 @@ type Config struct {
 
 // Source is one source plugin invocation. Which settings apply depends on
 // the plugin: pg-live reads a database through connection, and dpg-snapshot
-// reads a snapshot file.
+// reads a snapshot file. A shipped plugin's entry holds only the keys below;
+// any other plugin's may hold keys of its own, which the plugin validates.
 type Source struct {
 	Plugin     string `yaml:"plugin"`
 	Path       string `yaml:"path"`
@@ -49,6 +52,18 @@ type Source struct {
 	Snapshot         string   `yaml:"snapshot"`
 	Namespaces       []string `yaml:"namespaces"`
 	DefaultNamespace string   `yaml:"default-namespace"`
+	// Settings is the whole entry as written, for the plugin request.
+	Settings *structpb.Struct `yaml:"-"`
+}
+
+func (s *Source) UnmarshalYAML(n *yaml.Node) error {
+	type entry Source
+	var p entry
+	_, strict := shipped[entryPlugin(n)]
+	settings, err := decodeEntry(n, &p, "config.Source", strict)
+	*s = Source(p)
+	s.Settings = settings
+	return err
 }
 
 // shipped lists, for each shipped source plugin, the settings it needs and
@@ -70,7 +85,9 @@ func (s Source) setting(name string) string {
 	}
 }
 
-// Emit is one emitter run, which targets exactly one dialect (§2.4).
+// Emit is one emitter run, which targets exactly one dialect (§2.4). No
+// emitter ships yet, so an entry may hold keys of its own, which its plugin
+// validates.
 type Emit struct {
 	Plugin  string                    `yaml:"plugin"`
 	Path    string                    `yaml:"path"`
@@ -78,6 +95,93 @@ type Emit struct {
 	Package string                    `yaml:"package"`
 	Out     string                    `yaml:"out"`
 	Types   map[string]map[string]any `yaml:"types"`
+	// Settings is the whole entry as written, for the plugin request.
+	Settings *structpb.Struct `yaml:"-"`
+}
+
+func (e *Emit) UnmarshalYAML(n *yaml.Node) error {
+	type entry Emit
+	var p entry
+	settings, err := decodeEntry(n, &p, "config.Emit", false)
+	*e = Emit(p)
+	e.Settings = settings
+	return err
+}
+
+// entryPlugin is the plugin a sources or emit entry names, or "".
+func entryPlugin(n *yaml.Node) string {
+	for i := 0; i+1 < len(n.Content); i += 2 {
+		if n.Content[i].Value == "plugin" {
+			return n.Content[i+1].Value
+		}
+	}
+	return ""
+}
+
+// decodeEntry decodes a plugin entry into v, a pointer to a struct of the
+// keys the core reads, and returns the whole entry as the plugin's settings.
+// When strict, a key v lacks is an error, reported as for the rest of
+// dql.yaml with v's type as name.
+func decodeEntry(n *yaml.Node, v any, name string, strict bool) (*structpb.Struct, error) {
+	if err := n.Decode(v); err != nil {
+		return nil, err
+	}
+	var errs []string
+	if strict {
+		known := map[string]bool{}
+		t := reflect.TypeOf(v).Elem()
+		for i := range t.NumField() {
+			known[t.Field(i).Tag.Get("yaml")] = true
+		}
+		for i := 0; i < len(n.Content); i += 2 {
+			if k := n.Content[i]; !known[k.Value] {
+				errs = append(errs, fmt.Sprintf("line %d: field %s not found in type %s", k.Line, k.Value, name))
+			}
+		}
+	}
+	if k := textual(n, map[*yaml.Node]bool{}); k != nil {
+		errs = append(errs, fmt.Sprintf("line %d: a key in a plugin's settings must be a scalar", k.Line))
+	}
+	if len(errs) > 0 {
+		return nil, &yaml.TypeError{Errors: errs}
+	}
+	var m map[string]any
+	n.Decode(&m)                         // cannot fail: v decoded the same mapping
+	settings, _ := structpb.NewStruct(m) // cannot fail: textual leaves only JSON values
+	return settings, nil
+}
+
+// textual retags n's mapping keys, timestamps and binary values as strings,
+// so the plugin receives them as written and every mapping decodes with
+// string keys. It returns the first key that is not a scalar, or nil.
+func textual(n *yaml.Node, seen map[*yaml.Node]bool) *yaml.Node {
+	if seen[n] {
+		return nil
+	}
+	seen[n] = true
+	switch n.Kind {
+	case yaml.AliasNode:
+		return textual(n.Alias, seen)
+	case yaml.ScalarNode:
+		if t := n.ShortTag(); t == "!!timestamp" || t == "!!binary" {
+			n.Tag = "!!str"
+		}
+	case yaml.MappingNode:
+		for i := 0; i < len(n.Content); i += 2 {
+			switch k := n.Content[i]; {
+			case k.Kind != yaml.ScalarNode:
+				return k
+			case k.ShortTag() != "!!merge":
+				k.Tag = "!!str"
+			}
+		}
+	}
+	for _, c := range n.Content {
+		if k := textual(c, seen); k != nil {
+			return k
+		}
+	}
+	return nil
 }
 
 // Dialects are the dialect names an emit entry may target.
@@ -93,13 +197,20 @@ func Load(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.file, c.dir = filepath.Base(path), filepath.Dir(path)
+	// cannot fail: path was just read, so the working directory exists
+	c.dir, _ = filepath.Abs(filepath.Dir(path))
+	c.file = filepath.Base(path)
 	return c, nil
 }
 
-// Resolve returns a path written in dql.yaml, such as a snapshot's, as a
-// path relative to the working directory: relative paths in dql.yaml are
-// relative to its directory.
+// Dir is the absolute path of the directory holding the file Load read,
+// where plugin executables run so that relative paths in their settings
+// resolve as dql.yaml means them. It is "" for parsed content.
+func (c *Config) Dir() string { return c.dir }
+
+// Resolve returns a path written in dql.yaml, such as a snapshot's, as an
+// absolute path: relative paths in dql.yaml are relative to its directory.
+// For parsed content they stay relative.
 func (c *Config) Resolve(path string) string {
 	if path == "" || filepath.IsAbs(path) {
 		return path

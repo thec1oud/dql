@@ -6,10 +6,12 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
@@ -27,7 +29,7 @@ func TestEchoBothPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	executable, err := Start(ctx, echoBin, []string{"-features", "opaque-types"}, hello("opaque-types"), emitter)
+	executable, err := Start(ctx, echoBin, "", []string{"-features", "opaque-types"}, hello("opaque-types"), emitter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,11 +37,17 @@ func TestEchoBothPaths(t *testing.T) {
 		if c.Handshake().GetPlugin().GetName() != "echo" {
 			t.Errorf("%s: handshake not kept", name)
 		}
-		res, err := c.Invoke(ctx, testBundle())
+		res, err := c.Invoke(ctx, &irv1.Invoke{Bundle: testBundle()})
 		if err != nil || !proto.Equal(res.GetBundle(), testBundle()) {
 			t.Errorf("%s: echo failed: %v", name, err)
 		}
-		if _, err := c.Invoke(ctx, nil); err == nil || !strings.Contains(err.Error(), "no bundle") {
+		// The plugin receives its settings with the invocation.
+		settings, _ := structpb.NewStruct(map[string]any{"plugin": "echo", "out": "gen", "depth": 2})
+		res, err = c.Invoke(ctx, &irv1.Invoke{Bundle: testBundle(), Settings: settings})
+		if ds := res.GetDiagnostics(); err != nil || len(ds) != 1 || ds[0].GetMessage() != "map[depth:2 out:gen plugin:echo]" {
+			t.Errorf("%s: settings: %v %v", name, ds, err)
+		}
+		if _, err := c.Invoke(ctx, &irv1.Invoke{}); err == nil || !strings.Contains(err.Error(), "no bundle") {
 			t.Errorf("%s: want plugin error, got %v", name, err)
 		}
 		if err := c.Close(); err != nil {
@@ -66,7 +74,7 @@ func TestRefusalBothPaths(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("in-process %s: got %v", c.name, err)
 		}
-		_, err = Start(ctx, echoBin, []string{"-min", c.min}, c.hello, emitter)
+		_, err = Start(ctx, echoBin, "", []string{"-min", c.min}, c.hello, emitter)
 		if err == nil || !strings.Contains(err.Error(), c.want) || !strings.Contains(err.Error(), "refused by the core") {
 			t.Errorf("executable %s: got %v", c.name, err)
 		}
@@ -74,14 +82,25 @@ func TestRefusalBothPaths(t *testing.T) {
 }
 
 func TestStartMissingExecutable(t *testing.T) {
-	_, err := Start(context.Background(), "/nonexistent/dql-plugin-x", nil, hello(), emitter)
+	_, err := Start(context.Background(), "/nonexistent/dql-plugin-x", "", nil, hello(), emitter)
 	if err == nil || !strings.Contains(err.Error(), "starting") {
 		t.Fatal(err)
 	}
 }
 
+// A relative path is relative to the directory the plugin runs in.
+func TestStartInDir(t *testing.T) {
+	c, err := Start(context.Background(), "./"+filepath.Base(echoBin), filepath.Dir(echoBin), nil, hello(), emitter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStartPluginExitsEarly(t *testing.T) {
-	_, err := Start(context.Background(), "true", nil, hello(), emitter)
+	_, err := Start(context.Background(), "true", "", nil, hello(), emitter)
 	if !errors.Is(err, io.EOF) {
 		t.Fatal(err)
 	}
@@ -115,13 +134,13 @@ func TestProcessHandshakeErrors(t *testing.T) {
 func TestProcessInvokeErrors(t *testing.T) {
 	ctx := context.Background()
 	hs := &irv1.PluginMessage{Kind: &irv1.PluginMessage_Handshake{Handshake: handshake(emitter, "1.0.0", 1)}}
-	if _, err := started(t, &failAfter{}, nil).Invoke(ctx, testBundle()); !errors.Is(err, errWrite) {
+	if _, err := started(t, &failAfter{}, nil).Invoke(ctx, &irv1.Invoke{Bundle: testBundle()}); !errors.Is(err, errWrite) {
 		t.Errorf("write: %v", err)
 	}
-	if _, err := started(t, &failAfter{n: 1}, bytes.NewReader(nil)).Invoke(ctx, testBundle()); !errors.Is(err, io.EOF) {
+	if _, err := started(t, &failAfter{n: 1}, bytes.NewReader(nil)).Invoke(ctx, &irv1.Invoke{Bundle: testBundle()}); !errors.Is(err, io.EOF) {
 		t.Errorf("read: %v", err)
 	}
-	if _, err := started(t, &failAfter{n: 1}, bytes.NewReader(frames(t, hs))).Invoke(ctx, testBundle()); err == nil ||
+	if _, err := started(t, &failAfter{n: 1}, bytes.NewReader(frames(t, hs))).Invoke(ctx, &irv1.Invoke{Bundle: testBundle()}); err == nil ||
 		!strings.Contains(err.Error(), "expected a result") {
 		t.Errorf("unexpected kind: %v", err)
 	}

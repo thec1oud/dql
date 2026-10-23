@@ -1,8 +1,10 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -78,8 +80,18 @@ func TestLoad(t *testing.T) {
 	if err != nil || c.Sources[0].Catalog != "shop" {
 		t.Fatal(err)
 	}
-	// Paths in dql.yaml are relative to its directory.
+	// Paths in dql.yaml are relative to its directory, made absolute.
 	dir := filepath.Dir(path)
+	if c.Dir() != dir {
+		t.Errorf("dir: %s", c.Dir())
+	}
+	t.Chdir(dir)
+	if c, err := Load("dql.yaml"); err != nil || c.Dir() != dir || c.Resolve("shop.json") != filepath.Join(dir, "shop.json") {
+		t.Errorf("relative load: %v %v", c, err)
+	}
+	if c, _ := Parse(nil); c.Dir() != "" || c.Resolve("shop.json") != "shop.json" {
+		t.Errorf("parsed: %q", c.Dir())
+	}
 	if got := c.Resolve(filepath.Join("db", "shop.json")); got != filepath.Join(dir, "db", "shop.json") {
 		t.Errorf("relative: %s", got)
 	}
@@ -146,5 +158,67 @@ sources:
 	}
 	if ds := (&Config{Sources: []Source{{Plugin: "pg-live", Catalog: "shop", Connection: "env:URL"}}, OpaqueFallback: "bytes"}).Validate(); len(ds) != 0 {
 		t.Errorf("bytes fallback: %v", ds)
+	}
+}
+
+// Each plugin entry keeps every key as written, for the plugin request. A
+// shipped plugin's entry holds only the keys dql reads; any other plugin's
+// may hold its own, which the plugin validates.
+func TestSettings(t *testing.T) {
+	c, err := Parse([]byte(`
+sources:
+  - plugin: pg-live
+    catalog: shop
+    connection: env:SHOP_DATABASE_URL
+  - plugin: mysql-live
+    path: bin/dql-plugin-mysql-live
+    dsn: env:MYSQL_URL
+    since: 2001-12-14
+    cert: !!binary aGVsbG8=
+    retries: 3
+    ports: {1: primary, true: on}
+    pool: &pool {size: 4}
+    replica: *pool
+    <<: {timeout: ~}
+emit:
+  - plugin: kotlin
+    dialect: postgres
+    out: gen
+    nullable: [{boxed: true}]
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := []string{
+		fmt.Sprint(c.Sources[0].Settings.AsMap()),
+		fmt.Sprint(c.Sources[1].Settings.AsMap()),
+		fmt.Sprint(c.Emit[0].Settings.AsMap()),
+	}
+	want := []string{
+		"map[catalog:shop connection:env:SHOP_DATABASE_URL plugin:pg-live]",
+		"map[cert:aGVsbG8= dsn:env:MYSQL_URL path:bin/dql-plugin-mysql-live plugin:mysql-live pool:map[size:4] " +
+			"ports:map[1:primary true:on] replica:map[size:4] retries:3 since:2001-12-14 timeout:<nil>]",
+		"map[dialect:postgres nullable:[map[boxed:true]] out:gen plugin:kotlin]",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("settings:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+	if c.Sources[1].Path != "bin/dql-plugin-mysql-live" || c.Emit[0].Out != "gen" {
+		t.Errorf("known keys: %+v %+v", c.Sources[1], c.Emit[0])
+	}
+	if ds := c.Validate(); len(ds) != 0 {
+		t.Errorf("unexpected diagnostics: %v", ds)
+	}
+
+	for _, e := range []struct{ config, want string }{
+		{"sources:\n  - plugin: pg-live\n    catalog: shop\n    dsn: x\n    pool: 4\n",
+			"line 4: field dsn not found in type config.Source\n  line 5: field pool not found in type config.Source"},
+		{"sources:\n  - plugin: mysql-live\n    pool:\n      ? [a, b]\n      : 4\n", "line 4: a key in a plugin's settings must be a scalar"},
+		{"emit:\n  - plugin: kotlin\n    out: [gen]\n", "line 3: cannot unmarshal !!seq into string"},
+		{"sources:\n  - mysql-live\n", "line 2: cannot unmarshal !!str `mysql-live` into config.entry"},
+	} {
+		if _, err := Parse([]byte(e.config)); err == nil || !strings.Contains(err.Error(), e.want) {
+			t.Errorf("%q: %v; want %q", e.config, err, e.want)
+		}
 	}
 }
