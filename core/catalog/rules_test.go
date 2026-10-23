@@ -444,6 +444,56 @@ func TestWordValues(t *testing.T) {
 		"ERROR annotation-value-invalid shop.app.t")
 }
 
+// §1.3, §5.3, §7.4: list and struct values written as text, as comments
+// write them, are read by their key's form; struct names are split into
+// words. Text that is not a value of the form fails, once.
+func TestTextValues(t *testing.T) {
+	users := table("users", col("id", tInt64()), col("tenant_id", tInt64()), col("slug", tText()))
+	users.Uniqueness = []*irv1.Uniqueness{unique("users_id_key", "id"), unique("users_tenant_slug_key", "tenant_id", "slug")}
+	users.Annotations = []*irv1.Annotation{comment("logical-key", "COMMENT ON TABLE app.users", stringValue(" tenant_id,slug "))}
+	posts := table("posts", col("id", tInt64()), col("user_id?", tInt64()))
+	posts.Uniqueness = []*irv1.Uniqueness{pk("posts_pkey", "id")}
+	posts.Columns[1].Annotations = []*irv1.Annotation{comment("relation", "COMMENT ON COLUMN app.posts.user_id",
+		stringValue("to: shop.app.users.id, name: Writer, inverse-name: \"written posts\""))}
+	b := assembleOK(t, Options{}, output(postgres, small("shop", "app", users, posts)))
+	ns := namespace(t, b, "shop", "app")
+	assertContains(t, tableOf(t, ns, "users"), `{"annotations": [{"key": "core.logical-key", "value": {"list": ["tenant_id", "slug"]}}],
+	  "logicalKey": {"columns": ["tenant_id", "slug"], "origin": "ORIGIN_DB_COMMENT"}}`)
+	assertContains(t, columnOf(t, tableOf(t, ns, "posts"), "user_id"), `{"annotations": [{"key": "core.relation",
+	  "value": {"struct": {"to": "shop.app.users.id", "name": ["writer"], "inverse-name": ["written", "posts"]}}}]}`)
+	assertContains(t, relationOf(t, tableOf(t, ns, "posts"), "writer"), `{"origin": "RELATION_ORIGIN_ANNOTATED"}`)
+	assertContains(t, relationOf(t, tableOf(t, ns, "users"), "written_posts"), `{"name": {"words": ["written", "posts"]}}`)
+
+	for _, c := range []struct{ key, text, want string }{
+		{"logical-key", "tenant_id,", "item 2: it is empty"},
+		{"logical-key", `"tenant_id`, "a double quote is never closed"},
+		{"relation", "shop.app.users.id", "has no colon"},
+	} {
+		tb := table("users", col("id", tInt64()), col("tenant_id", tInt64()))
+		on := &tb.Annotations
+		if c.key == "relation" {
+			on = &tb.Columns[1].Annotations
+		}
+		*on = []*irv1.Annotation{comment(c.key, "COMMENT", stringValue(c.text))}
+		ds := assembleFails(t, Options{}, output(postgres, small("shop", "app", tb)))
+		if len(ds) != 1 || ds[0].GetCode() != annotate.CodeValueMalformed || !strings.Contains(ds[0].GetMessage(), c.want) {
+			t.Errorf("@%s(%s): %v", c.key, c.text, ds)
+		}
+	}
+
+	// A superseded annotation is read the same way.
+	tb := table("users", col("id", tInt64()))
+	tb.Uniqueness = []*irv1.Uniqueness{unique("users_id_key", "id")}
+	tb.Annotations = []*irv1.Annotation{comment("logical-key", "COMMENT", stringValue("id"))}
+	tb.Annotations[0].Superseded = []*irv1.Annotation{{Key: "core.logical-key", Value: stringValue(","),
+		Origin: &irv1.Origin{Kind: irv1.OriginKind_ORIGIN_INFERRED, Location: "default"}}}
+	ds := assembleFails(t, Options{}, output(postgres, small("shop", "app", tb)))
+	wantLines(t, ds, "ERROR annotation-value-malformed shop.app.users")
+	if !strings.Contains(ds[0].GetMessage(), `core.logical-key on shop.app.users, read at default, is written ",", which is not a list value`) {
+		t.Errorf("message: %s", ds[0].GetMessage())
+	}
+}
+
 // §5.3: a relation declared in config on MySQL crosses catalogs, with the
 // namespace left out of the key; its names are split into words.
 func TestCrossCatalogRelation(t *testing.T) {

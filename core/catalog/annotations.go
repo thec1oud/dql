@@ -198,10 +198,9 @@ func (a *assembler) annotate(b *irv1.Bundle, config map[string][]*irv1.Annotatio
 	}
 
 	for _, s := range all {
-		for _, ann := range *s.anns {
-			splitWordValues(ann)
-		}
-		merged, ds := annotate.Merge(s.target.Name, *s.anns)
+		typed, ds := typeValues(s.target.Name, *s.anns)
+		a.add(ds...)
+		merged, ds := annotate.Merge(s.target.Name, typed)
 		*s.anns = merged
 		a.add(ds...)
 	}
