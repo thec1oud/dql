@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 # Runs every workspace module's tests and fails unless hand-written code is at
 # 100% statement coverage. Generated protobuf code (*.pb.go) is excluded.
+#
+# The pg-live tests run against a real Postgres 16 server named by
+# DQL_TEST_POSTGRES_URL, a role that may create roles and databases (such as
+# postgres://postgres@localhost:5432/postgres). Each test package creates and
+# drops its own databases there.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+: "${DQL_TEST_POSTGRES_URL:?set DQL_TEST_POSTGRES_URL to a Postgres 16 server URL; the pg-live tests need one}"
 
 out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
