@@ -1,0 +1,11 @@
+{
+  "dpg_version": "0.2.0",
+  "cluster": "local",
+  "database": "shop",
+  "objects": {
+    "app": {
+      "kind": "schema",
+      "schema": {
+        "name": "app"
+      }
+    }
