@@ -1,0 +1,4 @@
+/bin/
+*.coverprofile
+coverage.out
+coverage.html

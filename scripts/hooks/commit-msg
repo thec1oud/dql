@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Rejects commit messages with forbidden content (docs/repository-rules §3.3).
+# Enable with: git config core.hooksPath scripts/hooks
+set -euo pipefail
+if grep -qiE 'claude|anthropic|co-authored-by:|signed-off-by:|generated with' "$1"; then
+  echo "commit-msg: message contains forbidden content (repository rules §3.3)" >&2
+  exit 1
+fi
