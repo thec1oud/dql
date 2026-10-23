@@ -193,6 +193,8 @@ enum ForbiddenReason {
   FORBIDDEN_PARENT = 10;
   // Dropped by a custom shape's pick or omit.
   FORBIDDEN_OMITTED = 11;
+  // soft-delete: only delete operations set it (§21.3).
+  FORBIDDEN_SOFT_DELETE = 12;
 }
 
 // A relation field (§12.5, §14.4 to §14.6).

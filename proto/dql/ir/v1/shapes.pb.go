@@ -388,6 +388,8 @@ const (
 	ForbiddenReason_FORBIDDEN_PARENT ForbiddenReason = 10
 	// Dropped by a custom shape's pick or omit.
 	ForbiddenReason_FORBIDDEN_OMITTED ForbiddenReason = 11
+	// soft-delete: only delete operations set it (§21.3).
+	ForbiddenReason_FORBIDDEN_SOFT_DELETE ForbiddenReason = 12
 )
 
 // Enum value maps for ForbiddenReason.
@@ -405,6 +407,7 @@ var (
 		9:  "FORBIDDEN_GENERATED",
 		10: "FORBIDDEN_PARENT",
 		11: "FORBIDDEN_OMITTED",
+		12: "FORBIDDEN_SOFT_DELETE",
 	}
 	ForbiddenReason_value = map[string]int32{
 		"FORBIDDEN_UNSPECIFIED":     0,
@@ -419,6 +422,7 @@ var (
 		"FORBIDDEN_GENERATED":       9,
 		"FORBIDDEN_PARENT":          10,
 		"FORBIDDEN_OMITTED":         11,
+		"FORBIDDEN_SOFT_DELETE":     12,
 	}
 )
 
@@ -2275,7 +2279,7 @@ const file_dql_ir_v1_shapes_proto_rawDesc = "" +
 	"\x1eVALUE_KIND_VALUE_OR_EXPRESSION\x10\x02*H\n" +
 	"\tFieldRole\x12\x1a\n" +
 	"\x16FIELD_ROLE_UNSPECIFIED\x10\x00\x12\x1f\n" +
-	"\x1bFIELD_ROLE_EXPECTED_VERSION\x10\x01*\xb6\x02\n" +
+	"\x1bFIELD_ROLE_EXPECTED_VERSION\x10\x01*\xd1\x02\n" +
 	"\x0fForbiddenReason\x12\x19\n" +
 	"\x15FORBIDDEN_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rFORBIDDEN_KEY\x10\x01\x12\x13\n" +
@@ -2289,7 +2293,8 @@ const file_dql_ir_v1_shapes_proto_rawDesc = "" +
 	"\x13FORBIDDEN_GENERATED\x10\t\x12\x14\n" +
 	"\x10FORBIDDEN_PARENT\x10\n" +
 	"\x12\x15\n" +
-	"\x11FORBIDDEN_OMITTED\x10\v*\xa9\x01\n" +
+	"\x11FORBIDDEN_OMITTED\x10\v\x12\x19\n" +
+	"\x15FORBIDDEN_SOFT_DELETE\x10\f*\xa9\x01\n" +
 	"\x11RelationUnionKind\x12\x1e\n" +
 	"\x1aRELATION_UNION_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12RELATION_UNION_REF\x10\x01\x12\x17\n" +
