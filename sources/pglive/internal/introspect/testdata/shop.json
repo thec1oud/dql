@@ -1,0 +1,1179 @@
+{
+  "database": {
+    "encoding": "UTF8",
+    "localeProvider": "c",
+    "collate": "C",
+    "ctype": "C"
+  },
+  "extensions": [
+    {
+      "name": "plpgsql",
+      "version": "1.0",
+      "schema": "pg_catalog"
+    }
+  ],
+  "schemas": [
+    {
+      "name": "app",
+      "owner": "dql_fixture_owner"
+    }
+  ],
+  "relations": [
+    {
+      "schema": "app",
+      "name": "post_tags",
+      "kind": "r",
+      "persistence": "p",
+      "owner": "dql_fixture_owner",
+      "columns": [
+        {
+          "name": "post_id",
+          "ordinal": 1,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          },
+          "notNull": true
+        },
+        {
+          "name": "tag_id",
+          "ordinal": 2,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          },
+          "notNull": true
+        }
+      ],
+      "constraints": [
+        {
+          "name": "post_tags_pkey",
+          "kind": "p",
+          "columns": [
+            "post_id",
+            "tag_id"
+          ],
+          "definition": "PRIMARY KEY (post_id, tag_id)",
+          "noInherit": true,
+          "index": "post_tags_pkey"
+        },
+        {
+          "name": "post_tags_post_id_fkey",
+          "kind": "f",
+          "columns": [
+            "post_id"
+          ],
+          "definition": "FOREIGN KEY (post_id) REFERENCES app.posts(id)",
+          "references": {
+            "schema": "app",
+            "table": "posts",
+            "columns": [
+              "id"
+            ],
+            "match": "s",
+            "onUpdate": "a",
+            "onDelete": "a"
+          },
+          "noInherit": true
+        },
+        {
+          "name": "post_tags_tag_id_fkey",
+          "kind": "f",
+          "columns": [
+            "tag_id"
+          ],
+          "definition": "FOREIGN KEY (tag_id) REFERENCES app.tags(id)",
+          "references": {
+            "schema": "app",
+            "table": "tags",
+            "columns": [
+              "id"
+            ],
+            "match": "s",
+            "onUpdate": "a",
+            "onDelete": "a"
+          },
+          "noInherit": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "post_tags_pkey",
+          "method": "btree",
+          "unique": true,
+          "primary": true,
+          "keys": [
+            {
+              "column": "post_id"
+            },
+            {
+              "column": "tag_id"
+            }
+          ],
+          "constraint": "post_tags_pkey",
+          "definition": "CREATE UNIQUE INDEX post_tags_pkey ON app.post_tags USING btree (post_id, tag_id)"
+        }
+      ]
+    },
+    {
+      "schema": "app",
+      "name": "posts",
+      "kind": "r",
+      "persistence": "p",
+      "owner": "dql_fixture_owner",
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 1,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          },
+          "notNull": true,
+          "identity": "d",
+          "identitySequence": "posts_id_seq"
+        },
+        {
+          "name": "author_id",
+          "ordinal": 2,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          },
+          "notNull": true
+        },
+        {
+          "name": "editor_id",
+          "ordinal": 3,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          }
+        },
+        {
+          "name": "title",
+          "ordinal": 4,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "text",
+            "kind": "b",
+            "category": "S",
+            "typmod": -1,
+            "formatted": "text"
+          },
+          "notNull": true,
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        },
+        {
+          "name": "slug",
+          "ordinal": 5,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "text",
+            "kind": "b",
+            "category": "S",
+            "typmod": -1,
+            "formatted": "text"
+          },
+          "generated": "s",
+          "generation": "lower(replace(title, ' '::text, '-'::text))",
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        },
+        {
+          "name": "status",
+          "ordinal": 6,
+          "type": {
+            "schema": "app",
+            "name": "post_status",
+            "kind": "e",
+            "category": "E",
+            "typmod": -1,
+            "formatted": "app.post_status"
+          },
+          "notNull": true,
+          "default": "'draft'::app.post_status"
+        },
+        {
+          "name": "price",
+          "ordinal": 7,
+          "type": {
+            "schema": "app",
+            "name": "money_amount",
+            "kind": "c",
+            "category": "C",
+            "typmod": -1,
+            "formatted": "app.money_amount"
+          }
+        },
+        {
+          "name": "labels",
+          "ordinal": 8,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "_text",
+            "kind": "b",
+            "category": "A",
+            "typmod": -1,
+            "formatted": "text[]",
+            "element": {
+              "schema": "pg_catalog",
+              "name": "text",
+              "kind": "b"
+            },
+            "dimensions": 1
+          },
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        },
+        {
+          "name": "published_at",
+          "ordinal": 9,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "timestamptz",
+            "kind": "b",
+            "category": "D",
+            "typmod": -1,
+            "formatted": "timestamp with time zone"
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "name": "posts_author_id_fkey",
+          "kind": "f",
+          "columns": [
+            "author_id"
+          ],
+          "definition": "FOREIGN KEY (author_id) REFERENCES app.users(id)",
+          "references": {
+            "schema": "app",
+            "table": "users",
+            "columns": [
+              "id"
+            ],
+            "match": "s",
+            "onUpdate": "a",
+            "onDelete": "a"
+          },
+          "noInherit": true
+        },
+        {
+          "name": "posts_editor_id_fkey",
+          "kind": "f",
+          "columns": [
+            "editor_id"
+          ],
+          "definition": "FOREIGN KEY (editor_id) REFERENCES app.users(id)",
+          "references": {
+            "schema": "app",
+            "table": "users",
+            "columns": [
+              "id"
+            ],
+            "match": "s",
+            "onUpdate": "a",
+            "onDelete": "a"
+          },
+          "noInherit": true
+        },
+        {
+          "name": "posts_pkey",
+          "kind": "p",
+          "columns": [
+            "id"
+          ],
+          "definition": "PRIMARY KEY (id)",
+          "noInherit": true,
+          "index": "posts_pkey"
+        },
+        {
+          "name": "posts_published_check",
+          "kind": "c",
+          "columns": [
+            "published_at",
+            "status"
+          ],
+          "definition": "CHECK (((published_at IS NULL) OR (status <> 'draft'::app.post_status)))"
+        },
+        {
+          "name": "posts_title_check",
+          "kind": "c",
+          "columns": [
+            "title"
+          ],
+          "definition": "CHECK (((char_length(title) >= 1) AND (char_length(title) <= 200)))"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "posts_one_published_slug",
+          "method": "btree",
+          "unique": true,
+          "keys": [
+            {
+              "column": "slug"
+            }
+          ],
+          "predicate": "(status = 'published'::app.post_status)",
+          "definition": "CREATE UNIQUE INDEX posts_one_published_slug ON app.posts USING btree (slug) WHERE (status = 'published'::app.post_status)"
+        },
+        {
+          "name": "posts_pkey",
+          "method": "btree",
+          "unique": true,
+          "primary": true,
+          "keys": [
+            {
+              "column": "id"
+            }
+          ],
+          "constraint": "posts_pkey",
+          "definition": "CREATE UNIQUE INDEX posts_pkey ON app.posts USING btree (id)"
+        }
+      ]
+    },
+    {
+      "schema": "app",
+      "name": "profiles",
+      "kind": "r",
+      "persistence": "p",
+      "owner": "dql_fixture_owner",
+      "columns": [
+        {
+          "name": "user_id",
+          "ordinal": 1,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          },
+          "notNull": true
+        },
+        {
+          "name": "bio",
+          "ordinal": 2,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "text",
+            "kind": "b",
+            "category": "S",
+            "typmod": -1,
+            "formatted": "text"
+          },
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        },
+        {
+          "name": "birthday",
+          "ordinal": 3,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "date",
+            "kind": "b",
+            "category": "D",
+            "typmod": -1,
+            "formatted": "date"
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "name": "profiles_pkey",
+          "kind": "p",
+          "columns": [
+            "user_id"
+          ],
+          "definition": "PRIMARY KEY (user_id)",
+          "noInherit": true,
+          "index": "profiles_pkey"
+        },
+        {
+          "name": "profiles_user_id_fkey",
+          "kind": "f",
+          "columns": [
+            "user_id"
+          ],
+          "definition": "FOREIGN KEY (user_id) REFERENCES app.users(id)",
+          "references": {
+            "schema": "app",
+            "table": "users",
+            "columns": [
+              "id"
+            ],
+            "match": "s",
+            "onUpdate": "a",
+            "onDelete": "a"
+          },
+          "noInherit": true,
+          "comment": "@inverse-name(user_profile)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "profiles_pkey",
+          "method": "btree",
+          "unique": true,
+          "primary": true,
+          "keys": [
+            {
+              "column": "user_id"
+            }
+          ],
+          "constraint": "profiles_pkey",
+          "definition": "CREATE UNIQUE INDEX profiles_pkey ON app.profiles USING btree (user_id)"
+        }
+      ]
+    },
+    {
+      "schema": "app",
+      "name": "published_posts",
+      "kind": "v",
+      "persistence": "p",
+      "owner": "dql_fixture_owner",
+      "comment": "@logical-key(id)",
+      "definition": " SELECT id,\n    title,\n    author_id,\n    published_at\n   FROM app.posts\n  WHERE (status = 'published'::app.post_status);",
+      "dependsOn": [
+        {
+          "schema": "app",
+          "name": "posts"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 1,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          },
+          "comment": "@nonnull"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "text",
+            "kind": "b",
+            "category": "S",
+            "typmod": -1,
+            "formatted": "text"
+          },
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          },
+          "comment": "@nonnull"
+        },
+        {
+          "name": "author_id",
+          "ordinal": 3,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          }
+        },
+        {
+          "name": "published_at",
+          "ordinal": 4,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "timestamptz",
+            "kind": "b",
+            "category": "D",
+            "typmod": -1,
+            "formatted": "timestamp with time zone"
+          }
+        }
+      ]
+    },
+    {
+      "schema": "app",
+      "name": "tags",
+      "kind": "r",
+      "persistence": "p",
+      "owner": "dql_fixture_owner",
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 1,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          },
+          "notNull": true,
+          "identity": "a",
+          "identitySequence": "tags_id_seq"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type": {
+            "schema": "app",
+            "name": "slug_text",
+            "kind": "d",
+            "category": "S",
+            "typmod": -1,
+            "formatted": "app.slug_text"
+          },
+          "notNull": true,
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "name": "tags_name_key",
+          "kind": "u",
+          "columns": [
+            "name"
+          ],
+          "definition": "UNIQUE (name)",
+          "noInherit": true,
+          "index": "tags_name_key"
+        },
+        {
+          "name": "tags_pkey",
+          "kind": "p",
+          "columns": [
+            "id"
+          ],
+          "definition": "PRIMARY KEY (id)",
+          "noInherit": true,
+          "index": "tags_pkey"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "tags_name_key",
+          "method": "btree",
+          "unique": true,
+          "keys": [
+            {
+              "column": "name"
+            }
+          ],
+          "constraint": "tags_name_key",
+          "definition": "CREATE UNIQUE INDEX tags_name_key ON app.tags USING btree (name)"
+        },
+        {
+          "name": "tags_pkey",
+          "method": "btree",
+          "unique": true,
+          "primary": true,
+          "keys": [
+            {
+              "column": "id"
+            }
+          ],
+          "constraint": "tags_pkey",
+          "definition": "CREATE UNIQUE INDEX tags_pkey ON app.tags USING btree (id)"
+        }
+      ]
+    },
+    {
+      "schema": "app",
+      "name": "tenants",
+      "kind": "r",
+      "persistence": "p",
+      "owner": "dql_fixture_owner",
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 1,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "uuid",
+            "kind": "b",
+            "category": "U",
+            "typmod": -1,
+            "formatted": "uuid"
+          },
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "text",
+            "kind": "b",
+            "category": "S",
+            "typmod": -1,
+            "formatted": "text"
+          },
+          "notNull": true,
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        }
+      ],
+      "constraints": [
+        {
+          "name": "tenants_pkey",
+          "kind": "p",
+          "columns": [
+            "id"
+          ],
+          "definition": "PRIMARY KEY (id)",
+          "noInherit": true,
+          "index": "tenants_pkey"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "tenants_pkey",
+          "method": "btree",
+          "unique": true,
+          "primary": true,
+          "keys": [
+            {
+              "column": "id"
+            }
+          ],
+          "constraint": "tenants_pkey",
+          "definition": "CREATE UNIQUE INDEX tenants_pkey ON app.tenants USING btree (id)"
+        }
+      ]
+    },
+    {
+      "schema": "app",
+      "name": "users",
+      "kind": "r",
+      "persistence": "p",
+      "owner": "dql_fixture_owner",
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 1,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          },
+          "notNull": true,
+          "identity": "a",
+          "identitySequence": "users_id_seq"
+        },
+        {
+          "name": "tenant_id",
+          "ordinal": 2,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "uuid",
+            "kind": "b",
+            "category": "U",
+            "typmod": -1,
+            "formatted": "uuid"
+          },
+          "notNull": true,
+          "comment": "@bound"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type": {
+            "schema": "app",
+            "name": "email_address",
+            "kind": "d",
+            "category": "S",
+            "typmod": -1,
+            "formatted": "app.email_address"
+          },
+          "notNull": true,
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        },
+        {
+          "name": "display_name",
+          "ordinal": 4,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "varchar",
+            "kind": "b",
+            "category": "S",
+            "typmod": 84,
+            "formatted": "character varying(80)"
+          },
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        },
+        {
+          "name": "password_hash",
+          "ordinal": 5,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "text",
+            "kind": "b",
+            "category": "S",
+            "typmod": -1,
+            "formatted": "text"
+          },
+          "notNull": true,
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          },
+          "comment": "@write-only @sensitive"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 6,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "timestamptz",
+            "kind": "b",
+            "category": "D",
+            "typmod": -1,
+            "formatted": "timestamp with time zone"
+          },
+          "notNull": true,
+          "default": "now()",
+          "comment": "@immutable"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 7,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "timestamptz",
+            "kind": "b",
+            "category": "D",
+            "typmod": -1,
+            "formatted": "timestamp with time zone"
+          },
+          "notNull": true,
+          "default": "now()",
+          "comment": "@db-updated"
+        },
+        {
+          "name": "version",
+          "ordinal": 8,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int4",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "integer"
+          },
+          "notNull": true,
+          "default": "1",
+          "comment": "@version"
+        }
+      ],
+      "constraints": [
+        {
+          "name": "users_pkey",
+          "kind": "p",
+          "columns": [
+            "id"
+          ],
+          "definition": "PRIMARY KEY (id)",
+          "noInherit": true,
+          "index": "users_pkey"
+        },
+        {
+          "name": "users_tenant_email_key",
+          "kind": "u",
+          "columns": [
+            "tenant_id",
+            "email"
+          ],
+          "definition": "UNIQUE (tenant_id, email)",
+          "noInherit": true,
+          "index": "users_tenant_email_key"
+        },
+        {
+          "name": "users_tenant_id_fkey",
+          "kind": "f",
+          "columns": [
+            "tenant_id"
+          ],
+          "definition": "FOREIGN KEY (tenant_id) REFERENCES app.tenants(id)",
+          "references": {
+            "schema": "app",
+            "table": "tenants",
+            "columns": [
+              "id"
+            ],
+            "match": "s",
+            "onUpdate": "a",
+            "onDelete": "a"
+          },
+          "noInherit": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "users_pkey",
+          "method": "btree",
+          "unique": true,
+          "primary": true,
+          "keys": [
+            {
+              "column": "id"
+            }
+          ],
+          "constraint": "users_pkey",
+          "definition": "CREATE UNIQUE INDEX users_pkey ON app.users USING btree (id)"
+        },
+        {
+          "name": "users_tenant_email_key",
+          "method": "btree",
+          "unique": true,
+          "keys": [
+            {
+              "column": "tenant_id"
+            },
+            {
+              "column": "email"
+            }
+          ],
+          "constraint": "users_tenant_email_key",
+          "definition": "CREATE UNIQUE INDEX users_tenant_email_key ON app.users USING btree (tenant_id, email)"
+        }
+      ]
+    }
+  ],
+  "enums": [
+    {
+      "schema": "app",
+      "name": "post_status",
+      "owner": "dql_fixture_owner",
+      "labels": [
+        "draft",
+        "published",
+        "archived"
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "schema": "app",
+      "name": "email_address",
+      "owner": "dql_fixture_owner",
+      "base": {
+        "schema": "pg_catalog",
+        "name": "text",
+        "kind": "b",
+        "category": "S",
+        "typmod": -1,
+        "formatted": "text"
+      },
+      "collation": {
+        "schema": "pg_catalog",
+        "name": "default",
+        "provider": "d",
+        "deterministic": true
+      },
+      "checks": [
+        {
+          "name": "email_address_check",
+          "definition": "CHECK ((char_length(VALUE) <= 320))"
+        }
+      ]
+    },
+    {
+      "schema": "app",
+      "name": "slug_text",
+      "owner": "dql_fixture_owner",
+      "base": {
+        "schema": "pg_catalog",
+        "name": "text",
+        "kind": "b",
+        "category": "S",
+        "typmod": -1,
+        "formatted": "text"
+      },
+      "collation": {
+        "schema": "pg_catalog",
+        "name": "default",
+        "provider": "d",
+        "deterministic": true
+      },
+      "checks": [
+        {
+          "name": "slug_text_check",
+          "definition": "CHECK ((VALUE ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::text))"
+        }
+      ]
+    }
+  ],
+  "composites": [
+    {
+      "schema": "app",
+      "name": "money_amount",
+      "owner": "dql_fixture_owner",
+      "attributes": [
+        {
+          "name": "amount",
+          "ordinal": 1,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "numeric",
+            "kind": "b",
+            "category": "N",
+            "typmod": 786438,
+            "formatted": "numeric(12,2)"
+          }
+        },
+        {
+          "name": "currency",
+          "ordinal": 2,
+          "type": {
+            "schema": "pg_catalog",
+            "name": "bpchar",
+            "kind": "b",
+            "category": "S",
+            "typmod": 7,
+            "formatted": "character(3)"
+          },
+          "collation": {
+            "schema": "pg_catalog",
+            "name": "default",
+            "provider": "d",
+            "deterministic": true
+          }
+        }
+      ]
+    }
+  ],
+  "sequences": [
+    {
+      "schema": "app",
+      "name": "posts_id_seq",
+      "owner": "dql_fixture_owner",
+      "dataType": {
+        "schema": "pg_catalog",
+        "name": "int8",
+        "kind": "b",
+        "category": "N",
+        "typmod": -1,
+        "formatted": "bigint"
+      },
+      "start": 1,
+      "increment": 1,
+      "min": 1,
+      "max": 9223372036854775807,
+      "cache": 1,
+      "ownedBy": {
+        "schema": "app",
+        "table": "posts",
+        "column": "id"
+      },
+      "identity": true
+    },
+    {
+      "schema": "app",
+      "name": "tags_id_seq",
+      "owner": "dql_fixture_owner",
+      "dataType": {
+        "schema": "pg_catalog",
+        "name": "int8",
+        "kind": "b",
+        "category": "N",
+        "typmod": -1,
+        "formatted": "bigint"
+      },
+      "start": 1,
+      "increment": 1,
+      "min": 1,
+      "max": 9223372036854775807,
+      "cache": 1,
+      "ownedBy": {
+        "schema": "app",
+        "table": "tags",
+        "column": "id"
+      },
+      "identity": true
+    },
+    {
+      "schema": "app",
+      "name": "users_id_seq",
+      "owner": "dql_fixture_owner",
+      "dataType": {
+        "schema": "pg_catalog",
+        "name": "int8",
+        "kind": "b",
+        "category": "N",
+        "typmod": -1,
+        "formatted": "bigint"
+      },
+      "start": 1,
+      "increment": 1,
+      "min": 1,
+      "max": 9223372036854775807,
+      "cache": 1,
+      "ownedBy": {
+        "schema": "app",
+        "table": "users",
+        "column": "id"
+      },
+      "identity": true
+    }
+  ],
+  "routines": [
+    {
+      "schema": "app",
+      "name": "post_score",
+      "kind": "f",
+      "identityArguments": "p_id bigint",
+      "owner": "dql_fixture_owner",
+      "comment": "@public",
+      "language": "sql",
+      "arguments": [
+        {
+          "name": "p_id",
+          "mode": "i",
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          }
+        }
+      ],
+      "returns": {
+        "schema": "pg_catalog",
+        "name": "numeric",
+        "kind": "b",
+        "category": "N",
+        "typmod": -1,
+        "formatted": "numeric"
+      },
+      "result": "numeric",
+      "strict": true,
+      "volatility": "s",
+      "parallel": "u",
+      "source": " SELECT 0::numeric "
+    },
+    {
+      "schema": "app",
+      "name": "post_score",
+      "kind": "f",
+      "identityArguments": "p_id bigint, window_days integer",
+      "owner": "dql_fixture_owner",
+      "comment": "@public",
+      "language": "sql",
+      "arguments": [
+        {
+          "name": "p_id",
+          "mode": "i",
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int8",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "bigint"
+          }
+        },
+        {
+          "name": "window_days",
+          "mode": "i",
+          "type": {
+            "schema": "pg_catalog",
+            "name": "int4",
+            "kind": "b",
+            "category": "N",
+            "typmod": -1,
+            "formatted": "integer"
+          }
+        }
+      ],
+      "returns": {
+        "schema": "pg_catalog",
+        "name": "numeric",
+        "kind": "b",
+        "category": "N",
+        "typmod": -1,
+        "formatted": "numeric"
+      },
+      "result": "numeric",
+      "strict": true,
+      "volatility": "s",
+      "parallel": "u",
+      "source": " SELECT 0::numeric "
+    }
+  ]
+}

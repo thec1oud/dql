@@ -1,0 +1,29 @@
+# dql.yaml
+sources:
+  - plugin: pg-live
+    catalog: shop
+    connection: env:SHOP_DATABASE_URL
+    namespaces: [app]
+    default-namespace: app   # objects in app get no namespace prefix (§4.3)
+
+annotations:
+  # Entity names. The core never inflects words (§4.4).
+  shop.app.tenants:         { name: tenant }
+  shop.app.users:           { name: user }
+  shop.app.profiles:        { name: profile }
+  shop.app.posts:           { name: post }
+  shop.app.tags:            { name: tag }
+  shop.app.post_tags:       { name: post_tag }
+  shop.app.published_posts: { name: published_post }
+  # Relations are addressed through their foreign key.
+  shop.app.profiles.profiles_user_id_fkey: { inverse-name: profile }
+  shop.app.posts.posts_author_id_fkey:     { collection-policy: replace, removal: delete }
+
+emit:
+  - plugin: go
+    dialect: postgres
+    package: shopdb
+    out: internal/shopdb
+  - plugin: ts
+    dialect: postgres
+    out: src/shopdb
