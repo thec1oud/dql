@@ -30,6 +30,7 @@ jobs:
       - name: generated code is current
         run: |
           go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.6
+          export PATH="$(go env GOPATH)/bin:$PATH"
           (cd proto && buf generate)
           git diff --exit-code
 
@@ -41,7 +42,8 @@ jobs:
         with:
           go-version: "1.25"
       - name: vet
-        run: go vet $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
+        run: |
+          go vet $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
       - name: test with 100% coverage
         run: scripts/coverage.sh
       - name: determinism under a Turkish locale
