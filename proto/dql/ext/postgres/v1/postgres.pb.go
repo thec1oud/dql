@@ -39,7 +39,9 @@ type Trigger struct {
 	// ORIGIN, ALWAYS, REPLICA or DISABLED.
 	Enabled string `protobuf:"bytes,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	// pg_get_triggerdef.
-	Definition    string `protobuf:"bytes,7,opt,name=definition,proto3" json:"definition,omitempty"`
+	Definition string `protobuf:"bytes,7,opt,name=definition,proto3" json:"definition,omitempty"`
+	// The trigger's raw comment.
+	Comment       string `protobuf:"bytes,8,opt,name=comment,proto3" json:"comment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -123,7 +125,15 @@ func (x *Trigger) GetDefinition() string {
 	return ""
 }
 
-// A non-unique index (§6.2). Unique indexes are uniqueness facts (§11.2).
+func (x *Trigger) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+// A non-unique index (§6.2). Unique indexes are uniqueness facts (§11.2); the
+// index behind a uniqueness fact or an exclusion constraint is carried on it.
 type Index struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -132,8 +142,10 @@ type Index struct {
 	Definition        string   `protobuf:"bytes,3,opt,name=definition,proto3" json:"definition,omitempty"`
 	StorageParameters []string `protobuf:"bytes,4,rep,name=storage_parameters,json=storageParameters,proto3" json:"storage_parameters,omitempty"`
 	Tablespace        string   `protobuf:"bytes,5,opt,name=tablespace,proto3" json:"tablespace,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// The index's raw comment.
+	Comment       string `protobuf:"bytes,6,opt,name=comment,proto3" json:"comment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Index) Reset() {
@@ -197,6 +209,13 @@ func (x *Index) GetStorageParameters() []string {
 func (x *Index) GetTablespace() string {
 	if x != nil {
 		return x.Tablespace
+	}
+	return ""
+}
+
+func (x *Index) GetComment() string {
+	if x != nil {
+		return x.Comment
 	}
 	return ""
 }
@@ -322,11 +341,13 @@ type Policy struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// ALL, SELECT, INSERT, UPDATE or DELETE.
-	Command       string   `protobuf:"bytes,2,opt,name=command,proto3" json:"command,omitempty"`
-	Permissive    bool     `protobuf:"varint,3,opt,name=permissive,proto3" json:"permissive,omitempty"`
-	Roles         []string `protobuf:"bytes,4,rep,name=roles,proto3" json:"roles,omitempty"`
-	Using         string   `protobuf:"bytes,5,opt,name=using,proto3" json:"using,omitempty"`
-	WithCheck     string   `protobuf:"bytes,6,opt,name=with_check,json=withCheck,proto3" json:"with_check,omitempty"`
+	Command    string   `protobuf:"bytes,2,opt,name=command,proto3" json:"command,omitempty"`
+	Permissive bool     `protobuf:"varint,3,opt,name=permissive,proto3" json:"permissive,omitempty"`
+	Roles      []string `protobuf:"bytes,4,rep,name=roles,proto3" json:"roles,omitempty"`
+	Using      string   `protobuf:"bytes,5,opt,name=using,proto3" json:"using,omitempty"`
+	WithCheck  string   `protobuf:"bytes,6,opt,name=with_check,json=withCheck,proto3" json:"with_check,omitempty"`
+	// The policy's raw comment.
+	Comment       string `protobuf:"bytes,7,opt,name=comment,proto3" json:"comment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -399,6 +420,13 @@ func (x *Policy) GetUsing() string {
 func (x *Policy) GetWithCheck() string {
 	if x != nil {
 		return x.WithCheck
+	}
+	return ""
+}
+
+func (x *Policy) GetComment() string {
+	if x != nil {
+		return x.Comment
 	}
 	return ""
 }
@@ -694,7 +722,10 @@ type Statistics struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// pg_get_statisticsobjdef.
-	Definition    string `protobuf:"bytes,2,opt,name=definition,proto3" json:"definition,omitempty"`
+	Definition string `protobuf:"bytes,2,opt,name=definition,proto3" json:"definition,omitempty"`
+	Owner      string `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
+	// The statistics object's raw comment.
+	Comment       string `protobuf:"bytes,4,opt,name=comment,proto3" json:"comment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -739,6 +770,20 @@ func (x *Statistics) GetName() string {
 func (x *Statistics) GetDefinition() string {
 	if x != nil {
 		return x.Definition
+	}
+	return ""
+}
+
+func (x *Statistics) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *Statistics) GetComment() string {
+	if x != nil {
+		return x.Comment
 	}
 	return ""
 }
@@ -806,9 +851,10 @@ func (x *InstalledExtension) GetNamespace() string {
 
 // A routine's implementation language and body, which the core does not read.
 type RoutineSource struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Language      string                 `protobuf:"bytes,1,opt,name=language,proto3" json:"language,omitempty"`
-	Body          string                 `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Language string                 `protobuf:"bytes,1,opt,name=language,proto3" json:"language,omitempty"`
+	// prosrc, or the BEGIN ATOMIC body of a SQL-standard routine.
+	Body          string `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -857,11 +903,986 @@ func (x *RoutineSource) GetBody() string {
 	return ""
 }
 
+// The connected database's encoding and default locale, which a column's
+// default collation stands for (§8.9).
+type Database struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Encoding string                 `protobuf:"bytes,1,opt,name=encoding,proto3" json:"encoding,omitempty"`
+	// libc or icu.
+	LocaleProvider string `protobuf:"bytes,2,opt,name=locale_provider,json=localeProvider,proto3" json:"locale_provider,omitempty"`
+	Collate        string `protobuf:"bytes,3,opt,name=collate,proto3" json:"collate,omitempty"`
+	Ctype          string `protobuf:"bytes,4,opt,name=ctype,proto3" json:"ctype,omitempty"`
+	IcuLocale      string `protobuf:"bytes,5,opt,name=icu_locale,json=icuLocale,proto3" json:"icu_locale,omitempty"`
+	IcuRules       string `protobuf:"bytes,6,opt,name=icu_rules,json=icuRules,proto3" json:"icu_rules,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Database) Reset() {
+	*x = Database{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Database) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Database) ProtoMessage() {}
+
+func (x *Database) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Database.ProtoReflect.Descriptor instead.
+func (*Database) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *Database) GetEncoding() string {
+	if x != nil {
+		return x.Encoding
+	}
+	return ""
+}
+
+func (x *Database) GetLocaleProvider() string {
+	if x != nil {
+		return x.LocaleProvider
+	}
+	return ""
+}
+
+func (x *Database) GetCollate() string {
+	if x != nil {
+		return x.Collate
+	}
+	return ""
+}
+
+func (x *Database) GetCtype() string {
+	if x != nil {
+		return x.Ctype
+	}
+	return ""
+}
+
+func (x *Database) GetIcuLocale() string {
+	if x != nil {
+		return x.IcuLocale
+	}
+	return ""
+}
+
+func (x *Database) GetIcuRules() string {
+	if x != nil {
+		return x.IcuRules
+	}
+	return ""
+}
+
+// A view's or materialized view's query, pg_get_viewdef.
+type ViewDefinition struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Definition    string                 `protobuf:"bytes,1,opt,name=definition,proto3" json:"definition,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ViewDefinition) Reset() {
+	*x = ViewDefinition{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ViewDefinition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ViewDefinition) ProtoMessage() {}
+
+func (x *ViewDefinition) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ViewDefinition.ProtoReflect.Descriptor instead.
+func (*ViewDefinition) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ViewDefinition) GetDefinition() string {
+	if x != nil {
+		return x.Definition
+	}
+	return ""
+}
+
+// Marks an unlogged table.
+type Unlogged struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Unlogged) Reset() {
+	*x = Unlogged{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Unlogged) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Unlogged) ProtoMessage() {}
+
+func (x *Unlogged) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Unlogged.ProtoReflect.Descriptor instead.
+func (*Unlogged) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{16}
+}
+
+// Names the installed extension an object belongs to.
+type ExtensionMember struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Extension     string                 `protobuf:"bytes,1,opt,name=extension,proto3" json:"extension,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExtensionMember) Reset() {
+	*x = ExtensionMember{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExtensionMember) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExtensionMember) ProtoMessage() {}
+
+func (x *ExtensionMember) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExtensionMember.ProtoReflect.Descriptor instead.
+func (*ExtensionMember) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ExtensionMember) GetExtension() string {
+	if x != nil {
+		return x.Extension
+	}
+	return ""
+}
+
+// Constraint properties the IR does not model. Each is carried only where it
+// differs from Postgres's default, so an absent message means none is set.
+type ConstraintOptions struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Deferrability of a primary key, unique or exclusion constraint; a
+	// foreign key's is ForeignKey.deferrable.
+	Deferrable        bool `protobuf:"varint,1,opt,name=deferrable,proto3" json:"deferrable,omitempty"`
+	InitiallyDeferred bool `protobuf:"varint,2,opt,name=initially_deferred,json=initiallyDeferred,proto3" json:"initially_deferred,omitempty"`
+	// Existing rows were not checked when the constraint was added.
+	NotValid bool `protobuf:"varint,3,opt,name=not_valid,json=notValid,proto3" json:"not_valid,omitempty"`
+	// A check constraint that partitions and children do not inherit.
+	NoInherit bool `protobuf:"varint,4,opt,name=no_inherit,json=noInherit,proto3" json:"no_inherit,omitempty"`
+	// The columns ON DELETE SET NULL or SET DEFAULT is limited to.
+	OnDeleteColumns []string `protobuf:"bytes,5,rep,name=on_delete_columns,json=onDeleteColumns,proto3" json:"on_delete_columns,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ConstraintOptions) Reset() {
+	*x = ConstraintOptions{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConstraintOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConstraintOptions) ProtoMessage() {}
+
+func (x *ConstraintOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConstraintOptions.ProtoReflect.Descriptor instead.
+func (*ConstraintOptions) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ConstraintOptions) GetDeferrable() bool {
+	if x != nil {
+		return x.Deferrable
+	}
+	return false
+}
+
+func (x *ConstraintOptions) GetInitiallyDeferred() bool {
+	if x != nil {
+		return x.InitiallyDeferred
+	}
+	return false
+}
+
+func (x *ConstraintOptions) GetNotValid() bool {
+	if x != nil {
+		return x.NotValid
+	}
+	return false
+}
+
+func (x *ConstraintOptions) GetNoInherit() bool {
+	if x != nil {
+		return x.NoInherit
+	}
+	return false
+}
+
+func (x *ConstraintOptions) GetOnDeleteColumns() []string {
+	if x != nil {
+		return x.OnDeleteColumns
+	}
+	return nil
+}
+
+// A sequence's cache size, carried only when it is not 1.
+type SequenceCache struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cache         int64                  `protobuf:"varint,1,opt,name=cache,proto3" json:"cache,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SequenceCache) Reset() {
+	*x = SequenceCache{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SequenceCache) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SequenceCache) ProtoMessage() {}
+
+func (x *SequenceCache) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SequenceCache.ProtoReflect.Descriptor instead.
+func (*SequenceCache) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *SequenceCache) GetCache() int64 {
+	if x != nil {
+		return x.Cache
+	}
+	return 0
+}
+
+// A collation defined in a namespace. Columns record their collation's
+// comparison facts themselves (§8.9).
+type Collation struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// libc or icu.
+	Provider      string `protobuf:"bytes,2,opt,name=provider,proto3" json:"provider,omitempty"`
+	Deterministic bool   `protobuf:"varint,3,opt,name=deterministic,proto3" json:"deterministic,omitempty"`
+	Collate       string `protobuf:"bytes,4,opt,name=collate,proto3" json:"collate,omitempty"`
+	Ctype         string `protobuf:"bytes,5,opt,name=ctype,proto3" json:"ctype,omitempty"`
+	IcuLocale     string `protobuf:"bytes,6,opt,name=icu_locale,json=icuLocale,proto3" json:"icu_locale,omitempty"`
+	IcuRules      string `protobuf:"bytes,7,opt,name=icu_rules,json=icuRules,proto3" json:"icu_rules,omitempty"`
+	Owner         string `protobuf:"bytes,8,opt,name=owner,proto3" json:"owner,omitempty"`
+	Comment       string `protobuf:"bytes,9,opt,name=comment,proto3" json:"comment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Collation) Reset() {
+	*x = Collation{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Collation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Collation) ProtoMessage() {}
+
+func (x *Collation) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Collation.ProtoReflect.Descriptor instead.
+func (*Collation) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *Collation) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Collation) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+func (x *Collation) GetDeterministic() bool {
+	if x != nil {
+		return x.Deterministic
+	}
+	return false
+}
+
+func (x *Collation) GetCollate() string {
+	if x != nil {
+		return x.Collate
+	}
+	return ""
+}
+
+func (x *Collation) GetCtype() string {
+	if x != nil {
+		return x.Ctype
+	}
+	return ""
+}
+
+func (x *Collation) GetIcuLocale() string {
+	if x != nil {
+		return x.IcuLocale
+	}
+	return ""
+}
+
+func (x *Collation) GetIcuRules() string {
+	if x != nil {
+		return x.IcuRules
+	}
+	return ""
+}
+
+func (x *Collation) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *Collation) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+// A range type and its multirange. Columns of either carry the range or
+// multirange logical type (§8.1).
+type RangeType struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Subtype    *v1.Type               `protobuf:"bytes,2,opt,name=subtype,proto3" json:"subtype,omitempty"`
+	Multirange string                 `protobuf:"bytes,3,opt,name=multirange,proto3" json:"multirange,omitempty"`
+	// The subtype's collation, as namespace.name.
+	Collation     string   `protobuf:"bytes,4,opt,name=collation,proto3" json:"collation,omitempty"`
+	Canonical     string   `protobuf:"bytes,5,opt,name=canonical,proto3" json:"canonical,omitempty"`
+	SubtypeDiff   string   `protobuf:"bytes,6,opt,name=subtype_diff,json=subtypeDiff,proto3" json:"subtype_diff,omitempty"`
+	Owner         string   `protobuf:"bytes,7,opt,name=owner,proto3" json:"owner,omitempty"`
+	Comment       string   `protobuf:"bytes,8,opt,name=comment,proto3" json:"comment,omitempty"`
+	Extension     string   `protobuf:"bytes,9,opt,name=extension,proto3" json:"extension,omitempty"`
+	Grants        []*Grant `protobuf:"bytes,10,rep,name=grants,proto3" json:"grants,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RangeType) Reset() {
+	*x = RangeType{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RangeType) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RangeType) ProtoMessage() {}
+
+func (x *RangeType) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RangeType.ProtoReflect.Descriptor instead.
+func (*RangeType) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *RangeType) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *RangeType) GetSubtype() *v1.Type {
+	if x != nil {
+		return x.Subtype
+	}
+	return nil
+}
+
+func (x *RangeType) GetMultirange() string {
+	if x != nil {
+		return x.Multirange
+	}
+	return ""
+}
+
+func (x *RangeType) GetCollation() string {
+	if x != nil {
+		return x.Collation
+	}
+	return ""
+}
+
+func (x *RangeType) GetCanonical() string {
+	if x != nil {
+		return x.Canonical
+	}
+	return ""
+}
+
+func (x *RangeType) GetSubtypeDiff() string {
+	if x != nil {
+		return x.SubtypeDiff
+	}
+	return ""
+}
+
+func (x *RangeType) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *RangeType) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+func (x *RangeType) GetExtension() string {
+	if x != nil {
+		return x.Extension
+	}
+	return ""
+}
+
+func (x *RangeType) GetGrants() []*Grant {
+	if x != nil {
+		return x.Grants
+	}
+	return nil
+}
+
+// A base or pseudo type, such as one an extension installs. Columns of it
+// are opaque (§8.3).
+type BaseType struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// typtype: b base, p pseudo.
+	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	// typcategory.
+	Category      string   `protobuf:"bytes,3,opt,name=category,proto3" json:"category,omitempty"`
+	Owner         string   `protobuf:"bytes,4,opt,name=owner,proto3" json:"owner,omitempty"`
+	Comment       string   `protobuf:"bytes,5,opt,name=comment,proto3" json:"comment,omitempty"`
+	Extension     string   `protobuf:"bytes,6,opt,name=extension,proto3" json:"extension,omitempty"`
+	Grants        []*Grant `protobuf:"bytes,7,rep,name=grants,proto3" json:"grants,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BaseType) Reset() {
+	*x = BaseType{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BaseType) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BaseType) ProtoMessage() {}
+
+func (x *BaseType) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BaseType.ProtoReflect.Descriptor instead.
+func (*BaseType) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *BaseType) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *BaseType) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *BaseType) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *BaseType) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *BaseType) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+func (x *BaseType) GetExtension() string {
+	if x != nil {
+		return x.Extension
+	}
+	return ""
+}
+
+func (x *BaseType) GetGrants() []*Grant {
+	if x != nil {
+		return x.Grants
+	}
+	return nil
+}
+
+// A routine that is not exposed: a function or procedure not marked public,
+// an aggregate or a window function (§6.5).
+type Routine struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// FUNCTION, PROCEDURE, AGGREGATE or WINDOW.
+	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	// pg_get_function_identity_arguments.
+	IdentityArguments string `protobuf:"bytes,3,opt,name=identity_arguments,json=identityArguments,proto3" json:"identity_arguments,omitempty"`
+	// pg_get_function_result.
+	Result   string `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`
+	Language string `protobuf:"bytes,5,opt,name=language,proto3" json:"language,omitempty"`
+	// prosrc, or the BEGIN ATOMIC body of a SQL-standard routine.
+	Body   string `protobuf:"bytes,6,opt,name=body,proto3" json:"body,omitempty"`
+	Strict bool   `protobuf:"varint,7,opt,name=strict,proto3" json:"strict,omitempty"`
+	// IMMUTABLE, STABLE or VOLATILE.
+	Volatility string `protobuf:"bytes,8,opt,name=volatility,proto3" json:"volatility,omitempty"`
+	// SAFE, RESTRICTED or UNSAFE.
+	Parallel        string   `protobuf:"bytes,9,opt,name=parallel,proto3" json:"parallel,omitempty"`
+	SecurityDefiner bool     `protobuf:"varint,10,opt,name=security_definer,json=securityDefiner,proto3" json:"security_definer,omitempty"`
+	Leakproof       bool     `protobuf:"varint,11,opt,name=leakproof,proto3" json:"leakproof,omitempty"`
+	Owner           string   `protobuf:"bytes,12,opt,name=owner,proto3" json:"owner,omitempty"`
+	Comment         string   `protobuf:"bytes,13,opt,name=comment,proto3" json:"comment,omitempty"`
+	Extension       string   `protobuf:"bytes,14,opt,name=extension,proto3" json:"extension,omitempty"`
+	Grants          []*Grant `protobuf:"bytes,15,rep,name=grants,proto3" json:"grants,omitempty"`
+	// The default expressions of the arguments that have one, in argument order.
+	ArgumentDefaults []string `protobuf:"bytes,16,rep,name=argument_defaults,json=argumentDefaults,proto3" json:"argument_defaults,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *Routine) Reset() {
+	*x = Routine{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Routine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Routine) ProtoMessage() {}
+
+func (x *Routine) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Routine.ProtoReflect.Descriptor instead.
+func (*Routine) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *Routine) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Routine) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Routine) GetIdentityArguments() string {
+	if x != nil {
+		return x.IdentityArguments
+	}
+	return ""
+}
+
+func (x *Routine) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
+func (x *Routine) GetLanguage() string {
+	if x != nil {
+		return x.Language
+	}
+	return ""
+}
+
+func (x *Routine) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *Routine) GetStrict() bool {
+	if x != nil {
+		return x.Strict
+	}
+	return false
+}
+
+func (x *Routine) GetVolatility() string {
+	if x != nil {
+		return x.Volatility
+	}
+	return ""
+}
+
+func (x *Routine) GetParallel() string {
+	if x != nil {
+		return x.Parallel
+	}
+	return ""
+}
+
+func (x *Routine) GetSecurityDefiner() bool {
+	if x != nil {
+		return x.SecurityDefiner
+	}
+	return false
+}
+
+func (x *Routine) GetLeakproof() bool {
+	if x != nil {
+		return x.Leakproof
+	}
+	return false
+}
+
+func (x *Routine) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *Routine) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+func (x *Routine) GetExtension() string {
+	if x != nil {
+		return x.Extension
+	}
+	return ""
+}
+
+func (x *Routine) GetGrants() []*Grant {
+	if x != nil {
+		return x.Grants
+	}
+	return nil
+}
+
+func (x *Routine) GetArgumentDefaults() []string {
+	if x != nil {
+		return x.ArgumentDefaults
+	}
+	return nil
+}
+
+// Properties of an exposed routine the IR does not model.
+type RoutineProperties struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// SAFE, RESTRICTED or UNSAFE.
+	Parallel        string `protobuf:"bytes,1,opt,name=parallel,proto3" json:"parallel,omitempty"`
+	SecurityDefiner bool   `protobuf:"varint,2,opt,name=security_definer,json=securityDefiner,proto3" json:"security_definer,omitempty"`
+	Leakproof       bool   `protobuf:"varint,3,opt,name=leakproof,proto3" json:"leakproof,omitempty"`
+	// The default expressions of the arguments that have one, in argument order.
+	ArgumentDefaults []string `protobuf:"bytes,4,rep,name=argument_defaults,json=argumentDefaults,proto3" json:"argument_defaults,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *RoutineProperties) Reset() {
+	*x = RoutineProperties{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RoutineProperties) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RoutineProperties) ProtoMessage() {}
+
+func (x *RoutineProperties) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RoutineProperties.ProtoReflect.Descriptor instead.
+func (*RoutineProperties) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *RoutineProperties) GetParallel() string {
+	if x != nil {
+		return x.Parallel
+	}
+	return ""
+}
+
+func (x *RoutineProperties) GetSecurityDefiner() bool {
+	if x != nil {
+		return x.SecurityDefiner
+	}
+	return false
+}
+
+func (x *RoutineProperties) GetLeakproof() bool {
+	if x != nil {
+		return x.Leakproof
+	}
+	return false
+}
+
+func (x *RoutineProperties) GetArgumentDefaults() []string {
+	if x != nil {
+		return x.ArgumentDefaults
+	}
+	return nil
+}
+
+// A partition of a partitioned table, carried on its parent (§6.2). The
+// partition is mapped as a table of its own, but it is not an entity.
+type Partition struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Namespace string                 `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// pg_get_expr of the partition bound.
+	Bound         string    `protobuf:"bytes,2,opt,name=bound,proto3" json:"bound,omitempty"`
+	Table         *v1.Table `protobuf:"bytes,3,opt,name=table,proto3" json:"table,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Partition) Reset() {
+	*x = Partition{}
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Partition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Partition) ProtoMessage() {}
+
+func (x *Partition) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_postgres_v1_postgres_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Partition.ProtoReflect.Descriptor instead.
+func (*Partition) Descriptor() ([]byte, []int) {
+	return file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *Partition) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *Partition) GetBound() string {
+	if x != nil {
+		return x.Bound
+	}
+	return ""
+}
+
+func (x *Partition) GetTable() *v1.Table {
+	if x != nil {
+		return x.Table
+	}
+	return nil
+}
+
 var File_dql_ext_postgres_v1_postgres_proto protoreflect.FileDescriptor
 
 const file_dql_ext_postgres_v1_postgres_proto_rawDesc = "" +
 	"\n" +
-	"\"dql/ext/postgres/v1/postgres.proto\x12\x13dql.ext.postgres.v1\x1a\x15dql/ir/v1/names.proto\"\xd3\x01\n" +
+	"\"dql/ext/postgres/v1/postgres.proto\x12\x13dql.ext.postgres.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x15dql/ir/v1/types.proto\"\xed\x01\n" +
 	"\aTrigger\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06timing\x18\x02 \x01(\tR\x06timing\x12\x16\n" +
@@ -871,7 +1892,8 @@ const file_dql_ext_postgres_v1_postgres_proto_rawDesc = "" +
 	"\aenabled\x18\x06 \x01(\tR\aenabled\x12\x1e\n" +
 	"\n" +
 	"definition\x18\a \x01(\tR\n" +
-	"definition\"\xa2\x01\n" +
+	"definition\x12\x18\n" +
+	"\acomment\x18\b \x01(\tR\acomment\"\xbc\x01\n" +
 	"\x05Index\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12\x1e\n" +
@@ -881,7 +1903,8 @@ const file_dql_ext_postgres_v1_postgres_proto_rawDesc = "" +
 	"\x12storage_parameters\x18\x04 \x03(\tR\x11storageParameters\x12\x1e\n" +
 	"\n" +
 	"tablespace\x18\x05 \x01(\tR\n" +
-	"tablespace\"\x1d\n" +
+	"tablespace\x12\x18\n" +
+	"\acomment\x18\x06 \x01(\tR\acomment\"\x1d\n" +
 	"\aComment\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\"y\n" +
 	"\x05Grant\x12\x18\n" +
@@ -890,7 +1913,7 @@ const file_dql_ext_postgres_v1_postgres_proto_rawDesc = "" +
 	"\n" +
 	"privileges\x18\x03 \x01(\tR\n" +
 	"privileges\x12\x1c\n" +
-	"\tgrantable\x18\x04 \x01(\tR\tgrantable\"\xa1\x01\n" +
+	"\tgrantable\x18\x04 \x01(\tR\tgrantable\"\xbb\x01\n" +
 	"\x06Policy\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\acommand\x18\x02 \x01(\tR\acommand\x12\x1e\n" +
@@ -900,7 +1923,8 @@ const file_dql_ext_postgres_v1_postgres_proto_rawDesc = "" +
 	"\x05roles\x18\x04 \x03(\tR\x05roles\x12\x14\n" +
 	"\x05using\x18\x05 \x01(\tR\x05using\x12\x1d\n" +
 	"\n" +
-	"with_check\x18\x06 \x01(\tR\twithCheck\"?\n" +
+	"with_check\x18\x06 \x01(\tR\twithCheck\x12\x18\n" +
+	"\acomment\x18\a \x01(\tR\acomment\"?\n" +
 	"\vRowSecurity\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x16\n" +
 	"\x06forced\x18\x02 \x01(\bR\x06forced\"\x1b\n" +
@@ -919,20 +1943,111 @@ const file_dql_ext_postgres_v1_postgres_proto_rawDesc = "" +
 	"definition\"U\n" +
 	"\vPartitionOf\x120\n" +
 	"\x06parent\x18\x01 \x01(\v2\x18.dql.ir.v1.QualifiedNameR\x06parent\x12\x14\n" +
-	"\x05bound\x18\x02 \x01(\tR\x05bound\"@\n" +
+	"\x05bound\x18\x02 \x01(\tR\x05bound\"p\n" +
 	"\n" +
 	"Statistics\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1e\n" +
 	"\n" +
 	"definition\x18\x02 \x01(\tR\n" +
-	"definition\"`\n" +
+	"definition\x12\x14\n" +
+	"\x05owner\x18\x03 \x01(\tR\x05owner\x12\x18\n" +
+	"\acomment\x18\x04 \x01(\tR\acomment\"`\n" +
 	"\x12InstalledExtension\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1c\n" +
 	"\tnamespace\x18\x03 \x01(\tR\tnamespace\"?\n" +
 	"\rRoutineSource\x12\x1a\n" +
 	"\blanguage\x18\x01 \x01(\tR\blanguage\x12\x12\n" +
-	"\x04body\x18\x02 \x01(\tR\x04bodyB;Z9github.com/thec1oud/dql/proto/dql/ext/postgres/v1;pgextv1b\x06proto3"
+	"\x04body\x18\x02 \x01(\tR\x04body\"\xbb\x01\n" +
+	"\bDatabase\x12\x1a\n" +
+	"\bencoding\x18\x01 \x01(\tR\bencoding\x12'\n" +
+	"\x0flocale_provider\x18\x02 \x01(\tR\x0elocaleProvider\x12\x18\n" +
+	"\acollate\x18\x03 \x01(\tR\acollate\x12\x14\n" +
+	"\x05ctype\x18\x04 \x01(\tR\x05ctype\x12\x1d\n" +
+	"\n" +
+	"icu_locale\x18\x05 \x01(\tR\ticuLocale\x12\x1b\n" +
+	"\ticu_rules\x18\x06 \x01(\tR\bicuRules\"0\n" +
+	"\x0eViewDefinition\x12\x1e\n" +
+	"\n" +
+	"definition\x18\x01 \x01(\tR\n" +
+	"definition\"\n" +
+	"\n" +
+	"\bUnlogged\"/\n" +
+	"\x0fExtensionMember\x12\x1c\n" +
+	"\textension\x18\x01 \x01(\tR\textension\"\xca\x01\n" +
+	"\x11ConstraintOptions\x12\x1e\n" +
+	"\n" +
+	"deferrable\x18\x01 \x01(\bR\n" +
+	"deferrable\x12-\n" +
+	"\x12initially_deferred\x18\x02 \x01(\bR\x11initiallyDeferred\x12\x1b\n" +
+	"\tnot_valid\x18\x03 \x01(\bR\bnotValid\x12\x1d\n" +
+	"\n" +
+	"no_inherit\x18\x04 \x01(\bR\tnoInherit\x12*\n" +
+	"\x11on_delete_columns\x18\x05 \x03(\tR\x0fonDeleteColumns\"%\n" +
+	"\rSequenceCache\x12\x14\n" +
+	"\x05cache\x18\x01 \x01(\x03R\x05cache\"\xfd\x01\n" +
+	"\tCollation\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
+	"\bprovider\x18\x02 \x01(\tR\bprovider\x12$\n" +
+	"\rdeterministic\x18\x03 \x01(\bR\rdeterministic\x12\x18\n" +
+	"\acollate\x18\x04 \x01(\tR\acollate\x12\x14\n" +
+	"\x05ctype\x18\x05 \x01(\tR\x05ctype\x12\x1d\n" +
+	"\n" +
+	"icu_locale\x18\x06 \x01(\tR\ticuLocale\x12\x1b\n" +
+	"\ticu_rules\x18\a \x01(\tR\bicuRules\x12\x14\n" +
+	"\x05owner\x18\b \x01(\tR\x05owner\x12\x18\n" +
+	"\acomment\x18\t \x01(\tR\acomment\"\xcb\x02\n" +
+	"\tRangeType\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12)\n" +
+	"\asubtype\x18\x02 \x01(\v2\x0f.dql.ir.v1.TypeR\asubtype\x12\x1e\n" +
+	"\n" +
+	"multirange\x18\x03 \x01(\tR\n" +
+	"multirange\x12\x1c\n" +
+	"\tcollation\x18\x04 \x01(\tR\tcollation\x12\x1c\n" +
+	"\tcanonical\x18\x05 \x01(\tR\tcanonical\x12!\n" +
+	"\fsubtype_diff\x18\x06 \x01(\tR\vsubtypeDiff\x12\x14\n" +
+	"\x05owner\x18\a \x01(\tR\x05owner\x12\x18\n" +
+	"\acomment\x18\b \x01(\tR\acomment\x12\x1c\n" +
+	"\textension\x18\t \x01(\tR\textension\x122\n" +
+	"\x06grants\x18\n" +
+	" \x03(\v2\x1a.dql.ext.postgres.v1.GrantR\x06grants\"\xd0\x01\n" +
+	"\bBaseType\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x1a\n" +
+	"\bcategory\x18\x03 \x01(\tR\bcategory\x12\x14\n" +
+	"\x05owner\x18\x04 \x01(\tR\x05owner\x12\x18\n" +
+	"\acomment\x18\x05 \x01(\tR\acomment\x12\x1c\n" +
+	"\textension\x18\x06 \x01(\tR\textension\x122\n" +
+	"\x06grants\x18\a \x03(\v2\x1a.dql.ext.postgres.v1.GrantR\x06grants\"\xf4\x03\n" +
+	"\aRoutine\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12-\n" +
+	"\x12identity_arguments\x18\x03 \x01(\tR\x11identityArguments\x12\x16\n" +
+	"\x06result\x18\x04 \x01(\tR\x06result\x12\x1a\n" +
+	"\blanguage\x18\x05 \x01(\tR\blanguage\x12\x12\n" +
+	"\x04body\x18\x06 \x01(\tR\x04body\x12\x16\n" +
+	"\x06strict\x18\a \x01(\bR\x06strict\x12\x1e\n" +
+	"\n" +
+	"volatility\x18\b \x01(\tR\n" +
+	"volatility\x12\x1a\n" +
+	"\bparallel\x18\t \x01(\tR\bparallel\x12)\n" +
+	"\x10security_definer\x18\n" +
+	" \x01(\bR\x0fsecurityDefiner\x12\x1c\n" +
+	"\tleakproof\x18\v \x01(\bR\tleakproof\x12\x14\n" +
+	"\x05owner\x18\f \x01(\tR\x05owner\x12\x18\n" +
+	"\acomment\x18\r \x01(\tR\acomment\x12\x1c\n" +
+	"\textension\x18\x0e \x01(\tR\textension\x122\n" +
+	"\x06grants\x18\x0f \x03(\v2\x1a.dql.ext.postgres.v1.GrantR\x06grants\x12+\n" +
+	"\x11argument_defaults\x18\x10 \x03(\tR\x10argumentDefaults\"\xa5\x01\n" +
+	"\x11RoutineProperties\x12\x1a\n" +
+	"\bparallel\x18\x01 \x01(\tR\bparallel\x12)\n" +
+	"\x10security_definer\x18\x02 \x01(\bR\x0fsecurityDefiner\x12\x1c\n" +
+	"\tleakproof\x18\x03 \x01(\bR\tleakproof\x12+\n" +
+	"\x11argument_defaults\x18\x04 \x03(\tR\x10argumentDefaults\"g\n" +
+	"\tPartition\x12\x1c\n" +
+	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12\x14\n" +
+	"\x05bound\x18\x02 \x01(\tR\x05bound\x12&\n" +
+	"\x05table\x18\x03 \x01(\v2\x10.dql.ir.v1.TableR\x05tableB;Z9github.com/thec1oud/dql/proto/dql/ext/postgres/v1;pgextv1b\x06proto3"
 
 var (
 	file_dql_ext_postgres_v1_postgres_proto_rawDescOnce sync.Once
@@ -946,7 +2061,7 @@ func file_dql_ext_postgres_v1_postgres_proto_rawDescGZIP() []byte {
 	return file_dql_ext_postgres_v1_postgres_proto_rawDescData
 }
 
-var file_dql_ext_postgres_v1_postgres_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_dql_ext_postgres_v1_postgres_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_dql_ext_postgres_v1_postgres_proto_goTypes = []any{
 	(*Trigger)(nil),            // 0: dql.ext.postgres.v1.Trigger
 	(*Index)(nil),              // 1: dql.ext.postgres.v1.Index
@@ -962,16 +2077,35 @@ var file_dql_ext_postgres_v1_postgres_proto_goTypes = []any{
 	(*Statistics)(nil),         // 11: dql.ext.postgres.v1.Statistics
 	(*InstalledExtension)(nil), // 12: dql.ext.postgres.v1.InstalledExtension
 	(*RoutineSource)(nil),      // 13: dql.ext.postgres.v1.RoutineSource
-	(*v1.QualifiedName)(nil),   // 14: dql.ir.v1.QualifiedName
+	(*Database)(nil),           // 14: dql.ext.postgres.v1.Database
+	(*ViewDefinition)(nil),     // 15: dql.ext.postgres.v1.ViewDefinition
+	(*Unlogged)(nil),           // 16: dql.ext.postgres.v1.Unlogged
+	(*ExtensionMember)(nil),    // 17: dql.ext.postgres.v1.ExtensionMember
+	(*ConstraintOptions)(nil),  // 18: dql.ext.postgres.v1.ConstraintOptions
+	(*SequenceCache)(nil),      // 19: dql.ext.postgres.v1.SequenceCache
+	(*Collation)(nil),          // 20: dql.ext.postgres.v1.Collation
+	(*RangeType)(nil),          // 21: dql.ext.postgres.v1.RangeType
+	(*BaseType)(nil),           // 22: dql.ext.postgres.v1.BaseType
+	(*Routine)(nil),            // 23: dql.ext.postgres.v1.Routine
+	(*RoutineProperties)(nil),  // 24: dql.ext.postgres.v1.RoutineProperties
+	(*Partition)(nil),          // 25: dql.ext.postgres.v1.Partition
+	(*v1.QualifiedName)(nil),   // 26: dql.ir.v1.QualifiedName
+	(*v1.Type)(nil),            // 27: dql.ir.v1.Type
+	(*v1.Table)(nil),           // 28: dql.ir.v1.Table
 }
 var file_dql_ext_postgres_v1_postgres_proto_depIdxs = []int32{
-	14, // 0: dql.ext.postgres.v1.Trigger.function:type_name -> dql.ir.v1.QualifiedName
-	14, // 1: dql.ext.postgres.v1.PartitionOf.parent:type_name -> dql.ir.v1.QualifiedName
-	2,  // [2:2] is the sub-list for method output_type
-	2,  // [2:2] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	26, // 0: dql.ext.postgres.v1.Trigger.function:type_name -> dql.ir.v1.QualifiedName
+	26, // 1: dql.ext.postgres.v1.PartitionOf.parent:type_name -> dql.ir.v1.QualifiedName
+	27, // 2: dql.ext.postgres.v1.RangeType.subtype:type_name -> dql.ir.v1.Type
+	3,  // 3: dql.ext.postgres.v1.RangeType.grants:type_name -> dql.ext.postgres.v1.Grant
+	3,  // 4: dql.ext.postgres.v1.BaseType.grants:type_name -> dql.ext.postgres.v1.Grant
+	3,  // 5: dql.ext.postgres.v1.Routine.grants:type_name -> dql.ext.postgres.v1.Grant
+	28, // 6: dql.ext.postgres.v1.Partition.table:type_name -> dql.ir.v1.Table
+	7,  // [7:7] is the sub-list for method output_type
+	7,  // [7:7] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_dql_ext_postgres_v1_postgres_proto_init() }
@@ -985,7 +2119,7 @@ func file_dql_ext_postgres_v1_postgres_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ext_postgres_v1_postgres_proto_rawDesc), len(file_dql_ext_postgres_v1_postgres_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

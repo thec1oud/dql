@@ -6,6 +6,8 @@ syntax = "proto3";
 package dql.ext.postgres.v1;
 
 import "dql/ir/v1/names.proto";
+import "dql/ir/v1/objects.proto";
+import "dql/ir/v1/types.proto";
 
 option go_package = "github.com/thec1oud/dql/proto/dql/ext/postgres/v1;pgextv1";
 
@@ -22,9 +24,12 @@ message Trigger {
   string enabled = 6;
   // pg_get_triggerdef.
   string definition = 7;
+  // The trigger's raw comment.
+  string comment = 8;
 }
 
-// A non-unique index (§6.2). Unique indexes are uniqueness facts (§11.2).
+// A non-unique index (§6.2). Unique indexes are uniqueness facts (§11.2); the
+// index behind a uniqueness fact or an exclusion constraint is carried on it.
 message Index {
   string name = 1;
   string method = 2;
@@ -32,6 +37,8 @@ message Index {
   string definition = 3;
   repeated string storage_parameters = 4;
   string tablespace = 5;
+  // The index's raw comment.
+  string comment = 6;
 }
 
 // The raw text of a comment, kept beside the annotations read from it (§7.5).
@@ -58,6 +65,8 @@ message Policy {
   repeated string roles = 4;
   string using = 5;
   string with_check = 6;
+  // The policy's raw comment.
+  string comment = 7;
 }
 
 // Row-level security switches on a table.
@@ -97,6 +106,9 @@ message Statistics {
   string name = 1;
   // pg_get_statisticsobjdef.
   string definition = 2;
+  string owner = 3;
+  // The statistics object's raw comment.
+  string comment = 4;
 }
 
 // An installed database extension.
@@ -109,5 +121,143 @@ message InstalledExtension {
 // A routine's implementation language and body, which the core does not read.
 message RoutineSource {
   string language = 1;
+  // prosrc, or the BEGIN ATOMIC body of a SQL-standard routine.
   string body = 2;
+}
+
+// The connected database's encoding and default locale, which a column's
+// default collation stands for (§8.9).
+message Database {
+  string encoding = 1;
+  // libc or icu.
+  string locale_provider = 2;
+  string collate = 3;
+  string ctype = 4;
+  string icu_locale = 5;
+  string icu_rules = 6;
+}
+
+// A view's or materialized view's query, pg_get_viewdef.
+message ViewDefinition {
+  string definition = 1;
+}
+
+// Marks an unlogged table.
+message Unlogged {}
+
+// Names the installed extension an object belongs to.
+message ExtensionMember {
+  string extension = 1;
+}
+
+// Constraint properties the IR does not model. Each is carried only where it
+// differs from Postgres's default, so an absent message means none is set.
+message ConstraintOptions {
+  // Deferrability of a primary key, unique or exclusion constraint; a
+  // foreign key's is ForeignKey.deferrable.
+  bool deferrable = 1;
+  bool initially_deferred = 2;
+  // Existing rows were not checked when the constraint was added.
+  bool not_valid = 3;
+  // A check constraint that partitions and children do not inherit.
+  bool no_inherit = 4;
+  // The columns ON DELETE SET NULL or SET DEFAULT is limited to.
+  repeated string on_delete_columns = 5;
+}
+
+// A sequence's cache size, carried only when it is not 1.
+message SequenceCache {
+  int64 cache = 1;
+}
+
+// A collation defined in a namespace. Columns record their collation's
+// comparison facts themselves (§8.9).
+message Collation {
+  string name = 1;
+  // libc or icu.
+  string provider = 2;
+  bool deterministic = 3;
+  string collate = 4;
+  string ctype = 5;
+  string icu_locale = 6;
+  string icu_rules = 7;
+  string owner = 8;
+  string comment = 9;
+}
+
+// A range type and its multirange. Columns of either carry the range or
+// multirange logical type (§8.1).
+message RangeType {
+  string name = 1;
+  dql.ir.v1.Type subtype = 2;
+  string multirange = 3;
+  // The subtype's collation, as namespace.name.
+  string collation = 4;
+  string canonical = 5;
+  string subtype_diff = 6;
+  string owner = 7;
+  string comment = 8;
+  string extension = 9;
+  repeated Grant grants = 10;
+}
+
+// A base or pseudo type, such as one an extension installs. Columns of it
+// are opaque (§8.3).
+message BaseType {
+  string name = 1;
+  // typtype: b base, p pseudo.
+  string kind = 2;
+  // typcategory.
+  string category = 3;
+  string owner = 4;
+  string comment = 5;
+  string extension = 6;
+  repeated Grant grants = 7;
+}
+
+// A routine that is not exposed: a function or procedure not marked public,
+// an aggregate or a window function (§6.5).
+message Routine {
+  string name = 1;
+  // FUNCTION, PROCEDURE, AGGREGATE or WINDOW.
+  string kind = 2;
+  // pg_get_function_identity_arguments.
+  string identity_arguments = 3;
+  // pg_get_function_result.
+  string result = 4;
+  string language = 5;
+  // prosrc, or the BEGIN ATOMIC body of a SQL-standard routine.
+  string body = 6;
+  bool strict = 7;
+  // IMMUTABLE, STABLE or VOLATILE.
+  string volatility = 8;
+  // SAFE, RESTRICTED or UNSAFE.
+  string parallel = 9;
+  bool security_definer = 10;
+  bool leakproof = 11;
+  string owner = 12;
+  string comment = 13;
+  string extension = 14;
+  repeated Grant grants = 15;
+  // The default expressions of the arguments that have one, in argument order.
+  repeated string argument_defaults = 16;
+}
+
+// Properties of an exposed routine the IR does not model.
+message RoutineProperties {
+  // SAFE, RESTRICTED or UNSAFE.
+  string parallel = 1;
+  bool security_definer = 2;
+  bool leakproof = 3;
+  // The default expressions of the arguments that have one, in argument order.
+  repeated string argument_defaults = 4;
+}
+
+// A partition of a partitioned table, carried on its parent (§6.2). The
+// partition is mapped as a table of its own, but it is not an entity.
+message Partition {
+  string namespace = 1;
+  // pg_get_expr of the partition bound.
+  string bound = 2;
+  dql.ir.v1.Table table = 3;
 }
