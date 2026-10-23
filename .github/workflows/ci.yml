@@ -67,6 +67,36 @@ jobs:
           LANG: tr_TR.UTF-8
         run: scripts/coverage.sh
 
+  # pg-live reads pg_catalog, which changes between major versions. The go
+  # job runs everything on 16; this runs the Postgres tests on the newer
+  # releases too.
+  postgres-versions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        postgres: ["17", "18"]
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: test against Postgres ${{ matrix.postgres }}
+        run: go test ./sources/... ./cmd/dql/...
+
   rules:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
