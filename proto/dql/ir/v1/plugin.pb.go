@@ -9,6 +9,7 @@ package irv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -575,8 +576,12 @@ func (x *HandshakeResult) GetReason() string {
 
 // Hands the plugin a bundle to work on.
 type Invoke struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Bundle        *Bundle                `protobuf:"bytes,1,opt,name=bundle,proto3" json:"bundle,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Bundle *Bundle                `protobuf:"bytes,1,opt,name=bundle,proto3" json:"bundle,omitempty"`
+	// The plugin's own dql.yaml entry, every key as written, plugin and path
+	// included. The plugin validates it; the core checks only the keys it
+	// reads itself.
+	Settings      *structpb.Struct `protobuf:"bytes,2,opt,name=settings,proto3" json:"settings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -614,6 +619,13 @@ func (*Invoke) Descriptor() ([]byte, []int) {
 func (x *Invoke) GetBundle() *Bundle {
 	if x != nil {
 		return x.Bundle
+	}
+	return nil
+}
+
+func (x *Invoke) GetSettings() *structpb.Struct {
+	if x != nil {
+		return x.Settings
 	}
 	return nil
 }
@@ -756,7 +768,7 @@ var File_dql_ir_v1_plugin_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_plugin_proto_rawDesc = "" +
 	"\n" +
-	"\x16dql/ir/v1/plugin.proto\x12\tdql.ir.v1\x1a\x16dql/ir/v1/bundle.proto\x1a\x1bdql/ir/v1/diagnostics.proto\"\xec\x01\n" +
+	"\x16dql/ir/v1/plugin.proto\x12\tdql.ir.v1\x1a\x16dql/ir/v1/bundle.proto\x1a\x1bdql/ir/v1/diagnostics.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xec\x01\n" +
 	"\vCoreMessage\x12,\n" +
 	"\x05hello\x18\x01 \x01(\v2\x14.dql.ir.v1.CoreHelloH\x00R\x05hello\x12G\n" +
 	"\x10handshake_result\x18\x02 \x01(\v2\x1a.dql.ir.v1.HandshakeResultH\x00R\x0fhandshakeResult\x12+\n" +
@@ -787,9 +799,10 @@ const file_dql_ir_v1_plugin_proto_rawDesc = "" +
 	"\tmax_major\x18\x02 \x01(\rR\bmaxMajor\"E\n" +
 	"\x0fHandshakeResult\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\bR\baccepted\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"3\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"h\n" +
 	"\x06Invoke\x12)\n" +
-	"\x06bundle\x18\x01 \x01(\v2\x11.dql.ir.v1.BundleR\x06bundle\"r\n" +
+	"\x06bundle\x18\x01 \x01(\v2\x11.dql.ir.v1.BundleR\x06bundle\x123\n" +
+	"\bsettings\x18\x02 \x01(\v2\x17.google.protobuf.StructR\bsettings\"r\n" +
 	"\fInvokeResult\x12)\n" +
 	"\x06bundle\x18\x01 \x01(\v2\x11.dql.ir.v1.BundleR\x06bundle\x127\n" +
 	"\vdiagnostics\x18\x02 \x03(\v2\x15.dql.ir.v1.DiagnosticR\vdiagnostics\"'\n" +
@@ -834,7 +847,8 @@ var file_dql_ir_v1_plugin_proto_goTypes = []any{
 	(*Shutdown)(nil),        // 11: dql.ir.v1.Shutdown
 	(*IrVersion)(nil),       // 12: dql.ir.v1.IrVersion
 	(*Bundle)(nil),          // 13: dql.ir.v1.Bundle
-	(*Diagnostic)(nil),      // 14: dql.ir.v1.Diagnostic
+	(*structpb.Struct)(nil), // 14: google.protobuf.Struct
+	(*Diagnostic)(nil),      // 15: dql.ir.v1.Diagnostic
 }
 var file_dql_ir_v1_plugin_proto_depIdxs = []int32{
 	3,  // 0: dql.ir.v1.CoreMessage.hello:type_name -> dql.ir.v1.CoreHello
@@ -849,13 +863,14 @@ var file_dql_ir_v1_plugin_proto_depIdxs = []int32{
 	6,  // 9: dql.ir.v1.PluginHandshake.ir_versions:type_name -> dql.ir.v1.IrVersionRange
 	0,  // 10: dql.ir.v1.PluginInfo.kind:type_name -> dql.ir.v1.PluginKind
 	13, // 11: dql.ir.v1.Invoke.bundle:type_name -> dql.ir.v1.Bundle
-	13, // 12: dql.ir.v1.InvokeResult.bundle:type_name -> dql.ir.v1.Bundle
-	14, // 13: dql.ir.v1.InvokeResult.diagnostics:type_name -> dql.ir.v1.Diagnostic
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	14, // 12: dql.ir.v1.Invoke.settings:type_name -> google.protobuf.Struct
+	13, // 13: dql.ir.v1.InvokeResult.bundle:type_name -> dql.ir.v1.Bundle
+	15, // 14: dql.ir.v1.InvokeResult.diagnostics:type_name -> dql.ir.v1.Diagnostic
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_plugin_proto_init() }

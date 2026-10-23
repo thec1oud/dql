@@ -4,6 +4,7 @@ package dql.ir.v1;
 
 import "dql/ir/v1/bundle.proto";
 import "dql/ir/v1/diagnostics.proto";
+import "google/protobuf/struct.proto";
 
 option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
 
@@ -71,6 +72,10 @@ message HandshakeResult {
 // Hands the plugin a bundle to work on.
 message Invoke {
   Bundle bundle = 1;
+  // The plugin's own dql.yaml entry, every key as written, plugin and path
+  // included. The plugin validates it; the core checks only the keys it
+  // reads itself.
+  google.protobuf.Struct settings = 2;
 }
 
 message InvokeResult {
