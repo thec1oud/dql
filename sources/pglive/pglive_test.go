@@ -13,9 +13,9 @@ import (
 	"github.com/thec1oud/dql/core/bundle"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
-	"github.com/thec1oud/dql/sources/internal/pgtest"
 	"github.com/thec1oud/dql/sources/pglive/internal/introspect"
 	"github.com/thec1oud/dql/sources/pglive/internal/mapping"
+	"github.com/thec1oud/dql/sources/pgtest"
 )
 
 // shopURL connects to a fresh database holding the running example (§1.3),

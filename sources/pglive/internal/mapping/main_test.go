@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/thec1oud/dql/sources/internal/pgtest"
 	"github.com/thec1oud/dql/sources/pglive/internal/introspect"
+	"github.com/thec1oud/dql/sources/pgtest"
 )
 
 // The Snapshots the tests map, read once from fresh databases: shop holds

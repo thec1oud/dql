@@ -11,9 +11,9 @@ import (
 	"github.com/thec1oud/dql/core/bundle"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
-	"github.com/thec1oud/dql/sources/internal/fidelity"
-	"github.com/thec1oud/dql/sources/internal/pgtest"
+	"github.com/thec1oud/dql/sources/fidelity"
 	"github.com/thec1oud/dql/sources/pglive"
+	"github.com/thec1oud/dql/sources/pgtest"
 	"github.com/thec1oud/dql/testkit/golden"
 )
 
@@ -31,7 +31,7 @@ func run(m *testing.M) int {
 	var db *pgtest.Database
 	if err == nil {
 		defer admin.Close(ctx)
-		db, err = pgtest.Create(ctx, admin, filepath.Join("..", "..", "..", "testdata", "shop", "schema.sql"))
+		db, err = pgtest.Create(ctx, admin, filepath.Join("..", "..", "testdata", "shop", "schema.sql"))
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAIL: setting up the test database: %v\n", err)
@@ -72,7 +72,7 @@ func TestDPGSnapshotParity(t *testing.T) {
 	live := catalog(t, pglive.New(pglive.Settings{Catalog: "shop", Connection: shopURL,
 		Namespaces: []string{"app"}, DefaultNamespace: "app"}))
 	snap := catalog(t, dpgsnapshot.New(dpgsnapshot.Settings{
-		Snapshot:   filepath.Join("..", "..", "dpgsnapshot", "internal", "format", "testdata", "shop.json"),
+		Snapshot:   filepath.Join("..", "dpgsnapshot", "internal", "format", "testdata", "shop.json"),
 		Namespaces: []string{"app"}, DefaultNamespace: "app"}))
 	limits := snap.GetProvenance().GetFidelityLimits()
 	if !slices.Equal(limits, fidelity.DPGSnapshot) || snap.GetProvenance().GetFidelity() != irv1.SourceFidelity_SOURCE_FIDELITY_PARTIAL {

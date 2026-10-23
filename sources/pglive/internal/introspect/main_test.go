@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/thec1oud/dql/sources/internal/pgtest"
+	"github.com/thec1oud/dql/sources/pgtest"
 )
 
 // Every object is created as the fixture owner, so the golden file does not
