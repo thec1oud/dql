@@ -8,6 +8,7 @@
 - The plugin validates its settings. The core checks only the keys it reads itself: `plugin`, `path`, and an emit entry's `dialect`.
 - An entry for a shipped plugin holds only the keys that plugin reads; any other key is a `dql.yaml` error. An entry for any other plugin may hold keys of its own.
 - Shipped plugins read their settings from the entry directly when built in. Their executables also take them as flags; a third-party executable gets no flags.
+- Relative paths in `dql.yaml`, a plugin's `path` included, are relative to its directory. Every plugin executable runs with that directory as its working directory, so a relative path in its settings opens as written. The flags of shipped executables carry absolute paths.
 
 ## Consequences
 
