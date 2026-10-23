@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/bundle.proto";
+import "dql/ir/v1/diagnostics.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// Messages the core sends to a plugin over its stdin (§2.3, §3.3).
+message CoreMessage {
+  oneof kind {
+    CoreHello hello = 1;
+    HandshakeResult handshake_result = 2;
+    Invoke invoke = 3;
+    Shutdown shutdown = 4;
+  }
+}
+
+// Messages a plugin sends to the core over its stdout.
+message PluginMessage {
+  oneof kind {
+    PluginHandshake handshake = 1;
+    InvokeResult result = 2;
+    PluginError error = 3;
+  }
+}
+
+// Opens the handshake: the bundle's IR version and the features it requires.
+message CoreHello {
+  IrVersion ir_version = 1;
+  repeated string required_features = 2;
+}
+
+// A plugin's declaration of what it supports (§3.3).
+message PluginHandshake {
+  PluginInfo plugin = 1;
+  IrVersionRange ir_versions = 2;
+  repeated string features = 3;
+}
+
+message PluginInfo {
+  string name = 1;
+  PluginKind kind = 2;
+  string version = 3;
+}
+
+enum PluginKind {
+  PLUGIN_KIND_UNSPECIFIED = 0;
+  PLUGIN_KIND_SOURCE = 1;
+  PLUGIN_KIND_DIALECT = 2;
+  PLUGIN_KIND_TYPE = 3;
+  PLUGIN_KIND_EMITTER = 4;
+}
+
+// The IR versions a plugin reads: at least min, and no major above max_major.
+message IrVersionRange {
+  // A semver version, such as "1.0.0".
+  string min = 1;
+  uint32 max_major = 2;
+}
+
+// The core's verdict on a plugin's handshake. A refused plugin receives no
+// further messages.
+message HandshakeResult {
+  bool accepted = 1;
+  // Why the plugin was refused.
+  string reason = 2;
+}
+
+// Hands the plugin a bundle to work on.
+message Invoke {
+  Bundle bundle = 1;
+}
+
+message InvokeResult {
+  Bundle bundle = 1;
+  repeated Diagnostic diagnostics = 2;
+}
+
+// A failure the plugin could not express as diagnostics.
+message PluginError {
+  string message = 1;
+}
+
+// Tells the plugin to exit.
+message Shutdown {}

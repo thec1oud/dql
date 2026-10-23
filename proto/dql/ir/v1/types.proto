@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/names.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// A column's logical type plus its structured native type (§8).
+// Parameters stay on the type, because emitters can map coarser but never
+// recover lost detail (§8.1).
+message Type {
+  oneof kind {
+    Empty bool = 1;
+    Empty int8 = 2;
+    Empty int16 = 3;
+    Empty int32 = 4;
+    Empty int64 = 5;
+    Empty uint8 = 6;
+    Empty uint16 = 7;
+    Empty uint32 = 8;
+    Empty uint64 = 9;
+    Empty float32 = 10;
+    Empty float64 = 11;
+    Decimal decimal = 20;
+    Empty money = 21;
+    Text text = 30;
+    Varchar varchar = 31;
+    Char char = 32;
+    Bytes bytes = 33;
+    // The seven time types (§8.8).
+    TimeType instant = 40;
+    TimeType instant_with_offset = 41;
+    TimeType local_datetime = 42;
+    Empty date = 43;
+    TimeType local_time = 44;
+    TimeType time_with_offset = 45;
+    TimeType interval = 46;
+    Empty uuid = 50;
+    Empty json = 51;
+    Empty jsonb = 52;
+    Empty xml = 53;
+    Empty inet = 54;
+    Empty cidr = 55;
+    Empty macaddr = 56;
+    Bit bit = 57;
+    RangeType range = 58;
+    RangeType multirange = 59;
+    ArrayType array = 60;
+    NamedRef named = 70;
+    Opaque opaque = 80;
+    Weak weak = 90;
+  }
+  NativeType native = 100;
+}
+
+message Empty {}
+
+message Decimal {
+  optional uint32 precision = 1;
+  optional uint32 scale = 2;
+}
+
+message Text {}
+
+message Varchar {
+  uint32 length = 1;
+  LengthUnit unit = 2;
+}
+
+message Char {
+  uint32 length = 1;
+  LengthUnit unit = 2;
+}
+
+// Emitters count lengths in the database's unit, never the host's (§10.3).
+enum LengthUnit {
+  LENGTH_UNIT_UNSPECIFIED = 0;
+  // Code points.
+  LENGTH_UNIT_CHARACTERS = 1;
+  LENGTH_UNIT_BYTES = 2;
+  LENGTH_UNIT_UTF16_CODE_UNITS = 3;
+}
+
+message Bytes {
+  optional uint32 max_length = 1;
+}
+
+message TimeType {
+  // Fractional-second digits: instant(6) is microseconds (§8.8).
+  optional uint32 precision = 1;
+}
+
+message Bit {
+  optional uint32 length = 1;
+  bool varying = 2;
+}
+
+message RangeType {
+  Type element = 1;
+}
+
+message ArrayType {
+  Type element = 1;
+  // True unless narrowed by array-elements-nonnull (§8.6).
+  bool element_nullable = 2;
+  uint32 dimensions = 3;
+}
+
+// A reference to an enum, domain or composite type.
+message NamedRef {
+  oneof kind {
+    QualifiedName enum = 1;
+    QualifiedName domain = 2;
+    QualifiedName composite = 3;
+  }
+}
+
+// A type the core cannot classify; its native type says what it is (§8.3).
+message Opaque {}
+
+// A column that can hold any storage class (§8.10).
+message Weak {
+  // The declared affinity.
+  Type affinity = 1;
+  repeated StorageClass storage_classes = 2;
+}
+
+enum StorageClass {
+  STORAGE_UNSPECIFIED = 0;
+  STORAGE_INTEGER = 1;
+  STORAGE_REAL = 2;
+  STORAGE_TEXT = 3;
+  STORAGE_BLOB = 4;
+}
+
+// The database's exact spelling of a type (§8.2).
+message NativeType {
+  QualifiedName name = 1;
+  repeated TypeModifier modifiers = 2;
+  // The original text, for debugging and round trips.
+  string raw = 3;
+}
+
+message TypeModifier {
+  oneof kind {
+    int32 int = 1;
+    string string = 2;
+  }
+}
