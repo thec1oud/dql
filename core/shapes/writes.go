@@ -47,7 +47,7 @@ func NewNester(catalogs []*irv1.Catalog, shapes []*irv1.Shape) *Nester {
 // columns r can supply optional (§14.5). It returns the relation-qualified
 // child shapes it derived from target, and the unions the nest refers to. A
 // relation none of whose changes can be written, such as one to a view
-// without a Key, is left out.
+// without a Key, is listed as forbidden with FORBIDDEN_NOT_WRITABLE.
 //
 // The diagnostic is reserved for the write rule of custom shapes (§14.8) and
 // is nil.
@@ -66,6 +66,9 @@ func (n *Nester) NestWrite(shape *irv1.Shape, r *irv1.Relation, target *irv1.Sha
 	default:
 		nest = w.dependent()
 	}
+	if nest == nil && !w.forbidden {
+		w.forbid(irv1.ForbiddenReason_FORBIDDEN_NOT_WRITABLE)
+	}
 	if nest != nil {
 		nest.Relation = r.GetName().GetStored()
 		shape.Nests = append(shape.Nests, nest)
@@ -83,6 +86,8 @@ type write struct {
 	tier   irv1.Preset
 	added  []*irv1.Shape
 	unions []*irv1.RelationUnion
+	// forbidden records that the relation was listed as forbidden.
+	forbidden bool
 }
 
 // owning is a relation this entity's foreign key points along. In a Draft it
@@ -175,6 +180,7 @@ func (w *write) manyToMany() *irv1.Nest {
 }
 
 func (w *write) forbid(reason irv1.ForbiddenReason) {
+	w.forbidden = true
 	w.shape.Forbidden = append(w.shape.Forbidden, &irv1.ForbiddenField{Relation: w.rel.GetName().GetStored(), Reason: reason})
 	sortForbidden(w.shape, w.n.tables[formsEntityKey(w.shape.GetEntity())])
 }

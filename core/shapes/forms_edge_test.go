@@ -158,8 +158,10 @@ func TestDraftNestsOfEdgeCases(t *testing.T) {
 	if got, want := nestNames(d), "b cs ks ms v"; got != want {
 		t.Errorf("nests = %q, want %q", got, want)
 	}
-	// nn and mn reach a view without a Key either.
-	if got, want := forbiddenNames(d), "g_id=GENERATED h_id=GENERATED rel:g=GENERATED rel:h=GENERATED"; got != want {
+	// nn and mn reach a view without a Key either. Relations no change can
+	// write are listed as not writable.
+	if got, want := forbiddenNames(d), "g_id=GENERATED h_id=GENERATED rel:g=GENERATED rel:h=GENERATED "+
+		"rel:mn=NOT_WRITABLE rel:nn=NOT_WRITABLE rel:nv=NOT_WRITABLE rel:vs=NOT_WRITABLE"; got != want {
 		t.Errorf("forbidden = %q, want %q", got, want)
 	}
 	// A Ref to a view links only: views have no Draft.
@@ -181,6 +183,13 @@ func TestPartialNestsOfEdgeCases(t *testing.T) {
 	// has a view child, which no change can write.
 	if got, want := nestNames(p), "b cs g h ks ms nv v"; got != want {
 		t.Errorf("nests = %q, want %q", got, want)
+	}
+	if got, want := forbiddenNames(p), "id=KEY g_id=GENERATED h_id=GENERATED rel:mn=NOT_WRITABLE rel:nn=NOT_WRITABLE rel:vs=NOT_WRITABLE"; got != want {
+		t.Errorf("forbidden = %q, want %q", got, want)
+	}
+	// The Nests form lists them too.
+	if got, want := forbiddenNames(findShape(t, shapes, "a partial nests")), "rel:mn=NOT_WRITABLE rel:nn=NOT_WRITABLE rel:vs=NOT_WRITABLE"; got != want {
+		t.Errorf("nests forbidden = %q, want %q", got, want)
 	}
 	for words, want := range map[string]string{
 		"a b change":  "a b link, a b create, a b update, a b unlink",
