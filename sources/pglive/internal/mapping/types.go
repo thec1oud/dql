@@ -2,7 +2,6 @@ package mapping
 
 import (
 	"fmt"
-	"strings"
 
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	"github.com/thec1oud/dql/sources/internal/pgsql"
@@ -89,88 +88,20 @@ func (m *mapper) baseOf(ref introspect.TypeRef) introspect.TypeRef {
 	return ref
 }
 
-// textTypes are the pg_catalog types whose comparison a collation decides.
-var textTypes = map[string]bool{"text": true, "varchar": true, "bpchar": true, "name": true}
-
 // collation turns a column's, attribute's or domain's collation into its
-// comparison facts (§8.9). It states only what Postgres guarantees:
-//
-//   - A deterministic collation compares equal only strings that are equal
-//     byte for byte, so it is case- and accent-sensitive and comparison is
-//     exact, which certifies CLIENT_FOLD_NONE.
-//   - A nondeterministic ICU collation of strength level1 ignores case and
-//     accents, and of strength level2 ignores case only. Any other is unknown.
-//   - char(n) ignores trailing spaces, so it pads, and no client fold matches.
-//
-// Facts are stated only for the text types; the comparison of any other
-// collatable type, such as an extension's, is its type plugin's to declare
-// (§8.3), so those facts stay unknown.
+// comparison facts (§8.9), for the type it is ultimately over.
 func (m *mapper) collation(c *introspect.CollationRef, ref introspect.TypeRef) *irv1.Collation {
 	if c == nil {
 		return nil
 	}
-	out := &irv1.Collation{Name: c.Name}
+	name := c.Name
 	if c.Schema != "pg_catalog" {
-		out.Name = c.Schema + "." + c.Name
+		name = c.Schema + "." + c.Name
 	}
 	base := m.baseOf(ref)
 	if e := base.Element; e != nil {
 		base = introspect.TypeRef{Schema: e.Schema, Name: e.Name}
 	}
-	if base.Schema != "pg_catalog" || !textTypes[base.Name] {
-		return out
-	}
-	pads := base.Name == "bpchar"
-	if pads {
-		out.PadSpace = irv1.Tristate_TRISTATE_TRUE
-	}
-	if c.Deterministic {
-		out.CaseSensitive, out.AccentSensitive, out.Deterministic = tristate(true), tristate(true), tristate(true)
-		if !pads {
-			out.PadSpace, out.ClientFold = tristate(false), irv1.ClientFold_CLIENT_FOLD_NONE
-		}
-		return out
-	}
-	out.Deterministic = tristate(false)
-	if c.Provider == "i" {
-		out.CaseSensitive, out.AccentSensitive = icuStrength(c.ICULocale)
-	}
-	return out
-}
-
-func tristate(b bool) irv1.Tristate {
-	if b {
-		return irv1.Tristate_TRISTATE_TRUE
-	}
-	return irv1.Tristate_TRISTATE_FALSE
-}
-
-// icuStrength reads the comparison strength from an ICU locale's -u-
-// extension: ks-level1 ignores case and accents, ks-level2 case only. The
-// kc (case level) keyword makes case count again at those strengths, so
-// with it case sensitivity is left unknown.
-func icuStrength(locale string) (caseSensitive, accentSensitive irv1.Tristate) {
-	tokens := strings.Split(strings.ToLower(locale), "-")
-	caseLevel := false
-	level := ""
-	for i, t := range tokens {
-		switch {
-		case t == "kc":
-			caseLevel = i+1 == len(tokens) || tokens[i+1] != "false"
-		case t == "ks" && i+1 < len(tokens):
-			level = tokens[i+1]
-		}
-	}
-	switch level {
-	case "level1":
-		caseSensitive, accentSensitive = tristate(false), tristate(false)
-	case "level2":
-		caseSensitive, accentSensitive = tristate(false), tristate(true)
-	default:
-		return irv1.Tristate_TRISTATE_UNSPECIFIED, irv1.Tristate_TRISTATE_UNSPECIFIED
-	}
-	if caseLevel {
-		caseSensitive = irv1.Tristate_TRISTATE_UNSPECIFIED
-	}
-	return caseSensitive, accentSensitive
+	return pgsql.CollationFacts(pgsql.CollationDef{Name: name, Deterministic: c.Deterministic,
+		ICU: c.Provider == "i", ICULocale: c.ICULocale}, base.Schema, base.Name)
 }

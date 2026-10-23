@@ -1,9 +1,9 @@
-// Package comment finds annotation tokens in Postgres comments. pg-live reads
-// @key and @key(value) tokens (design record §7.1), such as
-// '@write-only @sensitive' or '@logical-key(id)'; the text around them is
-// prose and is ignored here. The comment itself is kept whole as an extension
-// (§7.5 step 2), so a token records where it was found instead of copying
-// the text.
+// Package comment finds annotation tokens in Postgres comments. The Postgres
+// source plugins, pg-live and dpg-snapshot, read @key and @key(value) tokens
+// (design record §7.1), such as '@write-only @sensitive' or
+// '@logical-key(id)'; the text around them is prose and is ignored here. The
+// comment itself is kept whole as an extension (§7.5 step 2), so a token
+// records where it was found instead of copying the text.
 //
 // The rules:
 //

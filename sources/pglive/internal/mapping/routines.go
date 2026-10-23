@@ -5,7 +5,7 @@ import (
 
 	pgextv1 "github.com/thec1oud/dql/proto/dql/ext/postgres/v1"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
-	"github.com/thec1oud/dql/sources/pglive/internal/comment"
+	"github.com/thec1oud/dql/sources/internal/comment"
 	"github.com/thec1oud/dql/sources/pglive/internal/introspect"
 )
 
@@ -28,7 +28,7 @@ func (m *mapper) routines(all []introspect.Routine) (public []placedRoutine, hid
 	for _, r := range all {
 		location := "COMMENT ON " + routineKinds[r.Kind] + " " + signature(r)
 		target := m.qn(r.Schema, r.Name, "")
-		if (r.Kind != "f" && r.Kind != "p") || !markedPublic(r.Comment) {
+		if (r.Kind != "f" && r.Kind != "p") || !comment.Marked(r.Comment, "public") {
 			m.ignored(target, location, r.Comment, "the routine is not exposed, so pg-live reads no annotations on it")
 			hidden = append(hidden, r)
 			continue
@@ -42,16 +42,6 @@ func (m *mapper) routines(all []introspect.Routine) (public []placedRoutine, hid
 		public = append(public, placedRoutine{r.Schema, &irv1.Routine{Name: ident(r.Name), Overloads: []*irv1.Overload{o}}})
 	}
 	return public, hidden
-}
-
-// markedPublic reports whether a comment holds the @public marker.
-func markedPublic(text string) bool {
-	for _, tok := range comment.ParseComment(text) {
-		if tok.Key == "public" && !tok.Unclosed {
-			return true
-		}
-	}
-	return false
 }
 
 // signature names an overload as COMMENT ON names it: its input arguments'
