@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
-	"github.com/thec1oud/dql/sources/pglive/internal/comment"
+	"github.com/thec1oud/dql/sources/internal/comment"
 )
 
 // Diagnostic codes. They are stable: tools and tests match on them.

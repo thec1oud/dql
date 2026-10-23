@@ -5,7 +5,7 @@ import (
 
 	pgextv1 "github.com/thec1oud/dql/proto/dql/ext/postgres/v1"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
-	"github.com/thec1oud/dql/sources/pglive/internal/comment"
+	"github.com/thec1oud/dql/sources/internal/comment"
 	"github.com/thec1oud/dql/sources/pglive/internal/introspect"
 )
 
