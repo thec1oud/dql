@@ -1,6 +1,7 @@
 package pgsql
 
 import (
+	"encoding/json"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -19,4 +20,16 @@ func assertJSON(t *testing.T, label string, got proto.Message, want string) {
 		g, _ := protojson.Marshal(got)
 		t.Errorf("%s:\n got  %s\n want %s", label, g, want)
 	}
+}
+
+func mustUnmarshal(js string, m proto.Message) {
+	if err := protojson.Unmarshal([]byte(js), m); err != nil {
+		panic(err)
+	}
+}
+
+// quote returns s as a JSON string.
+func quote(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }

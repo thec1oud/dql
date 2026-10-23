@@ -50,6 +50,24 @@ func parseTypeName(text string) (*pg.TypeName, error) {
 	return def.GetTypeName(), nil
 }
 
+// parseCheck parses text as a check constraint, either as the database prints
+// it ("CHECK (...)", possibly followed by NOT VALID or NO INHERIT) or as the
+// bare expression.
+func parseCheck(text string) (*pg.Node, error) {
+	cmd, err := parseCmd("ALTER TABLE t ADD " + text)
+	if err != nil {
+		cmd, err = parseCmd("ALTER TABLE t ADD CHECK (" + text + ")")
+		if err != nil {
+			return nil, err
+		}
+	}
+	c := cmd.GetDef().GetConstraint()
+	if c.GetContype() != pg.ConstrType_CONSTR_CHECK {
+		return nil, errSQL
+	}
+	return c.GetRawExpr(), nil
+}
+
 // names returns the strings of a qualified name list, or false when an element
 // is not a plain string (such as the * of a column reference).
 func names(list []*pg.Node) ([]string, bool) {
@@ -62,4 +80,19 @@ func names(list []*pg.Node) ([]string, bool) {
 		out[i] = s.Sval
 	}
 	return out, true
+}
+
+// builtinName returns the pg_catalog type a type name refers to, for names
+// that are unqualified or qualified with pg_catalog; ok is false for names of
+// other namespaces. An unqualified name that is not built in is returned with
+// ok false as well, because the search path decides it.
+func builtinName(tn *pg.TypeName) (string, bool) {
+	ns, _ := names(tn.Names)
+	switch {
+	case len(ns) == 2 && ns[0] == "pg_catalog":
+		return ns[1], true
+	case len(ns) == 1 && catalogTypes[ns[0]]:
+		return ns[0], true
+	}
+	return "", false
 }
