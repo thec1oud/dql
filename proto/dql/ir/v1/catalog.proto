@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/names.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// One database (§5.1). Objects arrive with the catalog layer (M1).
+message Catalog {
+  Identifier name = 1;
+  Provenance provenance = 2;
+  // Sorted by stored name (§3.2).
+  repeated Namespace namespaces = 3;
+}
+
+// Names the source plugin, its version and a fingerprint of its input; never
+// when it ran (§3.2).
+message Provenance {
+  // The source plugin's name, such as "pg-live".
+  string source = 1;
+  string source_version = 2;
+  // A snapshot file's hash, or a hash of the introspected catalog: "sha256:…".
+  string input_fingerprint = 3;
+  SourceFidelity fidelity = 4;
+}
+
+// How completely a source captured its input.
+enum SourceFidelity {
+  SOURCE_FIDELITY_UNSPECIFIED = 0;
+  SOURCE_FIDELITY_FULL = 1;
+}
+
+// A schema (§5.1). On MySQL and SQLite the one implicit namespace is stored as "".
+message Namespace {
+  Identifier name = 1;
+}

@@ -1,0 +1,72 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [master, dev]
+
+jobs:
+  proto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - uses: bufbuild/buf-action@v1
+        with:
+          input: proto
+          lint: true
+          format: false
+          breaking: false
+          push: false
+      - name: buf breaking against the last release
+        run: |
+          tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -z "$tag" ]; then echo "no release yet"; exit 0; fi
+          buf breaking proto --against ".git#tag=$tag,subdir=proto"
+      - name: generated code is current
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.6
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          (cd proto && buf generate)
+          git diff --exit-code
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: vet
+        run: |
+          go vet $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
+      - name: test with 100% coverage
+        run: scripts/coverage.sh
+      - name: determinism under a Turkish locale
+        env:
+          LANG: tr_TR.UTF-8
+        run: scripts/coverage.sh
+
+  rules:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: commit messages carry no forbidden content
+        run: |
+          if git log --format=%B "origin/${{ github.base_ref }}..HEAD" \
+            | grep -iE 'claude|anthropic|co-authored-by:|signed-off-by:|generated with'; then
+            echo "forbidden content in commit messages"; exit 1
+          fi
+      - name: ADRs are immutable
+        run: |
+          if git diff --name-status "origin/${{ github.base_ref }}...HEAD" -- docs/adr \
+            | grep -E '^(M|D|R)'; then
+            echo "existing ADRs must not be modified, renamed or deleted"; exit 1
+          fi

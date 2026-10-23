@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// An effective annotation with its origin and the annotations it superseded (§7.4).
+message Annotation {
+  // "core.write-only", "x.go.type".
+  string key = 1;
+  // Absent for annotations that take no value.
+  AnnotationValue value = 2;
+  Origin origin = 3;
+  // Lower-precedence annotations it replaced (§7.1).
+  repeated Annotation superseded = 4;
+}
+
+// The value of an annotation: none (the field is absent), string, words, list or struct (§7.4).
+message AnnotationValue {
+  oneof kind {
+    string string = 1;
+    // A word list, encoded as a JSON array of strings: {"words": ["user", "profile"]}.
+    google.protobuf.ListValue words = 2;
+    google.protobuf.ListValue list = 3;
+    google.protobuf.Struct struct = 4;
+  }
+}
+
+// Where an annotation was read (§7.4).
+message Origin {
+  OriginKind kind = 1;
+  // The source plugin that read it.
+  string plugin = 2;
+  // Where it was read.
+  string location = 3;
+}
+
+enum OriginKind {
+  ORIGIN_UNSPECIFIED = 0;
+  ORIGIN_DB_COMMENT = 1;
+  ORIGIN_CONFIG = 2;
+  ORIGIN_INFERRED = 3;
+}

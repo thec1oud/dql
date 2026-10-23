@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/catalog.proto";
+import "dql/ir/v1/diagnostics.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// The three IR layers travelling together at every plugin boundary (§2.2, §3.1).
+message Bundle {
+  IrVersion version = 1;
+  // Optional IR capabilities the bundle uses (§3.3).
+  repeated string required_features = 2;
+  // Shared by every catalog (§5).
+  Dialect dialect = 3;
+  // Catalog layer.
+  repeated Catalog catalogs = 4;
+  // Published by the dialect plugin.
+  CapabilityProfile capabilities = 5;
+  // Shape layer (§14).
+  ShapeLayer shapes = 6;
+  // Query layer (§16).
+  QueryLayer queries = 7;
+  // Warnings carried through to emitters.
+  repeated Diagnostic diagnostics = 8;
+}
+
+// The IR version, semver (§3.3). The parts are explicit-presence fields so a
+// zero minor or patch still appears in JSON, as in "version": {"major": 1,
+// "minor": 0, "patch": 0}.
+message IrVersion {
+  optional uint32 major = 1;
+  optional uint32 minor = 2;
+  optional uint32 patch = 3;
+}
+
+enum Dialect {
+  DIALECT_UNSPECIFIED = 0;
+  DIALECT_POSTGRES = 1;
+  // MySQL and MariaDB.
+  DIALECT_MYSQL = 2;
+  DIALECT_SQLITE = 3;
+  DIALECT_SQLSERVER = 4;
+}
+
+// The dialect's capability profile (§9.2). Its fields arrive with M4.
+message CapabilityProfile {}
+
+// Shapes, conversions and validation rules (§14). Its fields arrive with M2.
+message ShapeLayer {}
+
+// Query entries (§16). Its fields arrive with M4.
+message QueryLayer {}
