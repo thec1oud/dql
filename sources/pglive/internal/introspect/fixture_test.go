@@ -1,6 +1,7 @@
 package introspect
 
 import (
+	"context"
 	"reflect"
 	"slices"
 	"testing"
@@ -254,4 +255,27 @@ func TestStatistics(t *testing.T) {
 			Table: ObjectName{Schema: "fx", Name: "bookings"}, Kinds: []string{"d", "f"}, Columns: []string{"room_id", "code"},
 			Definition: "CREATE STATISTICS fx.bookings_stats (ndistinct, dependencies) ON room_id, code FROM fx.bookings"},
 	})
+}
+
+// Postgres 17 renamed colliculocale to collocale and added the builtin
+// provider, whose locale is not an ICU locale. CI runs this on 17 and 18; on
+// older servers the provider does not exist.
+func TestBuiltinCollation(t *testing.T) {
+	ctx := context.Background()
+	var version int
+	if err := fixtureDB.QueryRow(ctx, `SELECT current_setting('server_version_num')::int`).Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if version < 170000 {
+		t.Skipf("server_version_num %d has no builtin collation provider", version)
+	}
+	if _, err := fixtureDB.Exec(ctx, `CREATE SCHEMA fx17;
+CREATE COLLATION fx17.utf8 (provider = builtin, locale = 'C.UTF-8')`); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { fixtureDB.Exec(ctx, `DROP SCHEMA fx17 CASCADE`) })
+	s := read(t, fixtureDB, "fx17")
+	got := s.Collations[0].CollationRef
+	check(t, "builtin", got, CollationRef{Schema: "fx17", Name: "utf8", Provider: "b", Deterministic: true,
+		Collate: got.Collate, Ctype: got.Ctype})
 }

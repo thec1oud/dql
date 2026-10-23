@@ -198,8 +198,9 @@ func (b *namespaces) get(schema string) *namespace {
 	return n
 }
 
-// localeProviders spells datlocprovider and collprovider.
-var localeProviders = map[string]string{"c": "libc", "i": "icu", "d": "default"}
+// localeProviders spells datlocprovider and collprovider. Postgres 17 added
+// the builtin provider.
+var localeProviders = map[string]string{"b": "builtin", "c": "libc", "i": "icu", "d": "default"}
 
 // provenance names the source and fingerprints the catalog it read: a hash
 // of the catalog's deterministic encoding, which covers everything read and

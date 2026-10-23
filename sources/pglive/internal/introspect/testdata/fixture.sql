@@ -3,7 +3,9 @@
 -- receives grants and policies.
 
 CREATE SCHEMA ext;
-CREATE EXTENSION citext SCHEMA ext;
+-- Pinned, since newer citext versions rewrite their functions and the
+-- goldens must not depend on which versions the server ships.
+CREATE EXTENSION citext VERSION '1.6' SCHEMA ext;
 
 CREATE SCHEMA fx;
 COMMENT ON SCHEMA fx IS 'fixture objects';
@@ -76,6 +78,13 @@ COMMENT ON POLICY bookings_read ON fx.bookings IS 'readers';
 
 GRANT SELECT, INSERT ON fx.bookings TO dql_fixture_reader WITH GRANT OPTION;
 GRANT UPDATE (label) ON fx.bookings TO dql_fixture_reader;
+-- Postgres 17 added MAINTAIN to an owner's privileges; dropping it keeps the
+-- owner's grants the same on every version the goldens are checked against.
+DO $$ BEGIN
+  IF current_setting('server_version_num')::int >= 170000 THEN
+    EXECUTE 'REVOKE MAINTAIN ON fx.bookings FROM CURRENT_USER';
+  END IF;
+END $$;
 
 CREATE STATISTICS fx.bookings_stats (ndistinct, dependencies) ON room_id, code FROM fx.bookings;
 CREATE STATISTICS fx.bookings_expr ON (lower(during)) FROM fx.bookings;
