@@ -41,7 +41,7 @@ import (
 	pgextv1 "github.com/thec1oud/dql/proto/dql/ext/postgres/v1"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	"github.com/thec1oud/dql/sources/dpgsnapshot/internal/format"
-	"github.com/thec1oud/dql/sources/internal/fidelity"
+	"github.com/thec1oud/dql/sources/fidelity"
 )
 
 // The source plugin's name and version, as provenance and annotation origins

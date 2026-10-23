@@ -1,8 +1,8 @@
 // Command dql is the dql compiler.
 //
-//	dql check    [-config dql.yaml]   validate the configuration
-//	dql generate [-config dql.yaml]   generate code for every emit entry
-//	dql inspect  <bundle.json|bundle.pb>   print a bundle as canonical JSON
+//	dql check    [-config dql.yaml]                  validate the configuration
+//	dql generate [-config dql.yaml] [-bundle <file>]  build the bundle, and write it to file
+//	dql inspect  <bundle.json|bundle.pb>             print a bundle as canonical JSON
 package main
 
 import (
@@ -14,19 +14,14 @@ import (
 
 	"github.com/thec1oud/dql/cmd/dql/internal/config"
 	"github.com/thec1oud/dql/core/bundle"
-	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
 const usage = `usage:
   dql check    [-config dql.yaml]
-  dql generate [-config dql.yaml]
+  dql generate [-config dql.yaml] [-bundle <file>]
   dql inspect  <bundle.json|bundle.pb>
 `
-
-// builtins are the shipped plugins that run in-process (ADR 0002). The first
-// arrive with M1.
-var builtins = map[string]plugin.Plugin{}
 
 var exit = os.Exit
 
@@ -55,58 +50,34 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 }
 
-// loadConfig parses flags, loads dql.yaml and prints its diagnostics. It
-// returns nil and an exit code when the command cannot continue.
-func loadConfig(name string, args []string, stderr io.Writer) (*config.Config, int) {
+// loadConfig parses flags, with the command's own added by more, loads
+// dql.yaml and its annotations, and prints their diagnostics. It returns nil
+// and an exit code when the command cannot continue.
+func loadConfig(name string, args []string, stderr io.Writer, more func(*flag.FlagSet)) (*config.Config, map[string][]*irv1.Annotation, int) {
 	fs := flag.NewFlagSet("dql "+name, flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	path := fs.String("config", "dql.yaml", "project configuration")
+	more(fs)
 	if err := fs.Parse(args); err != nil {
-		return nil, 2
+		return nil, nil, 2
 	}
 	c, err := config.Load(*path)
 	if err != nil {
 		fmt.Fprintf(stderr, "dql %s: %v\n", name, err)
-		return nil, 1
+		return nil, nil, 1
 	}
-	ds := c.Validate()
-	for _, d := range ds {
-		fmt.Fprintf(stderr, "error %s: %s\n", d.GetCode(), d.GetMessage())
-	}
+	anns, annotationDiags := c.ConfigAnnotations()
+	ds := append(c.Validate(), annotationDiags...)
+	printDiagnostics(stderr, ds)
 	if len(ds) > 0 {
-		return nil, 1
+		return nil, nil, 1
 	}
-	return c, 0
+	return c, anns, 0
 }
 
 func check(args []string, stderr io.Writer) int {
-	_, code := loadConfig("check", args, stderr)
+	_, _, code := loadConfig("check", args, stderr, func(*flag.FlagSet) {})
 	return code
-}
-
-func generate(args []string, stderr io.Writer) int {
-	c, code := loadConfig("generate", args, stderr)
-	if c == nil {
-		return code
-	}
-	failed := false
-	for _, s := range c.Sources {
-		if _, err := plugin.Locate(s.Plugin, s.Path, builtins); err != nil {
-			fmt.Fprintf(stderr, "dql generate: %v\n", err)
-			failed = true
-		}
-	}
-	for _, e := range c.Emit {
-		if _, err := plugin.Locate(e.Plugin, e.Path, builtins); err != nil {
-			fmt.Fprintf(stderr, "dql generate: %v\n", err)
-			failed = true
-		}
-	}
-	if failed {
-		return 1
-	}
-	fmt.Fprintln(stderr, "dql generate: every plugin was found; building the catalog arrives with M1")
-	return 1
 }
 
 func inspect(args []string, stdout, stderr io.Writer) int {

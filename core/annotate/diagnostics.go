@@ -11,6 +11,9 @@ const (
 	CodeWrongTarget = "annotation-wrong-target"
 	// CodeValueInvalid: a value of the wrong form, or outside its allowed set.
 	CodeValueInvalid = "annotation-value-invalid"
+	// CodeValueMalformed: a value written as text, as a comment writes it,
+	// that cannot be read as its key's list or struct form (§7.4).
+	CodeValueMalformed = "annotation-value-malformed"
 	// CodeEnumNotMembership: enum on a check that is not a single-column
 	// membership test (§7.3, §8.4).
 	CodeEnumNotMembership = "enum-not-membership-test"

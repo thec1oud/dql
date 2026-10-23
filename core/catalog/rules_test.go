@@ -379,6 +379,53 @@ func TestLogicalKey(t *testing.T) {
 		"ERROR "+annotate.CodeLogicalKeyNullable+" shop.app.v")
 }
 
+// §7.3, through Assemble: the facts the checks need are the ones this
+// package reads from the catalog. Each check has a passing and a failing
+// case.
+func TestTargetFacts(t *testing.T) {
+	assemble := func(tb *irv1.Table, domains ...*irv1.Domain) []*irv1.Diagnostic {
+		c := small("shop", "app", tb)
+		c.Namespaces[0].Domains = domains
+		_, ds := Assemble([]SourceOutput{output(postgres, c)}, Options{})
+		return ds
+	}
+	// enum needs a check recognized as a single-column membership test (§8.4).
+	tb := table("orders", col("status", tText()))
+	tb.Constraints = []*irv1.Constraint{
+		membershipCheck("orders_status_check", []string{"status"}, "new", "paid"),
+		opaqueCheck("orders_status_len", []string{"status"}, "CHECK (length(status) > octet_length(status) - 4)"),
+	}
+	tb.Constraints[0].Annotations = []*irv1.Annotation{comment("enum", "COMMENT ON CONSTRAINT", stringValue("order_status"))}
+	tb.Constraints[1].Annotations = []*irv1.Annotation{comment("enum", "COMMENT ON CONSTRAINT", stringValue("order_len"))}
+	wantLines(t, assemble(tb), "ERROR "+annotate.CodeEnumNotMembership+" shop.app.orders.orders_status_len")
+
+	// version needs an integer column, through a domain (§8.5).
+	counter := &irv1.Domain{Name: ident("counter"), Base: tInt32(), Nullable: true}
+	label := &irv1.Domain{Name: ident("label"), Base: tText(), Nullable: true}
+	tb = table("items", col("version", tDomain(app("counter"))), col("note", tDomain(app("label"))))
+	tb.Columns[0].Annotations = []*irv1.Annotation{comment("version", "COMMENT ON COLUMN app.items.version", nil)}
+	tb.Columns[1].Annotations = []*irv1.Annotation{comment("version", "COMMENT ON COLUMN app.items.note", nil)}
+	wantLines(t, assemble(tb, counter, label), "ERROR annotation-wrong-target shop.app.items.note")
+
+	// logical-key designates the key of a table without a primary key
+	// (§11.1).
+	keyed, unkeyed := items(), table("events", col("id", tInt64()))
+	unkeyed.Uniqueness = []*irv1.Uniqueness{unique("events_id_key", "id")}
+	for _, tb := range []*irv1.Table{keyed, unkeyed} {
+		tb.Annotations = []*irv1.Annotation{comment("logical-key", "COMMENT ON TABLE", stringValue("id"))}
+	}
+	wantLines(t, assemble(keyed), "ERROR annotation-wrong-target shop.app.items")
+	wantLines(t, assemble(unkeyed))
+
+	// bound and version on one column (§7.3).
+	tb = table("users", col("tenant_id", tInt64()), col("version", tInt32()))
+	tb.Columns[0].Annotations = []*irv1.Annotation{comment("bound", "COMMENT ON COLUMN app.users.tenant_id", nil)}
+	tb.Columns[1].Annotations = []*irv1.Annotation{comment("version", "COMMENT ON COLUMN app.users.version", nil)}
+	wantLines(t, assemble(tb))
+	tb.Columns[1].Annotations = append(tb.Columns[1].Annotations, comment("bound", "COMMENT ON COLUMN app.users.version", nil))
+	wantLines(t, assemble(tb), "ERROR "+annotate.CodeBoundWithVersion+" shop.app.users.version")
+}
+
 // §8.6: array-elements-nonnull narrows an array column's elements; on any
 // other column it fails.
 func TestArrayElementsNonNull(t *testing.T) {
@@ -442,6 +489,56 @@ func TestWordValues(t *testing.T) {
 	tb.Annotations = []*irv1.Annotation{comment("name", "COMMENT ON TABLE app.t", wordsValue("a", ""))}
 	wantLines(t, assembleFails(t, Options{}, output(postgres, small("shop", "app", tb))),
 		"ERROR annotation-value-invalid shop.app.t")
+}
+
+// §1.3, §5.3, §7.4: list and struct values written as text, as comments
+// write them, are read by their key's form; struct names are split into
+// words. Text that is not a value of the form fails, once.
+func TestTextValues(t *testing.T) {
+	users := table("users", col("id", tInt64()), col("tenant_id", tInt64()), col("slug", tText()))
+	users.Uniqueness = []*irv1.Uniqueness{unique("users_id_key", "id"), unique("users_tenant_slug_key", "tenant_id", "slug")}
+	users.Annotations = []*irv1.Annotation{comment("logical-key", "COMMENT ON TABLE app.users", stringValue(" tenant_id,slug "))}
+	posts := table("posts", col("id", tInt64()), col("user_id?", tInt64()))
+	posts.Uniqueness = []*irv1.Uniqueness{pk("posts_pkey", "id")}
+	posts.Columns[1].Annotations = []*irv1.Annotation{comment("relation", "COMMENT ON COLUMN app.posts.user_id",
+		stringValue("to: shop.app.users.id, name: Writer, inverse-name: \"written posts\""))}
+	b := assembleOK(t, Options{}, output(postgres, small("shop", "app", users, posts)))
+	ns := namespace(t, b, "shop", "app")
+	assertContains(t, tableOf(t, ns, "users"), `{"annotations": [{"key": "core.logical-key", "value": {"list": ["tenant_id", "slug"]}}],
+	  "logicalKey": {"columns": ["tenant_id", "slug"], "origin": "ORIGIN_DB_COMMENT"}}`)
+	assertContains(t, columnOf(t, tableOf(t, ns, "posts"), "user_id"), `{"annotations": [{"key": "core.relation",
+	  "value": {"struct": {"to": "shop.app.users.id", "name": ["writer"], "inverse-name": ["written", "posts"]}}}]}`)
+	assertContains(t, relationOf(t, tableOf(t, ns, "posts"), "writer"), `{"origin": "RELATION_ORIGIN_ANNOTATED"}`)
+	assertContains(t, relationOf(t, tableOf(t, ns, "users"), "written_posts"), `{"name": {"words": ["written", "posts"]}}`)
+
+	for _, c := range []struct{ key, text, want string }{
+		{"logical-key", "tenant_id,", "item 2: it is empty"},
+		{"logical-key", `"tenant_id`, "a double quote is never closed"},
+		{"relation", "shop.app.users.id", "has no colon"},
+	} {
+		tb := table("users", col("id", tInt64()), col("tenant_id", tInt64()))
+		on := &tb.Annotations
+		if c.key == "relation" {
+			on = &tb.Columns[1].Annotations
+		}
+		*on = []*irv1.Annotation{comment(c.key, "COMMENT", stringValue(c.text))}
+		ds := assembleFails(t, Options{}, output(postgres, small("shop", "app", tb)))
+		if len(ds) != 1 || ds[0].GetCode() != annotate.CodeValueMalformed || !strings.Contains(ds[0].GetMessage(), c.want) {
+			t.Errorf("@%s(%s): %v", c.key, c.text, ds)
+		}
+	}
+
+	// A superseded annotation is read the same way.
+	tb := table("users", col("id", tInt64()))
+	tb.Uniqueness = []*irv1.Uniqueness{unique("users_id_key", "id")}
+	tb.Annotations = []*irv1.Annotation{comment("logical-key", "COMMENT", stringValue("id"))}
+	tb.Annotations[0].Superseded = []*irv1.Annotation{{Key: "core.logical-key", Value: stringValue(","),
+		Origin: &irv1.Origin{Kind: irv1.OriginKind_ORIGIN_INFERRED, Location: "default"}}}
+	ds := assembleFails(t, Options{}, output(postgres, small("shop", "app", tb)))
+	wantLines(t, ds, "ERROR annotation-value-malformed shop.app.users")
+	if !strings.Contains(ds[0].GetMessage(), `core.logical-key on shop.app.users, read at default, is written ",", which is not a list value`) {
+		t.Errorf("message: %s", ds[0].GetMessage())
+	}
 }
 
 // §5.3: a relation declared in config on MySQL crosses catalogs, with the

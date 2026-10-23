@@ -1,0 +1,35 @@
+# testdata/shop/dql.yaml with the config that design record examples about
+# the running example add to §1.3, for the database extras.sql extends.
+sources:
+  - plugin: pg-live
+    catalog: shop
+    connection: env:SHOP_DATABASE_URL
+    namespaces: [app]
+    default-namespace: app
+
+annotations:
+  shop.app.tenants:         { name: tenant }
+  shop.app.users:           { name: user }
+  shop.app.profiles:        { name: profile }
+  shop.app.posts:           { name: post }
+  shop.app.tags:            { name: tag }
+  shop.app.post_tags:       { name: post_tag }
+  shop.app.published_posts: { name: published_post }
+  shop.app.profiles.profiles_user_id_fkey: { inverse-name: profile }
+  shop.app.posts.posts_author_id_fkey:     { collection-policy: replace, removal: delete }
+  # §8.5
+  shop.app.money_amount.amount: { nonnull }
+  # §7.7
+  shop.app.posts.published_at: { x.ts.time-type: date }
+
+emit:
+  - plugin: go
+    dialect: postgres
+    package: shopdb
+    out: internal/shopdb
+    # §8.3
+    types:
+      public.citext: { go: string }
+  - plugin: ts
+    dialect: postgres
+    out: src/shopdb

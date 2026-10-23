@@ -48,4 +48,13 @@ func TestOpen(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// An executable is started with its arguments.
+	c, err := Open(ctx, Target{Name: "echo", Path: echoBin, Args: []string{"-features", "opaque-types"}}, hello("opaque-types"), emitter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Close()
+	if _, err := Open(ctx, Target{Name: "echo", Path: echoBin}, hello("opaque-types"), emitter); err == nil {
+		t.Error("an executable started without -features lacks opaque-types")
+	}
 }

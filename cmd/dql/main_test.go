@@ -32,7 +32,7 @@ func dql(args ...string) (int, string, string) {
 	return code, stdout.String(), stderr.String()
 }
 
-const valid = "sources:\n  - plugin: pg-live\nemit:\n  - plugin: go\n    dialect: postgres\n"
+const valid = "sources:\n  - plugin: pg-live\n    catalog: shop\n    connection: env:SHOP_DATABASE_URL\nemit:\n  - plugin: go\n    dialect: postgres\n"
 
 func TestUsage(t *testing.T) {
 	if code, _, stderr := dql(); code != 2 || !strings.Contains(stderr, "usage:") {
@@ -56,25 +56,6 @@ func TestCheck(t *testing.T) {
 	}
 	if code, _, _ := dql("check", "-bogus"); code != 2 {
 		t.Errorf("bad flag: %d", code)
-	}
-}
-
-func TestGenerate(t *testing.T) {
-	t.Setenv("PATH", t.TempDir())
-	code, _, stderr := dql("generate", "-config", write(t, "dql.yaml", valid))
-	if code != 1 || !strings.Contains(stderr, "dql-plugin-pg-live is not on PATH") || !strings.Contains(stderr, "dql-plugin-go is not on PATH") {
-		t.Errorf("unresolved plugins: %d %q", code, stderr)
-	}
-
-	builtins["pg-live"] = echo.New(irv1.PluginKind_PLUGIN_KIND_SOURCE, "1.0.0", 1)
-	defer delete(builtins, "pg-live")
-	cfg := "sources:\n  - plugin: pg-live\nemit:\n  - plugin: go\n    path: /opt/dql-plugin-go\n    dialect: postgres\n"
-	code, _, stderr = dql("generate", "-config", write(t, "dql.yaml", cfg))
-	if code != 1 || !strings.Contains(stderr, "every plugin was found") {
-		t.Errorf("resolved plugins: %d %q", code, stderr)
-	}
-	if code, _, _ := dql("generate", "-config", write(t, "dql.yaml", "")); code != 1 {
-		t.Errorf("invalid config: %d", code)
 	}
 }
 

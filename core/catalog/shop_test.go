@@ -110,7 +110,7 @@ func shopCatalog() *irv1.Catalog {
 		annotated(col("title?", tText()), comment("nonnull", onColumn("published_posts", "title"), nil)),
 		col("author_id?", tInt64()),
 		col("published_at?", tInstant()))
-	published.Annotations = []*irv1.Annotation{comment("logical-key", "COMMENT ON VIEW app.published_posts", listValue("id"))}
+	published.Annotations = []*irv1.Annotation{comment("logical-key", "COMMENT ON VIEW app.published_posts", stringValue("id"))}
 	published.DependsOn = []*irv1.QualifiedName{app("posts")}
 
 	postScore := &irv1.Routine{Name: ident("post_score"), Overloads: []*irv1.Overload{

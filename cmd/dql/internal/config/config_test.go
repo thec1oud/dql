@@ -47,10 +47,10 @@ func TestParseRunningExample(t *testing.T) {
 	if c.Sources[0].Plugin != "pg-live" || c.Sources[0].DefaultNamespace != "app" || c.Sources[0].Namespaces[0] != "app" {
 		t.Errorf("sources: %+v", c.Sources)
 	}
-	if c.Annotations["shop.app.users"]["name"] != "user" {
+	if n := c.Annotations["shop.app.users"]; len(n.Content) != 2 || n.Content[0].Value != "name" || n.Content[1].Value != "user" {
 		t.Errorf("annotations: %v", c.Annotations)
 	}
-	if _, ok := c.Annotations["shop.app.money_amount.amount"]["nonnull"]; !ok {
+	if n := c.Annotations["shop.app.money_amount.amount"]; len(n.Content) != 2 || n.Content[0].Value != "nonnull" {
 		t.Error("a valueless annotation was lost")
 	}
 	if len(c.Emit) != 2 || c.Emit[0].Package != "shopdb" || c.Emit[0].Types["public.citext"]["go"] != "string" {
@@ -74,11 +74,27 @@ func TestParseErrors(t *testing.T) {
 func TestLoad(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "dql.yaml")
 	os.WriteFile(path, []byte(shop), 0o644)
-	if c, err := Load(path); err != nil || c.Sources[0].Catalog != "shop" {
+	c, err := Load(path)
+	if err != nil || c.Sources[0].Catalog != "shop" {
 		t.Fatal(err)
+	}
+	// Paths in dql.yaml are relative to its directory.
+	dir := filepath.Dir(path)
+	if got := c.Resolve(filepath.Join("db", "shop.json")); got != filepath.Join(dir, "db", "shop.json") {
+		t.Errorf("relative: %s", got)
+	}
+	if got := c.Resolve("/abs/shop.json"); got != "/abs/shop.json" {
+		t.Errorf("absolute: %s", got)
+	}
+	if got := c.Resolve(""); got != "" {
+		t.Errorf("empty: %s", got)
 	}
 	if _, err := Load(filepath.Join(t.TempDir(), "missing.yaml")); err == nil {
 		t.Fatal("want an error for a missing file")
+	}
+	os.WriteFile(path, []byte("surces: []\n"), 0o644)
+	if _, err := Load(path); err == nil {
+		t.Fatal("want an error for an invalid file")
 	}
 }
 
@@ -98,10 +114,37 @@ opaque-fallback: json
 	if strings.Join(codes, " ") != want {
 		t.Errorf("got %v", codes)
 	}
+
+	// The shipped sources need their own settings and no other plugin's.
+	c, _ = Parse([]byte(`
+sources:
+  - plugin: pg-live
+    snapshot: shop.json
+  - plugin: dpg-snapshot
+    connection: env:SHOP_DATABASE_URL
+  - plugin: dpg-snapshot
+    snapshot: shop.json
+  - plugin: mysql-live
+    snapshot: shop.json
+`))
+	var msgs []string
+	for _, d := range c.Validate() {
+		msgs = append(msgs, d.GetCode()+": "+d.GetMessage())
+	}
+	want = strings.Join([]string{
+		"config-setting-missing: sources[0] (pg-live) has no catalog; set catalog:",
+		"config-setting-missing: sources[0] (pg-live) has no connection; set connection:",
+		"config-setting-unused: sources[0] (pg-live) sets snapshot, which pg-live does not read; remove it",
+		"config-setting-missing: sources[1] (dpg-snapshot) has no snapshot; set snapshot:",
+		"config-setting-unused: sources[1] (dpg-snapshot) sets connection, which dpg-snapshot does not read; remove it",
+	}, "\n")
+	if got := strings.Join(msgs, "\n"); got != want {
+		t.Errorf("settings:\n%s\nwant:\n%s", got, want)
+	}
 	if ds := (&Config{}).Validate(); len(ds) != 1 || ds[0].GetCode() != "config-no-sources" {
 		t.Errorf("no sources: %v", ds)
 	}
-	if ds := (&Config{Sources: []Source{{Plugin: "pg-live"}}, OpaqueFallback: "bytes"}).Validate(); len(ds) != 0 {
+	if ds := (&Config{Sources: []Source{{Plugin: "pg-live", Catalog: "shop", Connection: "env:URL"}}, OpaqueFallback: "bytes"}).Validate(); len(ds) != 0 {
 		t.Errorf("bytes fallback: %v", ds)
 	}
 }

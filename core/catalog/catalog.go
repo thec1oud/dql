@@ -110,10 +110,10 @@ const (
 //
 //  1. merges the catalogs into one bundle: one dialect, unique catalog names
 //     (§5.2);
-//  2. computes the words of every identifier, once (§4.2), and turns the
-//     string value of a words annotation into its words;
-//  3. attaches each config annotation to the object its key names and
-//     merges it over the comment annotations, config first (§7.1);
+//  2. computes the words of every identifier, once (§4.2);
+//  3. attaches each config annotation to the object its key names, reads
+//     the values sources wrote as text by their key's form (§7.4) and merges
+//     config over the comment annotations, config first (§7.1);
 //  4. applies nonnull (§6.4, §8.5, §13) and array-elements-nonnull (§8.6),
 //     then checks every target's annotations (§7.3);
 //  5. computes host names with their prefixes (§4.3, §4.4) and checks host

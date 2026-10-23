@@ -1,7 +1,8 @@
 // Package pgtest creates throwaway Postgres databases for the tests of the
-// source plugins. The server is the one DQL_TEST_POSTGRES_URL names, as a
-// role that may create roles and databases and SET ROLE to them, such as the
-// postgres superuser of a throwaway Postgres 16 server.
+// source plugins and of the dql command. The server is the one
+// DQL_TEST_POSTGRES_URL names, as a role that may create roles and databases
+// and SET ROLE to them, such as the postgres superuser of a throwaway
+// Postgres 16 server.
 package pgtest
 
 import (
