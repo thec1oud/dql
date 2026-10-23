@@ -54,9 +54,13 @@ func TestConnectFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer admin.Close(ctx)
-	// A login role without CREATEROLE cannot create the fixture roles.
+	// A login role without CREATEROLE cannot create the fixture roles. It
+	// gets a password, since servers such as CI's require one over TCP.
 	if _, err := admin.Exec(ctx, `DO $$ BEGIN CREATE ROLE dql_test_plain LOGIN;
 		EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL; END $$`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := admin.Exec(ctx, `ALTER ROLE dql_test_plain PASSWORD 'dql_test_plain'`); err != nil {
 		t.Fatal(err)
 	}
 	server := os.Getenv(URLEnv)
@@ -64,7 +68,7 @@ func TestConnectFailures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	plain.User = url.User("dql_test_plain")
+	plain.User = url.UserPassword("dql_test_plain", "dql_test_plain")
 	for _, c := range []struct{ url, want string }{
 		{"", "is not set"},
 		{"postgres://nobody@127.0.0.1:1/x", "pgtest:"},
