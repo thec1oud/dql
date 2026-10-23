@@ -17,6 +17,7 @@ import (
 	"github.com/thec1oud/dql/core/bundle"
 	pgextv1 "github.com/thec1oud/dql/proto/dql/ext/postgres/v1"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
+	"github.com/thec1oud/dql/sources/fidelity"
 	"github.com/thec1oud/dql/testkit/golden"
 )
 
@@ -483,4 +484,40 @@ func TestGateRecordExtras(t *testing.T) {
 	  { "name": { "stored": "amount" }, "nullable": false, "nullabilitySource": "NULLABILITY_SOURCE_ANNOTATION" },
 	  { "name": { "stored": "currency" }, "nullable": true }
 	]}`)
+}
+
+// TestGateSnapshotParity is the gate's second item (implementation guide
+// §4 M1): dql generate on the dpg snapshot of the running example assembles
+// the same bundle as on the database, apart from provenance and the limits
+// the snapshot's provenance names, which fidelity.Normalize removes from
+// each catalog. The database leaves out the two objects the snapshot's dpg
+// source does not declare (testdata/dpg/drift.sql), and the snapshot's
+// dql.yaml asserts in config the nonnull that the view column comments
+// assert on the database; that config is removed before comparing, since
+// it stands in for comments the snapshot cannot hold.
+func TestGateSnapshotParity(t *testing.T) {
+	_, live := generateBundle(t, filepath.Join(shopDir, "dql.yaml"), driftlessURL)
+	_, snap := generateBundle(t, filepath.Join("testdata", "dpg", "dql.yaml"), "")
+	limits := snap.GetCatalogs()[0].GetProvenance().GetFidelityLimits()
+	if !slices.Equal(limits, fidelity.DPGSnapshot) {
+		t.Fatalf("limits: %v", limits)
+	}
+	for _, col := range tableOf(t, snap.GetCatalogs()[0].GetNamespaces()[0], "published_posts").GetColumns() {
+		col.Annotations = slices.DeleteFunc(col.Annotations, func(a *irv1.Annotation) bool {
+			return a.GetOrigin().GetKind() == irv1.OriginKind_ORIGIN_CONFIG
+		})
+	}
+	normalized := func(b *irv1.Bundle) string {
+		for i, c := range b.GetCatalogs() {
+			b.Catalogs[i] = fidelity.Normalize(c, limits)
+		}
+		js, err := bundle.MarshalJSON(b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(js)
+	}
+	if want, got := normalized(live), normalized(snap); got != want {
+		t.Errorf("the normalized bundles differ:\n--- pg-live\n%s\n--- dpg-snapshot\n%s", want, got)
+	}
 }

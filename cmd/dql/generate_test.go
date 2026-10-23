@@ -28,6 +28,9 @@ var (
 	// extrasURL connects to one holding the running example with
 	// testdata/extras.sql applied.
 	extrasURL string
+	// driftlessURL connects to one holding the running example without what
+	// the dpg snapshot of it lacks, testdata/dpg/drift.sql.
+	driftlessURL string
 	// dpgBin is the dpg-snapshot source built as an executable.
 	dpgBin string
 )
@@ -70,6 +73,7 @@ func setup(m *testing.M) int {
 	}{
 		{&shopURL, []string{schema}},
 		{&extrasURL, []string{schema, filepath.Join("testdata", "extras.sql")}},
+		{&driftlessURL, []string{schema, filepath.Join("testdata", "dpg", "drift.sql")}},
 	} {
 		db, err := pgtest.Create(ctx, admin, d.files...)
 		if err != nil {
