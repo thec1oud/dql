@@ -195,6 +195,9 @@ enum ForbiddenReason {
   FORBIDDEN_OMITTED = 11;
   // soft-delete: only delete operations set it (§21.3).
   FORBIDDEN_SOFT_DELETE = 12;
+  // A relation none of whose changes can be written: the related or child
+  // entity lacks the Key, Draft or Partial every change needs (§14.5, §14.6).
+  FORBIDDEN_NOT_WRITABLE = 13;
 }
 
 // A relation field (§12.5, §14.4 to §14.6).
