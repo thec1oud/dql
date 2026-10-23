@@ -36,7 +36,17 @@ func typeRef(oid, typmod, dims string) string {
 func collationFields(co, cn string) string {
 	return fmt.Sprintf(`'schema', %[2]s.nspname, 'name', %[1]s.collname, 'provider', %[1]s.collprovider,
     'deterministic', %[1]s.collisdeterministic, 'collate', %[1]s.collcollate, 'ctype', %[1]s.collctype,
-    'icuLocale', %[1]s.colliculocale, 'icuRules', %[1]s.collicurules`, co, cn)
+    'icuLocale', `+icuLocale(co, "coll", "collprovider")+`, 'icuRules', %[1]s.collicurules`, co, cn)
+}
+
+// icuLocale renders the ICU locale of pg_database or pg_collation row r, whose
+// columns start with prefix and whose provider is in column provider. Postgres
+// 17 renamed <prefix>iculocale to <prefix>locale and uses it for the builtin
+// provider too, so the column is read by name from the row as JSON, which
+// works on either side of the rename, and only for the ICU provider.
+func icuLocale(r, prefix, provider string) string {
+	return fmt.Sprintf(`CASE WHEN %[1]s.%[3]s = 'i' THEN COALESCE(
+      to_jsonb(%[1]s) ->> '%[2]slocale', to_jsonb(%[1]s) ->> '%[2]siculocale') END`, r, prefix, provider)
 }
 
 // collationRef renders a CollationRef, or NULL for collation oid 0.
@@ -82,9 +92,9 @@ func tablespace(oid string) string {
 	return fmt.Sprintf(`(SELECT spcname FROM pg_tablespace WHERE oid = %s)`, oid)
 }
 
-const databaseSQL = `SELECT json_build_object(
+var databaseSQL = `SELECT json_build_object(
   'encoding', pg_encoding_to_char(d.encoding), 'localeProvider', d.datlocprovider,
-  'collate', d.datcollate, 'ctype', d.datctype, 'icuLocale', d.daticulocale, 'icuRules', d.daticurules)
+  'collate', d.datcollate, 'ctype', d.datctype, 'icuLocale', ` + icuLocale("d", "dat", "datlocprovider") + `, 'icuRules', d.daticurules)
 FROM pg_database d WHERE d.datname = current_database()`
 
 const extensionsSQL = `SELECT json_build_object('name', x.extname, 'version', x.extversion, 'schema', n.nspname)
@@ -126,7 +136,8 @@ var columnsOf = `(SELECT json_agg(json_build_object(
 
 // constraintsOf renders the constraints of relation c. A foreign key's
 // conindid is the referenced table's index, so Index is reported only for the
-// kinds an index backs.
+// kinds an index backs. Postgres 18 also stores each NOT NULL as a
+// constraint of kind n; attnotnull already says it, so those are left out.
 var constraintsOf = `(SELECT json_agg(json_build_object(
       'name', k.conname, 'kind', k.contype,
       'columns', ` + columnNames("k.conrelid", "k.conkey") + `,
@@ -147,7 +158,7 @@ var constraintsOf = `(SELECT json_agg(json_build_object(
         FROM unnest(k.conexclop) WITH ORDINALITY x(op, ord)),
       'comment', obj_description(k.oid, 'pg_constraint'))
     ORDER BY k.conname COLLATE "C")
-  FROM pg_constraint k WHERE k.conrelid = c.oid)`
+  FROM pg_constraint k WHERE k.conrelid = c.oid AND k.contype <> 'n')`
 
 // indexesOf renders the indexes of relation c, each key as its column or its
 // expression in index order.
