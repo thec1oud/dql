@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strings"
@@ -31,6 +32,8 @@ type site struct {
 	col *irv1.Column
 	// table is set for a table or view, whose target lists its columns.
 	table *irv1.Table
+	// ret is set for an overload with a scalar or set-of result.
+	ret *irv1.ReturnValue
 }
 
 // sites lists every object of cats that annotations can be on (§7.2), with
@@ -124,7 +127,14 @@ func sites(b *irv1.Bundle) []*site {
 						fmt.Sprintf("%s(%s)", diagnostics.Name(q), strings.Join(facts.Signature(o), ", ")),
 						diagnostics.Name(q),
 					}
-					add(&site{keys: keys, anns: &o.Annotations, target: annotate.Target{Kind: kind, Name: q, Words: r.GetName().GetWords()}})
+					s := &site{keys: keys, anns: &o.Annotations, target: annotate.Target{Kind: kind, Name: q, Words: r.GetName().GetWords()}}
+					// nonnull on an overload narrows its one result value (§7.2).
+					if ret := cmp.Or(o.GetReturns().GetScalar(), o.GetReturns().GetSetOf()); ret != nil {
+						s.ret = ret
+						s.target.Type = proto.CloneOf(ix.Underlying(ret.GetType()))
+						s.target.NotNull = !ret.GetNullable()
+					}
+					add(s)
 					for _, col := range o.GetReturns().GetTable().GetColumns() {
 						// Result columns are reached through their overload's
 						// comments; config keys do not name them.
@@ -210,6 +220,9 @@ func (a *assembler) annotate(b *irv1.Bundle, config map[string][]*irv1.Annotatio
 // Decoding enforces each one. logical-key is applied by core/facts, which
 // fills Table.logical_key with the annotation's origin (§6.4, §11.1).
 func narrow(s *site) {
+	if s.ret != nil && find(*s.anns, keyNonNull) {
+		s.ret.Nullable = false
+	}
 	if s.col == nil {
 		return
 	}

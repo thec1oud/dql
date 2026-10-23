@@ -138,7 +138,7 @@ var vocabulary = []Key{
 	{Name: "logical-key", Applies: []Kind{KindTable, KindView}, Target: "a table without a primary key, or view",
 		Form: FormList, See: "§11.1"},
 	{Name: "name", Applies: named, Target: "a named object", Form: FormWords, See: "§4.4"},
-	{Name: "nonnull", Applies: []Kind{KindColumn, KindViewColumn, KindAttribute, KindResult},
+	{Name: "nonnull", Applies: []Kind{KindColumn, KindViewColumn, KindAttribute, KindResult, KindFunction},
 		Target: "a column, view column, composite attribute or function result", Form: FormNone, See: "§13"},
 	{Name: "public", Applies: []Kind{KindFunction, KindProcedure}, Target: "a function or procedure",
 		Form: FormNone, See: "§6.5"},

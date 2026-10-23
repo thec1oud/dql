@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"cmp"
 	"slices"
 	"strings"
 	"testing"
@@ -393,6 +394,33 @@ func TestArrayElementsNonNull(t *testing.T) {
 	tb.Columns[0].Annotations = []*irv1.Annotation{comment("array-elements-nonnull", "COMMENT ON COLUMN app.t.name", nil)}
 	wantLines(t, assembleFails(t, Options{}, output(postgres, small("shop", "app", tb))),
 		"ERROR annotation-wrong-target shop.app.t.name")
+}
+
+// §7.2: nonnull on a function narrows its one result value; on a function
+// returning a table it fails, since its result columns are narrowed instead.
+func TestFunctionResultNonNull(t *testing.T) {
+	routine := func(o *irv1.Overload) *irv1.Catalog {
+		c := small("shop", "app")
+		o.Annotations = append(o.Annotations, comment("nonnull", "COMMENT ON FUNCTION app.f()", nil))
+		c.Namespaces[0].Routines = []*irv1.Routine{{Name: ident("f"), Overloads: []*irv1.Overload{o}}}
+		return c
+	}
+	for name, o := range map[string]*irv1.Overload{
+		"scalar": overload("COMMENT ON FUNCTION app.f()"),
+		"set of": {Kind: irv1.RoutineKind_ROUTINE_KIND_FUNCTION, Returns: &irv1.Returns{Kind: &irv1.Returns_SetOf{
+			SetOf: &irv1.ReturnValue{Type: tText(), Nullable: true}}}},
+	} {
+		b := assembleOK(t, Options{}, output(postgres, routine(o)))
+		got := b.GetCatalogs()[0].GetNamespaces()[0].GetRoutines()[0].GetOverloads()[0].GetReturns()
+		if v := cmp.Or(got.GetScalar(), got.GetSetOf()); v.GetNullable() {
+			t.Errorf("%s: returns = %v", name, got)
+		}
+	}
+
+	table := &irv1.Overload{Kind: irv1.RoutineKind_ROUTINE_KIND_FUNCTION, Returns: &irv1.Returns{Kind: &irv1.Returns_Table{
+		Table: &irv1.ReturnTable{Columns: []*irv1.Column{col("score", tText())}}}}}
+	wantLines(t, assembleFails(t, Options{}, output(postgres, routine(table))),
+		"ERROR annotation-wrong-target shop.app.f")
 }
 
 // §4.2, §7.6: a words annotation written as a string is split by the core;
