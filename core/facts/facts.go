@@ -1,7 +1,8 @@
 // Package facts derives the facts the core computes over a catalog IR that a
 // source produced: whether each uniqueness fact identifies rows, entity keys
-// and logical keys (design record §11.1, §11.2), and relations with their
-// kinds, nullability, policies and names (§12, §4.5).
+// and logical keys (design record §11.1, §11.2), relations with their kinds,
+// nullability, policies and names (§12, §4.5), and the host names of routine
+// overloads (§4.6).
 //
 // Identifiers arrive with their words already split (§4.2), and annotations
 // arrive merged, one effective annotation per key (§7.1).
@@ -23,6 +24,9 @@ type Options struct {
 	// CrossCatalogReferences is the dialect capability that allows a
 	// reference to cross catalogs (§5.2).
 	CrossCatalogReferences bool
+	// DefaultCatalog is the catalog whose objects get no catalog prefix when
+	// the bundle has several catalogs (§4.3).
+	DefaultCatalog string
 }
 
 // Diagnostic codes. They are stable: tools and tests match on them.
@@ -40,6 +44,7 @@ const (
 	CodeColumnNameCollision        = "column-name-collision"
 	CodeRelationNameCollision      = "relation-name-collision"
 	CodeRelationNameEqualsColumn   = "relation-name-equals-column"
+	CodeOverloadNameCollision      = "overload-name-collision"
 )
 
 // Derive computes every fact of this package in place over catalogs and
@@ -47,14 +52,16 @@ const (
 // generation.
 //
 // Derive fills Uniqueness.identifies, Table.logical_key from a logical-key
-// annotation and Table.relations. It sorts tables by stored name, and
-// uniqueness facts, foreign keys and relations as §3.2 requires, so its output does not depend on
+// annotation, Table.relations, and Overload.signature and host_name. It sorts
+// tables and routines by stored name, and uniqueness facts, foreign keys,
+// relations and overloads as §3.2 requires, so its output does not depend on
 // the order of its input.
 func Derive(catalogs []*irv1.Catalog, opts Options) []*irv1.Diagnostic {
-	d := &deriver{opts: opts, tables: map[string]*tableRef{}}
+	d := &deriver{opts: opts, tables: map[string]*tableRef{}, named: map[string][]string{}}
 	d.index(catalogs)
 	d.keys()
 	d.relations()
+	d.overloads(catalogs)
 	SortDiagnostics(d.diags)
 	return d.diags
 }
@@ -65,6 +72,7 @@ type deriver struct {
 	diags  []*irv1.Diagnostic
 	order  []*tableRef           // every table, in qualified-name order
 	tables map[string]*tableRef  // by qnKey
+	named  map[string][]string   // enum, domain and composite words by qnKey
 	rels   map[string][]*pending // relations by owner qnKey
 }
 
@@ -81,6 +89,9 @@ func (d *deriver) index(catalogs []*irv1.Catalog) {
 			slices.SortFunc(ns.Tables, func(a, b *irv1.Table) int {
 				return strings.Compare(a.GetName().GetStored(), b.GetName().GetStored())
 			})
+			slices.SortFunc(ns.Routines, func(a, b *irv1.Routine) int {
+				return strings.Compare(a.GetName().GetStored(), b.GetName().GetStored())
+			})
 			for _, t := range ns.GetTables() {
 				r := &tableRef{catalog: c, t: t, qn: &irv1.QualifiedName{
 					Catalog: c.GetName().GetStored(), Namespace: ns.GetName().GetStored(), Object: t.GetName().GetStored(),
@@ -88,9 +99,23 @@ func (d *deriver) index(catalogs []*irv1.Catalog) {
 				d.tables[qnKey(r.qn)] = r
 				d.order = append(d.order, r)
 			}
+			for _, e := range ns.GetEnums() {
+				d.addNamed(c, ns, e.GetName())
+			}
+			for _, e := range ns.GetDomains() {
+				d.addNamed(c, ns, e.GetName())
+			}
+			for _, e := range ns.GetComposites() {
+				d.addNamed(c, ns, e.GetName())
+			}
 		}
 	}
 	slices.SortFunc(d.order, func(a, b *tableRef) int { return compareQN(a.qn, b.qn) })
+}
+
+func (d *deriver) addNamed(c *irv1.Catalog, ns *irv1.Namespace, name *irv1.Identifier) {
+	qn := &irv1.QualifiedName{Catalog: c.GetName().GetStored(), Namespace: ns.GetName().GetStored(), Object: name.GetStored()}
+	d.named[qnKey(qn)] = name.GetWords()
 }
 
 func (d *deriver) lookup(qn *irv1.QualifiedName) *tableRef {

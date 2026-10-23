@@ -10,6 +10,7 @@ import (
 
 // Core annotation keys this package reads (§7.2).
 const (
+	keyName             = "core.name"
 	keyLogicalKey       = "core.logical-key"
 	keyRelationName     = "core.relation-name"
 	keyInverseName      = "core.inverse-name"

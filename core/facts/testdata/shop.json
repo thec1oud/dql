@@ -1460,6 +1460,16 @@
           },
           "overloads": [
             {
+              "signature": [
+                "int64"
+              ],
+              "hostName": {
+                "words": [
+                  "post",
+                  "score",
+                  "int64"
+                ]
+              },
               "kind": "ROUTINE_KIND_FUNCTION",
               "arguments": [
                 {
@@ -1472,19 +1482,6 @@
                   },
                   "type": {
                     "int64": {}
-                  },
-                  "mode": "ARG_MODE_IN"
-                },
-                {
-                  "name": {
-                    "stored": "window_days",
-                    "words": [
-                      "window",
-                      "days"
-                    ]
-                  },
-                  "type": {
-                    "int32": {}
                   },
                   "mode": "ARG_MODE_IN"
                 }
@@ -1510,6 +1507,18 @@
               ]
             },
             {
+              "signature": [
+                "int64",
+                "int32"
+              ],
+              "hostName": {
+                "words": [
+                  "post",
+                  "score",
+                  "int64",
+                  "int32"
+                ]
+              },
               "kind": "ROUTINE_KIND_FUNCTION",
               "arguments": [
                 {
@@ -1522,6 +1531,19 @@
                   },
                   "type": {
                     "int64": {}
+                  },
+                  "mode": "ARG_MODE_IN"
+                },
+                {
+                  "name": {
+                    "stored": "window_days",
+                    "words": [
+                      "window",
+                      "days"
+                    ]
+                  },
+                  "type": {
+                    "int32": {}
                   },
                   "mode": "ARG_MODE_IN"
                 }

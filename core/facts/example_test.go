@@ -153,6 +153,25 @@ func TestRunningExampleKeys(t *testing.T) {
 	]}`)
 }
 
+// §4.6 and §6.5.
+func TestRunningExampleOverloads(t *testing.T) {
+	c := derivedShop(t)
+	rt := c.GetNamespaces()[0].GetRoutines()[0]
+	assertContains(t, rt, `{
+	  "name": { "stored": "post_score", "words": ["post", "score"] },
+	  "overloads": [
+	    { "signature": ["int64"], "hostName": { "words": ["post", "score", "int64"] },
+	      "kind": "ROUTINE_KIND_FUNCTION",
+	      "arguments": [{ "name": { "stored": "p_id", "words": ["p", "id"] },
+	        "type": { "int64": {} }, "mode": "ARG_MODE_IN", "hasDefault": false }],
+	      "returns": { "scalar": { "type": { "decimal": {} }, "nullable": true } },
+	      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+	      "volatility": "VOLATILITY_STABLE" },
+	    { "signature": ["int64", "int32"], "hostName": { "words": ["post", "score", "int64", "int32"] } }
+	  ]
+	}`)
+}
+
 // The whole derived catalog, pinned for review as a diff.
 func TestRunningExampleGolden(t *testing.T) {
 	js, err := bundle.MarshalJSON(derivedShop(t))
@@ -173,6 +192,7 @@ func TestDeterministicUnderShuffledInput(t *testing.T) {
 			tb.ForeignKeys = determinism.Shuffled(seed, tb.ForeignKeys)
 			tb.Uniqueness = determinism.Shuffled(seed, tb.Uniqueness)
 		}
+		ns.Routines[0].Overloads = determinism.Shuffled(seed, ns.Routines[0].Overloads)
 		if ds := Derive([]*irv1.Catalog{c}, postgres); len(ds) != 0 {
 			t.Fatalf("seed %d: %v", seed, diagLines(ds))
 		}
