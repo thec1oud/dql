@@ -379,6 +379,53 @@ func TestLogicalKey(t *testing.T) {
 		"ERROR "+annotate.CodeLogicalKeyNullable+" shop.app.v")
 }
 
+// §7.3, through Assemble: the facts the checks need are the ones this
+// package reads from the catalog. Each check has a passing and a failing
+// case.
+func TestTargetFacts(t *testing.T) {
+	assemble := func(tb *irv1.Table, domains ...*irv1.Domain) []*irv1.Diagnostic {
+		c := small("shop", "app", tb)
+		c.Namespaces[0].Domains = domains
+		_, ds := Assemble([]SourceOutput{output(postgres, c)}, Options{})
+		return ds
+	}
+	// enum needs a check recognized as a single-column membership test (§8.4).
+	tb := table("orders", col("status", tText()))
+	tb.Constraints = []*irv1.Constraint{
+		membershipCheck("orders_status_check", []string{"status"}, "new", "paid"),
+		opaqueCheck("orders_status_len", []string{"status"}, "CHECK (length(status) > octet_length(status) - 4)"),
+	}
+	tb.Constraints[0].Annotations = []*irv1.Annotation{comment("enum", "COMMENT ON CONSTRAINT", stringValue("order_status"))}
+	tb.Constraints[1].Annotations = []*irv1.Annotation{comment("enum", "COMMENT ON CONSTRAINT", stringValue("order_len"))}
+	wantLines(t, assemble(tb), "ERROR "+annotate.CodeEnumNotMembership+" shop.app.orders.orders_status_len")
+
+	// version needs an integer column, through a domain (§8.5).
+	counter := &irv1.Domain{Name: ident("counter"), Base: tInt32(), Nullable: true}
+	label := &irv1.Domain{Name: ident("label"), Base: tText(), Nullable: true}
+	tb = table("items", col("version", tDomain(app("counter"))), col("note", tDomain(app("label"))))
+	tb.Columns[0].Annotations = []*irv1.Annotation{comment("version", "COMMENT ON COLUMN app.items.version", nil)}
+	tb.Columns[1].Annotations = []*irv1.Annotation{comment("version", "COMMENT ON COLUMN app.items.note", nil)}
+	wantLines(t, assemble(tb, counter, label), "ERROR annotation-wrong-target shop.app.items.note")
+
+	// logical-key designates the key of a table without a primary key
+	// (§11.1).
+	keyed, unkeyed := items(), table("events", col("id", tInt64()))
+	unkeyed.Uniqueness = []*irv1.Uniqueness{unique("events_id_key", "id")}
+	for _, tb := range []*irv1.Table{keyed, unkeyed} {
+		tb.Annotations = []*irv1.Annotation{comment("logical-key", "COMMENT ON TABLE", stringValue("id"))}
+	}
+	wantLines(t, assemble(keyed), "ERROR annotation-wrong-target shop.app.items")
+	wantLines(t, assemble(unkeyed))
+
+	// bound and version on one column (§7.3).
+	tb = table("users", col("tenant_id", tInt64()), col("version", tInt32()))
+	tb.Columns[0].Annotations = []*irv1.Annotation{comment("bound", "COMMENT ON COLUMN app.users.tenant_id", nil)}
+	tb.Columns[1].Annotations = []*irv1.Annotation{comment("version", "COMMENT ON COLUMN app.users.version", nil)}
+	wantLines(t, assemble(tb))
+	tb.Columns[1].Annotations = append(tb.Columns[1].Annotations, comment("bound", "COMMENT ON COLUMN app.users.version", nil))
+	wantLines(t, assemble(tb), "ERROR "+annotate.CodeBoundWithVersion+" shop.app.users.version")
+}
+
 // §8.6: array-elements-nonnull narrows an array column's elements; on any
 // other column it fails.
 func TestArrayElementsNonNull(t *testing.T) {
