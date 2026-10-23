@@ -22,6 +22,8 @@ jobs:
           format: false
           breaking: false
           push: false
+          # The workflow token cannot post PR comments; lint results show as annotations.
+          pr_comment: false
       - name: buf breaking against the last release
         run: |
           tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
