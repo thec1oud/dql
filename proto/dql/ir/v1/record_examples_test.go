@@ -274,6 +274,77 @@ func TestDesignRecordExamples(t *testing.T) {
 		  "severity": "SEVERITY_ERROR", "code": "write-shape-incomplete", "shape": "quick_invite",
 		  "message": "shape derived from user.draft drops required field password_hash; keep it or bind it"
 		}`},
+		{"§14.10 shape", &irv1.Shape{}, `{
+		  "id": {
+		    "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		    "preset": "PRESET_PARTIAL",
+		    "form": "FORM_FLAT"
+		  },
+		  "hostName": { "words": ["user", "partial"] },
+		  "lineage": [{ "op": "PRESET", "preset": "PRESET_PARTIAL" }],
+		  "fields": [
+		    { "column": "email", "presence": "PRESENCE_OPTIONAL", "nullable": false,
+		      "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+		      "type": { "named": { "domain": { "catalog": "shop", "namespace": "app", "object": "email_address" } } },
+		      "validation": ["email_address_check"] },
+		    { "column": "display_name", "presence": "PRESENCE_OPTIONAL", "nullable": true,
+		      "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+		      "type": { "varchar": { "length": 80, "unit": "LENGTH_UNIT_CHARACTERS" } } },
+		    { "column": "password_hash", "presence": "PRESENCE_OPTIONAL", "nullable": false,
+		      "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+		      "type": { "text": {} }, "redact": true }
+		  ],
+		  "forbidden": [
+		    { "column": "id", "reason": "FORBIDDEN_KEY" },
+		    { "column": "tenant_id", "reason": "FORBIDDEN_BOUND" },
+		    { "column": "created_at", "reason": "FORBIDDEN_IMMUTABLE" },
+		    { "column": "updated_at", "reason": "FORBIDDEN_DB_UPDATED" },
+		    { "column": "version", "reason": "FORBIDDEN_VERSION" }
+		  ],
+		  "scope": ["tenant_id"]
+		}`},
+		// §14.7 and §14.10 write shape ids in their dotted spelling ("user.draft.flat");
+		// the IR carries the structured ShapeId, and the dotted spelling is display only.
+		{"§14.7 upsert", &irv1.Upsert{}, `{
+		  "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		  "conflictTarget": "users_tenant_email_key",
+		  "insertShape": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		    "preset": "PRESET_DRAFT", "form": "FORM_FLAT" },
+		  "defaultUpdateExcludes": [
+		    { "column": "tenant_id", "reason": "EXCLUDE_BOUND" },
+		    { "column": "email", "reason": "EXCLUDE_CONFLICT_KEY" },
+		    { "column": "created_at", "reason": "EXCLUDE_IMMUTABLE" },
+		    { "column": "updated_at", "reason": "EXCLUDE_DB_UPDATED" },
+		    { "column": "version", "reason": "EXCLUDE_VERSION" }
+		  ]
+		}`},
+		{"§14.10 conversions", &irv1.ShapeLayer{}, `{ "conversions": [
+		  { "from": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_DRAFT", "form": "FORM_FLAT" },
+		    "to": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_FULL", "form": "FORM_FLAT" },
+		    "kind": "CONVERSION_VIA_DATABASE" },
+		  { "from": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_FULL", "form": "FORM_FLAT" },
+		    "to": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_DRAFT", "form": "FORM_FLAT" },
+		    "kind": "CONVERSION_NEEDS_INPUTS",
+		    "inputs": [{ "column": "password_hash", "reason": "INPUT_WRITE_ONLY" }] },
+		  { "from": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_FULL", "form": "FORM_FLAT" },
+		    "to": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_KEY" },
+		    "kind": "CONVERSION_TOTAL" },
+		  { "from": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_PARTIAL", "form": "FORM_FLAT" },
+		    "to": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_FULL", "form": "FORM_FLAT" },
+		    "kind": "CONVERSION_WITH_BASE" },
+		  { "from": { "custom": "user_summary" },
+		    "to": { "entity": { "catalog": "shop", "namespace": "app", "object": "users" },
+		      "preset": "PRESET_FULL", "form": "FORM_FLAT" },
+		    "kind": "CONVERSION_IMPOSSIBLE" }
+		] }`},
 		{"§17.3 diagnostic", &irv1.Diagnostic{}, `{
 		  "severity": "SEVERITY_ERROR", "code": "query-unscoped", "query": "AllUsers",
 		  "message": "query reads shop.app.users"

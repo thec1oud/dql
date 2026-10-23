@@ -1,0 +1,395 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/names.proto";
+import "dql/ir/v1/objects.proto";
+import "dql/ir/v1/types.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// Identifies a shape (§14.1). A shape is a preset of an entity or a custom
+// shape from dql.yaml. The dotted spelling (user.draft.flat, user.key,
+// user_summary) is the display and config form; the IR carries this message.
+//
+// The dotted spelling joins the entity's host-name words with "_", then the
+// preset and the form; a shape qualified by a relation appends ".for." and the
+// relation's stored name: post.draft.flat.for.author.
+message ShapeId {
+  oneof base {
+    // A preset shape of this entity.
+    QualifiedName entity = 1;
+    // A custom shape, by its name in dql.yaml (§14.8).
+    string custom = 4;
+  }
+  // Set with entity.
+  Preset preset = 2;
+  // Set with entity, except for Key and Scope, which have no form.
+  Form form = 3;
+  // A dependent child's shape for one parent (§14.5): the relation, owned by
+  // the shape's entity, through which the parent supplies the foreign key.
+  // post.draft.flat for author is PostDraftForAuthor, a post Draft without
+  // author_id.
+  string for_relation = 5;
+}
+
+enum Preset {
+  PRESET_UNSPECIFIED = 0;
+  // A persisted row.
+  PRESET_FULL = 1;
+  // A record not yet persisted; insert and upsert take it.
+  PRESET_DRAFT = 2;
+  // Changes to a persisted row.
+  PRESET_PARTIAL = 3;
+  // The identifying columns, plus the expected version.
+  PRESET_KEY = 4;
+  // The entity's bound columns.
+  PRESET_SCOPE = 5;
+}
+
+// The forms of a preset (§14.4).
+enum Form {
+  FORM_UNSPECIFIED = 0;
+  // The entity's own fields.
+  FORM_FLAT = 1;
+  // Only its relations.
+  FORM_NESTS = 2;
+  // Flat plus Nests.
+  FORM_NESTED = 3;
+}
+
+// A fully expanded shape (§14.10). Emitters generate it exactly as it is here
+// and never re-derive the algebra.
+message Shape {
+  ShapeId id = 1;
+  // The shape's words, such as ["user", "partial"] or
+  // ["post", "draft", "for", "author"]. Carries only words.
+  Identifier host_name = 2;
+  // The entity whose columns the shape holds.
+  QualifiedName entity = 3;
+  // How the shape was derived, root first (§14.8).
+  repeated LineageStep lineage = 4;
+  // In column order (§3.2).
+  repeated Field fields = 5;
+  // Columns and relations the shape leaves out, in column order, then
+  // relations by name.
+  repeated ForbiddenField forbidden = 6;
+  // The entity's bound columns, supplied by the scope rather than the
+  // payload (§14.2), in column order.
+  repeated string scope = 7;
+  // Columns a custom write shape drops from the payload and that generated
+  // functions take as parameters instead (§14.8, bind), in column order.
+  repeated string bind = 8;
+  // The relation fields of the Nests and Nested forms and of custom shapes
+  // that nest (§14.4, §14.8).
+  repeated Nest nests = 9;
+}
+
+// One step of a shape's derivation (§14.10).
+message LineageStep {
+  ShapeOp op = 1;
+  // PRESET: the root of every lineage.
+  QualifiedName entity = 2;
+  Preset preset = 3;
+  Form form = 4;
+  // FROM: the custom shape the steps above produce, which the steps below
+  // derive from. NEST: the shape the relation takes.
+  ShapeId shape = 5;
+  // PICK, OMIT, REQUIRE, OPTIONALIZE, NULLIFY, NONNULL and BIND: the columns
+  // the operator names, in the order given.
+  repeated string columns = 6;
+  // NEST and FOR_RELATION: a relation owned by the shape's entity.
+  string relation = 7;
+}
+
+// The design record fixes these values without a prefix (§14.10).
+enum ShapeOp {
+  SHAPE_OP_UNSPECIFIED = 0;
+  PRESET = 1;
+  FROM = 2;
+  // The dependent child's shape for one parent (§14.5).
+  FOR_RELATION = 3;
+  // The operators of §14.8.
+  PICK = 4;
+  OMIT = 5;
+  REQUIRE = 6;
+  OPTIONALIZE = 7;
+  NULLIFY = 8;
+  NONNULL = 9;
+  NEST = 10;
+  BIND = 11;
+}
+
+// A field and its modality (§14.1).
+message Field {
+  string column = 1;
+  // Forbidden fields are not fields; they are listed in Shape.forbidden.
+  Presence presence = 2;
+  bool nullable = 3;
+  // Why the field is or is not nullable. Every narrowing beyond what the
+  // database proves is enforced when decoding (§13).
+  NullabilitySource nullability_source = 4;
+  // The custom shape whose nonnull or nullify operator set the field's
+  // nullability, when nullability_source says a shape operator did.
+  ShapeId nullability_shape = 5;
+  // Set on write shapes; unspecified on read shapes.
+  ValueKind value_kind = 6;
+  Type type = 7;
+  // The client-validated constraints the field's value is checked against
+  // (§10.5), by name.
+  repeated string validation = 8;
+  // A sensitive column: redacted in logs, traces and errors (§7.5, §23.3).
+  bool redact = 9;
+  FieldRole role = 10;
+}
+
+enum Presence {
+  PRESENCE_UNSPECIFIED = 0;
+  PRESENCE_REQUIRED = 1;
+  PRESENCE_OPTIONAL = 2;
+}
+
+enum ValueKind {
+  VALUE_KIND_UNSPECIFIED = 0;
+  VALUE_KIND_VALUE = 1;
+  VALUE_KIND_VALUE_OR_EXPRESSION = 2;
+}
+
+// What a field means beyond holding its column's value.
+enum FieldRole {
+  // The column's value.
+  FIELD_ROLE_UNSPECIFIED = 0;
+  // A Key's expected version: writes compare it, reads ignore it (§14.3).
+  FIELD_ROLE_EXPECTED_VERSION = 1;
+}
+
+// A column or relation a shape leaves out, and why (§14.2, §14.3, §14.5).
+message ForbiddenField {
+  // Empty when the entry is a relation.
+  string column = 1;
+  ForbiddenReason reason = 2;
+  // A relation left out of a Nests or Nested form, such as an owning
+  // relation whose foreign-key columns are bound.
+  string relation = 3;
+}
+
+// The rule that forbids a field. A column several rules forbid carries one
+// reason, chosen by the shape layer.
+enum ForbiddenReason {
+  FORBIDDEN_UNSPECIFIED = 0;
+  // A key column of a Partial; the key is passed separately.
+  FORBIDDEN_KEY = 1;
+  // bound: supplied by the scope.
+  FORBIDDEN_BOUND = 2;
+  FORBIDDEN_IMMUTABLE = 3;
+  FORBIDDEN_DB_UPDATED = 4;
+  // The expected value travels in the Key.
+  FORBIDDEN_VERSION = 5;
+  FORBIDDEN_WRITE_ONLY = 6;
+  FORBIDDEN_READ_ONLY = 7;
+  FORBIDDEN_IDENTITY_ALWAYS = 8;
+  FORBIDDEN_GENERATED = 9;
+  // A dependent child's foreign key to its parent, which the parent supplies.
+  FORBIDDEN_PARENT = 10;
+  // Dropped by a custom shape's pick or omit.
+  FORBIDDEN_OMITTED = 11;
+}
+
+// A relation field (§12.5, §14.4 to §14.6).
+message Nest {
+  // A relation owned by the shape's entity.
+  string relation = 1;
+  // Read shapes always load their relations, so their nests are required
+  // (§14.4).
+  Presence presence = 2;
+  bool nullable = 3;
+  // What the field holds; a to-many relation holds a list of it.
+  oneof target {
+    // The related or child shape: read shapes, and dependent children in a
+    // Draft.
+    ShapeId shape = 4;
+    // A reference or a change: owning and many-to-many relations in a Draft,
+    // every relation in a Partial.
+    RelationUnionId union = 5;
+  }
+  // The foreign-key columns of an owning relation that the relation can also
+  // supply in this shape, in key order. Given together, they must agree, or
+  // validation fails with RelationConflict (§14.5).
+  repeated string supplies = 6;
+  // At least one of the supplied columns and the relation must be given:
+  // the foreign key is NOT NULL (§14.5).
+  bool needs_one = 7;
+  // The relation's collection policy and removal, with defaults applied
+  // (§14.6). Set on dependent and many-to-many relations of a Partial.
+  RelationPolicy policy = 8;
+}
+
+// Identifies a relation union.
+message RelationUnionId {
+  RelationUnionKind kind = 1;
+  // The entity whose rows the variants write: the related entity of a REF
+  // or LINK, the child of a CHILD_CHANGE, the owner of a RELATION_CHANGE.
+  QualifiedName entity = 2;
+  // CHILD_CHANGE: the child's relation to its parent, as in ShapeId.
+  // RELATION_CHANGE: the relation of the owner it changes.
+  string relation = 3;
+  // The custom shape whose nest declared the union, when its variants hold
+  // shapes other than the presets' (§14.8). Empty for unions of presets.
+  string custom = 4;
+}
+
+enum RelationUnionKind {
+  RELATION_UNION_UNSPECIFIED = 0;
+  // An owning to-one relation in a Draft: Link or Create, as UserRef (§14.5).
+  RELATION_UNION_REF = 1;
+  // A many-to-many relation in a Draft: Link or Create, as TagLink (§14.5).
+  RELATION_UNION_LINK = 2;
+  // One change to a dependent child in a Partial, as PostChangeForAuthor
+  // (§14.6).
+  RELATION_UNION_CHILD_CHANGE = 3;
+  // One change to an owning or many-to-many relation in a Partial, as
+  // PostAuthorChange or PostTagsChange (§14.6).
+  RELATION_UNION_RELATION_CHANGE = 4;
+}
+
+// A sum type a relation field of a write shape holds (§14.5, §14.6). It has
+// exactly the variants the relation allows, so a change its policy forbids
+// cannot be written.
+message RelationUnion {
+  RelationUnionId id = 1;
+  // ["user", "ref"], ["post", "change", "for", "author"]. Carries only words.
+  Identifier host_name = 2;
+  // In the order of RelationChange.
+  repeated RelationVariant variants = 3;
+}
+
+message RelationVariant {
+  RelationChange change = 1;
+  // The variant's constructor: ["user", "link"], ["tag", "link", "key"],
+  // ["post", "update", "for", "author"]. Carries only words.
+  Identifier host_name = 2;
+  // The Key that finds the row: Link, a child's Update and Delete, a
+  // many-to-many Unlink.
+  ShapeId key = 3;
+  // The Draft of a Create, the Partial of an Update.
+  ShapeId payload = 4;
+}
+
+enum RelationChange {
+  RELATION_CHANGE_UNSPECIFIED = 0;
+  // Point at an existing row by key.
+  RELATION_CHANGE_LINK = 1;
+  // Insert a new row.
+  RELATION_CHANGE_CREATE = 2;
+  // Patch an existing row.
+  RELATION_CHANGE_UPDATE = 3;
+  // Remove a child according to the relation's removal.
+  RELATION_CHANGE_DELETE = 4;
+  // Set the foreign key to NULL, or remove a junction row.
+  RELATION_CHANGE_UNLINK = 5;
+}
+
+// The default update side of an upsert on one conflict target (§14.7).
+message Upsert {
+  QualifiedName entity = 1;
+  // A uniqueness fact of the entity, by name (§11.2).
+  string conflict_target = 2;
+  ShapeId insert_shape = 3;
+  // Columns the default update leaves alone, in column order.
+  repeated UpdateExclude default_update_excludes = 4;
+}
+
+message UpdateExclude {
+  string column = 1;
+  ExcludeReason reason = 2;
+}
+
+enum ExcludeReason {
+  EXCLUDE_UNSPECIFIED = 0;
+  EXCLUDE_CONFLICT_KEY = 1;
+  EXCLUDE_IMMUTABLE = 2;
+  EXCLUDE_BOUND = 3;
+  EXCLUDE_VERSION = 4;
+  EXCLUDE_DB_UPDATED = 5;
+}
+
+// One conversion and its kind (§14.9). Emitters generate it as the kind
+// dictates.
+message Conversion {
+  ShapeId from = 1;
+  ShapeId to = 2;
+  ConversionKind kind = 3;
+  // CONVERSION_NEEDS_INPUTS: the target fields the caller passes, in the
+  // target's column order.
+  repeated ConversionInput inputs = 4;
+  ConversionOrigin origin = 5;
+}
+
+enum ConversionKind {
+  CONVERSION_UNSPECIFIED = 0;
+  // Always succeeds: a plain function.
+  CONVERSION_TOTAL = 1;
+  // Some target fields have no source: a function taking them as parameters.
+  CONVERSION_NEEDS_INPUTS = 2;
+  // Applies changes onto an existing value: a function taking the base.
+  CONVERSION_WITH_BASE = 3;
+  // Only the database can produce the result: no function.
+  CONVERSION_VIA_DATABASE = 4;
+  // May fail at runtime: a function returning an error.
+  CONVERSION_FALLIBLE = 5;
+  // Information is missing: nothing.
+  CONVERSION_IMPOSSIBLE = 6;
+}
+
+message ConversionInput {
+  string column = 1;
+  InputReason reason = 2;
+}
+
+// Why the source shape cannot supply a target field.
+enum InputReason {
+  INPUT_UNSPECIFIED = 0;
+  // The column is never selected, so no read shape holds it.
+  INPUT_WRITE_ONLY = 1;
+  // A custom shape along the source's lineage dropped it.
+  INPUT_OMITTED = 2;
+}
+
+// Why a conversion is in the table (§14.9).
+enum ConversionOrigin {
+  CONVERSION_ORIGIN_UNSPECIFIED = 0;
+  // Between an entity's presets and forms.
+  CONVERSION_ORIGIN_PRESET = 1;
+  // Along a custom shape's lineage.
+  CONVERSION_ORIGIN_LINEAGE = 2;
+  // Declared under conversions: in dql.yaml.
+  CONVERSION_ORIGIN_DECLARED = 3;
+}
+
+// Merging Partials into Full rows by key, for one keyed entity (§8.9, §14.9).
+message KeyMerge {
+  QualifiedName entity = 1;
+  // CONVERSION_TOTAL when every key column compares exactly or folds;
+  // CONVERSION_FALLIBLE otherwise.
+  ConversionKind kind = 2;
+  // In key order.
+  repeated KeyComparison key = 3;
+}
+
+// How the host compares one key column.
+message KeyComparison {
+  string column = 1;
+  Comparison comparison = 2;
+  // COMPARISON_FOLDED: the certified fold applied to both sides first.
+  ClientFold fold = 3;
+}
+
+enum Comparison {
+  COMPARISON_UNSPECIFIED = 0;
+  // Byte-for-byte equality is the database's equality.
+  COMPARISON_EXACT = 1;
+  // Equal after a certified client fold.
+  COMPARISON_FOLDED = 2;
+  // The collation may equate values the host cannot match.
+  COMPARISON_INEXACT = 3;
+}

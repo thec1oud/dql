@@ -72,6 +72,9 @@ enum NullabilitySource {
   NULLABILITY_SOURCE_ANNOTATION = 3;
   // Nothing proves non-null, so the column is nullable (§1.2, P2).
   NULLABILITY_SOURCE_UNPROVEN = 4;
+  // A custom shape's nonnull or nullify operator set it (§14.8); nonnull is
+  // enforced when decoding (§13). Used on shape fields only.
+  NULLABILITY_SOURCE_SHAPE_OPERATOR = 5;
 }
 
 // A column's default (§11.3).
