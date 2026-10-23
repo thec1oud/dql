@@ -1,0 +1,3838 @@
+{
+  "name": {
+    "stored": "full"
+  },
+  "provenance": {
+    "source": "dpg-snapshot",
+    "sourceVersion": "1.0.0",
+    "inputFingerprint": "sha256:32c5e78c6474edb9618ec000f247800e49d3ea49ee4444cc0ed05faaf3bdec39",
+    "fidelity": "SOURCE_FIDELITY_PARTIAL",
+    "fidelityLimits": [
+      "body-hashed-objects",
+      "collation-facts",
+      "database-settings",
+      "derived-names",
+      "expression-text",
+      "grants",
+      "materialized-views",
+      "owners",
+      "partitions",
+      "range-subtypes",
+      "routine-arguments",
+      "routine-bodies",
+      "search-path",
+      "unmanaged-objects",
+      "view-column-comments",
+      "view-column-types"
+    ]
+  },
+  "namespaces": [
+    {
+      "name": {
+        "stored": "Odd"
+      },
+      "tables": [
+        {
+          "name": {
+            "stored": "T"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_BY_DEFAULT",
+                "sequence": {
+                  "catalog": "full",
+                  "namespace": "Odd",
+                  "object": "T_id_seq"
+                },
+                "native": "nextval('\"Odd\".\"T_id_seq\"'::regclass)"
+              }
+            }
+          ]
+        }
+      ],
+      "sequences": [
+        {
+          "name": {
+            "stored": "T_id_seq"
+          },
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "2147483647",
+          "ownedBy": {
+            "catalog": "full",
+            "namespace": "Odd",
+            "object": "T",
+            "member": "id"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "stored": "app"
+      },
+      "tables": [
+        {
+          "name": {
+            "stored": "a_table_name_long_enough_that_postgres_must_shorten_derived_names"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "identifier_column_with_a_long_name"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_ALWAYS",
+                "sequence": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "a_table_name_long_enough_that_identifier_column_with_a_long_seq"
+                }
+              }
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "a_table_name_long_enough_that_identifier_column_with_a_long_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "identifier_column_with_a_long_name"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "a_table_name_long_enough_that_identifier_column_with_a_long_key",
+                  "method": "btree"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "items"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_BY_DEFAULT",
+                "sequence": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "items_id_seq"
+                },
+                "native": "nextval('app.items_id_seq'::regclass)"
+              }
+            },
+            {
+              "name": {
+                "stored": "code"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "varchar"
+                  },
+                  "raw": "character varying"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_CONSTANT",
+                "native": "'abc'::character varying",
+                "value": {
+                  "string": "abc"
+                }
+              },
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "qty"
+              },
+              "ordinal": 3,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "default": {
+                "class": "DEFAULT_IDENTITY_BY_DEFAULT",
+                "sequence": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "counter"
+                },
+                "native": "nextval('counter')"
+              }
+            },
+            {
+              "name": {
+                "stored": "score"
+              },
+              "ordinal": 4,
+              "type": {
+                "decimal": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "numeric"
+                  },
+                  "raw": "numeric"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "generation": {
+                "kind": "GENERATION_VIRTUAL",
+                "native": "(qty * 2)"
+              }
+            },
+            {
+              "name": {
+                "stored": "d"
+              },
+              "ordinal": 5,
+              "type": {
+                "named": {
+                  "domain": {
+                    "catalog": "full",
+                    "namespace": "app",
+                    "object": "c_text"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "c_text"
+                  },
+                  "raw": "app.c_text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "m"
+              },
+              "ordinal": 6,
+              "type": {
+                "named": {
+                  "enum": {
+                    "catalog": "full",
+                    "namespace": "app",
+                    "object": "mood"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "mood"
+                  },
+                  "raw": "mood"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "column",
+                  "fields": {
+                    "statistics": 100
+                  }
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "sp"
+              },
+              "ordinal": 7,
+              "type": {
+                "opaque": {},
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "span"
+                  },
+                  "raw": "app.span"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "bl"
+              },
+              "ordinal": 8,
+              "type": {
+                "opaque": {},
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "blob"
+                  },
+                  "raw": "blob"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "owner_row"
+              },
+              "ordinal": 9,
+              "type": {
+                "opaque": {},
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "users"
+                  },
+                  "raw": "app.users"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "tags"
+              },
+              "ordinal": 10,
+              "type": {
+                "array": {
+                  "element": {
+                    "text": {}
+                  },
+                  "elementNullable": true,
+                  "dimensions": 1
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "_text"
+                  },
+                  "raw": "text[]"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "ident"
+              },
+              "ordinal": 11,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_BY_DEFAULT",
+                "sequence": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "items_ident_seq"
+                }
+              }
+            },
+            {
+              "name": {
+                "stored": "legacy"
+              },
+              "ordinal": 12,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "column",
+                  "fields": {
+                    "comment": "@immutable"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "[DEPRECATED] use qty"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "Mixed Case"
+              },
+              "ordinal": 13,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              },
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "column",
+                  "fields": {
+                    "renamed_from": "mixed"
+                  }
+                }
+              ]
+            }
+          ],
+          "constraints": [
+            {
+              "name": "items_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "columns": [
+                "qty",
+                "code"
+              ],
+              "opaque": {
+                "native": "CHECK (qty > 0 OR code <> '')"
+              }
+            },
+            {
+              "name": "items_named_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "columns": [
+                "code"
+              ],
+              "portable": {
+                "notEmpty": {}
+              },
+              "clientValidated": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "constraint",
+                  "fields": {
+                    "expr": "CHECK (code <> '')"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "Named."
+                }
+              ]
+            },
+            {
+              "name": "items_named_excl",
+              "kind": "CONSTRAINT_KIND_EXCLUSION",
+              "columns": [
+                "sp"
+              ],
+              "opaque": {
+                "native": "EXCLUDE USING gist (sp WITH &&)"
+              },
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_named_excl",
+                  "method": "gist"
+                }
+              ]
+            },
+            {
+              "name": "items_qty_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "columns": [
+                "qty"
+              ],
+              "portable": {
+                "range": {
+                  "min": {
+                    "int": "0"
+                  },
+                  "minInclusive": true
+                }
+              },
+              "clientValidated": true,
+              "annotations": [
+                {
+                  "key": "core.enum",
+                  "value": {
+                    "string": "quantity"
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON CONSTRAINT items_qty_check ON app.items"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "constraint",
+                  "fields": {
+                    "expr": "CHECK (qty >= 0)"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@enum(quantity)"
+                }
+              ]
+            },
+            {
+              "name": "items_qty_check1",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "columns": [
+                "qty"
+              ],
+              "portable": {
+                "range": {
+                  "max": {
+                    "int": "100"
+                  },
+                  "maxInclusive": true
+                }
+              },
+              "clientValidated": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "constraint",
+                  "fields": {
+                    "expr": "CHECK (qty <= 100)"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "items_sp_lower_expr_excl",
+              "kind": "CONSTRAINT_KIND_EXCLUSION",
+              "columns": [
+                "sp"
+              ],
+              "opaque": {
+                "native": "EXCLUDE USING gist (sp WITH &&, lower(code) WITH =, (qty + 1) WITH =)"
+              },
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_sp_lower_expr_excl",
+                  "method": "gist"
+                }
+              ]
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "items_bl_key",
+              "kind": "UNIQUENESS_INDEX",
+              "columns": [
+                "bl"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "index",
+                  "fields": {
+                    "columns": "bl",
+                    "include": "code"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_bl_key",
+                  "method": "btree"
+                }
+              ]
+            },
+            {
+              "name": "items_code_desc",
+              "kind": "UNIQUENESS_INDEX",
+              "columns": [
+                "code"
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "index",
+                  "fields": {
+                    "columns": "code DESC"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_code_desc",
+                  "method": "btree"
+                }
+              ]
+            },
+            {
+              "name": "items_code_qty_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "code",
+                "qty"
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.ConstraintOptions",
+                  "deferrable": true
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_code_qty_key",
+                  "method": "btree"
+                }
+              ]
+            },
+            {
+              "name": "items_fn",
+              "kind": "UNIQUENESS_INDEX",
+              "expressions": [
+                {
+                  "native": "lower(code)"
+                }
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "index",
+                  "fields": {
+                    "columns": "lower(code)"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_fn",
+                  "method": "btree"
+                }
+              ]
+            },
+            {
+              "name": "items_id_key",
+              "kind": "UNIQUENESS_INDEX",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "index",
+                  "fields": {
+                    "columns": "id"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_id_key",
+                  "method": "btree",
+                  "comment": "Unique ids. @bound"
+                }
+              ]
+            },
+            {
+              "name": "items_lower_code",
+              "kind": "UNIQUENESS_INDEX",
+              "columns": [
+                "qty"
+              ],
+              "expressions": [
+                {
+                  "native": "lower(code)"
+                }
+              ],
+              "predicate": {
+                "native": "qty > 0"
+              },
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "index",
+                  "fields": {
+                    "columns": "(lower(code)), qty"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_lower_code",
+                  "method": "btree"
+                }
+              ]
+            },
+            {
+              "name": "items_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "constraint",
+                  "fields": {
+                    "expr": "PRIMARY KEY (\"id\") INCLUDE (\"code\")"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_pkey",
+                  "method": "btree"
+                }
+              ]
+            },
+            {
+              "name": "items_qty_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "qty"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "items_qty_key",
+                  "method": "btree",
+                  "storageParameters": [
+                    "fillfactor=70",
+                    "x=1.5",
+                    "y=s",
+                    "z=off",
+                    "w=true"
+                  ],
+                  "tablespace": "fast"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "items_ident_fkey"
+              },
+              "columns": [
+                "ident"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+              "onDelete": "FOREIGN_KEY_ACTION_SET_NULL",
+              "deferrable": true,
+              "annotations": [
+                {
+                  "key": "core.relation-name",
+                  "value": {
+                    "string": "owner"
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON CONSTRAINT items_ident_fkey ON app.items"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@relation-name(owner)"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.ConstraintOptions",
+                  "initiallyDeferred": true,
+                  "onDeleteColumns": [
+                    "ident"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "items_m_fk"
+              },
+              "columns": [
+                "m"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "onUpdate": "FOREIGN_KEY_ACTION_SET_DEFAULT",
+              "onDelete": "FOREIGN_KEY_ACTION_SET_NULL",
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.ConstraintOptions",
+                  "notValid": true
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "items_qty_fkey"
+              },
+              "columns": [
+                "qty"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_FULL",
+              "onUpdate": "FOREIGN_KEY_ACTION_RESTRICT",
+              "onDelete": "FOREIGN_KEY_ACTION_CASCADE"
+            }
+          ],
+          "annotations": [
+            {
+              "key": "core.name",
+              "value": {
+                "string": "item"
+              },
+              "origin": {
+                "kind": "ORIGIN_DB_COMMENT",
+                "plugin": "dpg-snapshot",
+                "location": "COMMENT ON TABLE app.items"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "constraint",
+              "name": "items_code_not_null",
+              "fields": {
+                "name": "items_code_not_null",
+                "type": "NOT NULL"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "index",
+              "name": "items_qty_idx",
+              "fields": {
+                "columns": "qty"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "index",
+              "name": "items_m_idx",
+              "fields": {
+                "columns": "m"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "trigger",
+              "name": "items_touch",
+              "fields": {
+                "condition": "(new.qty > 0)",
+                "function": "app.touch()"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "trigger",
+              "name": "items_audit",
+              "fields": {
+                "function": "audit_items"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "table",
+              "fields": {
+                "grants": [
+                  {
+                    "privileges": [
+                      "SELECT"
+                    ],
+                    "roles": [
+                      "web"
+                    ],
+                    "with_grant": true
+                  }
+                ],
+                "name_maps": [
+                  {
+                    "rule": "snake",
+                    "tool": "go"
+                  }
+                ],
+                "partitions": [
+                  {
+                    "bound": "FOR VALUES FROM (1) TO (10)",
+                    "name": "items_p1"
+                  },
+                  {
+                    "bound": "FOR VALUES FROM (10) TO (20)",
+                    "name": "items_p2",
+                    "partition_by": "LIST (qty)",
+                    "partitions": [
+                      {
+                        "bound": "FOR VALUES IN (11)",
+                        "name": "items_p2a"
+                      }
+                    ],
+                    "schema": "app"
+                  },
+                  {
+                    "bound": "DEFAULT",
+                    "name": "items_p3",
+                    "schema": "other"
+                  }
+                ]
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "@name(item)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+              "name": "items_qty_idx",
+              "method": "btree",
+              "storageParameters": [
+                "fillfactor=70",
+                "deduplicate_items=off"
+              ],
+              "tablespace": "fast",
+              "comment": "By quantity."
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+              "name": "items_m_idx",
+              "method": "hash"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "admin"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.PartitionKey",
+              "definition": "RANGE (id)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.PartitionOf",
+              "parent": {
+                "catalog": "full",
+                "namespace": "app",
+                "object": "base"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.PartitionOf",
+              "parent": {
+                "catalog": "full",
+                "namespace": "app",
+                "object": "base2"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Policy",
+              "name": "items_read",
+              "command": "SELECT",
+              "permissive": true,
+              "roles": [
+                "admin",
+                "web"
+              ],
+              "using": "true",
+              "comment": "Everyone reads."
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.RowSecurity",
+              "enabled": true
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.StorageParameters",
+              "parameters": [
+                "fillfactor=70",
+                "autovacuum_enabled=false"
+              ]
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Tablespace",
+              "name": "fast"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Trigger",
+              "name": "items_touch",
+              "timing": "BEFORE",
+              "events": [
+                "INSERT",
+                "UPDATE"
+              ],
+              "level": "ROW",
+              "function": {
+                "catalog": "full",
+                "namespace": "app",
+                "object": "touch"
+              },
+              "enabled": "ALWAYS"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Trigger",
+              "name": "items_audit",
+              "timing": "AFTER",
+              "events": [
+                "DELETE",
+                "TRUNCATE"
+              ],
+              "level": "STATEMENT",
+              "function": {
+                "catalog": "full",
+                "namespace": "app",
+                "object": "audit_items"
+              },
+              "enabled": "ORIGIN"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Unlogged"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "mv"
+          },
+          "kind": "RELATION_KIND_MATERIALIZED_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "mv_id",
+              "kind": "UNIQUENESS_INDEX",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "index",
+                  "fields": {
+                    "columns": "id"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "mv_id",
+                  "method": "btree"
+                }
+              ]
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "annotations": [
+            {
+              "key": "core.logical-key",
+              "value": {
+                "string": "id"
+              },
+              "origin": {
+                "kind": "ORIGIN_DB_COMMENT",
+                "plugin": "dpg-snapshot",
+                "location": "COMMENT ON MATERIALIZED VIEW app.mv"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "index",
+              "name": "mv_id_hash",
+              "fields": {
+                "columns": "id"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "view",
+              "fields": {
+                "with_no_data": true
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "@logical-key(id)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+              "name": "mv_id_hash",
+              "method": "hash"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Tablespace",
+              "name": "fast"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT id FROM app.users"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "mv2"
+          },
+          "kind": "RELATION_KIND_MATERIALIZED_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "index",
+              "name": "mv2_id",
+              "fields": {
+                "columns": "id"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+              "name": "mv2_id",
+              "method": "btree"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT id FROM app.users"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "mv3"
+          },
+          "kind": "RELATION_KIND_MATERIALIZED_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "view",
+              "fields": {
+                "with_no_data": true
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT id FROM app.users"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "texts"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "ci"
+              },
+              "ordinal": 1,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "app.ci",
+                "caseSensitive": "TRISTATE_FALSE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "deterministic": "TRISTATE_FALSE"
+              }
+            },
+            {
+              "name": {
+                "stored": "det"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "app.det",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "copied"
+              },
+              "ordinal": 3,
+              "type": {
+                "char": {
+                  "length": 2,
+                  "unit": "LENGTH_UNIT_CHARACTERS"
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "bpchar"
+                  },
+                  "modifiers": [
+                    {
+                      "int": 2
+                    }
+                  ],
+                  "raw": "character(2)"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "app.copied",
+                "padSpace": "TRISTATE_TRUE"
+              }
+            },
+            {
+              "name": {
+                "stored": "cat"
+              },
+              "ordinal": 4,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "nm"
+              },
+              "ordinal": 5,
+              "type": {
+                "opaque": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "name"
+                  },
+                  "raw": "name"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "dom_arr"
+              },
+              "ordinal": 6,
+              "type": {
+                "array": {
+                  "element": {
+                    "named": {
+                      "domain": {
+                        "catalog": "full",
+                        "namespace": "app",
+                        "object": "c_text"
+                      }
+                    }
+                  },
+                  "elementNullable": true,
+                  "dimensions": 1
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "_c_text"
+                  },
+                  "raw": "app.c_text[]"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "n"
+              },
+              "ordinal": 7,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "trigger",
+              "name": "texts_t",
+              "fields": {
+                "function": "t()"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "trigger",
+              "name": "texts_r",
+              "fields": {
+                "function": "r"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Policy",
+              "name": "texts_all",
+              "command": "ALL",
+              "roles": [
+                "PUBLIC"
+              ]
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Policy",
+              "name": "texts_pub",
+              "command": "UPDATE",
+              "permissive": true,
+              "roles": [
+                "PUBLIC"
+              ],
+              "withCheck": "true",
+              "comment": "@bound"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Trigger",
+              "name": "texts_t",
+              "timing": "INSTEAD OF",
+              "events": [
+                "INSERT"
+              ],
+              "level": "ROW",
+              "function": {
+                "catalog": "full",
+                "namespace": "app",
+                "object": "t"
+              },
+              "enabled": "DISABLED",
+              "comment": "@x"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Trigger",
+              "name": "texts_r",
+              "timing": "AFTER",
+              "events": [
+                "UPDATE"
+              ],
+              "level": "ROW",
+              "function": {
+                "catalog": "full",
+                "namespace": "app",
+                "object": "r"
+              },
+              "enabled": "REPLICA"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "tététététététététététététététététététété"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_BY_DEFAULT",
+                "sequence": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "tétététététététététététététététététét_id_seq"
+                },
+                "native": "nextval('app.\"tétététététététététététététététététét_id_seq\"'::regclass)"
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "users"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+              "default": {
+                "class": "DEFAULT_IDENTITY_ALWAYS",
+                "sequence": {
+                  "catalog": "full",
+                  "namespace": "app",
+                  "object": "users_id_seq"
+                }
+              }
+            },
+            {
+              "name": {
+                "stored": "email"
+              },
+              "ordinal": 2,
+              "type": {
+                "named": {
+                  "domain": {
+                    "catalog": "full",
+                    "namespace": "app",
+                    "object": "c_text"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "c_text"
+                  },
+                  "raw": "app.c_text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "nick"
+              },
+              "ordinal": 3,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "users_nick_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "nick"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "users_nick_key",
+                  "method": "btree"
+                }
+              ]
+            },
+            {
+              "name": "users_pk",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "Key."
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+                  "name": "users_pk",
+                  "method": "btree"
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.RowSecurity",
+              "forced": true
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_all"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "iid"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "c"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "varchar"
+                  },
+                  "raw": "character varying"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 3,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "email"
+              },
+              "ordinal": 4,
+              "type": {
+                "named": {
+                  "domain": {
+                    "catalog": "full",
+                    "namespace": "app",
+                    "object": "c_text"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "c_text"
+                  },
+                  "raw": "app.c_text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "nick"
+              },
+              "ordinal": 5,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "v_items"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "view",
+              "fields": {
+                "comment": "@logical-key(iid)"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "[DEPRECATED] use v_items"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT * FROM app.v_items"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_ambig"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "items"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT id FROM app.users, app.items"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_const"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT 1 FROM app.users"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_cte"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "WITH x AS (SELECT 1) SELECT * FROM x, app.users, users, nowhere"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_expr"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "items"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT count(*) AS n FROM app.items"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_func"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT * FROM generate_series(1, 2)"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_items"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "iid"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "c"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "varchar"
+                  },
+                  "raw": "character varying"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 3,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "email"
+              },
+              "ordinal": 4,
+              "type": {
+                "named": {
+                  "domain": {
+                    "catalog": "full",
+                    "namespace": "app",
+                    "object": "c_text"
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "c_text"
+                  },
+                  "raw": "app.c_text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "nick"
+              },
+              "ordinal": 5,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "items"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "view",
+              "fields": {
+                "columns": [
+                  "iid"
+                ],
+                "recursive": true
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "admin"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT i.id, i.code AS c, u.* FROM app.items i JOIN users u ON u.id = i.qty"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_join_alias"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "items"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT 1 FROM (app.users u JOIN app.items i ON true) AS j"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_left_unknown"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "v_expr"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT u.nick FROM app.v_expr e JOIN app.users u ON true"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_missing"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT a FROM nowhere"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_nested_join"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "items"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "v_expr"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT u.nick FROM app.users u JOIN app.items i ON true JOIN app.v_expr e ON true"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_qual"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "nick"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT app.users.id, users.nick FROM app.users"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_right_unknown"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "v_expr"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT u.nick FROM app.users u JOIN app.v_expr e ON true"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_stored"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id"
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.StorageParameters",
+              "parameters": [
+                "security_barrier=true"
+              ]
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT id FROM app.users"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_union"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "items"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT id FROM app.users UNION SELECT id FROM app.items"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_unknown_source"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "v_expr"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT * FROM app.v_expr"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_using"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "dependsOn": [
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "items"
+            },
+            {
+              "catalog": "full",
+              "namespace": "app",
+              "object": "users"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT id FROM app.users JOIN app.items USING (id)"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v_values"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "VALUES (1)"
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": {
+            "stored": "mood"
+          },
+          "labels": [
+            "sad",
+            "ok",
+            "happy"
+          ],
+          "origin": "ENUM_ORIGIN_NATIVE",
+          "annotations": [
+            {
+              "key": "core.name",
+              "value": {
+                "string": "feeling"
+              },
+              "origin": {
+                "kind": "ORIGIN_DB_COMMENT",
+                "plugin": "dpg-snapshot",
+                "location": "COMMENT ON TYPE app.mood"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "@name(feeling)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "admin"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "mood2"
+          },
+          "labels": [
+            "a"
+          ],
+          "origin": "ENUM_ORIGIN_NATIVE"
+        }
+      ],
+      "domains": [
+        {
+          "name": {
+            "stored": "base_dom"
+          },
+          "base": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          },
+          "default": {
+            "class": "DEFAULT_CONSTANT",
+            "native": "'x'::text",
+            "value": {
+              "string": "x"
+            }
+          },
+          "collation": {
+            "name": "C",
+            "caseSensitive": "TRISTATE_TRUE",
+            "accentSensitive": "TRISTATE_TRUE",
+            "padSpace": "TRISTATE_FALSE",
+            "deterministic": "TRISTATE_TRUE",
+            "clientFold": "CLIENT_FOLD_NONE"
+          },
+          "constraints": [
+            {
+              "name": "base_dom_check",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "opaque": {
+                "native": "CHECK (value <> 'bad' OR value IS NULL)"
+              },
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.ConstraintOptions",
+                  "notValid": true
+                }
+              ]
+            },
+            {
+              "name": "base_dom_len",
+              "kind": "CONSTRAINT_KIND_CHECK",
+              "portable": {
+                "length": {
+                  "min": 1,
+                  "unit": "LENGTH_UNIT_CHARACTERS"
+                }
+              },
+              "clientValidated": true,
+              "annotations": [
+                {
+                  "key": "x.go.check",
+                  "value": {
+                    "string": "len"
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON CONSTRAINT base_dom_len ON DOMAIN app.base_dom"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "constraint",
+                  "fields": {
+                    "expr": "CHECK (length(value) >= 1)"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "Not empty. @x.go.check(len)"
+                }
+              ]
+            }
+          ],
+          "annotations": [
+            {
+              "key": "core.name",
+              "value": {
+                "string": "base"
+              },
+              "origin": {
+                "kind": "ORIGIN_DB_COMMENT",
+                "plugin": "dpg-snapshot",
+                "location": "COMMENT ON DOMAIN app.base_dom"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+              "kind": "constraint",
+              "fields": {
+                "name": "",
+                "type": "NOT NULL"
+              }
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "@name(base)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "admin"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "c_text"
+          },
+          "base": {
+            "named": {
+              "domain": {
+                "catalog": "full",
+                "namespace": "app",
+                "object": "base_dom"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "base_dom"
+              },
+              "raw": "app.base_dom"
+            }
+          },
+          "nullable": true,
+          "collation": {
+            "name": "C",
+            "caseSensitive": "TRISTATE_TRUE",
+            "accentSensitive": "TRISTATE_TRUE",
+            "padSpace": "TRISTATE_FALSE",
+            "deterministic": "TRISTATE_TRUE",
+            "clientFold": "CLIENT_FOLD_NONE"
+          }
+        }
+      ],
+      "composites": [
+        {
+          "name": {
+            "stored": "pair"
+          },
+          "attributes": [
+            {
+              "name": {
+                "stored": "a"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "annotations": [
+                {
+                  "key": "core.nonnull",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON COLUMN app.pair.a"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@nonnull"
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "b"
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  },
+                  "raw": "text"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+              "collation": {
+                "name": "C",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              },
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "attribute",
+                  "fields": {
+                    "renamed_from": "bb"
+                  }
+                }
+              ]
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "A pair."
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "admin"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "pair2"
+          },
+          "attributes": [
+            {
+              "name": {
+                "stored": "x"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ]
+        }
+      ],
+      "sequences": [
+        {
+          "name": {
+            "stored": "a_table_name_long_enough_that_identifier_column_with_a_long_seq"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "9223372036854775807",
+          "ownedBy": {
+            "catalog": "full",
+            "namespace": "app",
+            "object": "a_table_name_long_enough_that_postgres_must_shorten_derived_names",
+            "member": "identifier_column_with_a_long_name"
+          }
+        },
+        {
+          "name": {
+            "stored": "counter"
+          },
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          },
+          "start": "20",
+          "increment": "5",
+          "min": "10",
+          "max": "1000",
+          "cycle": true,
+          "ownedBy": {
+            "catalog": "full",
+            "namespace": "app",
+            "object": "items",
+            "member": "qty"
+          },
+          "annotations": [
+            {
+              "key": "core.name",
+              "value": {
+                "string": "ctr"
+              },
+              "origin": {
+                "kind": "ORIGIN_DB_COMMENT",
+                "plugin": "dpg-snapshot",
+                "location": "COMMENT ON SEQUENCE app.counter"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "@name(ctr)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "admin"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.SequenceCache",
+              "cache": "9007199254740993"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "down"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "-1",
+          "increment": "-1",
+          "min": "-9223372036854775808",
+          "max": "-1"
+        },
+        {
+          "name": {
+            "stored": "items_id_seq"
+          },
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "2147483647",
+          "ownedBy": {
+            "catalog": "full",
+            "namespace": "app",
+            "object": "items",
+            "member": "id"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "admin"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "items_ident_seq"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "-1",
+          "increment": "-1",
+          "min": "-9223372036854775808",
+          "max": "-1",
+          "cycle": true,
+          "ownedBy": {
+            "catalog": "full",
+            "namespace": "app",
+            "object": "items",
+            "member": "ident"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "admin"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.SequenceCache",
+              "cache": "5"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "tétététététététététététététététététét_id_seq"
+          },
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "2147483647",
+          "ownedBy": {
+            "catalog": "full",
+            "namespace": "app",
+            "object": "tététététététététététététététététététété",
+            "member": "id"
+          }
+        },
+        {
+          "name": {
+            "stored": "users_id_seq"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "100",
+          "increment": "2",
+          "min": "50",
+          "max": "5000",
+          "ownedBy": {
+            "catalog": "full",
+            "namespace": "app",
+            "object": "users",
+            "member": "id"
+          }
+        }
+      ],
+      "routines": [
+        {
+          "name": {
+            "stored": "f"
+          },
+          "overloads": [
+            {
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "arguments": [
+                {
+                  "type": {
+                    "int32": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "int4"
+                      },
+                      "raw": "integer"
+                    }
+                  }
+                },
+                {
+                  "type": {
+                    "decimal": {
+                      "precision": 10,
+                      "scale": 2
+                    },
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "numeric"
+                      },
+                      "modifiers": [
+                        {
+                          "int": 10
+                        },
+                        {
+                          "int": 2
+                        }
+                      ],
+                      "raw": "numeric(10, 2)"
+                    }
+                  }
+                }
+              ],
+              "returns": {
+                "table": {
+                  "columns": [
+                    {
+                      "name": {
+                        "stored": "a"
+                      },
+                      "ordinal": 1,
+                      "type": {
+                        "int32": {},
+                        "native": {
+                          "name": {
+                            "namespace": "pg_catalog",
+                            "object": "int4"
+                          },
+                          "raw": "integer"
+                        }
+                      },
+                      "nullable": true,
+                      "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+                    },
+                    {
+                      "name": {
+                        "stored": "B c"
+                      },
+                      "ordinal": 2,
+                      "type": {
+                        "decimal": {
+                          "precision": 12,
+                          "scale": 2
+                        },
+                        "native": {
+                          "name": {
+                            "namespace": "pg_catalog",
+                            "object": "numeric"
+                          },
+                          "modifiers": [
+                            {
+                              "int": 12
+                            },
+                            {
+                              "int": 2
+                            }
+                          ],
+                          "raw": "numeric(12, 2)"
+                        }
+                      },
+                      "nullable": true,
+                      "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+                    }
+                  ]
+                }
+              },
+              "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+              "volatility": "VOLATILITY_IMMUTABLE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON FUNCTION app.f(integer, numeric(10, 2))"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "function",
+                  "fields": {
+                    "body_hash": "ff",
+                    "cost": 1.5
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@public"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+                  "role": "admin"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "parallel": "UNSAFE"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "plpgsql"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "g"
+          },
+          "overloads": [
+            {
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "returns": {
+                "nothing": {}
+              },
+              "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+              "volatility": "VOLATILITY_VOLATILE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON FUNCTION app.g()"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "function",
+                  "fields": {
+                    "body_hash": "gg",
+                    "comment": "kept in the record"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "[DEPRECATED] @public use h"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "parallel": "UNSAFE"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "sql"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "h"
+          },
+          "overloads": [
+            {
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "arguments": [
+                {
+                  "type": {
+                    "text": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "text"
+                      },
+                      "raw": "text"
+                    }
+                  }
+                }
+              ],
+              "returns": {
+                "setOf": {
+                  "type": {
+                    "text": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "text"
+                      },
+                      "raw": "text"
+                    }
+                  },
+                  "nullable": true
+                }
+              },
+              "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+              "volatility": "VOLATILITY_VOLATILE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON FUNCTION app.h(text)"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "function",
+                  "fields": {
+                    "body_hash": "hh"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@public"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "parallel": "UNSAFE"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "sql"
+                }
+              ]
+            },
+            {
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "arguments": [
+                {
+                  "type": {
+                    "text": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "text"
+                      },
+                      "raw": "text"
+                    }
+                  }
+                },
+                {
+                  "type": {
+                    "text": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "text"
+                      },
+                      "raw": "text"
+                    }
+                  }
+                }
+              ],
+              "returns": {
+                "scalar": {
+                  "type": {
+                    "named": {
+                      "enum": {
+                        "catalog": "full",
+                        "namespace": "app",
+                        "object": "mood"
+                      }
+                    },
+                    "native": {
+                      "name": {
+                        "namespace": "app",
+                        "object": "mood"
+                      },
+                      "raw": "app.mood"
+                    }
+                  },
+                  "nullable": true
+                }
+              },
+              "nullBehavior": "NULL_BEHAVIOR_STRICT",
+              "volatility": "VOLATILITY_STABLE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON FUNCTION app.h(text, text)"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "function",
+                  "fields": {
+                    "body_hash": "hh"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@public"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "parallel": "UNSAFE"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "sql"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "proc"
+          },
+          "overloads": [
+            {
+              "kind": "ROUTINE_KIND_PROCEDURE",
+              "arguments": [
+                {
+                  "type": {
+                    "int32": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "int4"
+                      },
+                      "raw": "integer"
+                    }
+                  }
+                }
+              ],
+              "returns": {
+                "nothing": {}
+              },
+              "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+              "volatility": "VOLATILITY_VOLATILE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "dpg-snapshot",
+                    "location": "COMMENT ON PROCEDURE app.proc(integer)"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+                  "kind": "procedure",
+                  "fields": {
+                    "body_hash": "cc"
+                  }
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@public"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+                  "role": "admin"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "parallel": "UNSAFE",
+                  "securityDefiner": true
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "key": "core.name",
+          "value": {
+            "string": "application"
+          },
+          "origin": {
+            "kind": "ORIGIN_DB_COMMENT",
+            "plugin": "dpg-snapshot",
+            "location": "COMMENT ON SCHEMA app"
+          }
+        }
+      ],
+      "extensions": [
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "schema",
+          "fields": {
+            "grants": [
+              {
+                "privileges": [
+                  "USAGE"
+                ],
+                "roles": [
+                  "web"
+                ]
+              }
+            ],
+            "name_maps": [
+              {
+                "name": "application",
+                "tool": "go"
+              }
+            ]
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "type",
+          "name": "app.blob",
+          "fields": {
+            "base_immutable_hash": "bb",
+            "base_structured": true,
+            "name": "blob",
+            "schema": "app",
+            "variant": "BASE"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "type",
+          "name": "app.span",
+          "fields": {
+            "body_hash": "ss",
+            "comment": "@x.y",
+            "multirange_name": "span_multi",
+            "name": "span",
+            "schema": "app",
+            "variant": "RANGE"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "table",
+          "name": "app.ft",
+          "fields": {
+            "columns": [
+              {
+                "name": "x",
+                "type": "integer"
+              }
+            ],
+            "foreign": true,
+            "foreign_server": "remote",
+            "name": "ft",
+            "schema": "app"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "aggregate",
+          "name": "app.agg(integer)",
+          "fields": {
+            "args": "integer",
+            "body_hash": "aa",
+            "kind": "aggregate",
+            "name": "agg",
+            "schema": "app"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "collation",
+          "name": "app.ci",
+          "fields": {
+            "collation_icu_locale": "und-u-ks-level2",
+            "collation_provider": "icu",
+            "collation_structured": true,
+            "kind": "collation",
+            "name": "ci",
+            "schema": "app"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "collation",
+          "name": "app.copied",
+          "fields": {
+            "collation_copy_from": "app.ci",
+            "kind": "collation",
+            "name": "copied",
+            "schema": "app"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "collation",
+          "name": "app.det",
+          "fields": {
+            "collation_collate": "C",
+            "collation_ctype": "C",
+            "collation_deterministic": true,
+            "collation_provider": "libc",
+            "collation_structured": true,
+            "kind": "collation",
+            "name": "det",
+            "schema": "app"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "function",
+          "name": "app.hidden_set()",
+          "fields": {
+            "body_hash": "h2"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "function",
+          "name": "app.hidden_tbl(integer)",
+          "fields": {
+            "body_hash": "h1"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "function",
+          "name": "app.private(integer)",
+          "fields": {
+            "body_hash": "pp"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "procedure",
+          "name": "app.proc2()",
+          "fields": {
+            "body_hash": "dd"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "virtual_type",
+          "name": "app.vt",
+          "fields": {
+            "body": {
+              "kind": "type_ref",
+              "name": "text"
+            },
+            "name": "vt",
+            "schema": "app"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+          "kind": "default_privileges",
+          "name": "default_privileges:admin:app:tables",
+          "fields": {
+            "for_role": "admin",
+            "grants": [
+              {
+                "privileges": [
+                  "SELECT"
+                ],
+                "roles": [
+                  "web"
+                ]
+              }
+            ],
+            "in_schema": "app",
+            "object_type": "tables"
+          }
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+          "text": "Application objects. @name(application)"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+          "role": "admin"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "hidden_set",
+          "kind": "FUNCTION",
+          "result": "SETOF integer",
+          "language": "sql",
+          "volatility": "VOLATILE",
+          "parallel": "SAFE",
+          "securityDefiner": true,
+          "leakproof": true,
+          "owner": "admin",
+          "comment": "@x.go.name(h)"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "hidden_tbl",
+          "kind": "FUNCTION",
+          "identityArguments": "integer",
+          "result": "TABLE(x integer)",
+          "language": "sql",
+          "volatility": "STABLE",
+          "parallel": "UNSAFE"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "private",
+          "kind": "FUNCTION",
+          "identityArguments": "integer",
+          "result": "integer",
+          "language": "sql",
+          "volatility": "IMMUTABLE",
+          "parallel": "UNSAFE",
+          "comment": "Not exposed."
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "proc2",
+          "kind": "PROCEDURE",
+          "volatility": "VOLATILE",
+          "parallel": "UNSAFE"
+        }
+      ]
+    },
+    {
+      "name": {
+        "stored": "audit"
+      },
+      "tables": [
+        {
+          "name": {
+            "stored": "log"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "at"
+              },
+              "ordinal": 1,
+              "type": {
+                "localDatetime": {
+                  "precision": 3
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "timestamp"
+                  },
+                  "modifiers": [
+                    {
+                      "int": 3
+                    }
+                  ],
+                  "raw": "timestamp(3) without time zone"
+                }
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            }
+          ]
+        }
+      ],
+      "sequences": [
+        {
+          "name": {
+            "stored": "seq"
+          },
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          },
+          "start": "1",
+          "increment": "1",
+          "min": "1",
+          "max": "9223372036854775807",
+          "ownedBy": {
+            "catalog": "full",
+            "namespace": "audit",
+            "object": "log",
+            "member": "at"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Unlogged"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": {
+        "stored": "public"
+      },
+      "tables": [
+        {
+          "name": {
+            "stored": "thing"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "x"
+              },
+              "ordinal": 1,
+              "type": {
+                "int32": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4"
+                  },
+                  "raw": "integer"
+                }
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+              "text": "@name( unclosed"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "defaultNamespace": "public",
+  "extensions": [
+    {
+      "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+      "kind": "role",
+      "name": "admin",
+      "fields": {
+        "kind": "role",
+        "role": {
+          "can_login": true,
+          "connection_limit": "9007199254740993",
+          "name": "admin"
+        }
+      }
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+      "kind": "cast",
+      "name": "cast:text:app.mood",
+      "fields": {
+        "kind": "cast",
+        "opaque": {
+          "cast_method": "INOUT",
+          "kind": "cast",
+          "name": "text_to_mood"
+        }
+      }
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+      "kind": "default_privileges",
+      "name": "default_privileges:admin:functions",
+      "fields": {
+        "default_privileges": {
+          "for_role": "admin",
+          "object_type": "functions"
+        },
+        "kind": "default_privileges"
+      }
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+      "kind": "extension",
+      "name": "extension:pgcrypto",
+      "fields": {
+        "comment": "crypto"
+      }
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.dpg.v1.Record",
+      "kind": "parameter_privileges",
+      "name": "parameter_privileges",
+      "fields": {
+        "kind": "parameter_privileges",
+        "parameter_privileges": {
+          "grants": [
+            {
+              "parameters": [
+                "work_mem"
+              ],
+              "privileges": [
+                "SET"
+              ],
+              "roles": [
+                "web"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.InstalledExtension",
+      "name": "pgcrypto",
+      "version": "1.3",
+      "namespace": "public"
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.InstalledExtension",
+      "name": "plpgsql"
+    }
+  ]
+}

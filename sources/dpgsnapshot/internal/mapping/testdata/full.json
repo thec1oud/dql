@@ -1,0 +1,1156 @@
+{
+  "dpg_version": "0.2.3",
+  "cluster": "local",
+  "database": "full",
+  "applied_at": "2026-10-23T03:14:26Z",
+  "source_revision": "abc123",
+  "migration": "20261023T031426Z-000000000000",
+  "objects": {
+    "Odd": {
+      "kind": "schema",
+      "schema": {
+        "name": "Odd"
+      }
+    },
+    "Odd.T": {
+      "kind": "table",
+      "table": {
+        "schema": "Odd",
+        "name": "T",
+        "columns": [
+          {
+            "name": "id",
+            "type": "integer",
+            "serial": "SERIAL"
+          }
+        ]
+      }
+    },
+    "admin": {
+      "kind": "role",
+      "role": {
+        "name": "admin",
+        "can_login": true,
+        "connection_limit": 9007199254740993
+      }
+    },
+    "app": {
+      "kind": "schema",
+      "schema": {
+        "name": "app",
+        "owner": "admin",
+        "comment": "Application objects. @name(application)",
+        "grants": [
+          {
+            "privileges": [
+              "USAGE"
+            ],
+            "roles": [
+              "web"
+            ]
+          }
+        ],
+        "name_maps": [
+          {
+            "tool": "go",
+            "name": "application"
+          }
+        ]
+      }
+    },
+    "app.a_table_name_long_enough_that_postgres_must_shorten_derived_names": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "a_table_name_long_enough_that_postgres_must_shorten_derived_names",
+        "columns": [
+          {
+            "name": "identifier_column_with_a_long_name",
+            "type": "bigint",
+            "identity": "ALWAYS"
+          }
+        ],
+        "constraints": [
+          {
+            "name": "",
+            "type": "UNIQUE",
+            "expr": "UNIQUE (identifier_column_with_a_long_name)"
+          }
+        ]
+      }
+    },
+    "app.agg(integer)": {
+      "kind": "aggregate",
+      "opaque": {
+        "kind": "aggregate",
+        "schema": "app",
+        "name": "agg",
+        "args": "integer",
+        "body_hash": "aa"
+      }
+    },
+    "app.base_dom": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "base_dom",
+        "variant": "DOMAIN",
+        "domain_base_type": "text",
+        "domain_collation": "C",
+        "domain_default": "'x'::text",
+        "domain_constraints": [
+          {
+            "name": "",
+            "type": "NOT NULL"
+          },
+          {
+            "name": "base_dom_len",
+            "type": "CHECK",
+            "expr": "CHECK (length(value) >= 1)",
+            "comment": "Not empty. @x.go.check(len)"
+          },
+          {
+            "name": "",
+            "type": "CHECK",
+            "expr": "CHECK (value <> 'bad' OR value IS NULL)",
+            "not_valid": true
+          }
+        ],
+        "comment": "@name(base)",
+        "owner": "admin"
+      }
+    },
+    "app.blob": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "blob",
+        "variant": "BASE",
+        "base_structured": true,
+        "base_immutable_hash": "bb"
+      }
+    },
+    "app.c_text": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "c_text",
+        "variant": "DOMAIN",
+        "domain_base_type": "app.base_dom"
+      }
+    },
+    "app.ci": {
+      "kind": "collation",
+      "opaque": {
+        "kind": "collation",
+        "schema": "app",
+        "name": "ci",
+        "collation_structured": true,
+        "collation_provider": "icu",
+        "collation_icu_locale": "und-u-ks-level2"
+      }
+    },
+    "app.copied": {
+      "kind": "collation",
+      "opaque": {
+        "kind": "collation",
+        "schema": "app",
+        "name": "copied",
+        "collation_copy_from": "app.ci"
+      }
+    },
+    "app.counter": {
+      "kind": "sequence",
+      "sequence": {
+        "schema": "app",
+        "name": "counter",
+        "owner": "admin",
+        "comment": "@name(ctr)",
+        "increment_by": 5,
+        "min_value": 10,
+        "max_value": 1000,
+        "start_value": 20,
+        "cache": 9007199254740993,
+        "cycle": true,
+        "as_type": "integer",
+        "owned_by": "items.qty"
+      }
+    },
+    "app.det": {
+      "kind": "collation",
+      "opaque": {
+        "kind": "collation",
+        "schema": "app",
+        "name": "det",
+        "collation_structured": true,
+        "collation_provider": "libc",
+        "collation_collate": "C",
+        "collation_ctype": "C",
+        "collation_deterministic": true
+      }
+    },
+    "app.down": {
+      "kind": "sequence",
+      "sequence": {
+        "schema": "app",
+        "name": "down",
+        "increment_by": -1,
+        "owned_by": "NONE"
+      }
+    },
+    "app.f(integer, numeric(10, 2))": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "f",
+        "args": "integer, numeric(10, 2)",
+        "return_type": "record",
+        "returns_set": true,
+        "return_table": "a integer, \"B c\" numeric(12, 2)",
+        "language": "plpgsql",
+        "volatility": "IMMUTABLE",
+        "body_hash": "ff",
+        "comment": "@public",
+        "owner": "admin",
+        "cost": 1.5
+      }
+    },
+    "app.ft": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "ft",
+        "foreign": true,
+        "foreign_server": "remote",
+        "columns": [
+          {
+            "name": "x",
+            "type": "integer"
+          }
+        ]
+      }
+    },
+    "app.g()": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "g",
+        "args": "",
+        "return_type": "void",
+        "language": "sql",
+        "volatility": "VOLATILE",
+        "body_hash": "gg",
+        "comment": "kept in the record",
+        "deprecated": "@public use h"
+      }
+    },
+    "app.h(text)": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "h",
+        "args": "text",
+        "return_type": "text",
+        "returns_set": true,
+        "language": "sql",
+        "volatility": "VOLATILE",
+        "body_hash": "hh",
+        "comment": "@public"
+      }
+    },
+    "app.h(text, text)": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "h",
+        "args": "text, text",
+        "return_type": "app.mood",
+        "language": "sql",
+        "volatility": "STABLE",
+        "body_hash": "hh",
+        "comment": "@public",
+        "strict": true
+      }
+    },
+    "app.hidden_set()": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "hidden_set",
+        "args": "",
+        "return_type": "integer",
+        "returns_set": true,
+        "language": "sql",
+        "volatility": "",
+        "parallel": "SAFE",
+        "body_hash": "h2",
+        "leakproof": true,
+        "security_def": true,
+        "owner": "admin",
+        "comment": "@x.go.name(h)"
+      }
+    },
+    "app.hidden_tbl(integer)": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "hidden_tbl",
+        "args": "integer",
+        "return_type": "record",
+        "returns_set": true,
+        "return_table": "x integer",
+        "language": "sql",
+        "volatility": "STABLE",
+        "body_hash": "h1"
+      }
+    },
+    "app.items": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "items",
+        "unlogged": true,
+        "owner": "admin",
+        "tablespace": "fast",
+        "comment": "@name(item)",
+        "storage_params": "fillfactor=70, autovacuum_enabled=false",
+        "rls_enabled": true,
+        "inherits": [
+          "app.base",
+          "base2"
+        ],
+        "partition_by": "RANGE (id)",
+        "partitions": [
+          {
+            "name": "items_p1",
+            "bound": "FOR VALUES FROM (1) TO (10)"
+          },
+          {
+            "schema": "app",
+            "name": "items_p2",
+            "bound": "FOR VALUES FROM (10) TO (20)",
+            "partition_by": "LIST (qty)",
+            "partitions": [
+              {
+                "name": "items_p2a",
+                "bound": "FOR VALUES IN (11)"
+              }
+            ]
+          },
+          {
+            "schema": "other",
+            "name": "items_p3",
+            "bound": "DEFAULT"
+          }
+        ],
+        "columns": [
+          {
+            "name": "id",
+            "type": "integer",
+            "not_null": true,
+            "serial": "SERIAL"
+          },
+          {
+            "name": "code",
+            "type": "character varying",
+            "not_null": true,
+            "default": "'abc'::character varying",
+            "collation": "C"
+          },
+          {
+            "name": "qty",
+            "type": "integer",
+            "default": "nextval('counter')"
+          },
+          {
+            "name": "score",
+            "type": "numeric",
+            "generated": "(qty * 2)",
+            "generated_virtual": true
+          },
+          {
+            "name": "d",
+            "type": "app.c_text"
+          },
+          {
+            "name": "m",
+            "type": "mood",
+            "statistics": 100
+          },
+          {
+            "name": "sp",
+            "type": "app.span"
+          },
+          {
+            "name": "bl",
+            "type": "blob"
+          },
+          {
+            "name": "owner_row",
+            "type": "app.users"
+          },
+          {
+            "name": "tags",
+            "type": "text[]"
+          },
+          {
+            "name": "ident",
+            "type": "bigint",
+            "not_null": true,
+            "identity": "BY DEFAULT",
+            "identity_increment_by": -1,
+            "identity_cycle": true,
+            "identity_cache": 5
+          },
+          {
+            "name": "legacy",
+            "type": "integer",
+            "comment": "@immutable",
+            "deprecated": "use qty"
+          },
+          {
+            "name": "Mixed Case",
+            "type": "text",
+            "comment": "",
+            "renamed_from": "mixed"
+          }
+        ],
+        "constraints": [
+          {
+            "name": "",
+            "type": "PRIMARY KEY",
+            "expr": "PRIMARY KEY (\"id\") INCLUDE (\"code\")"
+          },
+          {
+            "name": "",
+            "type": "UNIQUE",
+            "expr": "UNIQUE NULLS NOT DISTINCT (\"code\", \"qty\")",
+            "deferrable": true
+          },
+          {
+            "name": "",
+            "type": "CHECK",
+            "expr": "CHECK (qty > 0 OR code <> '')"
+          },
+          {
+            "name": "",
+            "type": "CHECK",
+            "expr": "CHECK (qty >= 0)",
+            "comment": "@enum(quantity)"
+          },
+          {
+            "name": "",
+            "type": "CHECK",
+            "expr": "CHECK (qty <= 100)"
+          },
+          {
+            "name": "",
+            "type": "EXCLUDE",
+            "expr": "EXCLUDE USING gist (sp WITH &&, lower(code) WITH =, (qty + 1) WITH =)"
+          },
+          {
+            "name": "",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (qty) REFERENCES users MATCH FULL ON UPDATE RESTRICT ON DELETE CASCADE"
+          },
+          {
+            "name": "",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (ident) REFERENCES app.users (id) ON DELETE SET NULL (ident)",
+            "deferrable": true,
+            "initially_deferred": true,
+            "comment": "@relation-name(owner)"
+          },
+          {
+            "name": "items_m_fk",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (m) REFERENCES app.users (id) MATCH SIMPLE ON UPDATE SET DEFAULT ON DELETE SET NULL",
+            "not_valid": true
+          },
+          {
+            "name": "items_code_not_null",
+            "type": "NOT NULL"
+          },
+          {
+            "name": "items_named_check",
+            "type": "CHECK",
+            "expr": "CHECK (code <> '')",
+            "comment": "Named."
+          },
+          {
+            "name": "items_named_excl",
+            "type": "EXCLUDE",
+            "expr": "EXCLUDE USING gist (sp WITH &&)"
+          },
+          {
+            "name": "",
+            "type": "UNIQUE",
+            "expr": "UNIQUE (qty) WITH (fillfactor=70, x=1.5, y='s', z=off, w) USING INDEX TABLESPACE fast"
+          }
+        ],
+        "indexes": [
+          {
+            "name": "items_lower_code",
+            "unique": true,
+            "method": "btree",
+            "columns": "(lower(code)), qty",
+            "where": "qty > 0"
+          },
+          {
+            "name": "items_code_desc",
+            "unique": true,
+            "method": "btree",
+            "columns": "code DESC",
+            "nulls_not_distinct": true
+          },
+          {
+            "name": "items_id_key",
+            "unique": true,
+            "method": "btree",
+            "columns": "id",
+            "comment": "Unique ids. @bound"
+          },
+          {
+            "name": "items_bl_key",
+            "unique": true,
+            "method": "btree",
+            "columns": "bl",
+            "include": "code"
+          },
+          {
+            "name": "items_qty_idx",
+            "method": "btree",
+            "columns": "qty",
+            "with": "fillfactor=70, deduplicate_items=off",
+            "tablespace": "fast",
+            "comment": "By quantity."
+          },
+          {
+            "name": "items_m_idx",
+            "method": "hash",
+            "columns": "m"
+          },
+          {
+            "name": "items_fn",
+            "unique": true,
+            "method": "btree",
+            "columns": "lower(code)"
+          }
+        ],
+        "policies": [
+          {
+            "name": "items_read",
+            "command": "SELECT",
+            "permissive": true,
+            "roles": [
+              "web",
+              "admin"
+            ],
+            "using": "true",
+            "comment": "Everyone reads."
+          }
+        ],
+        "triggers": [
+          {
+            "name": "items_touch",
+            "when": "BEFORE",
+            "events": "UPDATE, INSERT",
+            "for_each": "ROW",
+            "function": "app.touch()",
+            "enable_state": "ENABLE ALWAYS",
+            "condition": "(new.qty > 0)"
+          },
+          {
+            "name": "items_audit",
+            "when": "AFTER",
+            "events": "TRUNCATE, DELETE",
+            "for_each": "STATEMENT",
+            "function": "audit_items"
+          }
+        ],
+        "grants": [
+          {
+            "privileges": [
+              "SELECT"
+            ],
+            "roles": [
+              "web"
+            ],
+            "with_grant": true
+          }
+        ],
+        "name_maps": [
+          {
+            "tool": "go",
+            "rule": "snake"
+          }
+        ]
+      }
+    },
+    "app.mood": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "mood",
+        "variant": "ENUM",
+        "values": [
+          "sad",
+          "ok",
+          "happy"
+        ],
+        "comment": "@name(feeling)",
+        "owner": "admin"
+      }
+    },
+    "app.mood2": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "mood2",
+        "variant": "ENUM",
+        "values": [
+          "a"
+        ]
+      }
+    },
+    "app.mv": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "mv",
+        "query": "SELECT id FROM app.users",
+        "comment": "@logical-key(id)",
+        "with_no_data": true,
+        "tablespace": "fast",
+        "indexes": [
+          {
+            "name": "mv_id",
+            "unique": true,
+            "method": "btree",
+            "columns": "id"
+          },
+          {
+            "name": "mv_id_hash",
+            "method": "hash",
+            "columns": "id"
+          }
+        ]
+      }
+    },
+    "app.mv2": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "mv2",
+        "query": "SELECT id FROM app.users",
+        "indexes": [
+          {
+            "name": "mv2_id",
+            "method": "btree",
+            "columns": "id"
+          }
+        ]
+      }
+    },
+    "app.mv3": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "mv3",
+        "query": "SELECT id FROM app.users",
+        "with_no_data": true
+      }
+    },
+    "app.pair": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "pair",
+        "variant": "COMPOSITE",
+        "composite_attrs": [
+          {
+            "name": "a",
+            "type": "integer",
+            "comment": "@nonnull"
+          },
+          {
+            "name": "b",
+            "type": "text",
+            "collation": "C",
+            "renamed_from": "bb"
+          }
+        ],
+        "comment": "A pair.",
+        "owner": "admin"
+      }
+    },
+    "app.pair2": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "pair2",
+        "variant": "COMPOSITE",
+        "composite_attrs": [
+          {
+            "name": "x",
+            "type": "integer"
+          }
+        ]
+      }
+    },
+    "app.private(integer)": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "private",
+        "args": "integer",
+        "return_type": "integer",
+        "language": "sql",
+        "volatility": "IMMUTABLE",
+        "body_hash": "pp",
+        "comment": "Not exposed."
+      }
+    },
+    "app.proc(integer)": {
+      "kind": "procedure",
+      "opaque": {
+        "kind": "procedure",
+        "schema": "app",
+        "name": "proc",
+        "args": "integer",
+        "body_hash": "cc",
+        "comment": "@public",
+        "procedure_owner": "admin",
+        "procedure_security_def": true
+      }
+    },
+    "app.proc2()": {
+      "kind": "procedure",
+      "opaque": {
+        "kind": "procedure",
+        "schema": "app",
+        "name": "proc2",
+        "body_hash": "dd"
+      }
+    },
+    "app.span": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "span",
+        "variant": "RANGE",
+        "body_hash": "ss",
+        "multirange_name": "span_multi",
+        "comment": "@x.y"
+      }
+    },
+    "app.texts": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "texts",
+        "columns": [
+          {
+            "name": "ci",
+            "type": "text",
+            "collation": "ci"
+          },
+          {
+            "name": "det",
+            "type": "text",
+            "collation": "app.det"
+          },
+          {
+            "name": "copied",
+            "type": "character(2)",
+            "collation": "copied"
+          },
+          {
+            "name": "cat",
+            "type": "text",
+            "collation": "pg_catalog.C"
+          },
+          {
+            "name": "nm",
+            "type": "name"
+          },
+          {
+            "name": "dom_arr",
+            "type": "app.c_text[]"
+          },
+          {
+            "name": "n",
+            "type": "integer"
+          }
+        ],
+        "policies": [
+          {
+            "name": "texts_all",
+            "command": "",
+            "permissive": false
+          },
+          {
+            "name": "texts_pub",
+            "command": "UPDATE",
+            "permissive": true,
+            "roles": [
+              "public"
+            ],
+            "with_check": "true",
+            "comment": "@bound"
+          }
+        ],
+        "triggers": [
+          {
+            "name": "texts_t",
+            "when": "INSTEAD OF",
+            "events": "INSERT",
+            "for_each": "ROW",
+            "function": "t()",
+            "enable_state": "DISABLED",
+            "comment": "@x"
+          },
+          {
+            "name": "texts_r",
+            "when": "AFTER",
+            "events": "UPDATE",
+            "for_each": "ROW",
+            "function": "r",
+            "enable_state": "ENABLE REPLICA"
+          }
+        ]
+      }
+    },
+    "app.tététététététététététététététététététété": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "tététététététététététététététététététété",
+        "columns": [
+          {
+            "name": "id",
+            "type": "integer",
+            "serial": "SERIAL"
+          }
+        ]
+      }
+    },
+    "app.users": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "users",
+        "columns": [
+          {
+            "name": "id",
+            "type": "bigint",
+            "not_null": true,
+            "identity": "ALWAYS",
+            "identity_start_value": 100,
+            "identity_min_value": 50,
+            "identity_max_value": 5000,
+            "identity_increment_by": 2
+          },
+          {
+            "name": "email",
+            "type": "app.c_text"
+          },
+          {
+            "name": "nick",
+            "type": "text"
+          }
+        ],
+        "constraints": [
+          {
+            "name": "users_pk",
+            "type": "PRIMARY KEY",
+            "expr": "PRIMARY KEY (id)",
+            "comment": "Key."
+          },
+          {
+            "name": "",
+            "type": "UNIQUE",
+            "expr": "UNIQUE (nick)"
+          }
+        ],
+        "rls_forced": true
+      }
+    },
+    "app.v_all": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_all",
+        "query": "SELECT * FROM app.v_items",
+        "deprecated": "use v_items",
+        "comment": "@logical-key(iid)"
+      }
+    },
+    "app.v_ambig": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_ambig",
+        "query": "SELECT id FROM app.users, app.items"
+      }
+    },
+    "app.v_const": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_const",
+        "query": "SELECT 1 FROM app.users"
+      }
+    },
+    "app.v_cte": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_cte",
+        "query": "WITH x AS (SELECT 1) SELECT * FROM x, app.users, users, nowhere"
+      }
+    },
+    "app.v_expr": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_expr",
+        "query": "SELECT count(*) AS n FROM app.items"
+      }
+    },
+    "app.v_func": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_func",
+        "query": "SELECT * FROM generate_series(1, 2)"
+      }
+    },
+    "app.v_items": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_items",
+        "query": "SELECT i.id, i.code AS c, u.* FROM app.items i JOIN users u ON u.id = i.qty",
+        "columns": [
+          "iid"
+        ],
+        "owner": "admin",
+        "recursive": true
+      }
+    },
+    "app.v_join_alias": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_join_alias",
+        "query": "SELECT 1 FROM (app.users u JOIN app.items i ON true) AS j"
+      }
+    },
+    "app.v_left_unknown": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_left_unknown",
+        "query": "SELECT u.nick FROM app.v_expr e JOIN app.users u ON true"
+      }
+    },
+    "app.v_missing": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_missing",
+        "query": "SELECT a FROM nowhere"
+      }
+    },
+    "app.v_nested_join": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_nested_join",
+        "query": "SELECT u.nick FROM app.users u JOIN app.items i ON true JOIN app.v_expr e ON true"
+      }
+    },
+    "app.v_qual": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_qual",
+        "query": "SELECT app.users.id, users.nick FROM app.users"
+      }
+    },
+    "app.v_right_unknown": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_right_unknown",
+        "query": "SELECT u.nick FROM app.users u JOIN app.v_expr e ON true"
+      }
+    },
+    "app.v_stored": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_stored",
+        "query": "SELECT id FROM app.users",
+        "storage_params": "security_barrier=true"
+      }
+    },
+    "app.v_union": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_union",
+        "query": "SELECT id FROM app.users UNION SELECT id FROM app.items"
+      }
+    },
+    "app.v_unknown_source": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_unknown_source",
+        "query": "SELECT * FROM app.v_expr"
+      }
+    },
+    "app.v_using": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_using",
+        "query": "SELECT id FROM app.users JOIN app.items USING (id)"
+      }
+    },
+    "app.v_values": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "v_values",
+        "query": "VALUES (1)"
+      }
+    },
+    "app.vt": {
+      "kind": "virtual_type",
+      "virtual_type": {
+        "schema": "app",
+        "name": "vt",
+        "body": {
+          "kind": "type_ref",
+          "name": "text"
+        }
+      }
+    },
+    "audit": {
+      "kind": "schema",
+      "schema": {
+        "name": "audit"
+      }
+    },
+    "audit.log": {
+      "kind": "table",
+      "table": {
+        "schema": "audit",
+        "name": "log",
+        "columns": [
+          {
+            "name": "at",
+            "type": "timestamp(3) without time zone",
+            "not_null": true
+          }
+        ]
+      }
+    },
+    "audit.seq": {
+      "kind": "sequence",
+      "sequence": {
+        "schema": "audit",
+        "name": "seq",
+        "owned_by": "audit.log.at",
+        "no_min_value": true,
+        "no_max_value": true,
+        "min_value": 3,
+        "max_value": 4,
+        "unlogged": true
+      }
+    },
+    "cast:text:app.mood": {
+      "kind": "cast",
+      "opaque": {
+        "kind": "cast",
+        "name": "text_to_mood",
+        "cast_method": "INOUT"
+      }
+    },
+    "default_privileges:admin:app:tables": {
+      "kind": "default_privileges",
+      "default_privileges": {
+        "for_role": "admin",
+        "in_schema": "app",
+        "object_type": "tables",
+        "grants": [
+          {
+            "privileges": [
+              "SELECT"
+            ],
+            "roles": [
+              "web"
+            ]
+          }
+        ]
+      }
+    },
+    "default_privileges:admin:functions": {
+      "kind": "default_privileges",
+      "default_privileges": {
+        "for_role": "admin",
+        "object_type": "functions"
+      }
+    },
+    "extension:pgcrypto": {
+      "kind": "extension",
+      "extension": {
+        "name": "pgcrypto",
+        "schema": "public",
+        "version": "1.3",
+        "comment": "crypto"
+      }
+    },
+    "extension:plpgsql": {
+      "kind": "extension",
+      "extension": {
+        "name": "plpgsql"
+      }
+    },
+    "parameter_privileges": {
+      "kind": "parameter_privileges",
+      "parameter_privileges": {
+        "grants": [
+          {
+            "parameters": [
+              "work_mem"
+            ],
+            "roles": [
+              "web"
+            ],
+            "privileges": [
+              "SET"
+            ]
+          }
+        ]
+      }
+    },
+    "public.thing": {
+      "kind": "table",
+      "table": {
+        "schema": "public",
+        "name": "thing",
+        "columns": [
+          {
+            "name": "x",
+            "type": "integer"
+          }
+        ],
+        "comment": "@name( unclosed"
+      }
+    }
+  }
+}
