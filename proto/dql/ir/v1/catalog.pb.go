@@ -9,6 +9,7 @@ package irv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	anypb "google.golang.org/protobuf/types/known/anypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -27,6 +28,8 @@ type SourceFidelity int32
 const (
 	SourceFidelity_SOURCE_FIDELITY_UNSPECIFIED SourceFidelity = 0
 	SourceFidelity_SOURCE_FIDELITY_FULL        SourceFidelity = 1
+	// The source documents what it does not capture in fidelity_limits.
+	SourceFidelity_SOURCE_FIDELITY_PARTIAL SourceFidelity = 2
 )
 
 // Enum value maps for SourceFidelity.
@@ -34,10 +37,12 @@ var (
 	SourceFidelity_name = map[int32]string{
 		0: "SOURCE_FIDELITY_UNSPECIFIED",
 		1: "SOURCE_FIDELITY_FULL",
+		2: "SOURCE_FIDELITY_PARTIAL",
 	}
 	SourceFidelity_value = map[string]int32{
 		"SOURCE_FIDELITY_UNSPECIFIED": 0,
 		"SOURCE_FIDELITY_FULL":        1,
+		"SOURCE_FIDELITY_PARTIAL":     2,
 	}
 )
 
@@ -68,13 +73,19 @@ func (SourceFidelity) EnumDescriptor() ([]byte, []int) {
 	return file_dql_ir_v1_catalog_proto_rawDescGZIP(), []int{0}
 }
 
-// One database (§5.1). Objects arrive with the catalog layer (M1).
+// One database (§5.1).
 type Catalog struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	Name       *Identifier            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Provenance *Provenance            `protobuf:"bytes,2,opt,name=provenance,proto3" json:"provenance,omitempty"`
 	// Sorted by stored name (§3.2).
-	Namespaces    []*Namespace `protobuf:"bytes,3,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	Namespaces []*Namespace `protobuf:"bytes,3,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	// The namespace whose objects get no namespace prefix (§4.3): the
+	// dialect's own unless config sets default-namespace.
+	DefaultNamespace string `protobuf:"bytes,4,opt,name=default_namespace,json=defaultNamespace,proto3" json:"default_namespace,omitempty"`
+	// Typed dialect extensions on the catalog itself, such as installed
+	// database extensions (§6.2).
+	Extensions    []*anypb.Any `protobuf:"bytes,5,rep,name=extensions,proto3" json:"extensions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -130,6 +141,20 @@ func (x *Catalog) GetNamespaces() []*Namespace {
 	return nil
 }
 
+func (x *Catalog) GetDefaultNamespace() string {
+	if x != nil {
+		return x.DefaultNamespace
+	}
+	return ""
+}
+
+func (x *Catalog) GetExtensions() []*anypb.Any {
+	if x != nil {
+		return x.Extensions
+	}
+	return nil
+}
+
 // Names the source plugin, its version and a fingerprint of its input; never
 // when it ran (§3.2).
 type Provenance struct {
@@ -140,8 +165,10 @@ type Provenance struct {
 	// A snapshot file's hash, or a hash of the introspected catalog: "sha256:…".
 	InputFingerprint string         `protobuf:"bytes,3,opt,name=input_fingerprint,json=inputFingerprint,proto3" json:"input_fingerprint,omitempty"`
 	Fidelity         SourceFidelity `protobuf:"varint,4,opt,name=fidelity,proto3,enum=dql.ir.v1.SourceFidelity" json:"fidelity,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// What the source could not capture, when fidelity is not full. Sorted.
+	FidelityLimits []string `protobuf:"bytes,5,rep,name=fidelity_limits,json=fidelityLimits,proto3" json:"fidelity_limits,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Provenance) Reset() {
@@ -202,10 +229,28 @@ func (x *Provenance) GetFidelity() SourceFidelity {
 	return SourceFidelity_SOURCE_FIDELITY_UNSPECIFIED
 }
 
+func (x *Provenance) GetFidelityLimits() []string {
+	if x != nil {
+		return x.FidelityLimits
+	}
+	return nil
+}
+
 // A schema (§5.1). On MySQL and SQLite the one implicit namespace is stored as "".
+// Every list is sorted by stored name (§3.2).
 type Namespace struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          *Identifier            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  *Identifier            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Tables, views and materialized views.
+	Tables     []*Table     `protobuf:"bytes,2,rep,name=tables,proto3" json:"tables,omitempty"`
+	Enums      []*Enum      `protobuf:"bytes,3,rep,name=enums,proto3" json:"enums,omitempty"`
+	Domains    []*Domain    `protobuf:"bytes,4,rep,name=domains,proto3" json:"domains,omitempty"`
+	Composites []*Composite `protobuf:"bytes,5,rep,name=composites,proto3" json:"composites,omitempty"`
+	Sequences  []*Sequence  `protobuf:"bytes,6,rep,name=sequences,proto3" json:"sequences,omitempty"`
+	// Public functions and procedures only (§6.5).
+	Routines      []*Routine    `protobuf:"bytes,7,rep,name=routines,proto3" json:"routines,omitempty"`
+	Annotations   []*Annotation `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty"`
+	Extensions    []*anypb.Any  `protobuf:"bytes,9,rep,name=extensions,proto3" json:"extensions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -247,11 +292,67 @@ func (x *Namespace) GetName() *Identifier {
 	return nil
 }
 
+func (x *Namespace) GetTables() []*Table {
+	if x != nil {
+		return x.Tables
+	}
+	return nil
+}
+
+func (x *Namespace) GetEnums() []*Enum {
+	if x != nil {
+		return x.Enums
+	}
+	return nil
+}
+
+func (x *Namespace) GetDomains() []*Domain {
+	if x != nil {
+		return x.Domains
+	}
+	return nil
+}
+
+func (x *Namespace) GetComposites() []*Composite {
+	if x != nil {
+		return x.Composites
+	}
+	return nil
+}
+
+func (x *Namespace) GetSequences() []*Sequence {
+	if x != nil {
+		return x.Sequences
+	}
+	return nil
+}
+
+func (x *Namespace) GetRoutines() []*Routine {
+	if x != nil {
+		return x.Routines
+	}
+	return nil
+}
+
+func (x *Namespace) GetAnnotations() []*Annotation {
+	if x != nil {
+		return x.Annotations
+	}
+	return nil
+}
+
+func (x *Namespace) GetExtensions() []*anypb.Any {
+	if x != nil {
+		return x.Extensions
+	}
+	return nil
+}
+
 var File_dql_ir_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x17dql/ir/v1/catalog.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\"\xa1\x01\n" +
+	"\x17dql/ir/v1/catalog.proto\x12\tdql.ir.v1\x1a\x1bdql/ir/v1/annotations.proto\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x18dql/ir/v1/routines.proto\x1a\x19google/protobuf/any.proto\"\x84\x02\n" +
 	"\aCatalog\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x125\n" +
 	"\n" +
@@ -259,18 +360,36 @@ const file_dql_ir_v1_catalog_proto_rawDesc = "" +
 	"provenance\x124\n" +
 	"\n" +
 	"namespaces\x18\x03 \x03(\v2\x14.dql.ir.v1.NamespaceR\n" +
-	"namespaces\"\xaf\x01\n" +
+	"namespaces\x12+\n" +
+	"\x11default_namespace\x18\x04 \x01(\tR\x10defaultNamespace\x124\n" +
+	"\n" +
+	"extensions\x18\x05 \x03(\v2\x14.google.protobuf.AnyR\n" +
+	"extensions\"\xd8\x01\n" +
 	"\n" +
 	"Provenance\x12\x16\n" +
 	"\x06source\x18\x01 \x01(\tR\x06source\x12%\n" +
 	"\x0esource_version\x18\x02 \x01(\tR\rsourceVersion\x12+\n" +
 	"\x11input_fingerprint\x18\x03 \x01(\tR\x10inputFingerprint\x125\n" +
-	"\bfidelity\x18\x04 \x01(\x0e2\x19.dql.ir.v1.SourceFidelityR\bfidelity\"6\n" +
+	"\bfidelity\x18\x04 \x01(\x0e2\x19.dql.ir.v1.SourceFidelityR\bfidelity\x12'\n" +
+	"\x0ffidelity_limits\x18\x05 \x03(\tR\x0efidelityLimits\"\xbc\x03\n" +
 	"\tNamespace\x12)\n" +
-	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name*K\n" +
+	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x12(\n" +
+	"\x06tables\x18\x02 \x03(\v2\x10.dql.ir.v1.TableR\x06tables\x12%\n" +
+	"\x05enums\x18\x03 \x03(\v2\x0f.dql.ir.v1.EnumR\x05enums\x12+\n" +
+	"\adomains\x18\x04 \x03(\v2\x11.dql.ir.v1.DomainR\adomains\x124\n" +
+	"\n" +
+	"composites\x18\x05 \x03(\v2\x14.dql.ir.v1.CompositeR\n" +
+	"composites\x121\n" +
+	"\tsequences\x18\x06 \x03(\v2\x13.dql.ir.v1.SequenceR\tsequences\x12.\n" +
+	"\broutines\x18\a \x03(\v2\x12.dql.ir.v1.RoutineR\broutines\x127\n" +
+	"\vannotations\x18\b \x03(\v2\x15.dql.ir.v1.AnnotationR\vannotations\x124\n" +
+	"\n" +
+	"extensions\x18\t \x03(\v2\x14.google.protobuf.AnyR\n" +
+	"extensions*h\n" +
 	"\x0eSourceFidelity\x12\x1f\n" +
 	"\x1bSOURCE_FIDELITY_UNSPECIFIED\x10\x00\x12\x18\n" +
-	"\x14SOURCE_FIDELITY_FULL\x10\x01B.Z,github.com/thec1oud/dql/proto/dql/ir/v1;irv1b\x06proto3"
+	"\x14SOURCE_FIDELITY_FULL\x10\x01\x12\x1b\n" +
+	"\x17SOURCE_FIDELITY_PARTIAL\x10\x02B.Z,github.com/thec1oud/dql/proto/dql/ir/v1;irv1b\x06proto3"
 
 var (
 	file_dql_ir_v1_catalog_proto_rawDescOnce sync.Once
@@ -292,18 +411,35 @@ var file_dql_ir_v1_catalog_proto_goTypes = []any{
 	(*Provenance)(nil),  // 2: dql.ir.v1.Provenance
 	(*Namespace)(nil),   // 3: dql.ir.v1.Namespace
 	(*Identifier)(nil),  // 4: dql.ir.v1.Identifier
+	(*anypb.Any)(nil),   // 5: google.protobuf.Any
+	(*Table)(nil),       // 6: dql.ir.v1.Table
+	(*Enum)(nil),        // 7: dql.ir.v1.Enum
+	(*Domain)(nil),      // 8: dql.ir.v1.Domain
+	(*Composite)(nil),   // 9: dql.ir.v1.Composite
+	(*Sequence)(nil),    // 10: dql.ir.v1.Sequence
+	(*Routine)(nil),     // 11: dql.ir.v1.Routine
+	(*Annotation)(nil),  // 12: dql.ir.v1.Annotation
 }
 var file_dql_ir_v1_catalog_proto_depIdxs = []int32{
-	4, // 0: dql.ir.v1.Catalog.name:type_name -> dql.ir.v1.Identifier
-	2, // 1: dql.ir.v1.Catalog.provenance:type_name -> dql.ir.v1.Provenance
-	3, // 2: dql.ir.v1.Catalog.namespaces:type_name -> dql.ir.v1.Namespace
-	0, // 3: dql.ir.v1.Provenance.fidelity:type_name -> dql.ir.v1.SourceFidelity
-	4, // 4: dql.ir.v1.Namespace.name:type_name -> dql.ir.v1.Identifier
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	4,  // 0: dql.ir.v1.Catalog.name:type_name -> dql.ir.v1.Identifier
+	2,  // 1: dql.ir.v1.Catalog.provenance:type_name -> dql.ir.v1.Provenance
+	3,  // 2: dql.ir.v1.Catalog.namespaces:type_name -> dql.ir.v1.Namespace
+	5,  // 3: dql.ir.v1.Catalog.extensions:type_name -> google.protobuf.Any
+	0,  // 4: dql.ir.v1.Provenance.fidelity:type_name -> dql.ir.v1.SourceFidelity
+	4,  // 5: dql.ir.v1.Namespace.name:type_name -> dql.ir.v1.Identifier
+	6,  // 6: dql.ir.v1.Namespace.tables:type_name -> dql.ir.v1.Table
+	7,  // 7: dql.ir.v1.Namespace.enums:type_name -> dql.ir.v1.Enum
+	8,  // 8: dql.ir.v1.Namespace.domains:type_name -> dql.ir.v1.Domain
+	9,  // 9: dql.ir.v1.Namespace.composites:type_name -> dql.ir.v1.Composite
+	10, // 10: dql.ir.v1.Namespace.sequences:type_name -> dql.ir.v1.Sequence
+	11, // 11: dql.ir.v1.Namespace.routines:type_name -> dql.ir.v1.Routine
+	12, // 12: dql.ir.v1.Namespace.annotations:type_name -> dql.ir.v1.Annotation
+	5,  // 13: dql.ir.v1.Namespace.extensions:type_name -> google.protobuf.Any
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_catalog_proto_init() }
@@ -311,7 +447,10 @@ func file_dql_ir_v1_catalog_proto_init() {
 	if File_dql_ir_v1_catalog_proto != nil {
 		return
 	}
+	file_dql_ir_v1_annotations_proto_init()
 	file_dql_ir_v1_names_proto_init()
+	file_dql_ir_v1_objects_proto_init()
+	file_dql_ir_v1_routines_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

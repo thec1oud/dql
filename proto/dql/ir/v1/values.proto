@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// A constant from the schema: a default, a constraint bound or a membership
+// value. Its meaning comes from the logical type it belongs to.
+message Value {
+  oneof kind {
+    // Text, and values of any type the source keeps in their text form, such
+    // as dates, times and enum labels.
+    string string = 1;
+    int64 int = 2;
+    uint64 uint = 3;
+    // A decimal in its exact text form; never binary floating point (§8.7).
+    string decimal = 4;
+    double float = 5;
+    bool bool = 6;
+  }
+}

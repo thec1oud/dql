@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+// Postgres objects the core does not model, carried losslessly as typed
+// extensions in google.protobuf.Any (design record §6.2, §6.3). Their type URLs
+// use the prefix "type.dql.dev/". The core passes them through unchanged.
+package dql.ext.postgres.v1;
+
+import "dql/ir/v1/names.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ext/postgres/v1;pgextv1";
+
+message Trigger {
+  string name = 1;
+  // BEFORE, AFTER or INSTEAD OF.
+  string timing = 2;
+  // INSERT, UPDATE, DELETE, TRUNCATE, in that order.
+  repeated string events = 3;
+  // ROW or STATEMENT.
+  string level = 4;
+  dql.ir.v1.QualifiedName function = 5;
+  // ORIGIN, ALWAYS, REPLICA or DISABLED.
+  string enabled = 6;
+  // pg_get_triggerdef.
+  string definition = 7;
+}
+
+// A non-unique index (§6.2). Unique indexes are uniqueness facts (§11.2).
+message Index {
+  string name = 1;
+  string method = 2;
+  // pg_get_indexdef.
+  string definition = 3;
+  repeated string storage_parameters = 4;
+  string tablespace = 5;
+}
+
+// The raw text of a comment, kept beside the annotations read from it (§7.5).
+message Comment {
+  string text = 1;
+}
+
+// The privileges of one grantee, as an ACL item.
+message Grant {
+  string grantee = 1;
+  string grantor = 2;
+  // Privilege letters as Postgres prints them, such as "arwd".
+  string privileges = 3;
+  // The subset that may be granted on.
+  string grantable = 4;
+}
+
+// A row-level security policy.
+message Policy {
+  string name = 1;
+  // ALL, SELECT, INSERT, UPDATE or DELETE.
+  string command = 2;
+  bool permissive = 3;
+  repeated string roles = 4;
+  string using = 5;
+  string with_check = 6;
+}
+
+// Row-level security switches on a table.
+message RowSecurity {
+  bool enabled = 1;
+  bool forced = 2;
+}
+
+message Owner {
+  string role = 1;
+}
+
+message Tablespace {
+  string name = 1;
+}
+
+// Storage parameters of a table, such as "fillfactor=70".
+message StorageParameters {
+  repeated string parameters = 1;
+}
+
+// A partitioned table's partition key.
+message PartitionKey {
+  // pg_get_partkeydef.
+  string definition = 1;
+}
+
+// A partition of a partitioned table, or a child in an inheritance tree.
+message PartitionOf {
+  dql.ir.v1.QualifiedName parent = 1;
+  // pg_get_expr of the partition bound; empty for inheritance.
+  string bound = 2;
+}
+
+// An extended statistics object.
+message Statistics {
+  string name = 1;
+  // pg_get_statisticsobjdef.
+  string definition = 2;
+}
+
+// An installed database extension.
+message InstalledExtension {
+  string name = 1;
+  string version = 2;
+  string namespace = 3;
+}
+
+// A routine's implementation language and body, which the core does not read.
+message RoutineSource {
+  string language = 1;
+  string body = 2;
+}

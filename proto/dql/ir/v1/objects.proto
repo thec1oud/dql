@@ -1,0 +1,400 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/annotations.proto";
+import "dql/ir/v1/names.proto";
+import "dql/ir/v1/types.proto";
+import "dql/ir/v1/values.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// A table, view or materialized view (§6.1, §6.4).
+message Table {
+  Identifier name = 1;
+  // The entity's words after the name annotation and the prefixes of §4.3.
+  // Computed by the core; carries only words.
+  Identifier host_name = 2;
+  TableKind kind = 3;
+  // In the database's order (§3.2).
+  repeated Column columns = 4;
+  // Check and exclusion constraints, sorted by name (§10).
+  repeated Constraint constraints = 5;
+  // Primary key, unique constraints and unique indexes, sorted by name (§11.2).
+  repeated Uniqueness uniqueness = 6;
+  // Sorted by name.
+  repeated ForeignKey foreign_keys = 7;
+  // Relations this entity owns, sorted by name (§12).
+  repeated Relation relations = 8;
+  // A key designated by annotation, for a table without a primary key or a
+  // view (§6.4, §11.1).
+  LogicalKey logical_key = 9;
+  // The objects a view reads, sorted (§6.1).
+  repeated QualifiedName depends_on = 10;
+  repeated Annotation annotations = 11;
+  repeated google.protobuf.Any extensions = 12;
+}
+
+enum TableKind {
+  TABLE_KIND_UNSPECIFIED = 0;
+  RELATION_KIND_TABLE = 1;
+  RELATION_KIND_VIEW = 2;
+  RELATION_KIND_MATERIALIZED_VIEW = 3;
+}
+
+// A table, view or composite-type column (§6.1).
+message Column {
+  Identifier name = 1;
+  // The field's words after the name annotation (§4.4). Computed by the core.
+  Identifier host_name = 2;
+  // 1-based position in the database's order.
+  uint32 ordinal = 3;
+  Type type = 4;
+  bool nullable = 5;
+  NullabilitySource nullability_source = 6;
+  Default default = 7;
+  Generation generation = 8;
+  // Set for text columns (§8.9).
+  Collation collation = 9;
+  repeated Annotation annotations = 10;
+  repeated google.protobuf.Any extensions = 11;
+}
+
+// Why a column is or is not nullable (§6.4, §13).
+enum NullabilitySource {
+  NULLABILITY_SOURCE_UNSPECIFIED = 0;
+  // The database guarantees it: NOT NULL, a primary key, a domain's NOT NULL.
+  NULLABILITY_SOURCE_DATABASE = 1;
+  // The source plugin proved it, as for a view column it traced.
+  NULLABILITY_SOURCE_PROVEN = 2;
+  // A nonnull annotation asserts it; decoding enforces it (§13).
+  NULLABILITY_SOURCE_ANNOTATION = 3;
+  // Nothing proves non-null, so the column is nullable (§1.2, P2).
+  NULLABILITY_SOURCE_UNPROVEN = 4;
+}
+
+// A column's default (§11.3).
+message Default {
+  DefaultClass class = 1;
+  // The sequence behind an identity column.
+  QualifiedName sequence = 2;
+  // The default expression as the database prints it.
+  string native = 3;
+  // The value of a constant default, when the source recognized one.
+  Value value = 4;
+  // The database sets the column on every update, as MySQL's ON UPDATE
+  // CURRENT_TIMESTAMP does (§11.3).
+  bool on_update = 5;
+}
+
+enum DefaultClass {
+  DEFAULT_UNSPECIFIED = 0;
+  DEFAULT_CONSTANT = 1;
+  DEFAULT_EXPRESSION = 2;
+  DEFAULT_IDENTITY_BY_DEFAULT = 3;
+  DEFAULT_IDENTITY_ALWAYS = 4;
+}
+
+// A generated column (§11.3).
+message Generation {
+  GenerationKind kind = 1;
+  string native = 2;
+}
+
+enum GenerationKind {
+  GENERATION_UNSPECIFIED = 0;
+  GENERATION_STORED = 1;
+  GENERATION_VIRTUAL = 2;
+}
+
+// A text column's comparison facts (§8.9). An unspecified fact is unknown,
+// and unknown is always treated as inexact.
+message Collation {
+  string name = 1;
+  Tristate case_sensitive = 2;
+  Tristate accent_sensitive = 3;
+  Tristate pad_space = 4;
+  Tristate deterministic = 5;
+  ClientFold client_fold = 6;
+}
+
+enum Tristate {
+  // Unknown.
+  TRISTATE_UNSPECIFIED = 0;
+  TRISTATE_TRUE = 1;
+  TRISTATE_FALSE = 2;
+}
+
+// A client-side folding function the dialect plugin certifies as equivalent
+// to the collation (§8.9).
+enum ClientFold {
+  CLIENT_FOLD_UNSPECIFIED = 0;
+  // Comparison is exact; keys are compared as they are.
+  CLIENT_FOLD_NONE = 1;
+  // ASCII letters fold to lower case; nothing else changes.
+  CLIENT_FOLD_ASCII_LOWER = 2;
+}
+
+// A check or exclusion constraint, on a table or a domain (§10).
+message Constraint {
+  string name = 1;
+  ConstraintKind kind = 2;
+  // The columns the constraint reads, in the database's order; empty on a domain.
+  repeated string columns = 3;
+  oneof form {
+    // A kind the core defines and every emitter validates (§10.2).
+    PortableConstraint portable = 4;
+    // Enforced only by the database (§10.4).
+    NativeText opaque = 5;
+  }
+  bool client_validated = 6;
+  repeated Annotation annotations = 7;
+  repeated google.protobuf.Any extensions = 8;
+}
+
+enum ConstraintKind {
+  CONSTRAINT_KIND_UNSPECIFIED = 0;
+  CONSTRAINT_KIND_CHECK = 1;
+  CONSTRAINT_KIND_EXCLUSION = 2;
+}
+
+// SQL text exactly as the database prints it.
+message NativeText {
+  string native = 1;
+}
+
+// The portable constraint kinds (§10.2).
+message PortableConstraint {
+  oneof kind {
+    LengthConstraint length = 1;
+    RangeConstraint range = 2;
+    DigitsConstraint digits = 3;
+    MembershipConstraint membership = 4;
+    NotEmptyConstraint not_empty = 5;
+    PatternConstraint pattern = 6;
+  }
+}
+
+// Length counted in the stated unit (§10.3).
+message LengthConstraint {
+  optional uint32 min = 1;
+  optional uint32 max = 2;
+  LengthUnit unit = 3;
+}
+
+// Comparison in the column's logical type.
+message RangeConstraint {
+  Value min = 1;
+  Value max = 2;
+  bool min_inclusive = 3;
+  bool max_inclusive = 4;
+}
+
+// The value fits decimal(precision, scale).
+message DigitsConstraint {
+  uint32 precision = 1;
+  uint32 scale = 2;
+}
+
+// Equal to one listed value.
+message MembershipConstraint {
+  repeated Value values = 1;
+}
+
+// Length of at least 1, without trimming.
+message NotEmptyConstraint {}
+
+// An unanchored search with a regex in the portable subset of §10.2.
+message PatternConstraint {
+  string regex = 1;
+}
+
+// A primary key, unique constraint or unique index (§11.2).
+message Uniqueness {
+  string name = 1;
+  UniquenessKind kind = 2;
+  // The key's plain columns, in key order.
+  repeated string columns = 3;
+  // Expression elements of an expression index, by position in the key.
+  repeated IndexExpression expressions = 4;
+  // A partial index's predicate. A partial index never identifies rows.
+  NativeText predicate = 5;
+  bool nulls_distinct = 6;
+  // True only for a key whose columns are all non-null and that has no
+  // predicate or expression (§11.1).
+  bool identifies = 7;
+  repeated google.protobuf.Any extensions = 8;
+}
+
+enum UniquenessKind {
+  UNIQUENESS_UNSPECIFIED = 0;
+  UNIQUENESS_PRIMARY_KEY = 1;
+  UNIQUENESS_CONSTRAINT = 2;
+  UNIQUENESS_INDEX = 3;
+}
+
+message IndexExpression {
+  // 0-based position among the key's elements.
+  uint32 position = 1;
+  string native = 2;
+}
+
+// A foreign key (§4.1).
+message ForeignKey {
+  Identifier name = 1;
+  // In the database's order.
+  repeated string columns = 2;
+  ColumnSet references = 3;
+  ForeignKeyMatch match = 4;
+  ForeignKeyAction on_update = 5;
+  ForeignKeyAction on_delete = 6;
+  bool deferrable = 7;
+  repeated Annotation annotations = 8;
+  repeated google.protobuf.Any extensions = 9;
+}
+
+enum ForeignKeyMatch {
+  FOREIGN_KEY_MATCH_UNSPECIFIED = 0;
+  // A composite key is unenforced when any of its columns is NULL (§12.3).
+  FOREIGN_KEY_MATCH_SIMPLE = 1;
+  FOREIGN_KEY_MATCH_FULL = 2;
+  FOREIGN_KEY_MATCH_PARTIAL = 3;
+}
+
+enum ForeignKeyAction {
+  FOREIGN_KEY_ACTION_UNSPECIFIED = 0;
+  FOREIGN_KEY_ACTION_NO_ACTION = 1;
+  FOREIGN_KEY_ACTION_RESTRICT = 2;
+  FOREIGN_KEY_ACTION_CASCADE = 3;
+  FOREIGN_KEY_ACTION_SET_NULL = 4;
+  FOREIGN_KEY_ACTION_SET_DEFAULT = 5;
+}
+
+// Columns of a table. The table is omitted where it is the owner (§12.4).
+message ColumnSet {
+  QualifiedName table = 1;
+  repeated string columns = 2;
+}
+
+// A key designated by the logical-key annotation (§11.1).
+message LogicalKey {
+  repeated string columns = 1;
+  OriginKind origin = 2;
+}
+
+// A relation between two entities (§12).
+message Relation {
+  Identifier name = 1;
+  QualifiedName owner = 2;
+  RelationKind kind = 3;
+  RelationOrigin origin = 4;
+  // The foreign key it comes from: the referencing table plus the
+  // constraint's name as member.
+  QualifiedName via = 5;
+  ColumnSet from = 6;
+  ColumnSet to = 7;
+  // A to-one relation that may be absent (§12.3).
+  bool optional = 8;
+  // The name of the relation this one is the inverse of.
+  string inverse_of = 9;
+  RelationPolicy policy = 10;
+  // The junction table of a many-to-many relation.
+  QualifiedName through = 11;
+  bool cross_catalog = 12;
+  repeated Annotation annotations = 13;
+}
+
+enum RelationKind {
+  RELATION_KIND_UNSPECIFIED = 0;
+  RELATION_KIND_MANY_TO_ONE = 1;
+  RELATION_KIND_ONE_TO_MANY = 2;
+  RELATION_KIND_ONE_TO_ONE = 3;
+  RELATION_KIND_INVERSE_TO_ONE = 4;
+  RELATION_KIND_MANY_TO_MANY = 5;
+}
+
+enum RelationOrigin {
+  RELATION_ORIGIN_UNSPECIFIED = 0;
+  RELATION_ORIGIN_FOREIGN_KEY = 1;
+  RELATION_ORIGIN_ANNOTATED = 2;
+  RELATION_ORIGIN_INFERRED_JUNCTION = 3;
+}
+
+// How nested Partials treat a to-many relation (§14.6).
+message RelationPolicy {
+  CollectionPolicy collection = 1;
+  Removal removal = 2;
+}
+
+enum CollectionPolicy {
+  COLLECTION_POLICY_UNSPECIFIED = 0;
+  COLLECTION_POLICY_MERGE = 1;
+  COLLECTION_POLICY_REPLACE = 2;
+  COLLECTION_POLICY_APPEND = 3;
+}
+
+enum Removal {
+  REMOVAL_UNSPECIFIED = 0;
+  REMOVAL_DELETE = 1;
+  REMOVAL_UNLINK = 2;
+}
+
+// An enum, with its labels in declared order (§8.4).
+message Enum {
+  Identifier name = 1;
+  Identifier host_name = 2;
+  repeated string labels = 3;
+  EnumOrigin origin = 4;
+  // The column (inline) or check constraint (check) it was derived from.
+  QualifiedName derived_from = 5;
+  repeated Annotation annotations = 6;
+  repeated google.protobuf.Any extensions = 7;
+}
+
+enum EnumOrigin {
+  ENUM_ORIGIN_UNSPECIFIED = 0;
+  ENUM_ORIGIN_NATIVE = 1;
+  ENUM_ORIGIN_INLINE = 2;
+  ENUM_ORIGIN_CHECK = 3;
+}
+
+// A domain: a distinct host type whose constraints are its validator (§8.5).
+message Domain {
+  Identifier name = 1;
+  Identifier host_name = 2;
+  Type base = 3;
+  bool nullable = 4;
+  Default default = 5;
+  Collation collation = 6;
+  // Sorted by name.
+  repeated Constraint constraints = 7;
+  repeated Annotation annotations = 8;
+  repeated google.protobuf.Any extensions = 9;
+}
+
+// A composite type with ordered attributes (§8.5).
+message Composite {
+  Identifier name = 1;
+  Identifier host_name = 2;
+  // In the database's order.
+  repeated Column attributes = 3;
+  repeated Annotation annotations = 4;
+  repeated google.protobuf.Any extensions = 5;
+}
+
+// A sequence (§6.1).
+message Sequence {
+  Identifier name = 1;
+  Identifier host_name = 2;
+  Type type = 3;
+  int64 start = 4;
+  int64 increment = 5;
+  int64 min = 6;
+  int64 max = 7;
+  bool cycle = 8;
+  // The column that owns it, as member of its table.
+  QualifiedName owned_by = 9;
+  repeated Annotation annotations = 10;
+  repeated google.protobuf.Any extensions = 11;
+}
