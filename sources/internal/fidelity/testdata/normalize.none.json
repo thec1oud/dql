@@ -1,0 +1,641 @@
+{
+  "name": {
+    "stored": "c"
+  },
+  "namespaces": [
+    {
+      "name": {
+        "stored": "app"
+      },
+      "tables": [
+        {
+          "name": {
+            "stored": "t"
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "text"
+              },
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  }
+                }
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "dom"
+              },
+              "type": {
+                "named": {
+                  "domain": {
+                    "namespace": "app",
+                    "object": "d"
+                  }
+                }
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "int_dom"
+              },
+              "type": {
+                "named": {
+                  "domain": {
+                    "namespace": "app",
+                    "object": "dn"
+                  }
+                }
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "cycle"
+              },
+              "type": {
+                "named": {
+                  "domain": {
+                    "namespace": "app",
+                    "object": "x"
+                  }
+                }
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "unknown"
+              },
+              "type": {
+                "named": {
+                  "domain": {
+                    "namespace": "app",
+                    "object": "zz"
+                  }
+                }
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "array"
+              },
+              "type": {
+                "array": {
+                  "element": {
+                    "text": {}
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "_text"
+                  }
+                }
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "range"
+              },
+              "type": {
+                "range": {
+                  "element": {
+                    "int32": {}
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "app",
+                    "object": "r"
+                  }
+                }
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "builtin_range"
+              },
+              "type": {
+                "range": {
+                  "element": {
+                    "int32": {}
+                  }
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int4range"
+                  }
+                }
+              },
+              "collation": {
+                "name": "default",
+                "caseSensitive": "TRISTATE_TRUE",
+                "accentSensitive": "TRISTATE_TRUE",
+                "padSpace": "TRISTATE_FALSE",
+                "deterministic": "TRISTATE_TRUE",
+                "clientFold": "CLIENT_FOLD_NONE"
+              }
+            },
+            {
+              "name": {
+                "stored": "filled"
+              },
+              "type": {
+                "text": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "text"
+                  }
+                }
+              },
+              "default": {
+                "class": "DEFAULT_CONSTANT",
+                "native": "'x'::text"
+              },
+              "generation": {
+                "native": "lower(text)"
+              }
+            }
+          ],
+          "constraints": [
+            {
+              "name": "c",
+              "opaque": {
+                "native": "CHECK (x)"
+              }
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "u",
+              "expressions": [
+                {
+                  "native": "lower(a)"
+                }
+              ],
+              "predicate": {
+                "native": "(a > 0)"
+              }
+            }
+          ],
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Policy",
+              "name": "p",
+              "using": "u",
+              "withCheck": "w"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Index",
+              "name": "i",
+              "definition": "CREATE INDEX"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Trigger",
+              "name": "tr",
+              "definition": "CREATE TRIGGER"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.PartitionKey",
+              "definition": "RANGE (a)"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.PartitionOf",
+              "bound": "DEFAULT"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Partition",
+              "namespace": "app"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+              "grantee": "web"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
+              "role": "o"
+            },
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ViewDefinition",
+              "definition": "SELECT 1"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "owned"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ExtensionMember",
+              "extension": "x"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "v"
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "a"
+              },
+              "annotations": [
+                {
+                  "key": "core.nonnull",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "location": "COMMENT ON COLUMN app.v.a"
+                  }
+                },
+                {
+                  "key": "core.sensitive",
+                  "origin": {
+                    "kind": "ORIGIN_CONFIG"
+                  }
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@nonnull"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Grant",
+                  "grantee": "web"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "mv"
+          },
+          "kind": "RELATION_KIND_MATERIALIZED_VIEW",
+          "annotations": [
+            {
+              "key": "core.logical-key",
+              "origin": {
+                "kind": "ORIGIN_DB_COMMENT",
+                "location": "COMMENT ON COLUMN app.v.a"
+              }
+            }
+          ]
+        }
+      ],
+      "enums": [
+        {
+          "name": {
+            "stored": "e"
+          }
+        },
+        {
+          "name": {
+            "stored": "owned"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ExtensionMember",
+              "extension": "x"
+            }
+          ]
+        }
+      ],
+      "domains": [
+        {
+          "name": {
+            "stored": "d"
+          },
+          "base": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              }
+            }
+          },
+          "collation": {
+            "name": "app.ci",
+            "caseSensitive": "TRISTATE_TRUE",
+            "accentSensitive": "TRISTATE_TRUE",
+            "padSpace": "TRISTATE_FALSE",
+            "deterministic": "TRISTATE_TRUE",
+            "clientFold": "CLIENT_FOLD_NONE"
+          }
+        },
+        {
+          "name": {
+            "stored": "dn"
+          },
+          "base": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              }
+            }
+          },
+          "collation": {
+            "name": "default",
+            "caseSensitive": "TRISTATE_TRUE",
+            "accentSensitive": "TRISTATE_TRUE",
+            "padSpace": "TRISTATE_FALSE",
+            "deterministic": "TRISTATE_TRUE",
+            "clientFold": "CLIENT_FOLD_NONE"
+          }
+        },
+        {
+          "name": {
+            "stored": "x"
+          },
+          "base": {
+            "named": {
+              "domain": {
+                "namespace": "app",
+                "object": "y"
+              }
+            }
+          }
+        },
+        {
+          "name": {
+            "stored": "y"
+          },
+          "base": {
+            "named": {
+              "domain": {
+                "namespace": "app",
+                "object": "x"
+              }
+            }
+          }
+        },
+        {
+          "name": {
+            "stored": "owned"
+          },
+          "base": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              }
+            }
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ExtensionMember",
+              "extension": "x"
+            }
+          ]
+        }
+      ],
+      "composites": [
+        {
+          "name": {
+            "stored": "owned"
+          },
+          "extensions": [
+            {
+              "@type": "type.dql.dev/dql.ext.postgres.v1.ExtensionMember",
+              "extension": "x"
+            }
+          ]
+        }
+      ],
+      "routines": [
+        {
+          "name": {
+            "stored": "f"
+          },
+          "overloads": [
+            {
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "arguments": [
+                {
+                  "name": {
+                    "stored": "b"
+                  },
+                  "type": {
+                    "text": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "text"
+                      }
+                    }
+                  },
+                  "mode": "ARG_MODE_IN",
+                  "hasDefault": true
+                },
+                {
+                  "name": {
+                    "stored": "o"
+                  },
+                  "type": {
+                    "text": {},
+                    "native": {
+                      "name": {
+                        "namespace": "pg_catalog",
+                        "object": "text"
+                      }
+                    }
+                  },
+                  "mode": "ARG_MODE_OUT"
+                }
+              ],
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "sql",
+                  "body": "SELECT 1"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineProperties",
+                  "argumentDefaults": [
+                    "'x'"
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "ROUTINE_KIND_FUNCTION"
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "p"
+          },
+          "overloads": [
+            {
+              "kind": "ROUTINE_KIND_PROCEDURE",
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
+                  "text": "@public"
+                },
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.RoutineSource",
+                  "language": "plpgsql",
+                  "body": "BEGIN END"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "owned"
+          },
+          "overloads": [
+            {
+              "extensions": [
+                {
+                  "@type": "type.dql.dev/dql.ext.postgres.v1.ExtensionMember",
+                  "extension": "x"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "extensions": [
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Statistics",
+          "name": "s"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Collation",
+          "name": "ci"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.BaseType",
+          "name": "b"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.BaseType",
+          "name": "bx",
+          "extension": "x"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.RangeType",
+          "name": "r",
+          "owner": "o",
+          "grants": [
+            {
+              "grantee": "web"
+            }
+          ]
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "agg",
+          "kind": "AGGREGATE"
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "proc",
+          "kind": "PROCEDURE",
+          "identityArguments": "a integer",
+          "language": "plpgsql",
+          "body": "BEGIN END",
+          "owner": "o",
+          "grants": [
+            {
+              "grantee": "web"
+            }
+          ],
+          "argumentDefaults": [
+            "1"
+          ]
+        },
+        {
+          "@type": "type.dql.dev/dql.ext.postgres.v1.Routine",
+          "name": "e",
+          "kind": "FUNCTION",
+          "extension": "x"
+        }
+      ]
+    }
+  ],
+  "extensions": [
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.Database",
+      "encoding": "UTF8"
+    },
+    {
+      "@type": "type.dql.dev/dql.ext.postgres.v1.InstalledExtension",
+      "name": "plpgsql"
+    }
+  ]
+}
