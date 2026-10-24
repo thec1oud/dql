@@ -1,0 +1,2648 @@
+{
+  "shapes": [
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "preset": "PRESET_FULL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "tag",
+          "full"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "post_tags"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "post_tags"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "post_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "tag_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "tag",
+          "draft"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "post_tags"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "post_tags"
+          },
+          "preset": "PRESET_DRAFT",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "post_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "tag_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "preset": "PRESET_PARTIAL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "tag",
+          "partial"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "post_tags"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "post_tags"
+          },
+          "preset": "PRESET_PARTIAL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "post_id",
+          "reason": "FORBIDDEN_KEY"
+        },
+        {
+          "column": "tag_id",
+          "reason": "FORBIDDEN_KEY"
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "preset": "PRESET_KEY"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "tag",
+          "key"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "post_tags"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "post_tags"
+          },
+          "preset": "PRESET_KEY"
+        }
+      ],
+      "fields": [
+        {
+          "column": "post_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "tag_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "preset": "PRESET_FULL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "full"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "posts"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "author_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "editor_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "title",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        },
+        {
+          "column": "slug",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        },
+        {
+          "column": "status",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "named": {
+              "enum": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_status"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "post_status"
+              },
+              "raw": "app.post_status"
+            }
+          }
+        },
+        {
+          "column": "price",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "named": {
+              "composite": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "money_amount"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "money_amount"
+              },
+              "raw": "app.money_amount"
+            }
+          }
+        },
+        {
+          "column": "labels",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "array": {
+              "element": {
+                "text": {}
+              },
+              "elementNullable": true,
+              "dimensions": 1
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "_text"
+              },
+              "raw": "text[]"
+            }
+          }
+        },
+        {
+          "column": "published_at",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "instant": {
+              "precision": 6
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "timestamptz"
+              },
+              "raw": "timestamp with time zone"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "draft"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "posts"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          },
+          "preset": "PRESET_DRAFT",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "author_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "editor_id",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "title",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          },
+          "validation": [
+            "posts_title_check"
+          ]
+        },
+        {
+          "column": "status",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "enum": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_status"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "post_status"
+              },
+              "raw": "app.post_status"
+            }
+          }
+        },
+        {
+          "column": "price",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "composite": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "money_amount"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "money_amount"
+              },
+              "raw": "app.money_amount"
+            }
+          }
+        },
+        {
+          "column": "labels",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "array": {
+              "element": {
+                "text": {}
+              },
+              "elementNullable": true,
+              "dimensions": 1
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "_text"
+              },
+              "raw": "text[]"
+            }
+          }
+        },
+        {
+          "column": "published_at",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "instant": {
+              "precision": 6
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "timestamptz"
+              },
+              "raw": "timestamp with time zone"
+            }
+          }
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "slug",
+          "reason": "FORBIDDEN_GENERATED"
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "preset": "PRESET_PARTIAL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "partial"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "posts"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          },
+          "preset": "PRESET_PARTIAL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "author_id",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "editor_id",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "title",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          },
+          "validation": [
+            "posts_title_check"
+          ]
+        },
+        {
+          "column": "status",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "enum": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_status"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "post_status"
+              },
+              "raw": "app.post_status"
+            }
+          }
+        },
+        {
+          "column": "price",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "composite": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "money_amount"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "money_amount"
+              },
+              "raw": "app.money_amount"
+            }
+          }
+        },
+        {
+          "column": "labels",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "array": {
+              "element": {
+                "text": {}
+              },
+              "elementNullable": true,
+              "dimensions": 1
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "_text"
+              },
+              "raw": "text[]"
+            }
+          }
+        },
+        {
+          "column": "published_at",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "instant": {
+              "precision": 6
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "timestamptz"
+              },
+              "raw": "timestamp with time zone"
+            }
+          }
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "id",
+          "reason": "FORBIDDEN_KEY"
+        },
+        {
+          "column": "slug",
+          "reason": "FORBIDDEN_GENERATED"
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "preset": "PRESET_KEY"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "key"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "posts"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          },
+          "preset": "PRESET_KEY"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "profiles"
+        },
+        "preset": "PRESET_FULL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "profile",
+          "full"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "profiles"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "profiles"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "user_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "bio",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        },
+        {
+          "column": "birthday",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "date": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "date"
+              },
+              "raw": "date"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "profiles"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "profile",
+          "draft"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "profiles"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "profiles"
+          },
+          "preset": "PRESET_DRAFT",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "user_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "bio",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        },
+        {
+          "column": "birthday",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "date": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "date"
+              },
+              "raw": "date"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "profiles"
+        },
+        "preset": "PRESET_PARTIAL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "profile",
+          "partial"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "profiles"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "profiles"
+          },
+          "preset": "PRESET_PARTIAL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "bio",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        },
+        {
+          "column": "birthday",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "date": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "date"
+              },
+              "raw": "date"
+            }
+          }
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "user_id",
+          "reason": "FORBIDDEN_KEY"
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "profiles"
+        },
+        "preset": "PRESET_KEY"
+      },
+      "hostName": {
+        "words": [
+          "profile",
+          "key"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "profiles"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "profiles"
+          },
+          "preset": "PRESET_KEY"
+        }
+      ],
+      "fields": [
+        {
+          "column": "user_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "published_posts"
+        },
+        "preset": "PRESET_FULL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "published",
+          "post",
+          "full"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "published_posts"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "published_posts"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_ANNOTATION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "title",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_ANNOTATION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        },
+        {
+          "column": "author_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "published_at",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "instant": {
+              "precision": 6
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "timestamptz"
+              },
+              "raw": "timestamp with time zone"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "published_posts"
+        },
+        "preset": "PRESET_KEY"
+      },
+      "hostName": {
+        "words": [
+          "published",
+          "post",
+          "key"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "published_posts"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "published_posts"
+          },
+          "preset": "PRESET_KEY"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_ANNOTATION",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "preset": "PRESET_FULL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "tag",
+          "full"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tags"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "name",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "slug_text"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "slug_text"
+              },
+              "raw": "app.slug_text"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "tag",
+          "draft"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tags"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags"
+          },
+          "preset": "PRESET_DRAFT",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "name",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "slug_text"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "slug_text"
+              },
+              "raw": "app.slug_text"
+            }
+          },
+          "validation": [
+            "slug_text_check"
+          ]
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "id",
+          "reason": "FORBIDDEN_IDENTITY_ALWAYS"
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "preset": "PRESET_PARTIAL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "tag",
+          "partial"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tags"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags"
+          },
+          "preset": "PRESET_PARTIAL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "name",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "slug_text"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "slug_text"
+              },
+              "raw": "app.slug_text"
+            }
+          },
+          "validation": [
+            "slug_text_check"
+          ]
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "id",
+          "reason": "FORBIDDEN_KEY"
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "preset": "PRESET_KEY"
+      },
+      "hostName": {
+        "words": [
+          "tag",
+          "key"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tags"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags"
+          },
+          "preset": "PRESET_KEY"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tenants"
+        },
+        "preset": "PRESET_FULL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "tenant",
+          "full"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tenants"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tenants"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "uuid": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "uuid"
+              },
+              "raw": "uuid"
+            }
+          }
+        },
+        {
+          "column": "name",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tenants"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "tenant",
+          "draft"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tenants"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tenants"
+          },
+          "preset": "PRESET_DRAFT",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "uuid": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "uuid"
+              },
+              "raw": "uuid"
+            }
+          }
+        },
+        {
+          "column": "name",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tenants"
+        },
+        "preset": "PRESET_PARTIAL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "tenant",
+          "partial"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tenants"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tenants"
+          },
+          "preset": "PRESET_PARTIAL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "name",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          }
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "id",
+          "reason": "FORBIDDEN_KEY"
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tenants"
+        },
+        "preset": "PRESET_KEY"
+      },
+      "hostName": {
+        "words": [
+          "tenant",
+          "key"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tenants"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tenants"
+          },
+          "preset": "PRESET_KEY"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "uuid": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "uuid"
+              },
+              "raw": "uuid"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "preset": "PRESET_FULL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "user",
+          "full"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "tenant_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "uuid": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "uuid"
+              },
+              "raw": "uuid"
+            }
+          }
+        },
+        {
+          "column": "email",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "email_address"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "email_address"
+              },
+              "raw": "app.email_address"
+            }
+          }
+        },
+        {
+          "column": "display_name",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "varchar": {
+              "length": 80,
+              "unit": "LENGTH_UNIT_CHARACTERS"
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "varchar"
+              },
+              "modifiers": [
+                {
+                  "int": 80
+                }
+              ],
+              "raw": "character varying(80)"
+            }
+          }
+        },
+        {
+          "column": "created_at",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "instant": {
+              "precision": 6
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "timestamptz"
+              },
+              "raw": "timestamp with time zone"
+            }
+          }
+        },
+        {
+          "column": "updated_at",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "instant": {
+              "precision": 6
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "timestamptz"
+              },
+              "raw": "timestamp with time zone"
+            }
+          }
+        },
+        {
+          "column": "version",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          }
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "password_hash",
+          "reason": "FORBIDDEN_WRITE_ONLY"
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "user",
+          "draft"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_DRAFT",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "email",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "email_address"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "email_address"
+              },
+              "raw": "app.email_address"
+            }
+          },
+          "validation": [
+            "email_address_check"
+          ]
+        },
+        {
+          "column": "display_name",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "varchar": {
+              "length": 80,
+              "unit": "LENGTH_UNIT_CHARACTERS"
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "varchar"
+              },
+              "modifiers": [
+                {
+                  "int": 80
+                }
+              ],
+              "raw": "character varying(80)"
+            }
+          }
+        },
+        {
+          "column": "password_hash",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          },
+          "redact": true
+        },
+        {
+          "column": "created_at",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "instant": {
+              "precision": 6
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "timestamptz"
+              },
+              "raw": "timestamp with time zone"
+            }
+          }
+        },
+        {
+          "column": "updated_at",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "instant": {
+              "precision": 6
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "timestamptz"
+              },
+              "raw": "timestamp with time zone"
+            }
+          }
+        },
+        {
+          "column": "version",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          }
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "id",
+          "reason": "FORBIDDEN_IDENTITY_ALWAYS"
+        },
+        {
+          "column": "tenant_id",
+          "reason": "FORBIDDEN_BOUND"
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "preset": "PRESET_PARTIAL",
+        "form": "FORM_FLAT"
+      },
+      "hostName": {
+        "words": [
+          "user",
+          "partial"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_PARTIAL",
+          "form": "FORM_FLAT"
+        }
+      ],
+      "fields": [
+        {
+          "column": "email",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "email_address"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "email_address"
+              },
+              "raw": "app.email_address"
+            }
+          },
+          "validation": [
+            "email_address_check"
+          ]
+        },
+        {
+          "column": "display_name",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "varchar": {
+              "length": 80,
+              "unit": "LENGTH_UNIT_CHARACTERS"
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "varchar"
+              },
+              "modifiers": [
+                {
+                  "int": 80
+                }
+              ],
+              "raw": "character varying(80)"
+            }
+          }
+        },
+        {
+          "column": "password_hash",
+          "presence": "PRESENCE_OPTIONAL",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "text"
+              },
+              "raw": "text"
+            }
+          },
+          "redact": true
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "id",
+          "reason": "FORBIDDEN_KEY"
+        },
+        {
+          "column": "tenant_id",
+          "reason": "FORBIDDEN_BOUND"
+        },
+        {
+          "column": "created_at",
+          "reason": "FORBIDDEN_IMMUTABLE"
+        },
+        {
+          "column": "updated_at",
+          "reason": "FORBIDDEN_DB_UPDATED"
+        },
+        {
+          "column": "version",
+          "reason": "FORBIDDEN_VERSION"
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "preset": "PRESET_KEY"
+      },
+      "hostName": {
+        "words": [
+          "user",
+          "key"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_KEY"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "column": "version",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          },
+          "role": "FIELD_ROLE_EXPECTED_VERSION"
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ]
+    },
+    {
+      "id": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "preset": "PRESET_SCOPE"
+      },
+      "hostName": {
+        "words": [
+          "user",
+          "scope"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_SCOPE"
+        }
+      ],
+      "fields": [
+        {
+          "column": "tenant_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "uuid": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "uuid"
+              },
+              "raw": "uuid"
+            }
+          }
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ]
+    }
+  ],
+  "upserts": [
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "post_tags"
+      },
+      "conflictTarget": "post_tags_pkey",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "post_id",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        },
+        {
+          "column": "tag_id",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        }
+      ]
+    },
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "posts"
+      },
+      "conflictTarget": "posts_one_published_slug",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "slug",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        }
+      ]
+    },
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "posts"
+      },
+      "conflictTarget": "posts_pkey",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "id",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        }
+      ]
+    },
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "profiles"
+      },
+      "conflictTarget": "profiles_pkey",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "profiles"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "user_id",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        }
+      ]
+    },
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tags"
+      },
+      "conflictTarget": "tags_name_key",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "name",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        }
+      ]
+    },
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tags"
+      },
+      "conflictTarget": "tags_pkey",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "id",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        }
+      ]
+    },
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "tenants"
+      },
+      "conflictTarget": "tenants_pkey",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tenants"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "id",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        }
+      ]
+    },
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "conflictTarget": "users_pkey",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "id",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        },
+        {
+          "column": "tenant_id",
+          "reason": "EXCLUDE_BOUND"
+        },
+        {
+          "column": "created_at",
+          "reason": "EXCLUDE_IMMUTABLE"
+        },
+        {
+          "column": "updated_at",
+          "reason": "EXCLUDE_DB_UPDATED"
+        },
+        {
+          "column": "version",
+          "reason": "EXCLUDE_VERSION"
+        }
+      ]
+    },
+    {
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "conflictTarget": "users_tenant_email_key",
+      "insertShape": {
+        "entity": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "preset": "PRESET_DRAFT",
+        "form": "FORM_FLAT"
+      },
+      "defaultUpdateExcludes": [
+        {
+          "column": "tenant_id",
+          "reason": "EXCLUDE_BOUND"
+        },
+        {
+          "column": "email",
+          "reason": "EXCLUDE_CONFLICT_KEY"
+        },
+        {
+          "column": "created_at",
+          "reason": "EXCLUDE_IMMUTABLE"
+        },
+        {
+          "column": "updated_at",
+          "reason": "EXCLUDE_DB_UPDATED"
+        },
+        {
+          "column": "version",
+          "reason": "EXCLUDE_VERSION"
+        }
+      ]
+    }
+  ]
+}
