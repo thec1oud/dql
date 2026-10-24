@@ -668,3 +668,28 @@ func TestForeignKeyTarget(t *testing.T) {
 		t.Errorf("diagnostics = %v", lines(ds))
 	}
 }
+
+// §4.2, §8.4: every label gets its word split; labels without words, or with
+// equal words, fail.
+func TestEnumLabelNames(t *testing.T) {
+	c := small("shop", "app")
+	c.Namespaces[0].Enums = []*irv1.Enum{{Name: ident("post_status"), Labels: []string{"draft", "in-review", "HTTPError"}}}
+	b := assembleOK(t, Options{}, output(postgres, c))
+	var got []string
+	for _, l := range namespace(t, b, "shop", "app").GetEnums()[0].GetLabelNames() {
+		got = append(got, l.GetStored()+"="+strings.Join(l.GetWords(), " "))
+	}
+	if want := []string{"draft=draft", "in-review=in review", "HTTPError=http error"}; !slices.Equal(got, want) {
+		t.Errorf("label names = %q", got)
+	}
+
+	c = small("shop", "app")
+	c.Namespaces[0].Enums = []*irv1.Enum{{Name: ident("mood"), Labels: []string{"in_progress", "+", "in-progress", "InProgress", "ok"}}}
+	ds := assembleFails(t, Options{}, output(postgres, c))
+	wantLines(t, ds, "ERROR enum-label-unnamed shop.app.mood.+", "ERROR enum-label-collision shop.app.mood.InProgress")
+	for i, s := range []string{`label "+" of enum shop.app.mood has no letters`, "labels InProgress, in-progress and in_progress of enum shop.app.mood all have the words [in progress]"} {
+		if !strings.Contains(ds[i].GetMessage(), s) {
+			t.Errorf("message = %s", ds[i].GetMessage())
+		}
+	}
+}

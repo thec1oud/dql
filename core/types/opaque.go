@@ -14,6 +14,12 @@ const (
 	FallbackBytes  = "bytes"
 )
 
+// fallbacks are the IR spellings of the opaque-fallback values.
+var fallbacks = map[string]irv1.OpaqueFallback{
+	FallbackString: irv1.OpaqueFallback_OPAQUE_FALLBACK_STRING,
+	FallbackBytes:  irv1.OpaqueFallback_OPAQUE_FALLBACK_BYTES,
+}
+
 // CheckOpaque checks that every opaque type is mapped (§8.3). mapped holds
 // the native types that type plugins and emitter config map, such as
 // public.citext; a native type matches on namespace and object, since native
@@ -24,11 +30,24 @@ const (
 // back instead, with a warning for every affected place. Columns of a domain
 // whose base is opaque are affected too. Any other fallback value counts as
 // unset; config validation rejects it (config-opaque-fallback-invalid).
+//
+// Where the fallback applies, CheckOpaque records it on the opaque type
+// itself, so emitters know the host type without reading project config;
+// the native type stays as it is.
 func CheckOpaque(b *irv1.Bundle, mapped []*irv1.QualifiedName, fallback string) []*irv1.Diagnostic {
 	ix := NewIndex(b)
 	isMapped := func(n *irv1.QualifiedName) bool {
 		return slices.ContainsFunc(mapped, func(m *irv1.QualifiedName) bool {
 			return m.GetNamespace() == n.GetNamespace() && m.GetObject() == n.GetObject()
+		})
+	}
+	if mark, ok := fallbacks[fallback]; ok {
+		sites(b, func(s site) {
+			walk(s.typ, func(t *irv1.Type) {
+				if o := t.GetOpaque(); o != nil && t.GetNative().GetName().GetObject() != "" && !isMapped(t.GetNative().GetName()) {
+					o.Fallback = mark
+				}
+			})
 		})
 	}
 	var ds []*irv1.Diagnostic

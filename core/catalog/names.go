@@ -51,6 +51,7 @@ func (a *assembler) hostNames(cats []*irv1.Catalog) {
 			}
 			for _, e := range ns.GetEnums() {
 				e.HostName = hostType(e.GetName(), e.GetAnnotations())
+				a.labelNames(&irv1.QualifiedName{Catalog: c.GetName().GetStored(), Namespace: ns.GetName().GetStored(), Object: e.GetName().GetStored()}, e)
 			}
 			for _, d := range ns.GetDomains() {
 				d.HostName = hostType(d.GetName(), d.GetAnnotations())
@@ -88,6 +89,35 @@ func (a *assembler) hostNames(cats []*irv1.Catalog) {
 				name, strings.Join(col.Words, " "), joinList(others))
 		}
 	}
+}
+
+// labelNames sets the enum's label names, each label with its word split
+// (§4.2), and fails labels without words and labels with equal words: the
+// emitters name the enum's constants from these words (§8.4, §15.2).
+func (a *assembler) labelNames(q *irv1.QualifiedName, e *irv1.Enum) {
+	e.LabelNames = nil
+	var items []naming.Item
+	for _, label := range e.GetLabels() {
+		words := naming.Words(label)
+		e.LabelNames = append(e.LabelNames, &irv1.Identifier{Stored: label, Words: words})
+		if len(words) == 0 {
+			a.errorf(CodeEnumLabelUnnamed, member(q, label),
+				"label %q of enum %s has no letters or digits, so no host constant can be named from it (§4.2, §8.4); rename the label in the database",
+				label, diagnostics.Name(q))
+			continue
+		}
+		items = append(items, naming.Item{Stored: label, Words: words})
+	}
+	for _, col := range naming.Collisions(items) {
+		a.errorf(CodeEnumLabelCollision, member(q, col.Stored[0]),
+			"labels %s of enum %s all have the words [%s], so their host constants would collide (§4.3, §8.4); rename all but one in the database",
+			joinList(col.Stored), diagnostics.Name(q), strings.Join(col.Words, " "))
+	}
+}
+
+// member returns q with member m.
+func member(q *irv1.QualifiedName, m string) *irv1.QualifiedName {
+	return &irv1.QualifiedName{Catalog: q.GetCatalog(), Namespace: q.GetNamespace(), Object: q.GetObject(), Member: m}
 }
 
 // fields sets the host names of a host struct's columns and fails equal ones.

@@ -79,6 +79,32 @@ func TestCheckOpaqueFallback(t *testing.T) {
 			t.Errorf("%s: %v", fb, ds[0])
 		}
 	}
+	// The fallback is recorded on every unmapped opaque type, through arrays,
+	// ranges, weak affinities and domain bases; mapped ones are left alone.
+	for fb, want := range fallbacks {
+		b := withOpaque()
+		CheckOpaque(b, []*irv1.QualifiedName{{Namespace: "public", Object: "citext"}}, fb)
+		tables := ns(b).GetTables()
+		cols := tables[len(tables)-1].GetColumns()
+		if got := cols[3].GetType().GetRange().GetElement().GetOpaque().GetFallback(); got != want {
+			t.Errorf("%s: geometry fallback %v", fb, got)
+		}
+		if got := cols[0].GetType().GetOpaque().GetFallback(); got != irv1.OpaqueFallback_OPAQUE_FALLBACK_UNSPECIFIED {
+			t.Errorf("%s: mapped citext fallback %v", fb, got)
+		}
+		b = withOpaque()
+		CheckOpaque(b, nil, fb)
+		if got := ns(b).GetDomains()[len(ns(b).GetDomains())-2].GetBase().GetOpaque().GetFallback(); got != want {
+			t.Errorf("%s: domain base fallback %v", fb, got)
+		}
+	}
+	// Without a fallback nothing is recorded.
+	b := withOpaque()
+	CheckOpaque(b, nil, FallbackNone)
+	tables := ns(b).GetTables()
+	if got := tables[len(tables)-1].GetColumns()[0].GetType().GetOpaque().GetFallback(); got != irv1.OpaqueFallback_OPAQUE_FALLBACK_UNSPECIFIED {
+		t.Errorf("no fallback: %v", got)
+	}
 	// An invalid fallback counts as unset.
 	if ds := CheckOpaque(withOpaque(), nil, "json"); ds[0].GetCode() != CodeOpaqueUnmapped {
 		t.Errorf("invalid fallback: %q", codes(ds))
