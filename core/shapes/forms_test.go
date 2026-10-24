@@ -116,7 +116,7 @@ func TestShopNestedWritesMatchRecord(t *testing.T) {
 		}
 	}
 	for words, want := range map[string]string{
-		"user ref":               "user link, user create",
+		"user ref":               "user ref link, user ref create",
 		"tag link":               "tag link key, tag link create",
 		"post change for author": "post create for author, post update for author, post delete for author",
 		"post author change":     "post author link, post author create, post author update",

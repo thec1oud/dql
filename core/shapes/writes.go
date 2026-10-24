@@ -111,8 +111,8 @@ func (w *nestWrite) owning() *irv1.Nest {
 		return nil
 	}
 	u := w.union(irv1.RelationUnionKind_RELATION_UNION_REF, w.rel.GetTo().GetTable(), "",
-		w.variant(irv1.RelationChange_RELATION_CHANGE_LINK, true, w.keyOf(w.rel.GetTo().GetTable()), nil, "link"),
-		w.variant(irv1.RelationChange_RELATION_CHANGE_CREATE, false, nil, w.payload(irv1.Preset_PRESET_DRAFT), "create"),
+		w.variant(irv1.RelationChange_RELATION_CHANGE_LINK, true, w.keyOf(w.rel.GetTo().GetTable()), nil, "ref", "link"),
+		w.variant(irv1.RelationChange_RELATION_CHANGE_CREATE, false, nil, w.payload(irv1.Preset_PRESET_DRAFT), "ref", "create"),
 	)
 	if u == nil {
 		return nil
