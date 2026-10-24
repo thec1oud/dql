@@ -236,6 +236,32 @@ sources:
 	if got := strings.Join(msgs, "\n"); got != want {
 		t.Errorf("settings:\n%s\nwant:\n%s", got, want)
 	}
+	// The go emitter needs a package and an output directory.
+	c, _ = Parse([]byte(`
+sources:
+  - plugin: dpg-snapshot
+    snapshot: shop.json
+emit:
+  - plugin: go
+    dialect: postgres
+  - plugin: go
+    dialect: postgres
+    package: shopdb
+    out: gen
+  - plugin: kotlin
+    dialect: postgres
+`))
+	msgs = nil
+	for _, d := range c.Validate() {
+		msgs = append(msgs, d.GetCode()+": "+d.GetMessage())
+	}
+	want = strings.Join([]string{
+		"config-setting-missing: emit[0] (go) has no package; set package:",
+		"config-setting-missing: emit[0] (go) has no out; set out:",
+	}, "\n")
+	if got := strings.Join(msgs, "\n"); got != want {
+		t.Errorf("emit settings:\n%s\nwant:\n%s", got, want)
+	}
 	if ds := (&Config{}).Validate(); len(ds) != 1 || ds[0].GetCode() != "config-no-sources" {
 		t.Errorf("no sources: %v", ds)
 	}
@@ -298,6 +324,7 @@ emit:
 			"line 4: field dsn not found in type config.Source\n  line 5: field pool not found in type config.Source"},
 		{"sources:\n  - plugin: mysql-live\n    pool:\n      ? [a, b]\n      : 4\n", "line 4: a key in a plugin's settings must be a scalar"},
 		{"emit:\n  - plugin: kotlin\n    out: [gen]\n", "line 3: cannot unmarshal !!seq into string"},
+		{"emit:\n  - plugin: go\n    out: gen\n    tags: [json]\n", "line 4: field tags not found in type config.Emit"},
 		{"sources:\n  - mysql-live\n", "line 2: cannot unmarshal !!str `mysql-live` into config.entry"},
 	} {
 		if _, err := Parse([]byte(e.config)); err == nil || !strings.Contains(err.Error(), e.want) {

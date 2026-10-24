@@ -63,7 +63,7 @@ func generateBundle(t *testing.T, path, url string) ([]byte, *irv1.Bundle) {
 	t.Helper()
 	t.Setenv("SHOP_DATABASE_URL", url)
 	out := filepath.Join(t.TempDir(), "bundle.json")
-	if code, _, stderr := dql("generate", "-config", path, "-bundle", out); code != 0 {
+	if code, _, stderr := dql("generate", "-config", relocate(t, path), "-bundle", out); code != 0 {
 		t.Fatalf("dql generate: %d\n%s", code, stderr)
 	}
 	raw, err := os.ReadFile(out)
@@ -79,6 +79,24 @@ func generateBundle(t *testing.T, path, url string) ([]byte, *irv1.Bundle) {
 
 // assertContains fails unless got holds every field of want, a design
 // record example in protobuf JSON.
+// relocate copies the dql.yaml at path into a temporary directory, so that
+// emitters write there, with its snapshot paths made absolute.
+func relocate(t *testing.T, path string) string {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(string(raw), "\n")
+	for i, l := range lines {
+		if rel, ok := strings.CutPrefix(l, "    snapshot: "); ok {
+			abs, _ := filepath.Abs(filepath.Join(filepath.Dir(path), rel))
+			lines[i] = "    snapshot: " + abs
+		}
+	}
+	return write(t, "dql.yaml", strings.Join(lines, "\n"))
+}
+
 func assertContains(t *testing.T, what string, got proto.Message, want string) {
 	t.Helper()
 	w := got.ProtoReflect().New().Interface()

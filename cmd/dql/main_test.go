@@ -32,7 +32,7 @@ func dql(args ...string) (int, string, string) {
 	return code, stdout.String(), stderr.String()
 }
 
-const valid = "sources:\n  - plugin: pg-live\n    catalog: shop\n    connection: env:SHOP_DATABASE_URL\nemit:\n  - plugin: go\n    dialect: postgres\n"
+const valid = "sources:\n  - plugin: pg-live\n    catalog: shop\n    connection: env:SHOP_DATABASE_URL\nemit:\n  - plugin: go\n    dialect: postgres\n    package: shopdb\n    out: gen\n"
 
 func TestUsage(t *testing.T) {
 	if code, _, stderr := dql(); code != 2 || !strings.Contains(stderr, "usage:") {

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"slices"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/thec1oud/dql/core/conversions"
 	"github.com/thec1oud/dql/core/diagnostics"
 	"github.com/thec1oud/dql/core/shapes"
+	goemit "github.com/thec1oud/dql/emitters/go"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
@@ -34,10 +36,19 @@ var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 	},
 }
 
+// emitters are the shipped emitter plugins, which run in-process (ADR 0002).
+// Each resolves a relative out against the directory of dql.yaml.
+var emitters = map[string]func(c *config.Config) plugin.Plugin{
+	goemit.Name: func(c *config.Config) plugin.Plugin { return goemit.New(c.Dir(), goemit.Settings{}) },
+}
+
+// planned are emitters that ship in a later milestone; their entries are
+// skipped until then.
+var planned = map[string]bool{"ts": true}
+
 // generate runs every source, assembles the catalog layer (§2.2, §5.2) and
-// the shape layer (§14), and writes the bundle to -bundle, in canonical JSON
-// (§3.1). Emitters arrive in
-// later milestones, so emit entries are skipped.
+// the shape layer (§14), writes the bundle to -bundle, in canonical JSON
+// (§3.1), and runs every emitter on it (§2.3).
 func generate(args []string, stderr io.Writer) int {
 	var out string
 	c, anns, code := loadConfig("generate", args, stderr, func(fs *flag.FlagSet) {
@@ -97,9 +108,69 @@ func generate(args []string, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "dql generate: wrote the bundle to %s\n", out)
 	}
 	for i, e := range c.Emit {
-		fmt.Fprintf(stderr, "dql generate: skipped emit[%d] (%s): emitters arrive in a later milestone\n", i, e.Plugin)
+		if planned[e.Plugin] {
+			fmt.Fprintf(stderr, "dql generate: skipped emit[%d] (%s): the %s emitter arrives in a later milestone\n", i, e.Plugin, e.Plugin)
+			continue
+		}
+		ds, err := runEmitter(ctx, c, e, b)
+		printDiagnostics(stderr, ds)
+		if err != nil {
+			fmt.Fprintf(stderr, "dql generate: emit[%d] (%s): %v\n", i, e.Plugin, err)
+		}
+		if err != nil || hasErrors(ds) {
+			failed = true
+		}
+	}
+	if failed {
+		return 1
 	}
 	return 0
+}
+
+// runEmitter invokes one emitter plugin with the bundle and its emit entry,
+// and returns its diagnostics. The core refuses an emitter that lacks a
+// feature the bundle requires (§3.3, §15.12).
+func runEmitter(ctx context.Context, c *config.Config, e config.Emit, b *irv1.Bundle) ([]*irv1.Diagnostic, error) {
+	builtins := map[string]plugin.Plugin{}
+	if build, ok := emitters[e.Plugin]; ok {
+		builtins[e.Plugin] = build(c)
+	}
+	t, err := plugin.Locate(e.Plugin, c.Resolve(e.Path), builtins)
+	if err != nil {
+		return nil, err
+	}
+	t.Dir = c.Dir()
+	if _, ok := emitters[e.Plugin]; ok {
+		t.Args = emitFlags(c, e)
+	}
+	hello := &irv1.CoreHello{IrVersion: b.GetVersion(), RequiredFeatures: b.GetRequiredFeatures()}
+	client, err := plugin.Open(ctx, t, hello, irv1.PluginKind_PLUGIN_KIND_EMITTER)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Invoke(ctx, &irv1.Invoke{Bundle: b, Settings: e.Settings})
+	if cerr := client.Close(); err == nil {
+		err = cerr
+	}
+	return res.GetDiagnostics(), err
+}
+
+// emitFlags are the settings of a shipped emitter's emit entry as its
+// executable takes them, out as an absolute path (ADR 0003): -dialect
+// postgres -package shopdb -out /abs/internal/shopdb -type public.citext=string.
+func emitFlags(c *config.Config, e config.Emit) []string {
+	var args []string
+	for _, f := range [][2]string{{"dialect", e.Dialect}, {"package", e.Package}, {"out", c.Resolve(e.Out)}} {
+		if f[1] != "" {
+			args = append(args, "-"+f[0], f[1])
+		}
+	}
+	for _, k := range slices.Sorted(maps.Keys(e.Types)) {
+		if spec, ok := e.Types[k][e.Plugin].(string); ok {
+			args = append(args, "-type", k+"="+spec)
+		}
+	}
+	return args
 }
 
 // buildShapes is a variable so tests can make the shape layer fail.
