@@ -30,8 +30,10 @@ import (
 // an example lists one element of a longer list, that element is compared
 // on its own. Examples about another dialect (§5.3, §8.4's SQL Server
 // enum, §8.7, §8.9, §8.10, §9) are not about shop and are checked by
-// core/catalog and the dialect plugins' own tests; the shape and query
-// examples (§7.5 steps 4 to 6, §14 onwards) belong to later milestones.
+// core/catalog and the dialect plugins' own tests. The shape examples
+// (§7.5 step 4, §12.5, §14) are the M2 gate, in gate_shapes_test.go; the
+// generated code of §7.5 steps 5 and 6 and the query examples (§16 onwards)
+// belong to later milestones.
 //
 // What the examples say that the output cannot match, and why:
 //
