@@ -87,6 +87,9 @@ const (
 	NullabilitySource_NULLABILITY_SOURCE_ANNOTATION NullabilitySource = 3
 	// Nothing proves non-null, so the column is nullable (§1.2, P2).
 	NullabilitySource_NULLABILITY_SOURCE_UNPROVEN NullabilitySource = 4
+	// A custom shape's nonnull or nullify operator set it (§14.8); nonnull is
+	// enforced when decoding (§13). Used on shape fields only.
+	NullabilitySource_NULLABILITY_SOURCE_SHAPE_OPERATOR NullabilitySource = 5
 )
 
 // Enum value maps for NullabilitySource.
@@ -97,13 +100,15 @@ var (
 		2: "NULLABILITY_SOURCE_PROVEN",
 		3: "NULLABILITY_SOURCE_ANNOTATION",
 		4: "NULLABILITY_SOURCE_UNPROVEN",
+		5: "NULLABILITY_SOURCE_SHAPE_OPERATOR",
 	}
 	NullabilitySource_value = map[string]int32{
-		"NULLABILITY_SOURCE_UNSPECIFIED": 0,
-		"NULLABILITY_SOURCE_DATABASE":    1,
-		"NULLABILITY_SOURCE_PROVEN":      2,
-		"NULLABILITY_SOURCE_ANNOTATION":  3,
-		"NULLABILITY_SOURCE_UNPROVEN":    4,
+		"NULLABILITY_SOURCE_UNSPECIFIED":    0,
+		"NULLABILITY_SOURCE_DATABASE":       1,
+		"NULLABILITY_SOURCE_PROVEN":         2,
+		"NULLABILITY_SOURCE_ANNOTATION":     3,
+		"NULLABILITY_SOURCE_UNPROVEN":       4,
+		"NULLABILITY_SOURCE_SHAPE_OPERATOR": 5,
 	}
 )
 
@@ -3144,13 +3149,14 @@ const file_dql_ir_v1_objects_proto_rawDesc = "" +
 	"\x16TABLE_KIND_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13RELATION_KIND_TABLE\x10\x01\x12\x16\n" +
 	"\x12RELATION_KIND_VIEW\x10\x02\x12#\n" +
-	"\x1fRELATION_KIND_MATERIALIZED_VIEW\x10\x03*\xbb\x01\n" +
+	"\x1fRELATION_KIND_MATERIALIZED_VIEW\x10\x03*\xe2\x01\n" +
 	"\x11NullabilitySource\x12\"\n" +
 	"\x1eNULLABILITY_SOURCE_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bNULLABILITY_SOURCE_DATABASE\x10\x01\x12\x1d\n" +
 	"\x19NULLABILITY_SOURCE_PROVEN\x10\x02\x12!\n" +
 	"\x1dNULLABILITY_SOURCE_ANNOTATION\x10\x03\x12\x1f\n" +
-	"\x1bNULLABILITY_SOURCE_UNPROVEN\x10\x04*\x93\x01\n" +
+	"\x1bNULLABILITY_SOURCE_UNPROVEN\x10\x04\x12%\n" +
+	"!NULLABILITY_SOURCE_SHAPE_OPERATOR\x10\x05*\x93\x01\n" +
 	"\fDefaultClass\x12\x17\n" +
 	"\x13DEFAULT_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10DEFAULT_CONSTANT\x10\x01\x12\x16\n" +

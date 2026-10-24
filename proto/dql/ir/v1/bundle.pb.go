@@ -285,9 +285,23 @@ func (*CapabilityProfile) Descriptor() ([]byte, []int) {
 	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{2}
 }
 
-// Shapes, conversions and validation rules (§14). Its fields arrive with M2.
+// Shapes and the conversion table (§14), fully expanded so emitters never
+// re-implement the algebra (§14.10).
 type ShapeLayer struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Presets in every form, relation-qualified child shapes and custom
+	// shapes, sorted by the dotted spelling of their ids (§3.2).
+	Shapes []*Shape `protobuf:"bytes,1,rep,name=shapes,proto3" json:"shapes,omitempty"`
+	// The Ref, Link and change types of nested writes (§14.5, §14.6), sorted
+	// by their host-name words.
+	Unions []*RelationUnion `protobuf:"bytes,2,rep,name=unions,proto3" json:"unions,omitempty"`
+	// Sorted by the dotted spelling of from, then of to (§3.2).
+	Conversions []*Conversion `protobuf:"bytes,3,rep,name=conversions,proto3" json:"conversions,omitempty"`
+	// One per conflict target of every entity that has one, sorted by entity
+	// qualified name, then conflict target (§14.7).
+	Upserts []*Upsert `protobuf:"bytes,4,rep,name=upserts,proto3" json:"upserts,omitempty"`
+	// One per keyed entity, sorted by qualified name (§8.9, §11.1).
+	Merges        []*KeyMerge `protobuf:"bytes,5,rep,name=merges,proto3" json:"merges,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -320,6 +334,41 @@ func (x *ShapeLayer) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ShapeLayer.ProtoReflect.Descriptor instead.
 func (*ShapeLayer) Descriptor() ([]byte, []int) {
 	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ShapeLayer) GetShapes() []*Shape {
+	if x != nil {
+		return x.Shapes
+	}
+	return nil
+}
+
+func (x *ShapeLayer) GetUnions() []*RelationUnion {
+	if x != nil {
+		return x.Unions
+	}
+	return nil
+}
+
+func (x *ShapeLayer) GetConversions() []*Conversion {
+	if x != nil {
+		return x.Conversions
+	}
+	return nil
+}
+
+func (x *ShapeLayer) GetUpserts() []*Upsert {
+	if x != nil {
+		return x.Upserts
+	}
+	return nil
+}
+
+func (x *ShapeLayer) GetMerges() []*KeyMerge {
+	if x != nil {
+		return x.Merges
+	}
+	return nil
 }
 
 // Query entries (§16). Its fields arrive with M4.
@@ -363,7 +412,7 @@ var File_dql_ir_v1_bundle_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\n" +
-	"\x16dql/ir/v1/bundle.proto\x12\tdql.ir.v1\x1a\x17dql/ir/v1/catalog.proto\x1a\x1bdql/ir/v1/diagnostics.proto\"\x9e\x03\n" +
+	"\x16dql/ir/v1/bundle.proto\x12\tdql.ir.v1\x1a\x17dql/ir/v1/catalog.proto\x1a\x1bdql/ir/v1/diagnostics.proto\x1a\x16dql/ir/v1/shapes.proto\"\x9e\x03\n" +
 	"\x06Bundle\x12.\n" +
 	"\aversion\x18\x01 \x01(\v2\x14.dql.ir.v1.IrVersionR\aversion\x12+\n" +
 	"\x11required_features\x18\x02 \x03(\tR\x10requiredFeatures\x12,\n" +
@@ -380,9 +429,14 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\x06_majorB\b\n" +
 	"\x06_minorB\b\n" +
 	"\x06_patch\"\x13\n" +
-	"\x11CapabilityProfile\"\f\n" +
+	"\x11CapabilityProfile\"\xfb\x01\n" +
 	"\n" +
-	"ShapeLayer\"\f\n" +
+	"ShapeLayer\x12(\n" +
+	"\x06shapes\x18\x01 \x03(\v2\x10.dql.ir.v1.ShapeR\x06shapes\x120\n" +
+	"\x06unions\x18\x02 \x03(\v2\x18.dql.ir.v1.RelationUnionR\x06unions\x127\n" +
+	"\vconversions\x18\x03 \x03(\v2\x15.dql.ir.v1.ConversionR\vconversions\x12+\n" +
+	"\aupserts\x18\x04 \x03(\v2\x11.dql.ir.v1.UpsertR\aupserts\x12+\n" +
+	"\x06merges\x18\x05 \x03(\v2\x13.dql.ir.v1.KeyMergeR\x06merges\"\f\n" +
 	"\n" +
 	"QueryLayer*v\n" +
 	"\aDialect\x12\x17\n" +
@@ -415,20 +469,30 @@ var file_dql_ir_v1_bundle_proto_goTypes = []any{
 	(*QueryLayer)(nil),        // 5: dql.ir.v1.QueryLayer
 	(*Catalog)(nil),           // 6: dql.ir.v1.Catalog
 	(*Diagnostic)(nil),        // 7: dql.ir.v1.Diagnostic
+	(*Shape)(nil),             // 8: dql.ir.v1.Shape
+	(*RelationUnion)(nil),     // 9: dql.ir.v1.RelationUnion
+	(*Conversion)(nil),        // 10: dql.ir.v1.Conversion
+	(*Upsert)(nil),            // 11: dql.ir.v1.Upsert
+	(*KeyMerge)(nil),          // 12: dql.ir.v1.KeyMerge
 }
 var file_dql_ir_v1_bundle_proto_depIdxs = []int32{
-	2, // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
-	0, // 1: dql.ir.v1.Bundle.dialect:type_name -> dql.ir.v1.Dialect
-	6, // 2: dql.ir.v1.Bundle.catalogs:type_name -> dql.ir.v1.Catalog
-	3, // 3: dql.ir.v1.Bundle.capabilities:type_name -> dql.ir.v1.CapabilityProfile
-	4, // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
-	5, // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
-	7, // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	2,  // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
+	0,  // 1: dql.ir.v1.Bundle.dialect:type_name -> dql.ir.v1.Dialect
+	6,  // 2: dql.ir.v1.Bundle.catalogs:type_name -> dql.ir.v1.Catalog
+	3,  // 3: dql.ir.v1.Bundle.capabilities:type_name -> dql.ir.v1.CapabilityProfile
+	4,  // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
+	5,  // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
+	7,  // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
+	8,  // 7: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
+	9,  // 8: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
+	10, // 9: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
+	11, // 10: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
+	12, // 11: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_bundle_proto_init() }
@@ -438,6 +502,7 @@ func file_dql_ir_v1_bundle_proto_init() {
 	}
 	file_dql_ir_v1_catalog_proto_init()
 	file_dql_ir_v1_diagnostics_proto_init()
+	file_dql_ir_v1_shapes_proto_init()
 	file_dql_ir_v1_bundle_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

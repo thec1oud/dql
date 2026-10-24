@@ -4,6 +4,7 @@ package dql.ir.v1;
 
 import "dql/ir/v1/catalog.proto";
 import "dql/ir/v1/diagnostics.proto";
+import "dql/ir/v1/shapes.proto";
 
 option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
 
@@ -47,8 +48,23 @@ enum Dialect {
 // The dialect's capability profile (§9.2). Its fields arrive with M4.
 message CapabilityProfile {}
 
-// Shapes, conversions and validation rules (§14). Its fields arrive with M2.
-message ShapeLayer {}
+// Shapes and the conversion table (§14), fully expanded so emitters never
+// re-implement the algebra (§14.10).
+message ShapeLayer {
+  // Presets in every form, relation-qualified child shapes and custom
+  // shapes, sorted by the dotted spelling of their ids (§3.2).
+  repeated Shape shapes = 1;
+  // The Ref, Link and change types of nested writes (§14.5, §14.6), sorted
+  // by their host-name words.
+  repeated RelationUnion unions = 2;
+  // Sorted by the dotted spelling of from, then of to (§3.2).
+  repeated Conversion conversions = 3;
+  // One per conflict target of every entity that has one, sorted by entity
+  // qualified name, then conflict target (§14.7).
+  repeated Upsert upserts = 4;
+  // One per keyed entity, sorted by qualified name (§8.9, §11.1).
+  repeated KeyMerge merges = 5;
+}
 
 // Query entries (§16). Its fields arrive with M4.
 message QueryLayer {}
