@@ -3,6 +3,7 @@ package shapes
 import (
 	"slices"
 
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -15,7 +16,7 @@ import (
 // Shapes are sorted by their dotted spelling and unions by their host-name
 // words (§3.2); a shape or union reached both through the forms and through
 // a custom shape's nest is listed once. The diagnostics are those of the
-// custom shapes, sorted. The error is Forms', for catalogs no assembled
+// custom shapes and the host-name collisions of the layer, sorted. The error is Forms', for catalogs no assembled
 // bundle has.
 func Layer(catalogs []*irv1.Catalog, customs []Custom) (*irv1.ShapeLayer, []*irv1.Diagnostic, error) {
 	flat := Presets(catalogs)
@@ -34,7 +35,10 @@ func Layer(catalogs []*irv1.Catalog, customs []Custom) (*irv1.ShapeLayer, []*irv
 		set.addUnion(u)
 	}
 	shapes, unions := set.result()
-	return &irv1.ShapeLayer{Shapes: shapes, Unions: unions, Upserts: Upserts(catalogs)}, diags, nil
+	layer := &irv1.ShapeLayer{Shapes: shapes, Unions: unions, Upserts: Upserts(catalogs)}
+	diags = append(diags, checkHostNames(catalogs, layer, n)...)
+	diagnostics.Sort(diags)
+	return layer, diags, nil
 }
 
 // Ref returns the id of the shape of layer that ref names as dql.yaml writes
