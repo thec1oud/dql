@@ -117,7 +117,18 @@ message NamedRef {
 }
 
 // A type the core cannot classify; its native type says what it is (§8.3).
-message Opaque {}
+message Opaque {
+  // The project's opaque-fallback, set by the core when neither a type plugin
+  // nor emitter config maps the type. The native type is kept.
+  OpaqueFallback fallback = 1;
+}
+
+// The host type an unmapped opaque type falls back to (§8.3).
+enum OpaqueFallback {
+  OPAQUE_FALLBACK_UNSPECIFIED = 0;
+  OPAQUE_FALLBACK_STRING = 1;
+  OPAQUE_FALLBACK_BYTES = 2;
+}
 
 // A column that can hold any storage class (§8.10).
 message Weak {

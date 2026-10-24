@@ -2531,9 +2531,13 @@ type Enum struct {
 	Labels   []string               `protobuf:"bytes,3,rep,name=labels,proto3" json:"labels,omitempty"`
 	Origin   EnumOrigin             `protobuf:"varint,4,opt,name=origin,proto3,enum=dql.ir.v1.EnumOrigin" json:"origin,omitempty"`
 	// The column (inline) or check constraint (check) it was derived from.
-	DerivedFrom   *QualifiedName `protobuf:"bytes,5,opt,name=derived_from,json=derivedFrom,proto3" json:"derived_from,omitempty"`
-	Annotations   []*Annotation  `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty"`
-	Extensions    []*anypb.Any   `protobuf:"bytes,7,rep,name=extensions,proto3" json:"extensions,omitempty"`
+	DerivedFrom *QualifiedName `protobuf:"bytes,5,opt,name=derived_from,json=derivedFrom,proto3" json:"derived_from,omitempty"`
+	Annotations []*Annotation  `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty"`
+	Extensions  []*anypb.Any   `protobuf:"bytes,7,rep,name=extensions,proto3" json:"extensions,omitempty"`
+	// The labels as identifiers, in the order of labels: each label stored as
+	// written, with its word split (§4.2). Computed by the core; emitters name
+	// enum constants from these words (§8.4, §15.2).
+	LabelNames    []*Identifier `protobuf:"bytes,8,rep,name=label_names,json=labelNames,proto3" json:"label_names,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2613,6 +2617,13 @@ func (x *Enum) GetAnnotations() []*Annotation {
 func (x *Enum) GetExtensions() []*anypb.Any {
 	if x != nil {
 		return x.Extensions
+	}
+	return nil
+}
+
+func (x *Enum) GetLabelNames() []*Identifier {
+	if x != nil {
+		return x.LabelNames
 	}
 	return nil
 }
@@ -3097,7 +3108,7 @@ const file_dql_ir_v1_objects_proto_rawDesc = "" +
 	"\n" +
 	"collection\x18\x01 \x01(\x0e2\x1b.dql.ir.v1.CollectionPolicyR\n" +
 	"collection\x12,\n" +
-	"\aremoval\x18\x02 \x01(\x0e2\x12.dql.ir.v1.RemovalR\aremoval\"\xd8\x02\n" +
+	"\aremoval\x18\x02 \x01(\x0e2\x12.dql.ir.v1.RemovalR\aremoval\"\x90\x03\n" +
 	"\x04Enum\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x122\n" +
 	"\thost_name\x18\x02 \x01(\v2\x15.dql.ir.v1.IdentifierR\bhostName\x12\x16\n" +
@@ -3107,7 +3118,9 @@ const file_dql_ir_v1_objects_proto_rawDesc = "" +
 	"\vannotations\x18\x06 \x03(\v2\x15.dql.ir.v1.AnnotationR\vannotations\x124\n" +
 	"\n" +
 	"extensions\x18\a \x03(\v2\x14.google.protobuf.AnyR\n" +
-	"extensions\"\xb2\x03\n" +
+	"extensions\x126\n" +
+	"\vlabel_names\x18\b \x03(\v2\x15.dql.ir.v1.IdentifierR\n" +
+	"labelNames\"\xb2\x03\n" +
 	"\x06Domain\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x122\n" +
 	"\thost_name\x18\x02 \x01(\v2\x15.dql.ir.v1.IdentifierR\bhostName\x12#\n" +
@@ -3366,30 +3379,31 @@ var file_dql_ir_v1_objects_proto_depIdxs = []int32{
 	41, // 73: dql.ir.v1.Enum.derived_from:type_name -> dql.ir.v1.QualifiedName
 	42, // 74: dql.ir.v1.Enum.annotations:type_name -> dql.ir.v1.Annotation
 	43, // 75: dql.ir.v1.Enum.extensions:type_name -> google.protobuf.Any
-	40, // 76: dql.ir.v1.Domain.name:type_name -> dql.ir.v1.Identifier
-	40, // 77: dql.ir.v1.Domain.host_name:type_name -> dql.ir.v1.Identifier
-	44, // 78: dql.ir.v1.Domain.base:type_name -> dql.ir.v1.Type
-	17, // 79: dql.ir.v1.Domain.default:type_name -> dql.ir.v1.Default
-	19, // 80: dql.ir.v1.Domain.collation:type_name -> dql.ir.v1.Collation
-	20, // 81: dql.ir.v1.Domain.constraints:type_name -> dql.ir.v1.Constraint
-	42, // 82: dql.ir.v1.Domain.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 83: dql.ir.v1.Domain.extensions:type_name -> google.protobuf.Any
-	40, // 84: dql.ir.v1.Composite.name:type_name -> dql.ir.v1.Identifier
-	40, // 85: dql.ir.v1.Composite.host_name:type_name -> dql.ir.v1.Identifier
-	16, // 86: dql.ir.v1.Composite.attributes:type_name -> dql.ir.v1.Column
-	42, // 87: dql.ir.v1.Composite.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 88: dql.ir.v1.Composite.extensions:type_name -> google.protobuf.Any
-	40, // 89: dql.ir.v1.Sequence.name:type_name -> dql.ir.v1.Identifier
-	40, // 90: dql.ir.v1.Sequence.host_name:type_name -> dql.ir.v1.Identifier
-	44, // 91: dql.ir.v1.Sequence.type:type_name -> dql.ir.v1.Type
-	41, // 92: dql.ir.v1.Sequence.owned_by:type_name -> dql.ir.v1.QualifiedName
-	42, // 93: dql.ir.v1.Sequence.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 94: dql.ir.v1.Sequence.extensions:type_name -> google.protobuf.Any
-	95, // [95:95] is the sub-list for method output_type
-	95, // [95:95] is the sub-list for method input_type
-	95, // [95:95] is the sub-list for extension type_name
-	95, // [95:95] is the sub-list for extension extendee
-	0,  // [0:95] is the sub-list for field type_name
+	40, // 76: dql.ir.v1.Enum.label_names:type_name -> dql.ir.v1.Identifier
+	40, // 77: dql.ir.v1.Domain.name:type_name -> dql.ir.v1.Identifier
+	40, // 78: dql.ir.v1.Domain.host_name:type_name -> dql.ir.v1.Identifier
+	44, // 79: dql.ir.v1.Domain.base:type_name -> dql.ir.v1.Type
+	17, // 80: dql.ir.v1.Domain.default:type_name -> dql.ir.v1.Default
+	19, // 81: dql.ir.v1.Domain.collation:type_name -> dql.ir.v1.Collation
+	20, // 82: dql.ir.v1.Domain.constraints:type_name -> dql.ir.v1.Constraint
+	42, // 83: dql.ir.v1.Domain.annotations:type_name -> dql.ir.v1.Annotation
+	43, // 84: dql.ir.v1.Domain.extensions:type_name -> google.protobuf.Any
+	40, // 85: dql.ir.v1.Composite.name:type_name -> dql.ir.v1.Identifier
+	40, // 86: dql.ir.v1.Composite.host_name:type_name -> dql.ir.v1.Identifier
+	16, // 87: dql.ir.v1.Composite.attributes:type_name -> dql.ir.v1.Column
+	42, // 88: dql.ir.v1.Composite.annotations:type_name -> dql.ir.v1.Annotation
+	43, // 89: dql.ir.v1.Composite.extensions:type_name -> google.protobuf.Any
+	40, // 90: dql.ir.v1.Sequence.name:type_name -> dql.ir.v1.Identifier
+	40, // 91: dql.ir.v1.Sequence.host_name:type_name -> dql.ir.v1.Identifier
+	44, // 92: dql.ir.v1.Sequence.type:type_name -> dql.ir.v1.Type
+	41, // 93: dql.ir.v1.Sequence.owned_by:type_name -> dql.ir.v1.QualifiedName
+	42, // 94: dql.ir.v1.Sequence.annotations:type_name -> dql.ir.v1.Annotation
+	43, // 95: dql.ir.v1.Sequence.extensions:type_name -> google.protobuf.Any
+	96, // [96:96] is the sub-list for method output_type
+	96, // [96:96] is the sub-list for method input_type
+	96, // [96:96] is the sub-list for extension type_name
+	96, // [96:96] is the sub-list for extension extendee
+	0,  // [0:96] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_objects_proto_init() }
