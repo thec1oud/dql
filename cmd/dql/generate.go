@@ -12,6 +12,9 @@ import (
 	"github.com/thec1oud/dql/cmd/dql/internal/config"
 	"github.com/thec1oud/dql/core/bundle"
 	"github.com/thec1oud/dql/core/catalog"
+	"github.com/thec1oud/dql/core/conversions"
+	"github.com/thec1oud/dql/core/diagnostics"
+	"github.com/thec1oud/dql/core/shapes"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
@@ -32,7 +35,8 @@ var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 }
 
 // generate runs every source, assembles the catalog layer (§2.2, §5.2) and
-// writes the bundle to -bundle, in canonical JSON (§3.1). Emitters arrive in
+// the shape layer (§14), and writes the bundle to -bundle, in canonical JSON
+// (§3.1). Emitters arrive in
 // later milestones, so emit entries are skipped.
 func generate(args []string, stderr io.Writer) int {
 	var out string
@@ -72,6 +76,15 @@ func generate(args []string, stderr io.Writer) int {
 	if b == nil {
 		return 1
 	}
+	ds, err := shapeLayer(b, c)
+	if err != nil {
+		fmt.Fprintf(stderr, "dql generate: %v\n", err)
+		return 1
+	}
+	printDiagnostics(stderr, ds)
+	if hasErrors(ds) {
+		return 1
+	}
 	if out != "" {
 		js, err := marshalJSON(b)
 		if err == nil {
@@ -87,6 +100,39 @@ func generate(args []string, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "dql generate: skipped emit[%d] (%s): emitters arrive in a later milestone\n", i, e.Plugin)
 	}
 	return 0
+}
+
+// buildShapes is a variable so tests can make the shape layer fail.
+var buildShapes = shapes.Layer
+
+// shapeLayer adds the shape layer to b: the shapes, unions and upserts of
+// the catalogs and the custom shapes of c (§14.3 to §14.8), then the
+// conversion table, with the conversions c declares, and the merges (§14.9,
+// §8.9). It returns the diagnostics of both, sorted, and adds them to the
+// bundle's.
+func shapeLayer(b *irv1.Bundle, c *config.Config) ([]*irv1.Diagnostic, error) {
+	layer, ds, err := buildShapes(b.GetCatalogs(), c.CustomShapes())
+	if err != nil {
+		return nil, err
+	}
+	b.Shapes = layer
+	var declared []conversions.Declared
+	for _, v := range c.Conversions {
+		declared = append(declared, conversions.Declared{
+			From: shapes.Ref(b.GetCatalogs(), layer, v.From),
+			To:   shapes.Ref(b.GetCatalogs(), layer, v.To),
+		})
+	}
+	ds = append(ds, conversions.Derive(b, declared)...)
+	diagnostics.Sort(ds)
+	b.Diagnostics = append(b.Diagnostics, ds...)
+	diagnostics.Sort(b.Diagnostics)
+	return ds, nil
+}
+
+// hasErrors reports whether any of ds is an error.
+func hasErrors(ds []*irv1.Diagnostic) bool {
+	return slices.ContainsFunc(ds, func(d *irv1.Diagnostic) bool { return d.GetSeverity() == irv1.Severity_SEVERITY_ERROR })
 }
 
 // runSource invokes one source plugin with a bundle of the core's IR version
