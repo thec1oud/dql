@@ -169,7 +169,7 @@ func entityFlats(t *testing.T, qn *irv1.QualifiedName, tab *irv1.Table, lines []
 func fixtureShape(qn *irv1.QualifiedName, words []string, p irv1.Preset, form irv1.Form) *irv1.Shape {
 	return &irv1.Shape{
 		Id:       &irv1.ShapeId{Base: &irv1.ShapeId_Entity{Entity: qn}, Preset: p, Form: form},
-		HostName: &irv1.Identifier{Words: append(append([]string(nil), words...), presetWord(p))},
+		HostName: &irv1.Identifier{Words: append(append([]string(nil), words...), presetName(p))},
 		Entity:   qn,
 		Lineage:  []*irv1.LineageStep{{Op: irv1.ShapeOp_PRESET, Entity: qn, Preset: p, Form: form}},
 	}

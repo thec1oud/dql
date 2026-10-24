@@ -52,7 +52,7 @@ func NewNester(catalogs []*irv1.Catalog, shapes []*irv1.Shape) *Nester {
 // The diagnostic is reserved for the write rule of custom shapes (§14.8) and
 // is nil.
 func (n *Nester) NestWrite(shape *irv1.Shape, r *irv1.Relation, target *irv1.Shape) ([]*irv1.Shape, []*irv1.RelationUnion, *irv1.Diagnostic) {
-	w := &write{n: n, shape: shape, rel: r, target: target, tier: tierOf(shape)}
+	w := &nestWrite{n: n, shape: shape, rel: r, target: target, tier: tierOf(shape)}
 	shape.Nests = slices.DeleteFunc(shape.Nests, func(x *irv1.Nest) bool { return x.GetRelation() == r.GetName().GetStored() })
 	shape.Forbidden = slices.DeleteFunc(shape.Forbidden, func(x *irv1.ForbiddenField) bool {
 		return x.GetRelation() == r.GetName().GetStored()
@@ -77,8 +77,8 @@ func (n *Nester) NestWrite(shape *irv1.Shape, r *irv1.Relation, target *irv1.Sha
 	return w.added, w.unions, nil
 }
 
-// write is one NestWrite call.
-type write struct {
+// nestWrite is one NestWrite call.
+type nestWrite struct {
 	n      *Nester
 	shape  *irv1.Shape
 	rel    *irv1.Relation
@@ -94,7 +94,7 @@ type write struct {
 // is a reference, Link or Create; in a Partial it takes one change (§14.5,
 // §14.6). Its foreign-key columns and the relation coexist and follow the
 // consistency rule.
-func (w *write) owning() *irv1.Nest {
+func (w *nestWrite) owning() *irv1.Nest {
 	fk := w.rel.GetFrom().GetColumns()
 	base := w.n.preset(w.shape.GetEntity(), w.tier, irv1.Form_FORM_FLAT)
 	reason := forbiddenReason(base, fk)
@@ -143,7 +143,7 @@ func (w *write) owning() *irv1.Nest {
 // or inverse one-to-one relation. Its rows take the child's shape for the
 // forward relation, which forbids the foreign key the parent supplies
 // (§14.5). In a Partial each element is a change (§14.6).
-func (w *write) dependent() *irv1.Nest {
+func (w *nestWrite) dependent() *irv1.Nest {
 	child := w.rel.GetTo().GetTable()
 	fk := w.rel.GetTo().GetColumns()
 	if forbiddenReason(w.n.preset(child, irv1.Preset_PRESET_DRAFT, irv1.Form_FORM_FLAT), fk) == irv1.ForbiddenReason_FORBIDDEN_BOUND {
@@ -164,7 +164,7 @@ func (w *write) dependent() *irv1.Nest {
 // manyToMany is a relation through a junction. In a Draft each element links
 // an existing far row or creates one; both write the junction row (§14.5). In
 // a Partial it takes Link, Unlink or Create under its policy (§14.6).
-func (w *write) manyToMany() *irv1.Nest {
+func (w *nestWrite) manyToMany() *irv1.Nest {
 	if w.tier == irv1.Preset_PRESET_PARTIAL {
 		return w.manyToManyChange()
 	}
@@ -179,7 +179,7 @@ func (w *write) manyToMany() *irv1.Nest {
 	return &irv1.Nest{Presence: irv1.Presence_PRESENCE_OPTIONAL, Target: &irv1.Nest_Union{Union: u}}
 }
 
-func (w *write) forbid(reason irv1.ForbiddenReason) {
+func (w *nestWrite) forbid(reason irv1.ForbiddenReason) {
 	w.forbidden = true
 	w.shape.Forbidden = append(w.shape.Forbidden, &irv1.ForbiddenField{Relation: w.rel.GetName().GetStored(), Reason: reason})
 	sortForbidden(w.shape, w.n.tables[formsEntityKey(w.shape.GetEntity())])
@@ -187,7 +187,7 @@ func (w *write) forbid(reason irv1.ForbiddenReason) {
 
 // supplies lists the foreign-key columns that are fields of the shape, in
 // key order.
-func (w *write) supplies(fk []string) []string {
+func (w *nestWrite) supplies(fk []string) []string {
 	var out []string
 	for _, c := range fk {
 		if fieldOf(w.shape, c) != nil {
@@ -200,7 +200,7 @@ func (w *write) supplies(fk []string) []string {
 // payload is the shape a Create or Update writes the related rows with: the
 // target when it is of that tier, otherwise the related entity's flat preset
 // of that tier, or nil when there is none.
-func (w *write) payload(tier irv1.Preset) *irv1.Shape {
+func (w *nestWrite) payload(tier irv1.Preset) *irv1.Shape {
 	if w.target != nil && tierOf(w.target) == tier {
 		return w.target
 	}
@@ -208,7 +208,7 @@ func (w *write) payload(tier irv1.Preset) *irv1.Shape {
 }
 
 // keyOf is the Key preset of entity, or nil when it has none.
-func (w *write) keyOf(entity *irv1.QualifiedName) *irv1.Shape {
+func (w *nestWrite) keyOf(entity *irv1.QualifiedName) *irv1.Shape {
 	return w.n.preset(entity, irv1.Preset_PRESET_KEY, irv1.Form_FORM_UNSPECIFIED)
 }
 
@@ -216,7 +216,7 @@ func (w *write) keyOf(entity *irv1.QualifiedName) *irv1.Shape {
 // parent: base without the foreign-key columns, which the parent supplies
 // (§14.5). PostDraftForAuthor is post.draft.flat for author. It returns the
 // new shape's id, or nil when base is nil.
-func (w *write) forShape(base *irv1.Shape) *irv1.ShapeId {
+func (w *nestWrite) forShape(base *irv1.Shape) *irv1.ShapeId {
 	if base == nil {
 		return nil
 	}
@@ -326,9 +326,9 @@ func (n *Nester) spell(id *irv1.ShapeId) string {
 	if c := id.GetCustom(); c != "" {
 		parts = append(parts, c)
 	} else {
-		parts = append(parts, strings.Join(n.entityWords(id.GetEntity()), "_"), presetWord(id.GetPreset()))
+		parts = append(parts, strings.Join(n.entityWords(id.GetEntity()), "_"), presetName(id.GetPreset()))
 		if id.GetForm() != irv1.Form_FORM_UNSPECIFIED {
-			parts = append(parts, formWord(id.GetForm()))
+			parts = append(parts, formName(id.GetForm()))
 		}
 	}
 	if r := id.GetForRelation(); r != "" {

@@ -138,7 +138,7 @@ func (f *formSet) write(flat *irv1.Shape, t *irv1.Table) {
 func formsDerive(flat *irv1.Shape, form irv1.Form) *irv1.Shape {
 	s := proto.Clone(flat).(*irv1.Shape)
 	s.Id.Form = form
-	s.HostName = &irv1.Identifier{Words: append(slices.Clone(flat.GetHostName().GetWords()), formWord(form))}
+	s.HostName = &irv1.Identifier{Words: append(slices.Clone(flat.GetHostName().GetWords()), formName(form))}
 	s.Lineage = []*irv1.LineageStep{{
 		Op: irv1.ShapeOp_PRESET, Entity: proto.Clone(flat.GetEntity()).(*irv1.QualifiedName),
 		Preset: flat.GetId().GetPreset(), Form: form,
@@ -165,11 +165,11 @@ func nestsOf(flat, nested *irv1.Shape) *irv1.Shape {
 	return s
 }
 
-func formWord(f irv1.Form) string {
+func formName(f irv1.Form) string {
 	return strings.ToLower(strings.TrimPrefix(f.String(), "FORM_"))
 }
 
-func presetWord(p irv1.Preset) string {
+func presetName(p irv1.Preset) string {
 	return strings.ToLower(strings.TrimPrefix(p.String(), "PRESET_"))
 }
 

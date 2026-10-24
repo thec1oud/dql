@@ -11,7 +11,7 @@ import (
 // when the Partial can set the foreign-key columns (settable), and Unlink
 // only when the foreign key is nullable. Update patches the row the foreign
 // key points at. There is no Delete.
-func (w *write) owningChange(fk []string, settable bool) *irv1.Nest {
+func (w *nestWrite) owningChange(fk []string, settable bool) *irv1.Nest {
 	related := w.rel.GetTo().GetTable()
 	var link, create, unlink *variant
 	if settable {
@@ -41,7 +41,7 @@ func (w *write) owningChange(fk []string, settable bool) *irv1.Nest {
 // collection policy decides which changes exist: append allows only Create
 // (§14.6). Update and Create write the child's shapes for the forward
 // relation, which forbid the foreign key the parent supplies.
-func (w *write) childChange() *irv1.Nest {
+func (w *nestWrite) childChange() *irv1.Nest {
 	child := w.rel.GetTo().GetTable()
 	key := w.keyOf(child)
 	var update, del *variant
@@ -66,7 +66,7 @@ func (w *write) childChange() *irv1.Nest {
 
 // forVariant is a child change whose payload is the child's shape of tier
 // for the forward relation, or nil when the child has no shape of that tier.
-func (w *write) forVariant(change irv1.RelationChange, key *irv1.Shape, tier irv1.Preset, verb ...string) *variant {
+func (w *nestWrite) forVariant(change irv1.RelationChange, key *irv1.Shape, tier irv1.Preset, verb ...string) *variant {
 	id := w.forShape(w.payload(tier))
 	if id == nil {
 		return nil
@@ -78,7 +78,7 @@ func (w *write) forVariant(change irv1.RelationChange, key *irv1.Shape, tier irv
 // Create, under the relation's collection policy. Unlink removes only the
 // junction row. Under append only the changes that add a row, Link and
 // Create, exist (§14.6).
-func (w *write) manyToManyChange() *irv1.Nest {
+func (w *nestWrite) manyToManyChange() *irv1.Nest {
 	far := w.rel.GetTo().GetTable()
 	link := w.variant(irv1.RelationChange_RELATION_CHANGE_LINK, true, w.keyOf(far), nil, "link")
 	create := w.variant(irv1.RelationChange_RELATION_CHANGE_CREATE, false, nil, w.payload(irv1.Preset_PRESET_DRAFT), "create")

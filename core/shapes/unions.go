@@ -19,7 +19,7 @@ type variant struct {
 // needs key, and a Create or Update needs payload; when the shape it needs
 // is nil, such as the Draft of a view, the change does not exist and variant
 // returns nil.
-func (w *write) variant(change irv1.RelationChange, needKey bool, key, payload *irv1.Shape, verb ...string) *variant {
+func (w *nestWrite) variant(change irv1.RelationChange, needKey bool, key, payload *irv1.Shape, verb ...string) *variant {
 	v := &irv1.RelationVariant{Change: change}
 	if needKey {
 		if key == nil {
@@ -45,7 +45,7 @@ func (w *write) variant(change irv1.RelationChange, needKey bool, key, payload *
 // PostUpdateForAuthor, PostAuthorChange with its changes. A union whose
 // variants hold a custom shape's rows belongs to the custom shape that
 // nests it, and its words start with that shape's words and the relation's.
-func (w *write) union(kind irv1.RelationUnionKind, entity *irv1.QualifiedName, relation string, variants ...*variant) *irv1.RelationUnionId {
+func (w *nestWrite) union(kind irv1.RelationUnionKind, entity *irv1.QualifiedName, relation string, variants ...*variant) *irv1.RelationUnionId {
 	variants = slices.DeleteFunc(variants, func(v *variant) bool { return v == nil })
 	if len(variants) == 0 {
 		return nil
