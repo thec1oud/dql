@@ -149,9 +149,20 @@ func relationOf(t *testing.T, tb *irv1.Table, name string) *irv1.Relation {
 	return named(t, tb.GetRelations(), func(e *irv1.Relation) string { return e.GetName().GetStored() }, name)
 }
 
+// TestGateGolden pins the running example's bundle in two golden files: the
+// catalog layer in catalog.json, as the bundle without its shape layer, and
+// the shape layer in shapes.json (guide §6.1).
 func TestGateGolden(t *testing.T) {
-	raw, b := generateBundle(t, filepath.Join(shopDir, "dql.yaml"), shopURL)
-	golden.Assert(t, filepath.Join(shopDir, "catalog.json"), raw)
+	_, b := generateBundle(t, filepath.Join(shopDir, "dql.yaml"), shopURL)
+	layer := b.GetShapes()
+	b.Shapes = nil
+	for path, m := range map[string]proto.Message{"catalog.json": b, "shapes.json": layer} {
+		js, err := bundle.MarshalJSON(m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		golden.Assert(t, filepath.Join(shopDir, path), js)
+	}
 	if len(b.GetDiagnostics()) != 0 || len(b.GetRequiredFeatures()) != 0 {
 		t.Errorf("diagnostics %v, required features %v", b.GetDiagnostics(), b.GetRequiredFeatures())
 	}
