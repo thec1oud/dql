@@ -62,6 +62,7 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 	g := newGenerator(b, o)
 	g.version()
 	g.types()
+	g.shapes()
 	if g.failed() {
 		sortDiagnostics(g.diags)
 		return nil, g.diags
@@ -79,6 +80,7 @@ type generator struct {
 	b     *irv1.Bundle
 	o     Options
 	named map[key]named
+	ix    shapeIndex
 	files []*file
 	// decls says what declares each package-level name so far.
 	decls map[string]string
@@ -110,6 +112,7 @@ func newGenerator(b *irv1.Bundle, o Options) *generator {
 			g.named[keyOf(q(c.GetName().GetStored()))] = named{c.GetHostName().GetWords()}
 		}
 	})
+	g.indexShapes()
 	return g
 }
 
@@ -244,7 +247,7 @@ func sortDiagnostics(ds []*irv1.Diagnostic) {
 
 // version declares the generated-code version the runtime checks (§26.5).
 func (g *generator) version() {
-	f := g.newFile("version")
+	f := g.newFile("dql-version")
 	dql := f.use(Runtime+"/dql", "dql")
 	f.printf(`// The package fails to compile against a runtime that does not implement
 // generated-code version %[1]d (§26.5).

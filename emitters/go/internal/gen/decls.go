@@ -21,9 +21,10 @@ func displayName(q *irv1.QualifiedName) string {
 }
 
 // types generates the enums, domains and composite types of every catalog
-// (§8.4, §8.5, §15.7) into types.dql.go.
+// (§8.4, §8.5, §15.7) into dql-types.dql.go. The fixed files are named
+// with a hyphen, which no entity file has.
 func (g *generator) types() {
-	f := g.newFile("types")
+	f := g.newFile("dql-types")
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, e := range ns.GetEnums() {
 			g.enum(f, q(e.GetName().GetStored()), e)

@@ -136,7 +136,7 @@ func TestImportPaths(t *testing.T) {
 	// An import whose package name differs from its last element is aliased.
 	ns := composite(attr("a", opaque("public", "x", 0), false))
 	files, _ := generate(t, bundle(ns), Options{Types: map[string]string{"public.x": "example.com/go-thing.T"}})
-	if src := files["types.dql.go"]; !strings.Contains(src, `go_thing "example.com/go-thing"`) || !strings.Contains(src, "A go_thing.T") {
+	if src := files["dql-types.dql.go"]; !strings.Contains(src, `go_thing "example.com/go-thing"`) || !strings.Contains(src, "A go_thing.T") {
 		t.Errorf("alias:\n%s", src)
 	}
 }
@@ -156,15 +156,15 @@ func TestHeaderAndFiles(t *testing.T) {
 		names = append(names, n)
 	}
 	slices.Sort(names)
-	if !slices.Equal(names, []string{"types.dql.go", "version.dql.go"}) {
+	if !slices.Equal(names, []string{"dql-types.dql.go", "dql-version.dql.go"}) {
 		t.Errorf("files %q", names)
 	}
-	v := files["version.dql.go"]
+	v := files["dql-version.dql.go"]
 	if !strings.HasPrefix(v, Header+"\n") || !strings.Contains(v, "// Input: catalog billing from dpg-snapshot 0.2.0, sha256:11\n") ||
 		!strings.Contains(v, "_ = dql.EnforceVersion(1 - dql.MinVersion)") {
-		t.Errorf("version.dql.go:\n%s", v)
+		t.Errorf("dql-version.dql.go:\n%s", v)
 	}
-	if strings.Contains(files["types.dql.go"], "import") {
-		t.Errorf("types.dql.go imports:\n%s", files["types.dql.go"])
+	if strings.Contains(files["dql-types.dql.go"], "import") {
+		t.Errorf("dql-types.dql.go imports:\n%s", files["dql-types.dql.go"])
 	}
 }

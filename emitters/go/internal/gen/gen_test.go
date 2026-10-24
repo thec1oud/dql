@@ -135,7 +135,7 @@ func TestTypes(t *testing.T) {
 	if codes != nil {
 		t.Fatalf("diagnostics %q", codes)
 	}
-	src := files["types.dql.go"]
+	src := files["dql-types.dql.go"]
 	for i, c := range cases {
 		if re := regexp.MustCompile(fmt.Sprintf(`\tA%d +%s\n`, i, regexp.QuoteMeta(c.want))); !re.MatchString(src) {
 			t.Errorf("A%d is not %s", i, c.want)
