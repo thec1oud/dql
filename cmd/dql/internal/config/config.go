@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"gopkg.in/yaml.v3"
 
+	"github.com/thec1oud/dql/core/shapes"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -26,9 +28,10 @@ type Config struct {
 	// its text; ConfigAnnotations turns them into IR annotations.
 	Annotations map[string]yaml.Node `yaml:"annotations"`
 	Emit        []Emit               `yaml:"emit"`
-	// Custom shapes (§14.8) and declared conversions (§14.9), read in M2.
-	Shapes      map[string]any `yaml:"shapes"`
-	Conversions any            `yaml:"conversions"`
+	// Custom shapes by name (§14.8).
+	Shapes map[string]Shape `yaml:"shapes"`
+	// Conversions to generate beyond the presets' and lineages' (§14.9).
+	Conversions []Conversion `yaml:"conversions"`
 	// Project-wide settings (§7.2).
 	DefaultCatalog string `yaml:"default-catalog"`
 	OpaqueFallback string `yaml:"opaque-fallback"`
@@ -36,6 +39,47 @@ type Config struct {
 	// file is the name of the file Load read, for the locations of config
 	// annotations (§7.6), and dir its directory.
 	file, dir string
+}
+
+// Shape is a custom shape (§14.8): from names the shape it derives from in
+// the dotted spelling of shape ids, such as user.full or user_summary, and
+// each operator names fields of that shape.
+type Shape struct {
+	From        string   `yaml:"from"`
+	Pick        []string `yaml:"pick"`
+	Omit        []string `yaml:"omit"`
+	Require     []string `yaml:"require"`
+	Optionalize []string `yaml:"optionalize"`
+	Nullify     []string `yaml:"nullify"`
+	Nonnull     []string `yaml:"nonnull"`
+	// Nest maps a relation to the shape it takes.
+	Nest map[string]string `yaml:"nest"`
+	Bind []string          `yaml:"bind"`
+}
+
+// Conversion is a declared conversion between two shapes, written in the
+// dotted spelling of shape ids (§14.9). Each entry is a mapping, so that keys
+// can be added to it.
+type Conversion struct {
+	From string `yaml:"from"`
+	To   string `yaml:"to"`
+}
+
+// CustomShapes returns the shapes: entries for the shape layer, sorted by
+// name.
+func (c *Config) CustomShapes() []shapes.Custom {
+	var out []shapes.Custom
+	for _, name := range slices.Sorted(maps.Keys(c.Shapes)) {
+		s := c.Shapes[name]
+		out = append(out, shapes.Custom{
+			Name: name, From: s.From,
+			Pick: s.Pick, Omit: s.Omit,
+			Require: s.Require, Optionalize: s.Optionalize,
+			Nullify: s.Nullify, Nonnull: s.Nonnull,
+			Bind: s.Bind, Nest: s.Nest,
+		})
+	}
+	return out
 }
 
 // Source is one source plugin invocation. Which settings apply depends on
@@ -260,6 +304,19 @@ func (c *Config) Validate() []*irv1.Diagnostic {
 		}
 		if !slices.Contains(Dialects, e.Dialect) {
 			add("config-dialect-unknown", "emit[%d] targets dialect %q; use one of %v", i, e.Dialect, Dialects)
+		}
+	}
+	for _, name := range slices.Sorted(maps.Keys(c.Shapes)) {
+		if c.Shapes[name].From == "" {
+			add("config-setting-missing", "shapes.%s has no from; set from: to the shape it derives from, such as user.full", name)
+		}
+	}
+	for i, v := range c.Conversions {
+		if v.From == "" {
+			add("config-setting-missing", "conversions[%d] has no from; set from: to a shape, such as user.full", i)
+		}
+		if v.To == "" {
+			add("config-setting-missing", "conversions[%d] has no to; set to: to a shape, such as user_summary", i)
 		}
 	}
 	if c.OpaqueFallback != "" && c.OpaqueFallback != "string" && c.OpaqueFallback != "bytes" {
