@@ -109,6 +109,9 @@ func (f *formSet) read(flat *irv1.Shape, t *irv1.Table) error {
 			Target:   &irv1.Nest_Shape{Shape: proto.Clone(target.GetId()).(*irv1.ShapeId)},
 		})
 	}
+	// Relation fields are sorted by relation, as in write shapes, whatever
+	// order the table lists its relations in (§3.2).
+	slices.SortFunc(nested.Nests, func(a, b *irv1.Nest) int { return strings.Compare(a.GetRelation(), b.GetRelation()) })
 	f.addShape(nested)
 	f.addShape(nestsOf(flat, nested))
 	return nil
