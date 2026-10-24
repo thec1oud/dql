@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/thec1oud/dql/core/shapes"
 )
 
 // The running example's dql.yaml (design record §1.3).
@@ -28,6 +31,24 @@ shapes:
   user_summary:
     from: user.full
     pick: [id, email, display_name]
+  user_summary_named:
+    from: user_summary
+    nonnull: [display_name]
+  post_with_tags:
+    from: post.full
+    nest:
+      tags: tag.full
+      author: user_summary
+  signup:
+    from: user.draft
+    pick: [email, password_hash]
+  quick_invite:
+    from: user.draft
+    pick: [email]
+    bind: [password_hash]
+
+conversions:
+  - { from: user_summary, to: user_summary_named }
 
 emit:
   - plugin: go
@@ -60,6 +81,68 @@ func TestParseRunningExample(t *testing.T) {
 	}
 	if ds := c.Validate(); len(ds) != 0 {
 		t.Errorf("unexpected diagnostics: %v", ds)
+	}
+}
+
+// The shapes: entries of §14.8 reach the shape layer as written.
+func TestCustomShapes(t *testing.T) {
+	c, err := Parse([]byte(shop))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := c.CustomShapes()
+	want := []shapes.Custom{
+		{Name: "post_with_tags", From: "post.full", Nest: map[string]string{"tags": "tag.full", "author": "user_summary"}},
+		{Name: "quick_invite", From: "user.draft", Pick: []string{"email"}, Bind: []string{"password_hash"}},
+		{Name: "signup", From: "user.draft", Pick: []string{"email", "password_hash"}},
+		{Name: "user_summary", From: "user.full", Pick: []string{"id", "email", "display_name"}},
+		{Name: "user_summary_named", From: "user_summary", Nonnull: []string{"display_name"}},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("custom shapes:\n got %+v\nwant %+v", got, want)
+	}
+	if !reflect.DeepEqual(c.Conversions, []Conversion{{From: "user_summary", To: "user_summary_named"}}) {
+		t.Errorf("conversions: %+v", c.Conversions)
+	}
+	every, err := Parse([]byte("shapes:\n  s: { from: user.draft, pick: [a], omit: [b], require: [c], optionalize: [d], nullify: [e], nonnull: [f], bind: [g] }\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s := every.CustomShapes()[0]; s.Pick[0]+s.Omit[0]+s.Require[0]+s.Optionalize[0]+s.Nullify[0]+s.Nonnull[0]+s.Bind[0] != "abcdefg" {
+		t.Errorf("operators: %+v", s)
+	}
+	if (&Config{}).CustomShapes() != nil {
+		t.Error("no shapes: want nil")
+	}
+}
+
+func TestShapesAndConversionsErrors(t *testing.T) {
+	for _, tc := range []struct{ yaml, want string }{
+		{"shapes:\n  s: { from: user.full, picks: [id] }\n", "field picks not found"},
+		{"shapes:\n  s: { from: user.full, nest: { author: { shape: user.full } } }\n", "cannot unmarshal"},
+		{"conversions:\n  - user.full\n", "cannot unmarshal"},
+		{"conversions:\n  - { from: user.full, to: user.key, kind: total }\n", "field kind not found"},
+	} {
+		if _, err := Parse([]byte(tc.yaml)); err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("%q: %v", tc.yaml, err)
+		}
+	}
+	c, err := Parse([]byte("sources: [{ plugin: x }]\nshapes:\n  s:\n  t: { pick: [id] }\nconversions:\n  - { from: user.full }\n  - { to: user.key }\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, d := range c.Validate() {
+		got = append(got, d.GetCode()+": "+d.GetMessage())
+	}
+	want := []string{
+		"config-setting-missing: shapes.s has no from; set from: to the shape it derives from, such as user.full",
+		"config-setting-missing: shapes.t has no from; set from: to the shape it derives from, such as user.full",
+		"config-setting-missing: conversions[0] has no to; set to: to a shape, such as user_summary",
+		"config-setting-missing: conversions[1] has no from; set from: to a shape, such as user.full",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("diagnostics:\n got %q\nwant %q", got, want)
 	}
 }
 
