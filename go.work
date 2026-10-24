@@ -5,6 +5,7 @@ use (
 	./core
 	./plugin
 	./proto
+	./runtime/go
 	./sources
 	./testkit
 )
