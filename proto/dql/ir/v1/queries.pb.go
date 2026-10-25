@@ -210,8 +210,8 @@ type Query struct {
 	Source QuerySource            `protobuf:"varint,2,opt,name=source,proto3,enum=dql.ir.v1.QuerySource" json:"source,omitempty"`
 	// §19.
 	Cardinality Cardinality `protobuf:"varint,3,opt,name=cardinality,proto3,enum=dql.ir.v1.Cardinality" json:"cardinality,omitempty"`
-	// In the order the query first uses them. Scope parameters are not
-	// parameters: scope lists them (§21).
+	// In the order the query first uses them; in a query file's text, the
+	// n-th is $n. Scope parameters are not parameters: scope lists them (§21).
 	Params []*Param `protobuf:"bytes,4,rep,name=params,proto3" json:"params,omitempty"`
 	// Unset for a query that returns no rows.
 	Result *ResultShape `protobuf:"bytes,5,opt,name=result,proto3" json:"result,omitempty"`
@@ -726,7 +726,9 @@ func (x *Consistency) GetMaxStaleness() *durationpb.Duration {
 // The scope a query filters on (§21).
 type ScopeUse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The bound columns it filters on through @scope.<column>, sorted.
+	// The bound columns it filters on through @scope.<column>, sorted. In a
+	// query file's text their placeholders follow the parameters', in this
+	// order: with two parameters, the first scope column is $3.
 	Columns []string `protobuf:"bytes,1,rep,name=columns,proto3" json:"columns,omitempty"`
 	// Written -- unscoped: exempt from the scope checks.
 	Unscoped      bool `protobuf:"varint,2,opt,name=unscoped,proto3" json:"unscoped,omitempty"`
