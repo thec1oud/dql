@@ -4970,6 +4970,478 @@
         "name": "sub",
         "fidelity": "FIDELITY_EXACT"
       }
+    ],
+    "sessionSetup": [
+      "SET TIME ZONE 'UTC'"
+    ],
+    "errorCodes": [
+      {
+        "code": "08000",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "08001",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "08003",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "08004",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "08006",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "08007",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "08P01",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "23502",
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION"
+      },
+      {
+        "code": "23503",
+        "kind": "ERROR_KIND_FOREIGN_KEY_VIOLATION"
+      },
+      {
+        "code": "23505",
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION"
+      },
+      {
+        "code": "23514",
+        "kind": "ERROR_KIND_CHECK_VIOLATION"
+      },
+      {
+        "code": "23P01",
+        "kind": "ERROR_KIND_EXCLUSION_VIOLATION"
+      },
+      {
+        "code": "25P03",
+        "kind": "ERROR_KIND_TIMEOUT"
+      },
+      {
+        "code": "40001",
+        "kind": "ERROR_KIND_SERIALIZATION_FAILURE"
+      },
+      {
+        "code": "40P01",
+        "kind": "ERROR_KIND_DEADLOCK"
+      },
+      {
+        "code": "53300",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "55P03",
+        "kind": "ERROR_KIND_LOCK_TIMEOUT"
+      },
+      {
+        "code": "57014",
+        "kind": "ERROR_KIND_TIMEOUT"
+      },
+      {
+        "code": "57P01",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "57P02",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "57P03",
+        "kind": "ERROR_KIND_CONNECTION"
+      },
+      {
+        "code": "57P05",
+        "kind": "ERROR_KIND_CONNECTION"
+      }
+    ],
+    "violations": [
+      {
+        "kind": "ERROR_KIND_CHECK_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "email_address"
+        },
+        "reported": "email_address_check",
+        "rule": "email_address_check"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "reported": "post_tags_pkey",
+        "rule": "post_tags_pkey"
+      },
+      {
+        "kind": "ERROR_KIND_FOREIGN_KEY_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "reported": "post_tags_post_id_fkey",
+        "rule": "post_tags_post_id_fkey"
+      },
+      {
+        "kind": "ERROR_KIND_FOREIGN_KEY_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "reported": "post_tags_tag_id_fkey",
+        "rule": "post_tags_tag_id_fkey"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "reported": "post_id",
+        "rule": "post_id"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "post_tags"
+        },
+        "reported": "tag_id",
+        "rule": "tag_id"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "posts_one_published_slug",
+        "rule": "posts_one_published_slug"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "posts_pkey",
+        "rule": "posts_pkey"
+      },
+      {
+        "kind": "ERROR_KIND_FOREIGN_KEY_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "posts_author_id_fkey",
+        "rule": "posts_author_id_fkey"
+      },
+      {
+        "kind": "ERROR_KIND_FOREIGN_KEY_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "posts_editor_id_fkey",
+        "rule": "posts_editor_id_fkey"
+      },
+      {
+        "kind": "ERROR_KIND_CHECK_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "posts_published_check",
+        "rule": "posts_published_check"
+      },
+      {
+        "kind": "ERROR_KIND_CHECK_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "posts_title_check",
+        "rule": "posts_title_check"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "author_id",
+        "rule": "author_id"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "id",
+        "rule": "id"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "status",
+        "rule": "status"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        "reported": "title",
+        "rule": "title"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "profiles"
+        },
+        "reported": "profiles_pkey",
+        "rule": "profiles_pkey"
+      },
+      {
+        "kind": "ERROR_KIND_FOREIGN_KEY_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "profiles"
+        },
+        "reported": "profiles_user_id_fkey",
+        "rule": "profiles_user_id_fkey"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "profiles"
+        },
+        "reported": "user_id",
+        "rule": "user_id"
+      },
+      {
+        "kind": "ERROR_KIND_CHECK_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "slug_text"
+        },
+        "reported": "slug_text_check",
+        "rule": "slug_text_check"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "reported": "tags_name_key",
+        "rule": "tags_name_key"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "reported": "tags_pkey",
+        "rule": "tags_pkey"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "reported": "id",
+        "rule": "id"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tags"
+        },
+        "reported": "name",
+        "rule": "name"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tenants"
+        },
+        "reported": "tenants_pkey",
+        "rule": "tenants_pkey"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tenants"
+        },
+        "reported": "id",
+        "rule": "id"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "tenants"
+        },
+        "reported": "name",
+        "rule": "name"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "users_pkey",
+        "rule": "users_pkey"
+      },
+      {
+        "kind": "ERROR_KIND_UNIQUE_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "users_tenant_email_key",
+        "rule": "users_tenant_email_key"
+      },
+      {
+        "kind": "ERROR_KIND_FOREIGN_KEY_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "users_tenant_id_fkey",
+        "rule": "users_tenant_id_fkey"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "created_at",
+        "rule": "created_at",
+        "redact": true
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "email",
+        "rule": "email",
+        "redact": true
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "id",
+        "rule": "id",
+        "redact": true
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "password_hash",
+        "rule": "password_hash",
+        "redact": true
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "tenant_id",
+        "rule": "tenant_id",
+        "redact": true
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "updated_at",
+        "rule": "updated_at",
+        "redact": true
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        },
+        "reported": "version",
+        "rule": "version",
+        "redact": true
+      }
     ]
   },
   "operators": [

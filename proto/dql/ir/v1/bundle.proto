@@ -4,6 +4,7 @@ package dql.ir.v1;
 
 import "dql/ir/v1/catalog.proto";
 import "dql/ir/v1/diagnostics.proto";
+import "dql/ir/v1/names.proto";
 import "dql/ir/v1/objects.proto";
 import "dql/ir/v1/operators.proto";
 import "dql/ir/v1/queries.proto";
@@ -51,14 +52,63 @@ enum Dialect {
   DIALECT_SQLSERVER = 4;
 }
 
-// The dialect's capability profile (§9.2). Its other fields arrive with the
-// dialect plugins.
+// The dialect's capability profile (§9.2), with its session setup and error
+// mapping (§22.7, §23). Its other fields arrive with the dialect plugins.
 message CapabilityProfile {
   Dialect dialect = 1;
   // The operators the dialect supports, sorted by name (§9.2).
   repeated OperatorSupport operators = 2;
   // Whether a reference may cross catalogs (§5.1).
   bool cross_catalog_references = 3;
+  // Statements every new connection runs, in order, such as the UTC session
+  // time zone (§8.8, §22.7).
+  repeated string session_setup = 4;
+  // The native error codes that map into the taxonomy, sorted by code
+  // (§23.1). A code not listed is a DatabaseError.
+  repeated ErrorCode error_codes = 5;
+  // How the database reports a violation of each of the catalogs' rules,
+  // sorted by object, then kind, then what is reported (§23.2).
+  repeated ViolationReport violations = 6;
+}
+
+// A native error code and the taxonomy error it is (§23.1).
+message ErrorCode {
+  // Such as 23505 on Postgres.
+  string code = 1;
+  ErrorKind kind = 2;
+}
+
+// The errors of the taxonomy a native error code maps to (§23.1). The
+// runtime raises the others itself.
+enum ErrorKind {
+  ERROR_KIND_UNSPECIFIED = 0;
+  ERROR_KIND_UNIQUE_VIOLATION = 1;
+  ERROR_KIND_FOREIGN_KEY_VIOLATION = 2;
+  ERROR_KIND_CHECK_VIOLATION = 3;
+  ERROR_KIND_NOT_NULL_VIOLATION = 4;
+  ERROR_KIND_EXCLUSION_VIOLATION = 5;
+  ERROR_KIND_SERIALIZATION_FAILURE = 6;
+  ERROR_KIND_DEADLOCK = 7;
+  ERROR_KIND_LOCK_TIMEOUT = 8;
+  ERROR_KIND_CONNECTION = 9;
+  ERROR_KIND_TIMEOUT = 10;
+}
+
+// How the database reports a violation of one rule of a catalog, so the
+// runtime raises the typed constraint error that names it (§23.2).
+message ViolationReport {
+  ErrorKind kind = 1;
+  // The table or domain the rule belongs to, with no member.
+  QualifiedName object = 2;
+  // What the database's error names: on Postgres, the constraint or unique
+  // index, or the column of a not-null violation.
+  string reported = 3;
+  // The rule's name in the catalog: a constraint, uniqueness fact or
+  // foreign key, or the column of a not-null violation.
+  string rule = 4;
+  // Whether the database's detail may hold the value of a sensitive
+  // column, so the runtime drops it (§23.3).
+  bool redact = 5;
 }
 
 // Shapes and the conversion table (§14), fully expanded so emitters never
