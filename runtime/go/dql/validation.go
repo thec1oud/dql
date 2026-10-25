@@ -76,11 +76,16 @@ type ValidationIssue struct {
 	Other string
 }
 
-// String describes the issue without the value that broke it.
+// String describes the issue without the value that broke it. It leads
+// with the field's path, or, for a value checked on its own such as by a
+// domain's constructor, with the shape or domain checked.
 func (i ValidationIssue) String() string {
 	var b strings.Builder
-	b.WriteString(i.Field)
-	b.WriteString(": ")
+	if i.Field != "" {
+		b.WriteString(i.Field + ": ")
+	} else if i.Shape != "" {
+		b.WriteString(i.Shape + ": ")
+	}
 	switch i.Kind {
 	case KindLength:
 		fmt.Fprintf(&b, "length %d %s, want %s", i.Got, i.Unit, bounds(i.Min, i.Max, true, true))
