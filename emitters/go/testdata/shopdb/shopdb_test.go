@@ -830,3 +830,45 @@ func TestPatchNestedLinks(t *testing.T) {
 		t.Errorf("patched profile %+v", pr)
 	}
 }
+
+func TestUpsertSet(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+
+	// The Partial replaces the default update side: on conflict only the
+	// fields it holds change.
+	d := shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "x"}
+	a := must(h.Users.UpsertSetByTenantIDAndEmail(ctx, d, shopdb.UserPartial{}))
+	got := must(h.Users.UpsertSetByTenantIDAndEmail(ctx, shopdb.UserDraft{Email: d.Email, PasswordHash: "y", DisplayName: opt.Some(ptr("Draft"))},
+		shopdb.UserPartial{DisplayName: opt.Some(ptr("Ann"))}))
+	if got.ID != a.ID || *got.DisplayName != "Ann" || got.Version != a.Version+1 {
+		t.Errorf("upserted %+v", got)
+	}
+	// A Partial that sets nothing still returns the row.
+	if got = must(h.Users.UpsertSetByTenantIDAndEmail(ctx, d, shopdb.UserPartial{})); got.ID != a.ID || *got.DisplayName != "Ann" {
+		t.Errorf("nothing set %+v", got)
+	}
+	b := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "bob@acme.com", PasswordHash: "x"}))
+
+	// Expressions go to the update side.
+	p := must(h.Posts.Insert(ctx, shopdb.PostDraft{AuthorID: a.ID, Title: "Hello", Status: opt.Some(shopdb.PostStatusPublished)}))
+	q := must(h.Posts.UpsertSet(ctx, shopdb.PostDraft{ID: opt.Some(p.ID), AuthorID: a.ID, Title: "Other"}, shopdb.PostPartial{},
+		shopdb.Posts.AuthorID.Add(b.ID-a.ID), shopdb.Posts.PublishedAt.Set(dql.Now())))
+	if q.ID != p.ID || q.Title != "Hello" || q.AuthorID != b.ID || q.PublishedAt == nil {
+		t.Errorf("expressions %+v", q)
+	}
+	_, err := h.Posts.UpsertSet(ctx, shopdb.PostDraft{ID: opt.Some(p.ID), AuthorID: a.ID, Title: "Other"}, shopdb.PostPartial{PublishedAt: opt.Some[*time.Time](nil)},
+		shopdb.Posts.PublishedAt.Set(dql.Now()))
+	var v dql.ValidationErrors
+	if !errors.As(err, &v) || v[0].Kind != dql.KindFieldSetTwice {
+		t.Errorf("set twice: %v", err)
+	}
+	if _, err := h.Users.UpsertSet(ctx, d, shopdb.UserPartial{Email: opt.Some(shopdb.EmailAddress(strings.Repeat("a", 321)))}); err == nil {
+		t.Error("invalid partial written")
+	}
+	if _, err := h.Users.UpsertSet(ctx, shopdb.UserDraft{Email: shopdb.EmailAddress(strings.Repeat("a", 321))}, shopdb.UserPartial{}); err == nil {
+		t.Error("invalid draft written")
+	}
+}

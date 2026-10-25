@@ -621,6 +621,26 @@ var (
 			dql.Use{Fragment: "upsert.users.users_tenant_email_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.display_name"}}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.password_hash"}}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
 		},
 	}
+	userUpsertSetByPrimary = &dql.Query{
+		Name:      "user.upsert_set.by_primary",
+		Catalog:   "shop",
+		Kind:      "upsert_set",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true, "set.password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.users.users_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("set.email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("set.display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("set.password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
+		},
+	}
+	userUpsertSetByTenantIDAndEmail = &dql.Query{
+		Name:      "user.upsert_set.by_tenant_id_and_email",
+		Catalog:   "shop",
+		Kind:      "upsert_set",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true, "set.password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.users.users_tenant_email_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("set.email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("set.display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("set.password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
+		},
+	}
 	userPatch = &dql.Query{
 		Name:      "user.patch",
 		Catalog:   "shop",
@@ -683,6 +703,8 @@ type UsersStore interface {
 	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	Upsert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	UpsertSet(ctx context.Context, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
+	UpsertSetByTenantIDAndEmail(ctx context.Context, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
 	Patch(ctx context.Context, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
 	PatchNested(ctx context.Context, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error)
 	UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error)
@@ -711,6 +733,8 @@ type UsersUnscopedStore interface {
 	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	Upsert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	UpsertSet(ctx context.Context, scope UserScope, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
+	UpsertSetByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
 	Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
 	PatchNested(ctx context.Context, scope UserScope, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error)
 	UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error)
@@ -1002,6 +1026,86 @@ func (s usersWrites) UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft, 
 		return UserFull{}, err
 	}
 	st, err := userUpsertByTenantIDAndEmail.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
+}
+
+// UpsertSet runs user.upsert_set.by_primary (§20.1).
+func (s usersWrites) UpsertSet(ctx context.Context, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error) {
+	if err := d.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	if err := p.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := d.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := d.CreatedAt.Get(); ok {
+		args["created_at"] = v
+	}
+	if v, ok := d.UpdatedAt.Get(); ok {
+		args["updated_at"] = v
+	}
+	if v, ok := d.Version.Get(); ok {
+		args["version"] = v
+	}
+	if v, ok := p.Email.Get(); ok {
+		args["set.email"] = v
+	}
+	if v, ok := p.DisplayName.Get(); ok {
+		args["set.display_name"] = v
+	}
+	if v, ok := p.PasswordHash.Get(); ok {
+		args["set.password_hash"] = v
+	}
+	if err := dql.AssignPrefixed(userUpsertSetByPrimary, "user.partial.flat", "set.", args, as); err != nil {
+		return UserFull{}, err
+	}
+	st, err := userUpsertSetByPrimary.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
+}
+
+// UpsertSetByTenantIDAndEmail runs user.upsert_set.by_tenant_id_and_email (§20.1).
+func (s usersWrites) UpsertSetByTenantIDAndEmail(ctx context.Context, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error) {
+	if err := d.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	if err := p.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := d.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := d.CreatedAt.Get(); ok {
+		args["created_at"] = v
+	}
+	if v, ok := d.UpdatedAt.Get(); ok {
+		args["updated_at"] = v
+	}
+	if v, ok := d.Version.Get(); ok {
+		args["version"] = v
+	}
+	if v, ok := p.Email.Get(); ok {
+		args["set.email"] = v
+	}
+	if v, ok := p.DisplayName.Get(); ok {
+		args["set.display_name"] = v
+	}
+	if v, ok := p.PasswordHash.Get(); ok {
+		args["set.password_hash"] = v
+	}
+	if err := dql.AssignPrefixed(userUpsertSetByTenantIDAndEmail, "user.partial.flat", "set.", args, as); err != nil {
+		return UserFull{}, err
+	}
+	st, err := userUpsertSetByTenantIDAndEmail.Statement(fragments, args)
 	if err != nil {
 		return UserFull{}, err
 	}
@@ -1317,6 +1421,16 @@ func (u usersUnscoped) Upsert(ctx context.Context, scope UserScope, d UserDraft,
 // UpsertByTenantIDAndEmail runs user.upsert.by_tenant_id_and_email in scope (§21.2).
 func (u usersUnscoped) UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error) {
 	return usersWrites{usersReads{u.w, scope}, u.w}.UpsertByTenantIDAndEmail(ctx, d, as...)
+}
+
+// UpsertSet runs user.upsert_set.by_primary in scope (§21.2).
+func (u usersUnscoped) UpsertSet(ctx context.Context, scope UserScope, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.UpsertSet(ctx, d, p, as...)
+}
+
+// UpsertSetByTenantIDAndEmail runs user.upsert_set.by_tenant_id_and_email in scope (§21.2).
+func (u usersUnscoped) UpsertSetByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.UpsertSetByTenantIDAndEmail(ctx, d, p, as...)
 }
 
 // Patch runs user.patch in scope (§21.2).

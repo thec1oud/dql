@@ -973,6 +973,24 @@ var (
 			dql.Use{Fragment: "upsert.posts.posts_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.author_id"}}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.editor_id"}}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.title"}}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.status"}}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.price"}}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.labels"}}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.published_at"}}}}, Separator: ", "}}},
 		},
 	}
+	postUpsertSetByPostsOnePublishedSlug = &dql.Query{
+		Name:    "post.upsert_set.by_posts_one_published_slug",
+		Catalog: "shop",
+		Kind:    "upsert_set",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.posts.posts_one_published_slug", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Param("set.author_id")}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Param("set.editor_id")}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Param("set.title")}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Param("set.status")}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Param("set.price")}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Param("set.labels")}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Param("set.published_at")}}, dql.Use{Fragment: "set.posts.id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}}}}, Separator: ", "}}},
+		},
+	}
+	postUpsertSetByPrimary = &dql.Query{
+		Name:    "post.upsert_set.by_primary",
+		Catalog: "shop",
+		Kind:    "upsert_set",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.posts.posts_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Param("set.author_id")}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Param("set.editor_id")}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Param("set.title")}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Param("set.status")}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Param("set.price")}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Param("set.labels")}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Param("set.published_at")}}, dql.Use{Fragment: "set.posts.id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}}}}, Separator: ", "}}},
+		},
+	}
 	postPatch = &dql.Query{
 		Name:      "post.patch",
 		Catalog:   "shop",
@@ -1030,6 +1048,8 @@ type PostsStore interface {
 	InsertOrIgnore(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (opt.Opt[PostFull], error)
 	UpsertByPostsOnePublishedSlug(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (PostFull, error)
 	Upsert(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (PostFull, error)
+	UpsertSetByPostsOnePublishedSlug(ctx context.Context, d PostDraft, p PostPartial, as ...dql.Update[PostsTable]) (PostFull, error)
+	UpsertSet(ctx context.Context, d PostDraft, p PostPartial, as ...dql.Update[PostsTable]) (PostFull, error)
 	Patch(ctx context.Context, k PostKey, p PostPartial, as ...dql.Update[PostsTable]) (PostFull, error)
 	UpdateWhere(ctx context.Context, where dql.Pred[PostsTable], p PostPartial, as ...dql.Update[PostsTable]) (int64, error)
 	Delete(ctx context.Context, k PostKey) error
@@ -1283,6 +1303,122 @@ func (s postsWrites) Upsert(ctx context.Context, d PostDraft, as ...dql.Assignme
 		return PostFull{}, err
 	}
 	st, err := postUpsertByPrimary.Statement(fragments, args)
+	if err != nil {
+		return PostFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodePostFull)
+}
+
+// UpsertSetByPostsOnePublishedSlug runs post.upsert_set.by_posts_one_published_slug (§20.1).
+func (s postsWrites) UpsertSetByPostsOnePublishedSlug(ctx context.Context, d PostDraft, p PostPartial, as ...dql.Update[PostsTable]) (PostFull, error) {
+	if err := d.Validate(); err != nil {
+		return PostFull{}, err
+	}
+	if err := p.Validate(); err != nil {
+		return PostFull{}, err
+	}
+	args := dql.Args{"author_id": d.AuthorID, "title": d.Title}
+	if v, ok := d.ID.Get(); ok {
+		args["id"] = v
+	}
+	if v, ok := d.EditorID.Get(); ok {
+		args["editor_id"] = v
+	}
+	if v, ok := d.Status.Get(); ok {
+		args["status"] = v
+	}
+	if v, ok := d.Price.Get(); ok {
+		args["price"] = v
+	}
+	if v, ok := d.Labels.Get(); ok {
+		args["labels"] = v
+	}
+	if v, ok := d.PublishedAt.Get(); ok {
+		args["published_at"] = v
+	}
+	if v, ok := p.AuthorID.Get(); ok {
+		args["set.author_id"] = v
+	}
+	if v, ok := p.EditorID.Get(); ok {
+		args["set.editor_id"] = v
+	}
+	if v, ok := p.Title.Get(); ok {
+		args["set.title"] = v
+	}
+	if v, ok := p.Status.Get(); ok {
+		args["set.status"] = v
+	}
+	if v, ok := p.Price.Get(); ok {
+		args["set.price"] = v
+	}
+	if v, ok := p.Labels.Get(); ok {
+		args["set.labels"] = v
+	}
+	if v, ok := p.PublishedAt.Get(); ok {
+		args["set.published_at"] = v
+	}
+	if err := dql.AssignPrefixed(postUpsertSetByPostsOnePublishedSlug, "post.partial.flat", "set.", args, as); err != nil {
+		return PostFull{}, err
+	}
+	st, err := postUpsertSetByPostsOnePublishedSlug.Statement(fragments, args)
+	if err != nil {
+		return PostFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodePostFull)
+}
+
+// UpsertSet runs post.upsert_set.by_primary (§20.1).
+func (s postsWrites) UpsertSet(ctx context.Context, d PostDraft, p PostPartial, as ...dql.Update[PostsTable]) (PostFull, error) {
+	if err := d.Validate(); err != nil {
+		return PostFull{}, err
+	}
+	if err := p.Validate(); err != nil {
+		return PostFull{}, err
+	}
+	args := dql.Args{"author_id": d.AuthorID, "title": d.Title}
+	if v, ok := d.ID.Get(); ok {
+		args["id"] = v
+	}
+	if v, ok := d.EditorID.Get(); ok {
+		args["editor_id"] = v
+	}
+	if v, ok := d.Status.Get(); ok {
+		args["status"] = v
+	}
+	if v, ok := d.Price.Get(); ok {
+		args["price"] = v
+	}
+	if v, ok := d.Labels.Get(); ok {
+		args["labels"] = v
+	}
+	if v, ok := d.PublishedAt.Get(); ok {
+		args["published_at"] = v
+	}
+	if v, ok := p.AuthorID.Get(); ok {
+		args["set.author_id"] = v
+	}
+	if v, ok := p.EditorID.Get(); ok {
+		args["set.editor_id"] = v
+	}
+	if v, ok := p.Title.Get(); ok {
+		args["set.title"] = v
+	}
+	if v, ok := p.Status.Get(); ok {
+		args["set.status"] = v
+	}
+	if v, ok := p.Price.Get(); ok {
+		args["set.price"] = v
+	}
+	if v, ok := p.Labels.Get(); ok {
+		args["set.labels"] = v
+	}
+	if v, ok := p.PublishedAt.Get(); ok {
+		args["set.published_at"] = v
+	}
+	if err := dql.AssignPrefixed(postUpsertSetByPrimary, "post.partial.flat", "set.", args, as); err != nil {
+		return PostFull{}, err
+	}
+	st, err := postUpsertSetByPrimary.Statement(fragments, args)
 	if err != nil {
 		return PostFull{}, err
 	}

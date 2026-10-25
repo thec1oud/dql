@@ -42,6 +42,8 @@ func TableID(cats []*irv1.Catalog, q *irv1.QualifiedName) string {
 //   - <entity>.insert, <entity>.upsert.by_<key> and <entity>.patch take the
 //     Draft, Partial and Key presets, and <entity>.insert.<shape> and
 //     <entity>.patch.<shape> each custom write shape; all return the Full.
+//   - <entity>.upsert_set.by_<key> upserts the Draft and, on conflict, sets
+//     the Partial's fields it holds, whose parameters are named set.<column>.
 //   - <entity>.insert_or_ignore.by_<key> inserts the Draft unless the row
 //     conflicts on the uniqueness fact, and returns the Full or no row.
 //   - <entity>.delete removes by Key, setting the soft-delete column on a
@@ -505,6 +507,39 @@ func (p *planner) upsert(e *entity, u *irv1.Upsert) {
 	}
 	cols, row, params := e.values(s)
 	p.add(e, e.spelling+".upsert.by_"+keyName(e.t.GetUniqueness()[k]), irv1.Cardinality_CARDINALITY_ONE, true, params, full,
+		use("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), fill("returning", use("returning."+e.shapeID(full)))))
+	p.upsertSet(e, u, k, s, full)
+}
+
+// upsertSet adds the upsert of one conflict target whose update side is a
+// Partial in place of the default (§14.7): each field is optional, and its
+// parameter is named set.<column>, apart from the Draft's. A call that sets
+// nothing still returns the row: a versioned entity's bump writes, and
+// otherwise a Draft column the Partial leaves out is set to itself; with
+// neither there is no query.
+func (p *planner) upsertSet(e *entity, u *irv1.Upsert, k int, s, full *irv1.Shape) {
+	part := e.preset(irv1.Preset_PRESET_PARTIAL)
+	if part == nil {
+		return
+	}
+	var sets []*irv1.ListItem
+	var setParams []*irv1.Param
+	for _, f := range part.GetFields() {
+		sets = append(sets, item(use("set."+e.id+"."+f.GetColumn(), param("0", "set."+f.GetColumn()))))
+		setParams = append(setParams, &irv1.Param{Name: "set." + f.GetColumn(), Type: f.GetType(), Nullable: f.GetNullable(), Optional: true})
+	}
+	if bump := e.bump(); bump != nil {
+		sets = append(sets, bump...)
+	} else if i := slices.IndexFunc(s.GetFields(), func(d *irv1.Field) bool {
+		return !slices.ContainsFunc(part.GetFields(), func(f *irv1.Field) bool { return f.GetColumn() == d.GetColumn() })
+	}); i >= 0 {
+		c := s.GetFields()[i].GetColumn()
+		sets = append(sets, item(use("set."+e.id+"."+c, fill("0", e.col(c)))))
+	} else {
+		return
+	}
+	cols, row, params := e.values(s)
+	p.add(e, e.spelling+".upsert_set.by_"+keyName(e.t.GetUniqueness()[k]), irv1.Cardinality_CARDINALITY_ONE, true, append(params, setParams...), full,
 		use("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), fill("returning", use("returning."+e.shapeID(full)))))
 }
 

@@ -93,18 +93,25 @@ type expression struct{ node Node }
 // is a FieldSetTwice issue (§20.3), and a field q does not write is an
 // error.
 func Assign[E any](q *Query, shape string, args Args, as []Update[E]) error {
+	return AssignPrefixed(q, shape, "", args, as)
+}
+
+// AssignPrefixed is Assign for a query whose parameter for field is named
+// prefix+field, as an upsert's update side names set.<column> (§14.7).
+func AssignPrefixed[E any](q *Query, shape, prefix string, args Args, as []Update[E]) error {
 	var v ValidationErrors
 	var e E
 	for _, a := range as {
 		field, node := a.assignment(e)
-		if !takes(q.Plan, field) {
+		name := prefix + field
+		if !takes(q.Plan, name) {
 			return fmt.Errorf("dql: %s does not write %s", q.Name, field)
 		}
-		if _, ok := args[field]; ok {
+		if _, ok := args[name]; ok {
 			v = append(v, ValidationIssue{Shape: shape, Field: field, Kind: KindFieldSetTwice})
 			continue
 		}
-		args[field] = expression{node}
+		args[name] = expression{node}
 	}
 	return v.Err()
 }
