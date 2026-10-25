@@ -7,6 +7,8 @@
 package shopdb
 
 import (
+	"slices"
+
 	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/opt"
 )
@@ -131,4 +133,100 @@ func TagRefLink(k TagKey) TagRef {
 // TagRefCreate returns the TagRef that creates.
 func TagRefCreate(d TagDraft) TagRef {
 	return TagRef{change: dql.ChangeCreate, draft: d}
+}
+
+// ToPartial converts d to TagPartial (§14.9).
+func (d TagDraft) ToPartial() TagPartial {
+	var p TagPartial
+	p.Name = opt.Some(d.Name)
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n TagDraftNested) Flat() TagDraft {
+	return n.TagDraft
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n TagDraftNested) Nests() TagDraftNests {
+	return n.TagDraftNests
+}
+
+// ToDraft converts f to TagDraft (§14.9).
+func (f TagFull) ToDraft() TagDraft {
+	var d TagDraft
+	d.Name = f.Name
+	return d
+}
+
+// Key converts f to TagKey (§14.9).
+func (f TagFull) Key() TagKey {
+	var k TagKey
+	k.ID = f.ID
+	return k
+}
+
+// ToPartial converts f to TagPartial (§14.9).
+func (f TagFull) ToPartial() TagPartial {
+	var p TagPartial
+	p.Name = opt.Some(f.Name)
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n TagFullNested) Flat() TagFull {
+	return n.TagFull
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n TagFullNested) Nests() TagFullNests {
+	return n.TagFullNests
+}
+
+// ApplyToDraft returns d with the fields p holds set; fields TagDraft cannot hold are
+// ignored (§14.9).
+func (p TagPartial) ApplyToDraft(d TagDraft) TagDraft {
+	if v, ok := p.Name.Get(); ok {
+		d.Name = v
+	}
+	return d
+}
+
+// ApplyTo returns f with the fields p holds set; fields TagFull cannot hold are
+// ignored (§14.9).
+func (p TagPartial) ApplyTo(f TagFull) TagFull {
+	if v, ok := p.Name.Get(); ok {
+		f.Name = v
+	}
+	return f
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n TagPartialNested) Flat() TagPartial {
+	return n.TagPartial
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n TagPartialNested) Nests() TagPartialNests {
+	return n.TagPartialNests
+}
+
+// MergeTagByKey applies each change to the rows its key matches and returns
+// them, with the keys of changes that matched no row. Keys compare exactly, or
+// after a certified fold (§8.9, §14.9).
+func MergeTagByKey(rows []TagFull, changes []dql.Keyed[TagKey, TagPartial]) (merged []TagFull, unmatched []TagKey) {
+	merged = slices.Clone(rows)
+	for _, c := range changes {
+		matched := false
+		for i, r := range merged {
+			if r.ID == c.Key.ID {
+				merged[i] = c.Value.ApplyTo(r)
+				matched = true
+			}
+		}
+		if !matched {
+			unmatched = append(unmatched, c.Key)
+		}
+	}
+	return merged, unmatched
 }

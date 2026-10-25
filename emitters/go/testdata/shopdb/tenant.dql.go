@@ -7,7 +7,10 @@
 package shopdb
 
 import (
+	"slices"
+
 	"github.com/google/uuid"
+	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/opt"
 )
 
@@ -60,4 +63,103 @@ type TenantPartialNested struct {
 
 // TenantPartialNests is the shape tenant.partial.nests of shop.app.tenants.
 type TenantPartialNests struct {
+}
+
+// ToPartial converts d to TenantPartial (§14.9).
+func (d TenantDraft) ToPartial() TenantPartial {
+	var p TenantPartial
+	p.Name = opt.Some(d.Name)
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n TenantDraftNested) Flat() TenantDraft {
+	return n.TenantDraft
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n TenantDraftNested) Nests() TenantDraftNests {
+	var n2 TenantDraftNests
+	return n2
+}
+
+// ToDraft converts f to TenantDraft (§14.9).
+func (f TenantFull) ToDraft() TenantDraft {
+	var d TenantDraft
+	d.ID = opt.Some(f.ID)
+	d.Name = f.Name
+	return d
+}
+
+// Key converts f to TenantKey (§14.9).
+func (f TenantFull) Key() TenantKey {
+	var k TenantKey
+	k.ID = f.ID
+	return k
+}
+
+// ToPartial converts f to TenantPartial (§14.9).
+func (f TenantFull) ToPartial() TenantPartial {
+	var p TenantPartial
+	p.Name = opt.Some(f.Name)
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n TenantFullNested) Flat() TenantFull {
+	return n.TenantFull
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n TenantFullNested) Nests() TenantFullNests {
+	return n.TenantFullNests
+}
+
+// ApplyToDraft returns d with the fields p holds set; fields TenantDraft cannot hold are
+// ignored (§14.9).
+func (p TenantPartial) ApplyToDraft(d TenantDraft) TenantDraft {
+	if v, ok := p.Name.Get(); ok {
+		d.Name = v
+	}
+	return d
+}
+
+// ApplyTo returns f with the fields p holds set; fields TenantFull cannot hold are
+// ignored (§14.9).
+func (p TenantPartial) ApplyTo(f TenantFull) TenantFull {
+	if v, ok := p.Name.Get(); ok {
+		f.Name = v
+	}
+	return f
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n TenantPartialNested) Flat() TenantPartial {
+	return n.TenantPartial
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n TenantPartialNested) Nests() TenantPartialNests {
+	var n2 TenantPartialNests
+	return n2
+}
+
+// MergeTenantByKey applies each change to the rows its key matches and returns
+// them, with the keys of changes that matched no row. Keys compare exactly, or
+// after a certified fold (§8.9, §14.9).
+func MergeTenantByKey(rows []TenantFull, changes []dql.Keyed[TenantKey, TenantPartial]) (merged []TenantFull, unmatched []TenantKey) {
+	merged = slices.Clone(rows)
+	for _, c := range changes {
+		matched := false
+		for i, r := range merged {
+			if r.ID == c.Key.ID {
+				merged[i] = c.Value.ApplyTo(r)
+				matched = true
+			}
+		}
+		if !matched {
+			unmatched = append(unmatched, c.Key)
+		}
+	}
+	return merged, unmatched
 }

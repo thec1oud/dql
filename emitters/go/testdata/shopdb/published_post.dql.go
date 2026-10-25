@@ -31,3 +31,21 @@ type PublishedPostFullNests struct {
 type PublishedPostKey struct {
 	ID int64 // asserted non-null; checked when decoding
 }
+
+// Key converts f to PublishedPostKey (§14.9).
+func (f PublishedPostFull) Key() PublishedPostKey {
+	var k PublishedPostKey
+	k.ID = f.ID
+	return k
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n PublishedPostFullNested) Flat() PublishedPostFull {
+	return n.PublishedPostFull
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n PublishedPostFullNested) Nests() PublishedPostFullNests {
+	var n2 PublishedPostFullNests
+	return n2
+}

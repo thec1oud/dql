@@ -7,6 +7,8 @@
 package shopdb
 
 import (
+	"slices"
+
 	"github.com/thec1oud/dql/runtime/go/civil"
 	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/opt"
@@ -122,4 +124,107 @@ func (c ProfileUserChange) Change() dql.Change { return c.change }
 // ProfileUserUpdate returns the ProfileUserChange that updates.
 func ProfileUserUpdate(p UserPartial) ProfileUserChange {
 	return ProfileUserChange{change: dql.ChangeUpdate, partial: p}
+}
+
+// ToPartial converts d to ProfilePartial (§14.9).
+func (d ProfileDraft) ToPartial() ProfilePartial {
+	var p ProfilePartial
+	p.Bio = d.Bio
+	p.Birthday = d.Birthday
+	return p
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n ProfileDraftNested) Nests() ProfileDraftNests {
+	var n2 ProfileDraftNests
+	n2.User = n.User
+	return n2
+}
+
+// ToDraft converts f to ProfileDraft (§14.9).
+func (f ProfileFull) ToDraft() ProfileDraft {
+	var d ProfileDraft
+	d.UserID = f.UserID
+	d.Bio = opt.Some(f.Bio)
+	d.Birthday = opt.Some(f.Birthday)
+	return d
+}
+
+// Key converts f to ProfileKey (§14.9).
+func (f ProfileFull) Key() ProfileKey {
+	var k ProfileKey
+	k.UserID = f.UserID
+	return k
+}
+
+// ToPartial converts f to ProfilePartial (§14.9).
+func (f ProfileFull) ToPartial() ProfilePartial {
+	var p ProfilePartial
+	p.Bio = opt.Some(f.Bio)
+	p.Birthday = opt.Some(f.Birthday)
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n ProfileFullNested) Flat() ProfileFull {
+	return n.ProfileFull
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n ProfileFullNested) Nests() ProfileFullNests {
+	return n.ProfileFullNests
+}
+
+// ApplyToDraft returns d with the fields p holds set; fields ProfileDraft cannot hold are
+// ignored (§14.9).
+func (p ProfilePartial) ApplyToDraft(d ProfileDraft) ProfileDraft {
+	if v, ok := p.Bio.Get(); ok {
+		d.Bio = opt.Some(v)
+	}
+	if v, ok := p.Birthday.Get(); ok {
+		d.Birthday = opt.Some(v)
+	}
+	return d
+}
+
+// ApplyTo returns f with the fields p holds set; fields ProfileFull cannot hold are
+// ignored (§14.9).
+func (p ProfilePartial) ApplyTo(f ProfileFull) ProfileFull {
+	if v, ok := p.Bio.Get(); ok {
+		f.Bio = v
+	}
+	if v, ok := p.Birthday.Get(); ok {
+		f.Birthday = v
+	}
+	return f
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n ProfilePartialNested) Flat() ProfilePartial {
+	return n.ProfilePartial
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n ProfilePartialNested) Nests() ProfilePartialNests {
+	return n.ProfilePartialNests
+}
+
+// MergeProfileByKey applies each change to the rows its key matches and returns
+// them, with the keys of changes that matched no row. Keys compare exactly, or
+// after a certified fold (§8.9, §14.9).
+func MergeProfileByKey(rows []ProfileFull, changes []dql.Keyed[ProfileKey, ProfilePartial]) (merged []ProfileFull, unmatched []ProfileKey) {
+	merged = slices.Clone(rows)
+	for _, c := range changes {
+		matched := false
+		for i, r := range merged {
+			if r.UserID == c.Key.UserID {
+				merged[i] = c.Value.ApplyTo(r)
+				matched = true
+			}
+		}
+		if !matched {
+			unmatched = append(unmatched, c.Key)
+		}
+	}
+	return merged, unmatched
 }
