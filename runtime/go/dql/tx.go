@@ -2,8 +2,10 @@ package dql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
+	"time"
 )
 
 // Propagation is how a new transaction relates to the one its context
@@ -56,11 +58,19 @@ type root struct {
 	opts        TxOptions
 	consistency Consistency
 	// Records the positions of the root's commits.
-	session     *Session
-	conns       map[*sourcePool]Conn
-	order       []*sourcePool
+	session *Session
+	conns   map[*sourcePool]Conn
+	order   []*sourcePool
+	// The sources whose connection is a replica's.
+	replicas    map[*sourcePool]bool
 	independent int // how deep in independent transactions
 	done        bool
+	// For hooks: how the root began, its closure's run, when it began, and
+	// the context its begin hooks returned.
+	propagation Propagation
+	attempt     int
+	started     time.Time
+	hctx        context.Context
 }
 
 // frame is one level of a transaction: its root, or a savepoint in it.
@@ -70,6 +80,8 @@ type frame struct {
 	savepoint string
 	// The sources the savepoint was made on.
 	saved map[*sourcePool]bool
+	// The context the frame's closure runs in, from the begin hooks.
+	hctx context.Context
 }
 
 type frameKey struct{}
@@ -83,27 +95,32 @@ func (f *frame) with(ctx context.Context) context.Context {
 	return context.WithValue(ctx, frameKey{}, f)
 }
 
-// conn returns the frame's connection to s, beginning the root's
-// transaction on s and making the frame's savepoints there on first use.
-func (f *frame) conn(ctx context.Context, s *sourcePool, q string) (Conn, error) {
+// conn returns the frame's connection to s, and whether it is a
+// replica's, beginning the root's transaction on s and making the frame's
+// savepoints there on first use.
+func (f *frame) conn(ctx context.Context, s *sourcePool, q string) (Conn, bool, error) {
 	r := f.root
 	if r.done {
-		return nil, ErrDone
+		return nil, false, ErrDone
 	}
 	c := r.conns[s]
 	if c == nil {
 		var err error
+		var replica bool
 		if r.opts.ReadOnly {
-			c, err = r.exec.route(ctx, s, r.consistency, r.independent > 0, q)
+			c, replica, err = r.exec.route(ctx, s, r.consistency, r.independent > 0, q)
 		} else {
 			c, err = r.exec.conn(ctx, s, r.independent > 0, q)
 		}
 		if err != nil {
-			return nil, err
+			return nil, false, err
+		}
+		if replica {
+			r.replicas[s] = true
 		}
 		if err := c.Begin(ctx, r.opts); err != nil {
 			c.Release()
-			return nil, r.exec.translate(err, "", q, s)
+			return nil, false, r.exec.translate(err, "", q, s)
 		}
 		r.conns[s] = c
 		r.order = append(r.order, s)
@@ -116,17 +133,18 @@ func (f *frame) conn(ctx context.Context, s *sourcePool, q string) (Conn, error)
 	for _, g := range chain {
 		if !g.saved[s] {
 			if err := c.Savepoint(ctx, g.savepoint); err != nil {
-				return nil, r.exec.translate(err, "", q, s)
+				return nil, false, r.exec.translate(err, "", q, s)
 			}
 			g.saved[s] = true
 		}
 	}
-	return c, nil
+	return c, r.replicas[s], nil
 }
 
 // end commits or rolls back every connection of the root and releases
-// them. Commit stops at the first failure and rolls back the rest.
-func (r *root) end(ctx context.Context, commit bool) error {
+// them. Commit stops at the first failure and rolls back the rest. cause is
+// why a rollback happens, for the end hooks.
+func (r *root) end(ctx context.Context, commit bool, cause error) error {
 	if r.done {
 		return nil
 	}
@@ -148,6 +166,14 @@ func (r *root) end(ctx context.Context, commit bool) error {
 		}
 		c.Release()
 	}
+	ev := r.event()
+	ev.Duration, ev.Outcome, ev.Err = time.Since(r.started), RolledBack, cause
+	if commit && first == nil {
+		ev.Outcome = Committed
+	} else if first != nil {
+		ev.Err = first
+	}
+	r.exec.txEvent(r.hctx, txEnd, ev)
 	return first
 }
 
@@ -195,7 +221,7 @@ func (t *txHandle) Commit(ctx context.Context) error {
 	case t.f.root.done:
 		return ErrDone
 	}
-	return t.f.root.end(ctx, true)
+	return t.f.root.end(ctx, true, nil)
 }
 
 // Rollback rolls back a transaction of the pair form. After Commit it does
@@ -204,7 +230,7 @@ func (t *txHandle) Rollback(ctx context.Context) error {
 	if !t.owns {
 		return nil
 	}
-	return t.f.root.end(ctx, false)
+	return t.f.root.end(ctx, false, nil)
 }
 
 // Write runs fn in a write transaction (§22.3). A transaction fn's context
@@ -229,6 +255,9 @@ func (e *Executor) BeginWrite(ctx context.Context, opts ...TxOption) (*WriteTx, 
 	if err != nil {
 		return nil, err
 	}
+	if owns {
+		track(ctx, f.root)
+	}
 	return &WriteTx{txHandle{f: f, owns: owns}}, nil
 }
 
@@ -237,6 +266,9 @@ func (e *Executor) BeginRead(ctx context.Context, opts ...TxOption) (*ReadTx, er
 	f, owns, err := e.begin(ctx, true, opts)
 	if err != nil {
 		return nil, err
+	}
+	if owns {
+		track(ctx, f.root)
 	}
 	return &ReadTx{txHandle{f: f, owns: owns}}, nil
 }
@@ -271,10 +303,10 @@ func (e *Executor) begin(ctx context.Context, readOnly bool, opts []TxOption) (*
 		if depth > e.independentDepth {
 			return nil, false, ErrIndependentDepth
 		}
-		return e.newRoot(ctx, readOnly, c, depth), true, nil
+		return e.newRoot(ctx, readOnly, c, depth, 1), true, nil
 	}
 	if enclosing == nil {
-		return e.newRoot(ctx, readOnly, c, 0), true, nil
+		return e.newRoot(ctx, readOnly, c, 0, 1), true, nil
 	}
 	if !readOnly && enclosing.root.opts.ReadOnly {
 		return nil, false, ErrReadOnly
@@ -282,9 +314,18 @@ func (e *Executor) begin(ctx context.Context, readOnly bool, opts []TxOption) (*
 	return enclosing, false, nil
 }
 
-func (e *Executor) newRoot(ctx context.Context, readOnly bool, c txConfig, independent int) *frame {
-	return &frame{root: &root{exec: e, opts: TxOptions{ReadOnly: readOnly, Isolation: c.isolation},
-		consistency: c.consistency, session: SessionFrom(ctx), conns: map[*sourcePool]Conn{}, independent: independent}}
+// newRoot begins a root transaction, firing the begin hooks.
+func (e *Executor) newRoot(ctx context.Context, readOnly bool, c txConfig, independent, attempt int) *frame {
+	r := &root{exec: e, opts: TxOptions{ReadOnly: readOnly, Isolation: c.isolation},
+		consistency: c.consistency, session: SessionFrom(ctx), conns: map[*sourcePool]Conn{}, replicas: map[*sourcePool]bool{}, independent: independent,
+		propagation: c.propagation, attempt: attempt, started: time.Now()}
+	r.hctx = e.txBegin(ctx, r.event())
+	return &frame{root: r, hctx: r.hctx}
+}
+
+// event returns the root's transaction event.
+func (r *root) event() TxEvent {
+	return TxEvent{Propagation: r.propagation, Isolation: r.opts.Isolation, ReadOnly: r.opts.ReadOnly, Attempt: r.attempt}
 }
 
 // savepoints numbers savepoint names; a name need only be unique within
@@ -302,11 +343,20 @@ func (e *Executor) run(ctx context.Context, readOnly bool, fn func(context.Conte
 		if !readOnly && enclosing.root.opts.ReadOnly {
 			return ErrReadOnly
 		}
-		f := &frame{root: enclosing.root, parent: enclosing, savepoint: fmt.Sprintf("dql_%d", savepoints.Add(1)), saved: map[*sourcePool]bool{}}
+		ev := enclosing.root.event()
+		ev.Propagation, ev.ReadOnly, ev.Savepoint = Nested, readOnly, true
+		f := &frame{root: enclosing.root, parent: enclosing, savepoint: fmt.Sprintf("dql_%d", savepoints.Add(1)),
+			saved: map[*sourcePool]bool{}, hctx: e.txBegin(ctx, ev)}
+		start := time.Now()
 		err := call(ctx, f, fn)
 		if end := f.endSavepoint(ctx, err == nil); err == nil {
 			err = end
 		}
+		ev.Duration, ev.Outcome, ev.Err = time.Since(start), Committed, err
+		if err != nil {
+			ev.Outcome = RolledBack
+		}
+		e.txEvent(f.hctx, txEnd, ev)
 		return err
 	}
 	f, owns, err := e.begin(ctx, readOnly, opts)
@@ -323,27 +373,45 @@ func (e *Executor) run(ctx context.Context, readOnly bool, fn func(context.Conte
 	for attempt := 1; ; attempt++ {
 		err = call(ctx, f, fn)
 		if err == nil {
-			err = f.root.end(ctx, true)
+			err = f.root.end(ctx, true, nil)
 		} else {
-			f.root.end(ctx, false)
+			f.root.end(ctx, false, err)
 		}
-		if err == nil || !retryable(err) || attempt >= policy.Attempts || !wait(ctx, policy.backoff(attempt, e.rand)) {
-			if err != nil && attempt > 1 {
-				err = &Retried{Attempts: attempt, Err: err}
-			}
-			return err
+		if err == nil || !retryable(err) || attempt >= policy.Attempts {
+			return retried(err, attempt)
 		}
-		f = e.newRoot(ctx, readOnly, c, f.root.independent)
+		delay := policy.backoff(attempt, e.rand)
+		if !fits(ctx, delay) {
+			return retried(err, attempt)
+		}
+		ev := f.root.event()
+		ev.Duration, ev.Err, ev.Delay = time.Since(f.root.started), err, delay
+		e.txEvent(f.root.hctx, txRetry, ev)
+		if !wait(ctx, delay) {
+			return retried(err, attempt)
+		}
+		f = e.newRoot(ctx, readOnly, c, f.root.independent, attempt+1)
 	}
 }
+
+// retried returns the error of a closure after attempt runs.
+func retried(err error, attempt int) error {
+	if err != nil && attempt > 1 {
+		return &Retried{Attempts: attempt, Err: err}
+	}
+	return err
+}
+
+// errPanicked is the cause of a rollback after a panic, for the end hooks.
+var errPanicked = errors.New("dql: the transaction's closure panicked")
 
 // call runs fn in f, rolling back f's root and re-panicking on a panic.
 func call(ctx context.Context, f *frame, fn func(context.Context, *frame) error) (err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			f.root.end(ctx, false)
+			f.root.end(ctx, false, errPanicked)
 			panic(p)
 		}
 	}()
-	return fn(f.with(ctx), f)
+	return fn(f.with(f.hctx), f)
 }
