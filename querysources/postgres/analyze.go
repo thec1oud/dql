@@ -28,8 +28,10 @@ type analyzer struct {
 	ix *index
 	// The parameters by placeholder number - 1, as rewrite found them.
 	params []*param
-	// The catalogs of the tables the statement reads or writes.
+	// The catalogs of the tables and routines the statement uses.
 	catalogs map[string]bool
+	// The tables the statement reads or writes, by qualified name.
+	tables map[string]*irv1.QualifiedName
 	// Set by a statement that writes, a locking read, or a call of a
 	// volatile function (§17.2, §22).
 	writes bool
@@ -441,6 +443,8 @@ func (a *analyzer) tableRel(rv *pg.RangeVar, sc *scope) (*rel, error) {
 	}
 	t := ts[0]
 	a.catalogs[t.catalog] = true
+	q := columnName(t, "")
+	a.tables[qkey(q.GetCatalog(), q.GetNamespace(), q.GetObject())] = q
 	r := &rel{name: t.obj.GetName().GetStored(), namespace: t.namespace}
 	if alias != "" {
 		r.name, r.namespace = alias, ""
