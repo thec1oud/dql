@@ -347,6 +347,7 @@ var (
 
 // TenantsReadStore reads shop.app.tenants (§26.3).
 type TenantsReadStore interface {
+	from(TenantsTable) dql.From
 	Get(ctx context.Context, k TenantKey) (TenantFull, error)
 	Find(ctx context.Context, k TenantKey) (opt.Opt[TenantFull], error)
 	Count(ctx context.Context) (int64, error)
@@ -472,3 +473,186 @@ func (s tenantsWrites) Delete(ctx context.Context, k TenantKey) error {
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
 }
+
+// TenantsTable is table shop.app.tenants in builder reads (§18.2): its columns and relations
+// make predicates and order keys on its rows.
+type TenantsTable struct {
+	ID    tenantsIDColumn
+	Name  tenantsNameColumn
+	Users tenantsUsersRelation
+}
+
+// Tenants is table shop.app.tenants in builder reads (§18.2).
+var Tenants TenantsTable
+
+// tenantsIDColumn is column id in builder reads (§9.4).
+type tenantsIDColumn struct{}
+
+// Any is operator any on id (§9.4).
+func (tenantsIDColumn) Any(v []uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.any", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// Between is operator between on id (§9.4).
+func (tenantsIDColumn) Between(v0 uuid.UUID, v1 uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.between", "col.tenants.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on id (§9.4).
+func (tenantsIDColumn) Eq(v uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.eq", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on id (§9.4).
+func (tenantsIDColumn) Ge(v uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.ge", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on id (§9.4).
+func (tenantsIDColumn) Gt(v uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.gt", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// In is operator in on id (§9.4).
+func (tenantsIDColumn) In(v []uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.in", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on id (§9.4).
+func (tenantsIDColumn) IsDistinctFrom(v uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.is_distinct_from", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// Le is operator le on id (§9.4).
+func (tenantsIDColumn) Le(v uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.le", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on id (§9.4).
+func (tenantsIDColumn) Lt(v uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.lt", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on id (§9.4).
+func (tenantsIDColumn) Ne(v uuid.UUID) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.ne", "col.tenants.id", dql.Arg{Value: v})
+}
+
+// Asc orders by id, ascending.
+func (tenantsIDColumn) Asc() dql.Order[TenantsTable] {
+	return dql.Ordered[TenantsTable]("order.asc", "col.tenants.id")
+}
+
+// Desc orders by id, descending.
+func (tenantsIDColumn) Desc() dql.Order[TenantsTable] {
+	return dql.Ordered[TenantsTable]("order.desc", "col.tenants.id")
+}
+
+// tenantsNameColumn is column name in builder reads (§9.4).
+type tenantsNameColumn struct{}
+
+// Any is operator any on name (§9.4).
+func (tenantsNameColumn) Any(v []string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.any", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Between is operator between on name (§9.4).
+func (tenantsNameColumn) Between(v0 string, v1 string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.between", "col.tenants.name", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Contains is operator contains on name (§9.4).
+func (tenantsNameColumn) Contains(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.contains", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on name (§9.4).
+func (tenantsNameColumn) Eq(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.eq", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on name (§9.4).
+func (tenantsNameColumn) Ge(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.ge", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on name (§9.4).
+func (tenantsNameColumn) Gt(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.gt", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// ILike is operator ilike on name (§9.4).
+func (tenantsNameColumn) ILike(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.ilike", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// In is operator in on name (§9.4).
+func (tenantsNameColumn) In(v []string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.in", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on name (§9.4).
+func (tenantsNameColumn) IsDistinctFrom(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.is_distinct_from", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Le is operator le on name (§9.4).
+func (tenantsNameColumn) Le(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.le", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Like is operator like on name (§9.4).
+func (tenantsNameColumn) Like(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.like", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on name (§9.4).
+func (tenantsNameColumn) Lt(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.lt", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on name (§9.4).
+func (tenantsNameColumn) Ne(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.ne", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// RegexMatch is operator regex_match on name (§9.4).
+func (tenantsNameColumn) RegexMatch(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.regex_match", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// StartsWith is operator starts_with on name (§9.4).
+func (tenantsNameColumn) StartsWith(v string) dql.Pred[TenantsTable] {
+	return dql.Compare[TenantsTable]("op.starts_with", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Asc orders by name, ascending.
+func (tenantsNameColumn) Asc() dql.Order[TenantsTable] {
+	return dql.Ordered[TenantsTable]("order.asc", "col.tenants.name")
+}
+
+// Desc orders by name, descending.
+func (tenantsNameColumn) Desc() dql.Order[TenantsTable] {
+	return dql.Ordered[TenantsTable]("order.desc", "col.tenants.name")
+}
+
+// tenantsUsersRelation is relation users in builder reads (§18.2).
+type tenantsUsersRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (tenantsUsersRelation) Any(ps ...dql.Pred[UsersTable]) dql.Pred[TenantsTable] {
+	return dql.Related[TenantsTable]("rel.tenants.users", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (tenantsUsersRelation) None(ps ...dql.Pred[UsersTable]) dql.Pred[TenantsTable] {
+	return dql.Not(dql.Related[TenantsTable]("rel.tenants.users", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (tenantsUsersRelation) All(p dql.Pred[UsersTable]) dql.Pred[TenantsTable] {
+	return dql.Not(dql.Related[TenantsTable]("rel.tenants.users", dql.Not(p)))
+}
+
+func (s tenantsReads) from(TenantsTable) dql.From { return dql.From{H: s.h} }

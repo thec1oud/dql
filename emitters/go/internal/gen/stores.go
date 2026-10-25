@@ -309,6 +309,9 @@ func (g *generator) storeTypes(e *entity) {
 		f.printf("// %s %s %s (§26.3).\ntype %s interface {\n", name, doc, what, name)
 		if embed != "" {
 			f.printf("\t%s\n", embed)
+		} else {
+			// Select reads through the store (§18.2).
+			f.printf("\tfrom(%s) %s.From\n", e.tableType(), dql)
 		}
 		for _, s := range sigs {
 			if reads[s.x.verb] == write {

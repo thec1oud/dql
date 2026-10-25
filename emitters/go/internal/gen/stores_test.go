@@ -230,3 +230,114 @@ func TestScopeGroups(t *testing.T) {
 		t.Errorf("UserScoped covers %s", user)
 	}
 }
+
+// shopTable returns the shop bundle's table of the given name.
+func shopTable(b *irv1.Bundle, name string) *irv1.Table {
+	for _, ns := range b.GetCatalogs()[0].GetNamespaces() {
+		for _, t := range ns.GetTables() {
+			if t.GetName().GetStored() == name {
+				return t
+			}
+		}
+	}
+	return nil
+}
+
+// §9.3, §9.4, §18.2: column handles get the operators their columns support
+// and the fragment table holds; relations to tables without a store, to
+// the table itself and without a fragment get no handle.
+func TestTableHandles(t *testing.T) {
+	b := shopShapes(t)
+	frag := func(ids ...string) {
+		for _, id := range ids {
+			b.GetQueries().GetFragments().Fragments = append(b.GetQueries().GetFragments().GetFragments(), &irv1.Fragment{Id: id, Template: "x"})
+		}
+	}
+	text := &irv1.OperandType{Kind: &irv1.OperandType_Type{Type: &irv1.Type{Kind: &irv1.Type_Text{Text: &irv1.Text{}}}}}
+	tv := &irv1.OperandType{Kind: &irv1.OperandType_Var{Var: "T"}}
+	rangeOf := &irv1.OperandType{Kind: &irv1.OperandType_Range{Range: tv}}
+	arrayOf := &irv1.OperandType{Kind: &irv1.OperandType_Array{Array: tv}}
+	nested := &irv1.OperandType{Kind: &irv1.OperandType_Array{Array: arrayOf}}
+	boolean := &irv1.OperandType{Kind: &irv1.OperandType_Type{Type: &irv1.Type{Kind: &irv1.Type_Bool{Bool: e()}}}}
+	op := func(name string, args ...*irv1.OperandType) {
+		b.Operators = append(b.Operators, &irv1.Operator{Name: name, Signature: &irv1.Signature{Args: args, Returns: boolean}})
+		frag("op." + name)
+	}
+	op("within", rangeOf, tv)
+	op("meets", rangeOf, rangeOf)
+	op("deep", tv, nested)
+	op("approx", text, text)
+	op("first_array", arrayOf, tv)
+	frag("op.postgres.native")
+	users := shopTable(b, "users")
+	period := &irv1.Column{
+		Name: &irv1.Identifier{Stored: "period"}, HostName: &irv1.Identifier{Words: []string{"period"}},
+		Type: &irv1.Type{Kind: &irv1.Type_Range{Range: &irv1.RangeType{Element: &irv1.Type{Kind: &irv1.Type_Int64{Int64: e()}}}}},
+		Operators: []*irv1.ColumnOperator{
+			{Name: "within"}, {Name: "meets"}, {Name: "deep"}, {Name: "first_array"}, {Name: "postgres.native"}, {Name: "unknown"},
+			{Name: "approx", Fidelity: irv1.Fidelity_FIDELITY_APPROXIMATE},
+		},
+	}
+	// A column without a fragment, and one whose Go name another has.
+	hidden := &irv1.Column{Name: &irv1.Identifier{Stored: "hidden"}, HostName: &irv1.Identifier{Words: []string{"hidden"}}, Type: period.GetType()}
+	users.Columns = append(users.Columns, period, hidden)
+	frag("col.users.period")
+	rel := func(name, to string) *irv1.Relation {
+		frag("rel.users." + name)
+		return &irv1.Relation{Name: &irv1.Identifier{Stored: name, Words: []string{name}}, To: &irv1.ColumnSet{Table: qnShop(to)}}
+	}
+	users.Relations = append(users.Relations, rel("manager", "users"), rel("audit", "audits"),
+		&irv1.Relation{Name: &irv1.Identifier{Stored: "unfragmented", Words: []string{"unfragmented"}}, To: &irv1.ColumnSet{Table: qnShop("posts")}})
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatal(codes)
+	}
+	contains(t, files, "user.dql.go",
+		"func (usersPeriodColumn) Within(v int64) dql.Pred[UsersTable]",
+		"func (usersPeriodColumn) Meets(v dql.Range[int64]) dql.Pred[UsersTable]",
+		"// Approx is operator approx on period (§9.4).\n//\n// Approximate: its results can differ from the operator's (§9.2).\nfunc (usersPeriodColumn) Approx(v string)",
+	)
+	for _, absent := range []string{"Deep(", "FirstArray(", "Native(", "Unknown(", "usersHiddenColumn", "Manager", "Audit", "Unfragmented"} {
+		if strings.Contains(files["user.dql.go"], absent) {
+			t.Errorf("user.dql.go has %s", absent)
+		}
+	}
+
+	// Field names that meet fail.
+	users.Columns = append(users.Columns, &irv1.Column{Name: &irv1.Identifier{Stored: "Period"}, HostName: &irv1.Identifier{Words: []string{"period"}}, Type: period.GetType()})
+	frag("col.users.Period")
+	users.Relations = append(users.Relations, rel("email", "posts"))
+	if _, codes := generate(t, b, Options{}); !slices.Equal(codes, []string{
+		"SEVERITY_ERROR go-name-collision shop.app.users",
+		"SEVERITY_ERROR go-name-collision shop.app.users",
+	}) {
+		t.Error(codes)
+	}
+}
+
+// §18.2, §21.1: without select fragments there are no Shapes; a sensitive
+// scope column is a sensitive argument.
+func TestSelectShapes(t *testing.T) {
+	b := shopShapes(t)
+	b.GetQueries().GetFragments().Fragments = slices.DeleteFunc(b.GetQueries().GetFragments().GetFragments(), func(f *irv1.Fragment) bool {
+		return strings.HasPrefix(f.GetId(), "select.") || strings.HasPrefix(f.GetId(), "lock.")
+	})
+	b.GetQueries().Queries = slices.DeleteFunc(b.GetQueries().GetQueries(), func(q *irv1.Query) bool {
+		return !strings.Contains(q.GetName().GetStored(), ".count") && !strings.Contains(q.GetName().GetStored(), ".insert")
+	})
+	for _, s := range b.GetShapes().GetShapes() {
+		if s.GetId().GetPreset() == irv1.Preset_PRESET_FULL && s.GetEntity().GetObject() == "users" {
+			for _, f := range s.GetFields() {
+				f.Redact = f.Redact || f.GetColumn() == "tenant_id"
+			}
+		}
+	}
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatal(codes)
+	}
+	if s := files["dql-select.dql.go"]; strings.Contains(s, "Shapes") || strings.Contains(s, "ForUpdate") || strings.Contains(s, "Distinct") {
+		t.Error(s)
+	}
+	contains(t, files, "user.dql.go", `dql.Arg{Value: s.scope.TenantID, Sensitive: true}`)
+}
