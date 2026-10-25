@@ -33,3 +33,35 @@ func TestKeyed(t *testing.T) {
 		t.Errorf("Keyed = %+v", k)
 	}
 }
+
+func TestPtr(t *testing.T) {
+	v := 3
+	p := dql.Ptr(v)
+	v = 4
+	if *p != 3 {
+		t.Errorf("Ptr shares its argument")
+	}
+}
+
+type slug string
+
+func TestFoldASCII(t *testing.T) {
+	if got := dql.FoldASCII(slug("Go-ÄBC_z")); got != "go-Äbc_z" {
+		t.Errorf("FoldASCII = %q", got)
+	}
+	// Under a Turkish locale Unicode case mapping would give a dotless i;
+	// the fold is ASCII only.
+	if got := dql.FoldASCII("I"); got != "i" {
+		t.Errorf("FoldASCII(I) = %q", got)
+	}
+}
+
+func TestUnmatchedKeyError(t *testing.T) {
+	err := error(&dql.UnmatchedKeyError{Entity: "shop.app.countries", Index: 2})
+	if want := "dql: change 2 for shop.app.countries matches no row exactly, and its key's collation may match one the client cannot compare"; err.Error() != want {
+		t.Errorf("Error = %q", err.Error())
+	}
+	if dql.ClassOf(err) != "" {
+		t.Errorf("class %q", dql.ClassOf(err))
+	}
+}
