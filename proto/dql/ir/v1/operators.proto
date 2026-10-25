@@ -14,8 +14,8 @@ message Operator {
   // Such as eq, ilike or range_contains.
   string name = 1;
   Signature signature = 2;
-  // What the type variable must support: comparable, orderable or
-  // nullable. Sorted.
+  // What the type variable must support: comparable, orderable, numeric,
+  // json, or nullable for the operand itself. Sorted.
   repeated string requires = 3;
   NullBehavior null_behavior = 4;
 }
@@ -26,12 +26,16 @@ message Signature {
   OperandType returns = 2;
 }
 
-// A logical type, or a type variable that stands for the type of every
-// operand it names, such as T in eq(T, T).
+// A logical type, a type variable that stands for the type of every operand
+// it names, such as T in eq(T, T), or an array or range of either.
 message OperandType {
   oneof kind {
     string var = 1;
     Type type = 2;
+    // Such as array<T> in in(T, array<T>).
+    OperandType array = 3;
+    // Such as range<T> in range_contains(range<T>, T).
+    OperandType range = 4;
   }
 }
 

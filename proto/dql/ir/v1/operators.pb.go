@@ -28,8 +28,8 @@ type Operator struct {
 	// Such as eq, ilike or range_contains.
 	Name      string     `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Signature *Signature `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
-	// What the type variable must support: comparable, orderable or
-	// nullable. Sorted.
+	// What the type variable must support: comparable, orderable, numeric,
+	// json, or nullable for the operand itself. Sorted.
 	Requires      []string     `protobuf:"bytes,3,rep,name=requires,proto3" json:"requires,omitempty"`
 	NullBehavior  NullBehavior `protobuf:"varint,4,opt,name=null_behavior,json=nullBehavior,proto3,enum=dql.ir.v1.NullBehavior" json:"null_behavior,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -147,14 +147,16 @@ func (x *Signature) GetReturns() *OperandType {
 	return nil
 }
 
-// A logical type, or a type variable that stands for the type of every
-// operand it names, such as T in eq(T, T).
+// A logical type, a type variable that stands for the type of every operand
+// it names, such as T in eq(T, T), or an array or range of either.
 type OperandType struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Kind:
 	//
 	//	*OperandType_Var
 	//	*OperandType_Type
+	//	*OperandType_Array
+	//	*OperandType_Range
 	Kind          isOperandType_Kind `protobuf_oneof:"kind"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -215,6 +217,24 @@ func (x *OperandType) GetType() *Type {
 	return nil
 }
 
+func (x *OperandType) GetArray() *OperandType {
+	if x != nil {
+		if x, ok := x.Kind.(*OperandType_Array); ok {
+			return x.Array
+		}
+	}
+	return nil
+}
+
+func (x *OperandType) GetRange() *OperandType {
+	if x != nil {
+		if x, ok := x.Kind.(*OperandType_Range); ok {
+			return x.Range
+		}
+	}
+	return nil
+}
+
 type isOperandType_Kind interface {
 	isOperandType_Kind()
 }
@@ -227,9 +247,23 @@ type OperandType_Type struct {
 	Type *Type `protobuf:"bytes,2,opt,name=type,proto3,oneof"`
 }
 
+type OperandType_Array struct {
+	// Such as array<T> in in(T, array<T>).
+	Array *OperandType `protobuf:"bytes,3,opt,name=array,proto3,oneof"`
+}
+
+type OperandType_Range struct {
+	// Such as range<T> in range_contains(range<T>, T).
+	Range *OperandType `protobuf:"bytes,4,opt,name=range,proto3,oneof"`
+}
+
 func (*OperandType_Var) isOperandType_Kind() {}
 
 func (*OperandType_Type) isOperandType_Kind() {}
+
+func (*OperandType_Array) isOperandType_Kind() {}
+
+func (*OperandType_Range) isOperandType_Kind() {}
 
 // A dialect's support for one operator (§9.2). How it renders as SQL stays
 // private to the dialect plugin.
@@ -363,10 +397,12 @@ const file_dql_ir_v1_operators_proto_rawDesc = "" +
 	"\rnull_behavior\x18\x04 \x01(\x0e2\x17.dql.ir.v1.NullBehaviorR\fnullBehavior\"i\n" +
 	"\tSignature\x12*\n" +
 	"\x04args\x18\x01 \x03(\v2\x16.dql.ir.v1.OperandTypeR\x04args\x120\n" +
-	"\areturns\x18\x02 \x01(\v2\x16.dql.ir.v1.OperandTypeR\areturns\"P\n" +
+	"\areturns\x18\x02 \x01(\v2\x16.dql.ir.v1.OperandTypeR\areturns\"\xb0\x01\n" +
 	"\vOperandType\x12\x12\n" +
 	"\x03var\x18\x01 \x01(\tH\x00R\x03var\x12%\n" +
-	"\x04type\x18\x02 \x01(\v2\x0f.dql.ir.v1.TypeH\x00R\x04typeB\x06\n" +
+	"\x04type\x18\x02 \x01(\v2\x0f.dql.ir.v1.TypeH\x00R\x04type\x12.\n" +
+	"\x05array\x18\x03 \x01(\v2\x16.dql.ir.v1.OperandTypeH\x00R\x05array\x12.\n" +
+	"\x05range\x18\x04 \x01(\v2\x16.dql.ir.v1.OperandTypeH\x00R\x05rangeB\x06\n" +
 	"\x04kind\"\xbb\x01\n" +
 	"\x0fOperatorSupport\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12/\n" +
@@ -401,20 +437,22 @@ var file_dql_ir_v1_operators_proto_goTypes = []any{
 	(*Collation)(nil),         // 8: dql.ir.v1.Collation
 }
 var file_dql_ir_v1_operators_proto_depIdxs = []int32{
-	1, // 0: dql.ir.v1.Operator.signature:type_name -> dql.ir.v1.Signature
-	5, // 1: dql.ir.v1.Operator.null_behavior:type_name -> dql.ir.v1.NullBehavior
-	2, // 2: dql.ir.v1.Signature.args:type_name -> dql.ir.v1.OperandType
-	2, // 3: dql.ir.v1.Signature.returns:type_name -> dql.ir.v1.OperandType
-	6, // 4: dql.ir.v1.OperandType.type:type_name -> dql.ir.v1.Type
-	7, // 5: dql.ir.v1.OperatorSupport.fidelity:type_name -> dql.ir.v1.Fidelity
-	4, // 6: dql.ir.v1.OperatorSupport.when:type_name -> dql.ir.v1.OperatorCondition
-	7, // 7: dql.ir.v1.OperatorSupport.otherwise:type_name -> dql.ir.v1.Fidelity
-	8, // 8: dql.ir.v1.OperatorCondition.collation:type_name -> dql.ir.v1.Collation
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	1,  // 0: dql.ir.v1.Operator.signature:type_name -> dql.ir.v1.Signature
+	5,  // 1: dql.ir.v1.Operator.null_behavior:type_name -> dql.ir.v1.NullBehavior
+	2,  // 2: dql.ir.v1.Signature.args:type_name -> dql.ir.v1.OperandType
+	2,  // 3: dql.ir.v1.Signature.returns:type_name -> dql.ir.v1.OperandType
+	6,  // 4: dql.ir.v1.OperandType.type:type_name -> dql.ir.v1.Type
+	2,  // 5: dql.ir.v1.OperandType.array:type_name -> dql.ir.v1.OperandType
+	2,  // 6: dql.ir.v1.OperandType.range:type_name -> dql.ir.v1.OperandType
+	7,  // 7: dql.ir.v1.OperatorSupport.fidelity:type_name -> dql.ir.v1.Fidelity
+	4,  // 8: dql.ir.v1.OperatorSupport.when:type_name -> dql.ir.v1.OperatorCondition
+	7,  // 9: dql.ir.v1.OperatorSupport.otherwise:type_name -> dql.ir.v1.Fidelity
+	8,  // 10: dql.ir.v1.OperatorCondition.collation:type_name -> dql.ir.v1.Collation
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_operators_proto_init() }
@@ -428,6 +466,8 @@ func file_dql_ir_v1_operators_proto_init() {
 	file_dql_ir_v1_operators_proto_msgTypes[2].OneofWrappers = []any{
 		(*OperandType_Var)(nil),
 		(*OperandType_Type)(nil),
+		(*OperandType_Array)(nil),
+		(*OperandType_Range)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
