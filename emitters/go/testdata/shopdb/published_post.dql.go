@@ -8,6 +8,8 @@ package shopdb
 
 import (
 	"time"
+
+	"github.com/thec1oud/dql/runtime/go/dql"
 )
 
 // PublishedPostFull is the shape published_post.full.flat of shop.app.published_posts.
@@ -48,4 +50,49 @@ func (n PublishedPostFullNested) Flat() PublishedPostFull {
 func (n PublishedPostFullNested) Nests() PublishedPostFullNests {
 	var n2 PublishedPostFullNests
 	return n2
+}
+
+// DecodePublishedPostFull decodes r, a row of published_post.full.flat. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePublishedPostFull(r dql.Row) (PublishedPostFull, error) {
+	d := dql.NewDecoder("published_post.full.flat", r, 4)
+	var out PublishedPostFull
+	out.ID = dql.Field(d, 0, "id", "core.nonnull from COMMENT ON COLUMN app.published_posts.id", dql.Int[int64])
+	out.Title = dql.Field(d, 1, "title", "core.nonnull from COMMENT ON COLUMN app.published_posts.title", dql.String)
+	out.AuthorID = dql.Nullable(d, 2, "author_id", dql.Int[int64])
+	out.PublishedAt = dql.Nullable(d, 3, "published_at", dql.As[time.Time])
+	return out, d.Err()
+}
+
+// DecodePublishedPostFullNested decodes r, a row of published_post.full.nested. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePublishedPostFullNested(r dql.Row) (PublishedPostFullNested, error) {
+	d := dql.NewDecoder("published_post.full.nested", r, 4)
+	var out PublishedPostFullNested
+	out.ID = dql.Field(d, 0, "id", "core.nonnull from COMMENT ON COLUMN app.published_posts.id", dql.Int[int64])
+	out.Title = dql.Field(d, 1, "title", "core.nonnull from COMMENT ON COLUMN app.published_posts.title", dql.String)
+	out.AuthorID = dql.Nullable(d, 2, "author_id", dql.Int[int64])
+	out.PublishedAt = dql.Nullable(d, 3, "published_at", dql.As[time.Time])
+	return out, d.Err()
+}
+
+// DecodePublishedPostFullNests decodes r, a row of published_post.full.nests. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePublishedPostFullNests(r dql.Row) (PublishedPostFullNests, error) {
+	d := dql.NewDecoder("published_post.full.nests", r, 0)
+	var out PublishedPostFullNests
+	return out, d.Err()
+}
+
+// DecodePublishedPostKey decodes r, a row of published_post.key. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePublishedPostKey(r dql.Row) (PublishedPostKey, error) {
+	d := dql.NewDecoder("published_post.key", r, 1)
+	var out PublishedPostKey
+	out.ID = dql.Field(d, 0, "id", "core.nonnull from COMMENT ON COLUMN app.published_posts.id", dql.Int[int64])
+	return out, d.Err()
 }

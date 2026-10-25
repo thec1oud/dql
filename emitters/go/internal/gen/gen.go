@@ -64,11 +64,13 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 	g.types()
 	g.shapes()
 	if !g.failed() {
-		// Conversions, merges and validators read the shapes' types, so they wait for
-		// shapes without errors.
+		// Conversions, merges, validators, decoders and redaction read the
+		// shapes' types, so they wait for shapes without errors.
 		g.conversions()
 		g.merges()
 		g.validators()
+		g.decoders()
+		g.redaction()
 	}
 	if g.failed() {
 		sortDiagnostics(g.diags)
@@ -96,7 +98,11 @@ type generator struct {
 	checks     map[string]string
 	checkNames map[string]bool
 	checkFile  *file
-	diags      []*irv1.Diagnostic
+	// typesFile is dql-types.dql.go, and decoders the decoders of named
+	// types declared in it so far (§13).
+	typesFile     *file
+	namedDecoders map[key]string
+	diags         []*irv1.Diagnostic
 }
 
 // key identifies an object across catalogs.
@@ -114,10 +120,12 @@ type named struct {
 	base        *irv1.Type
 	q           *irv1.QualifiedName
 	constraints []*irv1.Constraint
+	// composite is a composite type's declaration.
+	composite *irv1.Composite
 }
 
 func newGenerator(b *irv1.Bundle, o Options) *generator {
-	g := &generator{b: b, o: o, named: map[key]named{}, decls: map[string]string{}, checks: map[string]string{}, checkNames: map[string]bool{}}
+	g := &generator{b: b, o: o, named: map[key]named{}, decls: map[string]string{}, namedDecoders: map[key]string{}, checks: map[string]string{}, checkNames: map[string]bool{}}
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, e := range ns.GetEnums() {
 			g.named[keyOf(q(e.GetName().GetStored()))] = named{words: e.GetHostName().GetWords()}
@@ -126,7 +134,7 @@ func newGenerator(b *irv1.Bundle, o Options) *generator {
 			g.named[keyOf(q(d.GetName().GetStored()))] = named{words: d.GetHostName().GetWords(), base: d.GetBase(), q: q(d.GetName().GetStored()), constraints: d.GetConstraints()}
 		}
 		for _, c := range ns.GetComposites() {
-			g.named[keyOf(q(c.GetName().GetStored()))] = named{words: c.GetHostName().GetWords()}
+			g.named[keyOf(q(c.GetName().GetStored()))] = named{words: c.GetHostName().GetWords(), q: q(c.GetName().GetStored()), composite: c}
 		}
 	})
 	g.indexShapes()

@@ -296,14 +296,7 @@ func (g *generator) convert(c *irv1.Conversion, from, to *irv1.Shape) {
 // the DecodeError decoding s would return (§13), naming where the narrowing
 // comes from.
 func (g *generator) narrowed(f *file, s *irv1.Shape, fld *irv1.Field) string {
-	var assertion string
-	switch fld.GetNullabilitySource() {
-	case irv1.NullabilitySource_NULLABILITY_SOURCE_SHAPE_OPERATOR:
-		assertion = "nonnull of shape " + g.dotted(s.GetId())
-	case irv1.NullabilitySource_NULLABILITY_SOURCE_ANNOTATION:
-		e := s.GetEntity()
-		assertion = "core.nonnull on " + displayName(&irv1.QualifiedName{Catalog: e.GetCatalog(), Namespace: e.GetNamespace(), Object: e.GetObject(), Member: fld.GetColumn()})
-	}
+	assertion := g.assertion(s, fld, column(g.ix.tables[keyOf(s.GetEntity())], fld.GetColumn()))
 	return fmt.Sprintf("&%[1]s.DecodeError{Shape: %[2]q, Field: %[3]q, Reason: %[1]s.NullIntoNonNull, Assertion: %[4]q}",
 		f.use(pkgDQL, "dql"), g.dotted(s.GetId()), fld.GetColumn(), assertion)
 }

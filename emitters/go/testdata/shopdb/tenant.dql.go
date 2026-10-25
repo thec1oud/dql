@@ -223,3 +223,46 @@ func (n TenantPartialNests) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	return v
 }
+
+// DecodeTenantFull decodes r, a row of tenant.full.flat. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeTenantFull(r dql.Row) (TenantFull, error) {
+	d := dql.NewDecoder("tenant.full.flat", r, 2)
+	var out TenantFull
+	out.ID = dql.Field(d, 0, "id", "", dql.As[uuid.UUID])
+	out.Name = dql.Field(d, 1, "name", "", dql.String)
+	return out, d.Err()
+}
+
+// DecodeTenantFullNested decodes r, a row of tenant.full.nested. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeTenantFullNested(r dql.Row) (TenantFullNested, error) {
+	d := dql.NewDecoder("tenant.full.nested", r, 3)
+	var out TenantFullNested
+	out.ID = dql.Field(d, 0, "id", "", dql.As[uuid.UUID])
+	out.Name = dql.Field(d, 1, "name", "", dql.String)
+	out.Users = dql.Many(d, 2, "users", DecodeUserFull)
+	return out, d.Err()
+}
+
+// DecodeTenantFullNests decodes r, a row of tenant.full.nests. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeTenantFullNests(r dql.Row) (TenantFullNests, error) {
+	d := dql.NewDecoder("tenant.full.nests", r, 1)
+	var out TenantFullNests
+	out.Users = dql.Many(d, 0, "users", DecodeUserFull)
+	return out, d.Err()
+}
+
+// DecodeTenantKey decodes r, a row of tenant.key. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeTenantKey(r dql.Row) (TenantKey, error) {
+	d := dql.NewDecoder("tenant.key", r, 1)
+	var out TenantKey
+	out.ID = dql.Field(d, 0, "id", "", dql.As[uuid.UUID])
+	return out, d.Err()
+}

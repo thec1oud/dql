@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"log/slog"
 	"slices"
 	"strconv"
 	"time"
@@ -348,3 +349,165 @@ func (n UserPartialNests) validate() dql.ValidationErrors {
 	}
 	return v
 }
+
+// DecodeUserFull decodes r, a row of user.full.flat. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeUserFull(r dql.Row) (UserFull, error) {
+	d := dql.NewDecoder("user.full.flat", r, 7)
+	var out UserFull
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	out.TenantID = dql.Field(d, 1, "tenant_id", "", dql.As[uuid.UUID])
+	out.Email = dql.Field(d, 2, "email", "", dqlDecodeEmailAddress)
+	out.DisplayName = dql.Nullable(d, 3, "display_name", dql.String)
+	out.CreatedAt = dql.Field(d, 4, "created_at", "", dql.As[time.Time])
+	out.UpdatedAt = dql.Field(d, 5, "updated_at", "", dql.As[time.Time])
+	out.Version = dql.Field(d, 6, "version", "", dql.Int[int32])
+	return out, d.Err()
+}
+
+// DecodeUserFullNested decodes r, a row of user.full.nested. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeUserFullNested(r dql.Row) (UserFullNested, error) {
+	d := dql.NewDecoder("user.full.nested", r, 11)
+	var out UserFullNested
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	out.TenantID = dql.Field(d, 1, "tenant_id", "", dql.As[uuid.UUID])
+	out.Email = dql.Field(d, 2, "email", "", dqlDecodeEmailAddress)
+	out.DisplayName = dql.Nullable(d, 3, "display_name", dql.String)
+	out.CreatedAt = dql.Field(d, 4, "created_at", "", dql.As[time.Time])
+	out.UpdatedAt = dql.Field(d, 5, "updated_at", "", dql.As[time.Time])
+	out.Version = dql.Field(d, 6, "version", "", dql.Int[int32])
+	out.PostsToAuthor = dql.Many(d, 7, "posts_to_author", DecodePostFull)
+	out.PostsToEditor = dql.Many(d, 8, "posts_to_editor", DecodePostFull)
+	out.Profile = dql.Nullable(d, 9, "profile", dql.Nest(DecodeProfileFull))
+	out.Tenant = dql.Field(d, 10, "tenant", "", dql.Nest(DecodeTenantFull))
+	return out, d.Err()
+}
+
+// DecodeUserFullNests decodes r, a row of user.full.nests. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeUserFullNests(r dql.Row) (UserFullNests, error) {
+	d := dql.NewDecoder("user.full.nests", r, 4)
+	var out UserFullNests
+	out.PostsToAuthor = dql.Many(d, 0, "posts_to_author", DecodePostFull)
+	out.PostsToEditor = dql.Many(d, 1, "posts_to_editor", DecodePostFull)
+	out.Profile = dql.Nullable(d, 2, "profile", dql.Nest(DecodeProfileFull))
+	out.Tenant = dql.Field(d, 3, "tenant", "", dql.Nest(DecodeTenantFull))
+	return out, d.Err()
+}
+
+// DecodeUserKey decodes r, a row of user.key. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeUserKey(r dql.Row) (UserKey, error) {
+	d := dql.NewDecoder("user.key", r, 2)
+	var out UserKey
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	out.Version = dql.Field(d, 1, "version", "", dql.Int[int32])
+	return out, d.Err()
+}
+
+// DecodeUserScope decodes r, a row of user.scope. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeUserScope(r dql.Row) (UserScope, error) {
+	d := dql.NewDecoder("user.scope", r, 1)
+	var out UserScope
+	out.TenantID = dql.Field(d, 0, "tenant_id", "", dql.As[uuid.UUID])
+	return out, d.Err()
+}
+
+// LogValue logs d with its sensitive fields as [REDACTED] (§7.5).
+func (d UserDraft) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Email", d.Email),
+		slog.Any("DisplayName", d.DisplayName),
+		slog.String("PasswordHash", "[REDACTED]"),
+		slog.Any("CreatedAt", d.CreatedAt),
+		slog.Any("UpdatedAt", d.UpdatedAt),
+		slog.Any("Version", d.Version),
+	)
+}
+
+// String formats d as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (d UserDraft) String() string { return d.LogValue().String() }
+
+// GoString formats d as String does, for %#v.
+func (d UserDraft) GoString() string { return d.String() }
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n UserDraftNested) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Email", n.Email),
+		slog.Any("DisplayName", n.DisplayName),
+		slog.String("PasswordHash", "[REDACTED]"),
+		slog.Any("CreatedAt", n.CreatedAt),
+		slog.Any("UpdatedAt", n.UpdatedAt),
+		slog.Any("Version", n.Version),
+		slog.Any("PostsToAuthor", n.PostsToAuthor),
+		slog.Any("PostsToEditor", n.PostsToEditor),
+		slog.Any("Profile", n.Profile),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n UserDraftNested) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n UserDraftNested) GoString() string { return n.String() }
+
+// LogValue logs p with its sensitive fields as [REDACTED] (§7.5).
+func (p UserPartial) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Email", p.Email),
+		slog.Any("DisplayName", p.DisplayName),
+		slog.String("PasswordHash", "[REDACTED]"),
+	)
+}
+
+// String formats p as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (p UserPartial) String() string { return p.LogValue().String() }
+
+// GoString formats p as String does, for %#v.
+func (p UserPartial) GoString() string { return p.String() }
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n UserPartialNested) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Email", n.Email),
+		slog.Any("DisplayName", n.DisplayName),
+		slog.String("PasswordHash", "[REDACTED]"),
+		slog.Any("PostsToAuthor", n.PostsToAuthor),
+		slog.Any("PostsToEditor", n.PostsToEditor),
+		slog.Any("Profile", n.Profile),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n UserPartialNested) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n UserPartialNested) GoString() string { return n.String() }
+
+// LogValue logs r with its sensitive fields as [REDACTED] (§7.5).
+func (r UserRef) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Change", r.change),
+		slog.Any("Key", r.key),
+		slog.Any("Draft", r.draft),
+	)
+}
+
+// String formats r as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (r UserRef) String() string { return r.LogValue().String() }
+
+// GoString formats r as String does, for %#v.
+func (r UserRef) GoString() string { return r.String() }

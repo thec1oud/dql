@@ -68,11 +68,16 @@ func composite(attrs ...*irv1.Column) *irv1.Namespace {
 }
 
 // §8.1, §8.6, §8.8, §8.10: every logical type's host type.
-func TestTypes(t *testing.T) {
-	cases := []struct {
-		typ  *irv1.Type
-		want string
-	}{
+// typeCase is a logical type and its Go type.
+type typeCase struct {
+	typ  *irv1.Type
+	want string
+}
+
+// everyType is every logical type, with the Go type each maps to under
+// everyTypeOptions.
+func everyType() []typeCase {
+	return []typeCase{
 		{&irv1.Type{Kind: &irv1.Type_Bool{Bool: e()}}, "bool"},
 		{&irv1.Type{Kind: &irv1.Type_Int8{Int8: e()}}, "int8"},
 		{&irv1.Type{Kind: &irv1.Type_Int16{Int16: e()}}, "int16"},
@@ -119,8 +124,19 @@ func TestTypes(t *testing.T) {
 		{opaque("public", "ltree", irv1.OpaqueFallback_OPAQUE_FALLBACK_STRING), "string"},
 		{opaque("public", "hstore", irv1.OpaqueFallback_OPAQUE_FALLBACK_BYTES), "[]byte"},
 	}
+}
+
+var everyTypeOptions = Options{Types: map[string]string{
+	"public.citext":   "string",
+	"public.geometry": "github.com/jackc/pgx/v5/pgtype.Point",
+}}
+
+// everyNamespace holds the composite type every, with an attribute aN of the
+// Nth of everyType and a nullable attribute maybe, and the enum mood and
+// the domain email it references.
+func everyNamespace() *irv1.Namespace {
 	var attrs []*irv1.Column
-	for i, c := range cases {
+	for i, c := range everyType() {
 		attrs = append(attrs, attr(fmt.Sprintf("a%d", i), c.typ, false))
 	}
 	attrs = append(attrs, attr("maybe", &irv1.Type{Kind: &irv1.Type_Int64{Int64: e()}}, true))
@@ -128,10 +144,12 @@ func TestTypes(t *testing.T) {
 	ns.Enums = []*irv1.Enum{{Name: &irv1.Identifier{Stored: "mood"}, HostName: &irv1.Identifier{Words: []string{"mood"}}}}
 	ns.Domains = []*irv1.Domain{{Name: &irv1.Identifier{Stored: "email"}, HostName: &irv1.Identifier{Words: []string{"email"}},
 		Base: &irv1.Type{Kind: &irv1.Type_Text{Text: &irv1.Text{}}}}}
-	files, codes := generate(t, bundle(ns), Options{Types: map[string]string{
-		"public.citext":   "string",
-		"public.geometry": "github.com/jackc/pgx/v5/pgtype.Point",
-	}})
+	return ns
+}
+
+func TestTypes(t *testing.T) {
+	cases := everyType()
+	files, codes := generate(t, bundle(everyNamespace()), everyTypeOptions)
 	if codes != nil {
 		t.Fatalf("diagnostics %q", codes)
 	}
