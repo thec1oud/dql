@@ -332,3 +332,43 @@ emit:
 		}
 	}
 }
+
+func TestQueryFiles(t *testing.T) {
+	dir := t.TempDir()
+	for _, f := range []string{"queries/b.sql", "queries/a.sql", "queries/notes.txt", "more.sql", "queries/dir.sql/x"} {
+		os.MkdirAll(filepath.Join(dir, filepath.Dir(f)), 0o755)
+		os.WriteFile(filepath.Join(dir, f), []byte("-- "+f), 0o644)
+	}
+	path := filepath.Join(dir, "dql.yaml")
+	load := func(queries string) *Config {
+		os.WriteFile(path, []byte(shop+"queries: "+queries+"\n"), 0o644)
+		c, err := Load(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return c
+	}
+	files, err := load("['queries/[ab].sql', more.sql, queries/a.sql]").QueryFiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, f := range files {
+		got = append(got, f.GetPath()+"="+f.GetText())
+	}
+	if want := []string{"more.sql=-- more.sql", "queries/a.sql=-- queries/a.sql", "queries/b.sql=-- queries/b.sql"}; !slices.Equal(got, want) {
+		t.Errorf("files %v", got)
+	}
+	if files, err := load("[]").QueryFiles(); err != nil || files != nil {
+		t.Errorf("none: %v %v", files, err)
+	}
+	for _, c := range []struct{ queries, want string }{
+		{"[none/*.sql]", `queries: "none/*.sql" matches no file`},
+		{"['queries/[.sql']", `queries: "queries/[.sql": syntax error in pattern`},
+		{"[queries/*.sql]", "queries: read " + filepath.Join(dir, "queries", "dir.sql") + ": is a directory"},
+	} {
+		if _, err := load(c.queries).QueryFiles(); err == nil || err.Error() != c.want {
+			t.Errorf("%s: %v", c.queries, err)
+		}
+	}
+}

@@ -21,6 +21,7 @@ import (
 	goemit "github.com/thec1oud/dql/emitters/go"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
+	pgqueries "github.com/thec1oud/dql/querysources/postgres"
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
 	"github.com/thec1oud/dql/sources/pglive"
 )
@@ -44,6 +45,12 @@ var dialects = map[irv1.Dialect]func() plugin.Plugin{
 	irv1.Dialect_DIALECT_POSTGRES: func() plugin.Plugin { return postgres.New() },
 }
 
+// querySources are the shipped query-source plugins, by the dialect whose
+// query files they type, which run in-process (ADR 0002).
+var querySources = map[irv1.Dialect]func() plugin.Plugin{
+	irv1.Dialect_DIALECT_POSTGRES: func() plugin.Plugin { return pgqueries.New() },
+}
+
 // emitters are the shipped emitter plugins, which run in-process (ADR 0002).
 // Each resolves a relative out against the directory of dql.yaml.
 var emitters = map[string]func(c *config.Config) plugin.Plugin{
@@ -54,9 +61,10 @@ var emitters = map[string]func(c *config.Config) plugin.Plugin{
 // skipped until then.
 var planned = map[string]bool{"ts": true}
 
-// generate runs every source, assembles the catalog layer (§2.2, §5.2) and
-// the shape layer (§14), writes the bundle to -bundle, in canonical JSON
-// (§3.1), and runs every emitter on it (§2.3).
+// generate runs every source, assembles the catalog layer (§2.2, §5.2), the
+// shape layer (§14), the operators (§9) and the query layer (§16, §17),
+// writes the bundle to -bundle, in canonical JSON (§3.1), and runs every
+// emitter on it (§2.3).
 func generate(args []string, stderr io.Writer) int {
 	var out string
 	c, anns, code := loadConfig("generate", args, stderr, func(fs *flag.FlagSet) {
@@ -105,6 +113,15 @@ func generate(args []string, stderr io.Writer) int {
 		return 1
 	}
 	ds, err = operatorLayer(ctx, b, c)
+	if err != nil {
+		fmt.Fprintf(stderr, "dql generate: %v\n", err)
+		return 1
+	}
+	printDiagnostics(stderr, ds)
+	if hasErrors(ds) {
+		return 1
+	}
+	ds, err = queryLayer(ctx, b, c)
 	if err != nil {
 		fmt.Fprintf(stderr, "dql generate: %v\n", err)
 		return 1
@@ -219,6 +236,42 @@ func operatorLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) (ds []
 		return nil, fmt.Errorf("dialect %s: %w", name, err)
 	}
 	ds = append(ds, operators.Resolve(b, operators.Options{AllowApproximate: c.Operators.AllowApproximate})...)
+	diagnostics.Sort(ds)
+	b.Diagnostics = append(b.Diagnostics, ds...)
+	diagnostics.Sort(b.Diagnostics)
+	return ds, nil
+}
+
+// queryLayer types the query files of c with the shipped query-source
+// plugin of b's dialect and adds their queries to b (§16, §17). It returns
+// the plugin's diagnostics, sorted, and adds them to the bundle's. Without
+// query files the bundle has no query layer.
+func queryLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) ([]*irv1.Diagnostic, error) {
+	files, err := c.QueryFiles()
+	if err != nil || len(files) == 0 {
+		return nil, err
+	}
+	build, ok := querySources[b.GetDialect()]
+	if !ok {
+		return nil, fmt.Errorf("no query-source plugin types %s query files", b.GetDialect())
+	}
+	p := build()
+	name := p.Handshake().GetPlugin().GetName()
+	client, err := plugin.InProcess(p, &irv1.CoreHello{IrVersion: b.GetVersion()}, irv1.PluginKind_PLUGIN_KIND_QUERY_SOURCE)
+	var ds []*irv1.Diagnostic
+	if err == nil {
+		var res *irv1.InvokeResult
+		if res, err = client.Invoke(ctx, &irv1.Invoke{Bundle: b, QueryFiles: files}); err == nil {
+			b.Queries = &irv1.QueryLayer{Queries: res.GetBundle().GetQueries().GetQueries()}
+			ds = res.GetDiagnostics()
+		}
+		if cerr := client.Close(); err == nil {
+			err = cerr
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("query source %s: %w", name, err)
+	}
 	diagnostics.Sort(ds)
 	b.Diagnostics = append(b.Diagnostics, ds...)
 	diagnostics.Sort(b.Diagnostics)
