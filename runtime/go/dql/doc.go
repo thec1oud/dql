@@ -11,6 +11,10 @@
 // a request's commit positions for read-your-writes, with the SQL for both
 // from the dialect's Replication.
 //
+// Builder queries reach the executor as plans over the dialect's generated
+// fragment table (§16.2): Fragments.Assemble fills holes, joins fragments
+// and numbers placeholders, and never writes SQL of its own.
+//
 // No error of this package carries a parameter or row value (§23, §23.3): a
 // message names classes, shapes, fields, constraints and queries, and a
 // database's own message or detail, which may quote values, is kept in a
