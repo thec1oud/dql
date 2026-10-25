@@ -232,7 +232,10 @@ type Query struct {
 	// A query file's -- returns: header as written, such as user.full. The
 	// core resolves it to result.shape once the query's columns match the
 	// shape (§17.2).
-	Returns       string `protobuf:"bytes,13,opt,name=returns,proto3" json:"returns,omitempty"`
+	Returns string `protobuf:"bytes,13,opt,name=returns,proto3" json:"returns,omitempty"`
+	// The tables and views the query reads or writes, sorted, for the scope
+	// checks (§21.2).
+	Tables        []*QualifiedName `protobuf:"bytes,14,rep,name=tables,proto3" json:"tables,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -369,6 +372,13 @@ func (x *Query) GetReturns() string {
 	return ""
 }
 
+func (x *Query) GetTables() []*QualifiedName {
+	if x != nil {
+		return x.Tables
+	}
+	return nil
+}
+
 type isQuery_Sql interface {
 	isQuery_Sql()
 }
@@ -466,7 +476,10 @@ type ResultShape struct {
 	//
 	//	*ResultShape_Shape
 	//	*ResultShape_Anonymous
-	Kind          isResultShape_Kind `protobuf_oneof:"kind"`
+	Kind isResultShape_Kind `protobuf_oneof:"kind"`
+	// For a shape from -- returns:, the shape's fields by column name in the
+	// order the query returns them, which decoding follows.
+	Columns       []string `protobuf:"bytes,3,rep,name=columns,proto3" json:"columns,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -522,6 +535,13 @@ func (x *ResultShape) GetAnonymous() *AnonymousShape {
 		if x, ok := x.Kind.(*ResultShape_Anonymous); ok {
 			return x.Anonymous
 		}
+	}
+	return nil
+}
+
+func (x *ResultShape) GetColumns() []string {
+	if x != nil {
+		return x.Columns
 	}
 	return nil
 }
@@ -1047,7 +1067,7 @@ var File_dql_ir_v1_queries_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\n" +
-	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\x8f\x04\n" +
+	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\xc1\x04\n" +
 	"\x05Query\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x12.\n" +
 	"\x06source\x18\x02 \x01(\x0e2\x16.dql.ir.v1.QuerySourceR\x06source\x128\n" +
@@ -1062,16 +1082,18 @@ const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	" \x01(\tH\x00R\x04text\x12-\n" +
 	"\x04plan\x18\v \x01(\v2\x17.dql.ir.v1.FragmentPlanH\x00R\x04plan\x12\x1a\n" +
 	"\blocation\x18\f \x01(\tR\blocation\x12\x18\n" +
-	"\areturns\x18\r \x01(\tR\areturnsB\x05\n" +
+	"\areturns\x18\r \x01(\tR\areturns\x120\n" +
+	"\x06tables\x18\x0e \x03(\v2\x18.dql.ir.v1.QualifiedNameR\x06tablesB\x05\n" +
 	"\x03sql\"p\n" +
 	"\x05Param\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
 	"\x04type\x18\x02 \x01(\v2\x0f.dql.ir.v1.TypeR\x04type\x12\x1a\n" +
 	"\bnullable\x18\x03 \x01(\bR\bnullable\x12\x12\n" +
-	"\x04list\x18\x04 \x01(\bR\x04list\"|\n" +
+	"\x04list\x18\x04 \x01(\bR\x04list\"\x96\x01\n" +
 	"\vResultShape\x12*\n" +
 	"\x05shape\x18\x01 \x01(\v2\x12.dql.ir.v1.ShapeIdH\x00R\x05shape\x129\n" +
-	"\tanonymous\x18\x02 \x01(\v2\x19.dql.ir.v1.AnonymousShapeH\x00R\tanonymousB\x06\n" +
+	"\tanonymous\x18\x02 \x01(\v2\x19.dql.ir.v1.AnonymousShapeH\x00R\tanonymous\x12\x18\n" +
+	"\acolumns\x18\x03 \x03(\tR\acolumnsB\x06\n" +
 	"\x04kind\"@\n" +
 	"\x0eAnonymousShape\x12.\n" +
 	"\x06fields\x18\x01 \x03(\v2\x16.dql.ir.v1.ResultFieldR\x06fields\"\xe1\x01\n" +
@@ -1151,9 +1173,9 @@ var file_dql_ir_v1_queries_proto_goTypes = []any{
 	(*HoleFill)(nil),            // 12: dql.ir.v1.HoleFill
 	(*FragmentList)(nil),        // 13: dql.ir.v1.FragmentList
 	(*Identifier)(nil),          // 14: dql.ir.v1.Identifier
-	(*Type)(nil),                // 15: dql.ir.v1.Type
-	(*ShapeId)(nil),             // 16: dql.ir.v1.ShapeId
-	(*QualifiedName)(nil),       // 17: dql.ir.v1.QualifiedName
+	(*QualifiedName)(nil),       // 15: dql.ir.v1.QualifiedName
+	(*Type)(nil),                // 16: dql.ir.v1.Type
+	(*ShapeId)(nil),             // 17: dql.ir.v1.ShapeId
 	(NullabilitySource)(0),      // 18: dql.ir.v1.NullabilitySource
 	(*durationpb.Duration)(nil), // 19: google.protobuf.Duration
 }
@@ -1166,25 +1188,26 @@ var file_dql_ir_v1_queries_proto_depIdxs = []int32{
 	8,  // 5: dql.ir.v1.Query.consistency:type_name -> dql.ir.v1.Consistency
 	9,  // 6: dql.ir.v1.Query.scope:type_name -> dql.ir.v1.ScopeUse
 	10, // 7: dql.ir.v1.Query.plan:type_name -> dql.ir.v1.FragmentPlan
-	15, // 8: dql.ir.v1.Param.type:type_name -> dql.ir.v1.Type
-	16, // 9: dql.ir.v1.ResultShape.shape:type_name -> dql.ir.v1.ShapeId
-	6,  // 10: dql.ir.v1.ResultShape.anonymous:type_name -> dql.ir.v1.AnonymousShape
-	7,  // 11: dql.ir.v1.AnonymousShape.fields:type_name -> dql.ir.v1.ResultField
-	15, // 12: dql.ir.v1.ResultField.type:type_name -> dql.ir.v1.Type
-	17, // 13: dql.ir.v1.ResultField.origin:type_name -> dql.ir.v1.QualifiedName
-	18, // 14: dql.ir.v1.ResultField.nullability_source:type_name -> dql.ir.v1.NullabilitySource
-	2,  // 15: dql.ir.v1.Consistency.level:type_name -> dql.ir.v1.ConsistencyLevel
-	19, // 16: dql.ir.v1.Consistency.max_staleness:type_name -> google.protobuf.Duration
-	11, // 17: dql.ir.v1.FragmentPlan.root:type_name -> dql.ir.v1.FragmentUse
-	12, // 18: dql.ir.v1.FragmentUse.holes:type_name -> dql.ir.v1.HoleFill
-	11, // 19: dql.ir.v1.HoleFill.fragment:type_name -> dql.ir.v1.FragmentUse
-	13, // 20: dql.ir.v1.HoleFill.list:type_name -> dql.ir.v1.FragmentList
-	11, // 21: dql.ir.v1.FragmentList.items:type_name -> dql.ir.v1.FragmentUse
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	15, // 8: dql.ir.v1.Query.tables:type_name -> dql.ir.v1.QualifiedName
+	16, // 9: dql.ir.v1.Param.type:type_name -> dql.ir.v1.Type
+	17, // 10: dql.ir.v1.ResultShape.shape:type_name -> dql.ir.v1.ShapeId
+	6,  // 11: dql.ir.v1.ResultShape.anonymous:type_name -> dql.ir.v1.AnonymousShape
+	7,  // 12: dql.ir.v1.AnonymousShape.fields:type_name -> dql.ir.v1.ResultField
+	16, // 13: dql.ir.v1.ResultField.type:type_name -> dql.ir.v1.Type
+	15, // 14: dql.ir.v1.ResultField.origin:type_name -> dql.ir.v1.QualifiedName
+	18, // 15: dql.ir.v1.ResultField.nullability_source:type_name -> dql.ir.v1.NullabilitySource
+	2,  // 16: dql.ir.v1.Consistency.level:type_name -> dql.ir.v1.ConsistencyLevel
+	19, // 17: dql.ir.v1.Consistency.max_staleness:type_name -> google.protobuf.Duration
+	11, // 18: dql.ir.v1.FragmentPlan.root:type_name -> dql.ir.v1.FragmentUse
+	12, // 19: dql.ir.v1.FragmentUse.holes:type_name -> dql.ir.v1.HoleFill
+	11, // 20: dql.ir.v1.HoleFill.fragment:type_name -> dql.ir.v1.FragmentUse
+	13, // 21: dql.ir.v1.HoleFill.list:type_name -> dql.ir.v1.FragmentList
+	11, // 22: dql.ir.v1.FragmentList.items:type_name -> dql.ir.v1.FragmentUse
+	23, // [23:23] is the sub-list for method output_type
+	23, // [23:23] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_queries_proto_init() }
