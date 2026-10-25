@@ -10,10 +10,15 @@ import (
 	// The golden package's uuid columns use it (§8.1), and the test compiles
 	// the package within this module.
 	_ "github.com/google/uuid"
+	// The golden package's hand-written test runs it on Postgres through
+	// dqlpgx, creating its database with pgx.
+	_ "github.com/jackc/pgx/v5"
+	_ "github.com/thec1oud/dql/runtime/go/dqlpgx"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	// The catalog carries Postgres extensions (§6.2).
+	"github.com/thec1oud/dql/emitters/go/internal/gen"
 	_ "github.com/thec1oud/dql/proto/dql/ext/postgres/v1"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	"github.com/thec1oud/dql/testkit/golden"
@@ -69,7 +74,7 @@ func TestShopGolden(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, _ := filepath.Glob(filepath.Join("testdata", "shopdb", "*"))
+	want, _ := filepath.Glob(filepath.Join("testdata", "shopdb", "*"+gen.Suffix))
 	if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
 		t.Errorf("%d files, golden has %d", len(files), len(want))
 	}
@@ -83,5 +88,10 @@ func TestShopGolden(t *testing.T) {
 	build := exec.Command("go", "vet", "./testdata/shopdb")
 	if msg, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("the golden package does not compile: %v\n%s", err, msg)
+	}
+	// The package's hand-written test runs it on Postgres (§26.5).
+	run := exec.Command("go", "test", "-count=1", "./testdata/shopdb")
+	if msg, err := run.CombinedOutput(); err != nil {
+		t.Fatalf("the golden package's test fails: %v\n%s", err, msg)
 	}
 }

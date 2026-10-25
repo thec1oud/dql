@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"context"
 	"slices"
 
 	"github.com/thec1oud/dql/runtime/go/dql"
@@ -465,4 +466,168 @@ func DecodePostTagKey(r dql.Row) (PostTagKey, error) {
 	out.PostID = dql.Field(d, 0, "post_id", "", dql.Int[int64])
 	out.TagID = dql.Field(d, 1, "tag_id", "", dql.Int[int64])
 	return out, d.Err()
+}
+
+// The builder queries of shop.app.post_tags (§16.3).
+var (
+	postTagGetByPrimary = &dql.Query{
+		Name:      "post_tag.get.by_primary",
+		Catalog:   "shop",
+		Kind:      "get",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.post_tag.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}, "1": dql.Param("key.post_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.tag_id"}, "1": dql.Param("key.tag_id")}}}}}},
+		},
+	}
+	postTagFindByPrimary = &dql.Query{
+		Name:      "post_tag.find.by_primary",
+		Catalog:   "shop",
+		Kind:      "find",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.post_tag.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}, "1": dql.Param("key.post_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.tag_id"}, "1": dql.Param("key.tag_id")}}}}}},
+		},
+	}
+	postTagCount = &dql.Query{
+		Name:    "post_tag.count",
+		Catalog: "shop",
+		Kind:    "count",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "count.post_tags"},
+		},
+	}
+	postTagExists = &dql.Query{
+		Name:    "post_tag.exists",
+		Catalog: "shop",
+		Kind:    "exists",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "exists.post_tags"},
+		},
+	}
+	postTagInsert = &dql.Query{
+		Name:    "post_tag.insert",
+		Catalog: "shop",
+		Kind:    "insert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "insert.post_tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}}},
+		},
+	}
+	postTagUpsertByPrimary = &dql.Query{
+		Name:    "post_tag.upsert.by_primary",
+		Catalog: "shop",
+		Kind:    "upsert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.post_tags.post_tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.post_tags.post_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.post_tags.post_id"}}}}, Separator: ", "}}},
+		},
+	}
+	postTagDelete = &dql.Query{
+		Name:    "post_tag.delete",
+		Catalog: "shop",
+		Kind:    "delete",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.post_tags", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}, "1": dql.Param("key.post_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.tag_id"}, "1": dql.Param("key.tag_id")}}}}}}}},
+		},
+	}
+)
+
+// PostTagsReadStore reads shop.app.post_tags (§26.3).
+type PostTagsReadStore interface {
+	Get(ctx context.Context, k PostTagKey) (PostTagFull, error)
+	Find(ctx context.Context, k PostTagKey) (opt.Opt[PostTagFull], error)
+	Count(ctx context.Context) (int64, error)
+	Exists(ctx context.Context) (bool, error)
+}
+
+// PostTagsStore reads and writes shop.app.post_tags (§26.3).
+type PostTagsStore interface {
+	PostTagsReadStore
+	Insert(ctx context.Context, d PostTagDraft) (PostTagFull, error)
+	Upsert(ctx context.Context, d PostTagDraft) (PostTagFull, error)
+	Delete(ctx context.Context, k PostTagKey) error
+}
+
+// postTagsReads implements PostTagsReadStore on a handle that reads.
+type postTagsReads struct {
+	h dql.Reader
+}
+
+// postTagsWrites implements PostTagsStore on a handle that writes.
+type postTagsWrites struct {
+	postTagsReads
+	w dql.Writer
+}
+
+// Get runs post_tag.get.by_primary (§19).
+func (s postTagsReads) Get(ctx context.Context, k PostTagKey) (PostTagFull, error) {
+	st, err := postTagGetByPrimary.Statement(fragments, dql.Args{"key.post_id": k.PostID, "key.tag_id": k.TagID})
+	if err != nil {
+		return PostTagFull{}, err
+	}
+	return dql.OneOf(ctx, s.h, st, DecodePostTagFull)
+}
+
+// Find runs post_tag.find.by_primary (§19).
+func (s postTagsReads) Find(ctx context.Context, k PostTagKey) (opt.Opt[PostTagFull], error) {
+	st, err := postTagFindByPrimary.Statement(fragments, dql.Args{"key.post_id": k.PostID, "key.tag_id": k.TagID})
+	if err != nil {
+		return opt.None[PostTagFull](), err
+	}
+	return dql.OptionalOf(ctx, s.h, st, DecodePostTagFull)
+}
+
+// Count runs post_tag.count (§19).
+func (s postTagsReads) Count(ctx context.Context) (int64, error) {
+	st, err := postTagCount.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Count(ctx, s.h, st)
+}
+
+// Exists runs post_tag.exists (§19).
+func (s postTagsReads) Exists(ctx context.Context) (bool, error) {
+	st, err := postTagExists.Statement(fragments, dql.Args{})
+	if err != nil {
+		return false, err
+	}
+	return dql.Exists(ctx, s.h, st)
+}
+
+// Insert runs post_tag.insert (§20.1).
+func (s postTagsWrites) Insert(ctx context.Context, d PostTagDraft) (PostTagFull, error) {
+	if err := d.Validate(); err != nil {
+		return PostTagFull{}, err
+	}
+	st, err := postTagInsert.Statement(fragments, dql.Args{"post_id": d.PostID, "tag_id": d.TagID})
+	if err != nil {
+		return PostTagFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodePostTagFull)
+}
+
+// Upsert runs post_tag.upsert.by_primary (§20.1).
+func (s postTagsWrites) Upsert(ctx context.Context, d PostTagDraft) (PostTagFull, error) {
+	if err := d.Validate(); err != nil {
+		return PostTagFull{}, err
+	}
+	st, err := postTagUpsertByPrimary.Statement(fragments, dql.Args{"post_id": d.PostID, "tag_id": d.TagID})
+	if err != nil {
+		return PostTagFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodePostTagFull)
+}
+
+// Delete runs post_tag.delete (§20.1).
+func (s postTagsWrites) Delete(ctx context.Context, k PostTagKey) error {
+	st, err := postTagDelete.Statement(fragments, dql.Args{"key.post_id": k.PostID, "key.tag_id": k.TagID})
+	if err != nil {
+		return err
+	}
+	_, err = dql.Exec(ctx, s.w, st)
+	return err
 }
