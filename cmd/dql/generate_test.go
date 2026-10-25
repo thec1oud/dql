@@ -28,11 +28,16 @@ var (
 	// extrasURL connects to one holding the running example with
 	// testdata/extras.sql applied.
 	extrasURL string
+	// opaqueURL connects to one holding the running example with
+	// testdata/opaque.sql applied.
+	opaqueURL string
 	// driftlessURL connects to one holding the running example without what
 	// the dpg snapshot of it lacks, testdata/dpg/drift.sql.
 	driftlessURL string
 	// dpgBin is the dpg-snapshot source built as an executable.
 	dpgBin string
+	// echoBin is the echo plugin built as an executable.
+	echoBin string
 	// probeBin is a third-party source plugin: the echo plugin as a source,
 	// which reports the settings it receives. It fails unless it runs in the
 	// directory of dql.yaml.
@@ -58,7 +63,7 @@ func setup(m *testing.M) int {
 	}
 	defer os.RemoveAll(dir)
 	dpgBin = filepath.Join(dir, "dql-plugin-dpg-snapshot")
-	echoBin := filepath.Join(dir, "dql-plugin-echo")
+	echoBin = filepath.Join(dir, "dql-plugin-echo")
 	for bin, pkg := range map[string]string{
 		dpgBin:  "github.com/thec1oud/dql/sources/dpgsnapshot/cmd/dql-plugin-dpg-snapshot",
 		echoBin: "github.com/thec1oud/dql/plugin/cmd/dql-plugin-echo",
@@ -89,6 +94,7 @@ func setup(m *testing.M) int {
 		{&shopURL, []string{schema}},
 		{&extrasURL, []string{schema, filepath.Join("testdata", "extras.sql")}},
 		{&driftlessURL, []string{schema, filepath.Join("testdata", "dpg", "drift.sql")}},
+		{&opaqueURL, []string{schema, filepath.Join("testdata", "opaque.sql")}},
 	} {
 		db, err := pgtest.Create(ctx, admin, d.files...)
 		if err != nil {
@@ -123,10 +129,9 @@ annotations:
 func TestGenerateWritesTheBundle(t *testing.T) {
 	t.Setenv("SHOP_DATABASE_URL", shopURL)
 	out := filepath.Join(t.TempDir(), "bundle.json")
-	code, _, stderr := dql("generate", "-config", filepath.Join(shopDir, "dql.yaml"), "-bundle", out)
+	code, _, stderr := dql("generate", "-config", shopConfig(t, ""), "-bundle", out)
 	want := "dql generate: wrote the bundle to " + out + "\n" +
-		"dql generate: skipped emit[0] (go): emitters arrive in a later milestone\n" +
-		"dql generate: skipped emit[1] (ts): emitters arrive in a later milestone\n"
+		"dql generate: skipped emit[1] (ts): the ts emitter arrives in a later milestone\n"
 	if code != 0 || stderr != want {
 		t.Fatalf("%d %q", code, stderr)
 	}
@@ -136,7 +141,7 @@ func TestGenerateWritesTheBundle(t *testing.T) {
 		t.Fatalf("bundle: %v", err)
 	}
 	// Without -bundle nothing is written.
-	if code, _, stderr := dql("generate", "-config", filepath.Join(shopDir, "dql.yaml")); code != 0 || strings.Contains(stderr, "wrote") {
+	if code, _, stderr := dql("generate", "-config", shopConfig(t, "")); code != 0 || strings.Contains(stderr, "wrote") {
 		t.Errorf("no -bundle: %d %q", code, stderr)
 	}
 }
@@ -214,7 +219,7 @@ func TestGenerateFailures(t *testing.T) {
 		{"source fails", "sources:\n" + pgLive + "  - plugin: dpg-snapshot\n    path: /nonexistent/dql-plugin-dpg-snapshot\n    snapshot: shop.json\n",
 			[]string{"dql generate: sources[0] (pg-live): pg-live: connection names env:SHOP_DATABASE_URL, which is not set",
 				"dql generate: sources[1] (dpg-snapshot): plugin: starting /nonexistent/dql-plugin-dpg-snapshot"}},
-		{"assembly fails", "sources:\n  - plugin: echo\nemit:\n  - plugin: go\n    dialect: postgres\n",
+		{"assembly fails", "sources:\n  - plugin: echo\nemit:\n  - plugin: go\n    dialect: postgres\n    package: p\n    out: gen\n",
 			[]string{"error catalog-none: the sources produced no catalog"}},
 	} {
 		code, _, stderr := dql("generate", "-config", write(t, "dql.yaml", c.config))

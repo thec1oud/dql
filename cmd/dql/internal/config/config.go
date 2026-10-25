@@ -129,9 +129,9 @@ func (s Source) setting(name string) string {
 	}
 }
 
-// Emit is one emitter run, which targets exactly one dialect (§2.4). No
-// emitter ships yet, so an entry may hold keys of its own, which its plugin
-// validates.
+// Emit is one emitter run, which targets exactly one dialect (§2.4). A
+// shipped emitter's entry holds only the keys below; any other emitter's may
+// hold keys of its own, which its plugin validates (ADR 0003).
 type Emit struct {
 	Plugin  string                    `yaml:"plugin"`
 	Path    string                    `yaml:"path"`
@@ -146,11 +146,14 @@ type Emit struct {
 func (e *Emit) UnmarshalYAML(n *yaml.Node) error {
 	type entry Emit
 	var p entry
-	settings, err := decodeEntry(n, &p, "config.Emit", false)
+	settings, err := decodeEntry(n, &p, "config.Emit", shippedEmitters[entryPlugin(n)])
 	*e = Emit(p)
 	e.Settings = settings
 	return err
 }
+
+// shippedEmitters are the emitter plugins that ship with dql.
+var shippedEmitters = map[string]bool{"go": true}
 
 // entryPlugin is the plugin a sources or emit entry names, or "".
 func entryPlugin(n *yaml.Node) string {
@@ -304,6 +307,13 @@ func (c *Config) Validate() []*irv1.Diagnostic {
 		}
 		if !slices.Contains(Dialects, e.Dialect) {
 			add("config-dialect-unknown", "emit[%d] targets dialect %q; use one of %v", i, e.Dialect, Dialects)
+		}
+		if shippedEmitters[e.Plugin] {
+			for _, f := range [][2]string{{"package", e.Package}, {"out", e.Out}} {
+				if f[1] == "" {
+					add("config-setting-missing", "emit[%d] (%s) has no %s; set %s:", i, e.Plugin, f[0], f[0])
+				}
+			}
 		}
 	}
 	for _, name := range slices.Sorted(maps.Keys(c.Shapes)) {
