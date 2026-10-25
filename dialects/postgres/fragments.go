@@ -7,6 +7,7 @@ import (
 	"unicode"
 
 	"github.com/thec1oud/dql/core/diagnostics"
+	"github.com/thec1oud/dql/core/queries"
 	"github.com/thec1oud/dql/core/shapes"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
@@ -16,9 +17,8 @@ import (
 // plans/fragment-table-proposal.md). Templates never hold values; the
 // runtime fills holes, joins the pieces and numbers the placeholders.
 //
-// Ids name a table by its stored name, behind its namespace when that is
-// not its catalog's default and behind its catalog when the bundle has
-// several, and a shape by its dotted spelling (§14.1). Each table has one
+// Ids name a table as queries.TableID does, and a shape by its dotted
+// spelling (§14.1). Each table has one
 // alias, the initials of its name's words, numbered from 2 when tables
 // share them, in the order of their qualified names.
 func Fragments(b *irv1.Bundle, p *irv1.CapabilityProfile) *irv1.FragmentTable {
@@ -129,6 +129,7 @@ func (f *fragments) static() {
 		"select.distinct_on": "SELECT DISTINCT ON ({keys}) {cols} FROM {from}",
 		"value.default":      "DEFAULT",
 		"value.now":          "now()",
+		"value.one":          "1",
 		"value.true":         "TRUE",
 		"values.row":         "({0})",
 	} {
@@ -142,14 +143,7 @@ func (f *fragments) collect(cats []*irv1.Catalog) {
 		for _, ns := range cat.GetNamespaces() {
 			for _, t := range ns.GetTables() {
 				name := &irv1.QualifiedName{Catalog: cat.GetName().GetStored(), Namespace: ns.GetName().GetStored(), Object: t.GetName().GetStored()}
-				var id []string
-				if len(cats) > 1 {
-					id = append(id, name.GetCatalog())
-				}
-				if name.GetNamespace() != cat.GetDefaultNamespace() {
-					id = append(id, name.GetNamespace())
-				}
-				tb := &table{t: t, name: name, id: strings.Join(append(id, name.GetObject()), "."), quoted: quote(name.GetNamespace()) + "." + quote(name.GetObject())}
+				tb := &table{t: t, name: name, id: queries.TableID(cats, name), quoted: quote(name.GetNamespace()) + "." + quote(name.GetObject())}
 				f.tables = append(f.tables, tb)
 				f.byName[diagnostics.Name(name)] = tb
 			}
