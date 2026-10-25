@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	// The golden package's uuid columns use it (§8.1), and the test compiles
+	// the package within this module.
+	_ "github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 

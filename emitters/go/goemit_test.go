@@ -112,11 +112,11 @@ func TestInvokeWrites(t *testing.T) {
 		t.Fatal(err)
 	}
 	files := map[string]string{
-		"old.dql.go":     gen.Header + "\n\npackage shopdb\n",
-		"mine.dql.go":    "package shopdb\n",
-		"helpers.go":     gen.Header + "\n\npackage shopdb\n",
-		"types.dql.go":   "stale",
-		"notes.dql.go.x": "x",
+		"old.dql.go":       gen.Header + "\n\npackage shopdb\n",
+		"mine.dql.go":      "package shopdb\n",
+		"helpers.go":       gen.Header + "\n\npackage shopdb\n",
+		"dql-types.dql.go": "stale",
+		"notes.dql.go.x":   "x",
 	}
 	for name, content := range files {
 		if err := os.WriteFile(filepath.Join(out, name), []byte(content), 0o644); err != nil {
@@ -132,11 +132,12 @@ func TestInvokeWrites(t *testing.T) {
 	for _, e := range entries {
 		names = append(names, e.Name())
 	}
-	if want := []string{"helpers.go", "mine.dql.go", "notes.dql.go.x", "types.dql.go", "version.dql.go"}; !slices.Equal(names, want) {
+	if want := []string{"dql-types.dql.go", "dql-version.dql.go", "helpers.go", "mine.dql.go", "notes.dql.go.x",
+		"post.dql.go", "post_tag.dql.go", "profile.dql.go", "published_post.dql.go", "tag.dql.go", "tenant.dql.go", "user.dql.go"}; !slices.Equal(names, want) {
 		t.Errorf("files %q", names)
 	}
-	if b, _ := os.ReadFile(filepath.Join(out, "types.dql.go")); !strings.HasPrefix(string(b), gen.Header) {
-		t.Errorf("types.dql.go not replaced")
+	if b, _ := os.ReadFile(filepath.Join(out, "dql-types.dql.go")); !strings.HasPrefix(string(b), gen.Header) {
+		t.Errorf("dql-types.dql.go not replaced")
 	}
 }
 
@@ -169,7 +170,7 @@ func TestInvokeFailures(t *testing.T) {
 	stale := filepath.Join(tmp, "stale")
 	os.MkdirAll(filepath.Join(stale, "dir.dql.go"), 0o755)
 	occupied := filepath.Join(tmp, "occupied")
-	os.MkdirAll(filepath.Join(occupied, "types.dql.go"), 0o755)
+	os.MkdirAll(filepath.Join(occupied, "dql-types.dql.go"), 0o755)
 	old := filepath.Join(tmp, "old")
 	os.MkdirAll(old, 0o755)
 	os.WriteFile(filepath.Join(old, "old.dql.go"), []byte(gen.Header+"\n"), 0o644)

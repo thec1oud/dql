@@ -9,6 +9,8 @@ require (
 	google.golang.org/protobuf v1.36.6
 )
 
+require github.com/google/uuid v1.6.0
+
 replace (
 	github.com/thec1oud/dql/plugin => ../../plugin
 	github.com/thec1oud/dql/proto => ../../proto
