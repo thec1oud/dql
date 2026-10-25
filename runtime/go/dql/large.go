@@ -23,7 +23,7 @@ func Iter(ctx context.Context, h Reader, s Statement) iter.Seq2[Row, error] {
 		}
 		defer func() { done(err) }()
 		src := e.catalogs[s.Catalog]
-		rows, err := c.Query(ctx, s.SQL, s.Args)
+		rows, err := c.Query(withQuery(ctx, s.Query), s.SQL, s.Args)
 		if err != nil {
 			err = e.translate(err, s.Catalog, s.Query, src)
 			yield(nil, err)
