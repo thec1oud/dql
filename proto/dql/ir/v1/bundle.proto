@@ -4,6 +4,7 @@ package dql.ir.v1;
 
 import "dql/ir/v1/catalog.proto";
 import "dql/ir/v1/diagnostics.proto";
+import "dql/ir/v1/operators.proto";
 import "dql/ir/v1/shapes.proto";
 
 option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
@@ -25,6 +26,9 @@ message Bundle {
   QueryLayer queries = 7;
   // Warnings carried through to emitters.
   repeated Diagnostic diagnostics = 8;
+  // The operator catalog: the core's, the type plugins' and the dialect
+  // plugin's, sorted by name (§9.1, §9.3).
+  repeated Operator operators = 9;
 }
 
 // The IR version, semver (§3.3). The parts are explicit-presence fields so a
@@ -45,8 +49,15 @@ enum Dialect {
   DIALECT_SQLSERVER = 4;
 }
 
-// The dialect's capability profile (§9.2). Its fields arrive with M4.
-message CapabilityProfile {}
+// The dialect's capability profile (§9.2). Its other fields arrive with the
+// dialect plugins.
+message CapabilityProfile {
+  Dialect dialect = 1;
+  // The operators the dialect supports, sorted by name (§9.2).
+  repeated OperatorSupport operators = 2;
+  // Whether a reference may cross catalogs (§5.1).
+  bool cross_catalog_references = 3;
+}
 
 // Shapes and the conversion table (§14), fully expanded so emitters never
 // re-implement the algebra (§14.10).

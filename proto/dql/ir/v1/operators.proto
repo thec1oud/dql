@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/objects.proto";
+import "dql/ir/v1/routines.proto";
+import "dql/ir/v1/types.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// An operator of the catalog (§9.1). The core defines the portable ones; a
+// type plugin adds operators for its types (§9.3), and a dialect plugin its
+// native ones.
+message Operator {
+  // Such as eq, ilike or range_contains. A plugin's operator is named
+  // <plugin>.<name>, such as postgres.jsonb_has_key; a core operator has no
+  // prefix.
+  string name = 1;
+  Signature signature = 2;
+  // What the type variable must support: comparable, orderable, numeric,
+  // json, or nullable for the operand itself. Sorted.
+  repeated string requires = 3;
+  NullBehavior null_behavior = 4;
+  OperatorOrigin origin = 5;
+}
+
+// Who defined an operator.
+message OperatorOrigin {
+  OperatorOriginKind kind = 1;
+  // The type or dialect plugin, empty for the core.
+  string plugin = 2;
+}
+
+enum OperatorOriginKind {
+  OPERATOR_ORIGIN_KIND_UNSPECIFIED = 0;
+  // A portable operator of §9.1.
+  OPERATOR_ORIGIN_KIND_CORE = 1;
+  OPERATOR_ORIGIN_KIND_TYPE_PLUGIN = 2;
+  OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN = 3;
+}
+
+// An operator's arguments and result, over logical types and type variables.
+message Signature {
+  repeated OperandType args = 1;
+  OperandType returns = 2;
+}
+
+// A logical type, a type variable that stands for the type of every operand
+// it names, such as T in eq(T, T), or an array or range of either.
+message OperandType {
+  oneof kind {
+    string var = 1;
+    Type type = 2;
+    // Such as array<T> in in(T, array<T>).
+    OperandType array = 3;
+    // Such as range<T> in range_contains(range<T>, T).
+    OperandType range = 4;
+  }
+}
+
+// A dialect's support for one operator (§9.2). How it renders as SQL stays
+// private to the dialect plugin.
+message OperatorSupport {
+  string name = 1;
+  // The fidelity, when no condition is given or the condition holds.
+  Fidelity fidelity = 2;
+  OperatorCondition when = 3;
+  // The fidelity when the condition does not hold. Unspecified means the
+  // operator is unsupported there.
+  Fidelity otherwise = 4;
+}
+
+// The column facts a fidelity depends on (§8.9, §9.2). A fact that is not
+// set matches anything; an unknown fact on the column never matches a set
+// one.
+message OperatorCondition {
+  Collation collation = 1;
+}
