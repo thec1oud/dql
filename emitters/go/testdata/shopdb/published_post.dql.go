@@ -7,9 +7,11 @@
 package shopdb
 
 import (
+	"context"
 	"time"
 
 	"github.com/thec1oud/dql/runtime/go/dql"
+	"github.com/thec1oud/dql/runtime/go/opt"
 )
 
 // PublishedPostFull is the shape published_post.full.flat of shop.app.published_posts.
@@ -95,4 +97,93 @@ func DecodePublishedPostKey(r dql.Row) (PublishedPostKey, error) {
 	var out PublishedPostKey
 	out.ID = dql.Field(d, 0, "id", "core.nonnull from COMMENT ON COLUMN app.published_posts.id", dql.Int[int64])
 	return out, d.Err()
+}
+
+// The builder queries of shop.app.published_posts (§16.3).
+var (
+	publishedPostGetByLogicalKey = &dql.Query{
+		Name:      "published_post.get.by_logical_key",
+		Catalog:   "shop",
+		Kind:      "get",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.published_post.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.published_posts.id"}, "1": dql.Param("key.id")}}}},
+		},
+	}
+	publishedPostFindByLogicalKey = &dql.Query{
+		Name:      "published_post.find.by_logical_key",
+		Catalog:   "shop",
+		Kind:      "find",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.published_post.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.published_posts.id"}, "1": dql.Param("key.id")}}}},
+		},
+	}
+	publishedPostCount = &dql.Query{
+		Name:    "published_post.count",
+		Catalog: "shop",
+		Kind:    "count",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "count.published_posts"},
+		},
+	}
+	publishedPostExists = &dql.Query{
+		Name:    "published_post.exists",
+		Catalog: "shop",
+		Kind:    "exists",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "exists.published_posts"},
+		},
+	}
+)
+
+// PublishedPostsReadStore reads shop.app.published_posts (§26.3).
+type PublishedPostsReadStore interface {
+	GetByLogicalKey(ctx context.Context, id int64) (PublishedPostFull, error)
+	FindByLogicalKey(ctx context.Context, id int64) (opt.Opt[PublishedPostFull], error)
+	Count(ctx context.Context) (int64, error)
+	Exists(ctx context.Context) (bool, error)
+}
+
+// publishedPostsReads implements PublishedPostsReadStore on a handle that reads.
+type publishedPostsReads struct {
+	h dql.Reader
+}
+
+// GetByLogicalKey runs published_post.get.by_logical_key (§19).
+func (s publishedPostsReads) GetByLogicalKey(ctx context.Context, id int64) (PublishedPostFull, error) {
+	st, err := publishedPostGetByLogicalKey.Statement(fragments, dql.Args{"key.id": id})
+	if err != nil {
+		return PublishedPostFull{}, err
+	}
+	return dql.OneOf(ctx, s.h, st, DecodePublishedPostFull)
+}
+
+// FindByLogicalKey runs published_post.find.by_logical_key (§19).
+func (s publishedPostsReads) FindByLogicalKey(ctx context.Context, id int64) (opt.Opt[PublishedPostFull], error) {
+	st, err := publishedPostFindByLogicalKey.Statement(fragments, dql.Args{"key.id": id})
+	if err != nil {
+		return opt.None[PublishedPostFull](), err
+	}
+	return dql.OptionalOf(ctx, s.h, st, DecodePublishedPostFull)
+}
+
+// Count runs published_post.count (§19).
+func (s publishedPostsReads) Count(ctx context.Context) (int64, error) {
+	st, err := publishedPostCount.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Count(ctx, s.h, st)
+}
+
+// Exists runs published_post.exists (§19).
+func (s publishedPostsReads) Exists(ctx context.Context) (bool, error) {
+	st, err := publishedPostExists.Statement(fragments, dql.Args{})
+	if err != nil {
+		return false, err
+	}
+	return dql.Exists(ctx, s.h, st)
 }
