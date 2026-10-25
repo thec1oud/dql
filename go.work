@@ -3,6 +3,7 @@ go 1.25
 use (
 	./cmd/dql
 	./core
+	./dialects
 	./emitters/go
 	./plugin
 	./proto

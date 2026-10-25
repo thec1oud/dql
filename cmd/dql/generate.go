@@ -15,7 +15,9 @@ import (
 	"github.com/thec1oud/dql/core/catalog"
 	"github.com/thec1oud/dql/core/conversions"
 	"github.com/thec1oud/dql/core/diagnostics"
+	"github.com/thec1oud/dql/core/operators"
 	"github.com/thec1oud/dql/core/shapes"
+	"github.com/thec1oud/dql/dialects/postgres"
 	goemit "github.com/thec1oud/dql/emitters/go"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
@@ -34,6 +36,12 @@ var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 		return dpgsnapshot.New(dpgsnapshot.Settings{Snapshot: c.Resolve(s.Snapshot), Catalog: s.Catalog,
 			Namespaces: s.Namespaces, DefaultNamespace: s.DefaultNamespace})
 	},
+}
+
+// dialects are the shipped dialect plugins, by the dialect they serve, which
+// run in-process (ADR 0002).
+var dialects = map[irv1.Dialect]func() plugin.Plugin{
+	irv1.Dialect_DIALECT_POSTGRES: func() plugin.Plugin { return postgres.New() },
 }
 
 // emitters are the shipped emitter plugins, which run in-process (ADR 0002).
@@ -88,6 +96,15 @@ func generate(args []string, stderr io.Writer) int {
 		return 1
 	}
 	ds, err := shapeLayer(b, c)
+	if err != nil {
+		fmt.Fprintf(stderr, "dql generate: %v\n", err)
+		return 1
+	}
+	printDiagnostics(stderr, ds)
+	if hasErrors(ds) {
+		return 1
+	}
+	ds, err = operatorLayer(ctx, b, c)
 	if err != nil {
 		fmt.Fprintf(stderr, "dql generate: %v\n", err)
 		return 1
@@ -171,6 +188,41 @@ func emitFlags(c *config.Config, e config.Emit) []string {
 		}
 	}
 	return args
+}
+
+// operatorLayer adds the operator catalog to b, runs the shipped dialect
+// plugin of b's dialect in-process for its capability profile and the
+// operators it contributes, and resolves every column's operators (§9). It returns the diagnostics, sorted, and adds them to the
+// bundle's.
+func operatorLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) (ds []*irv1.Diagnostic, err error) {
+	build, ok := dialects[b.GetDialect()]
+	if !ok {
+		return nil, fmt.Errorf("no dialect plugin serves %s", b.GetDialect())
+	}
+	b.Operators = operators.Catalog()
+	p := build()
+	name := p.Handshake().GetPlugin().GetName()
+	client, err := plugin.InProcess(p, &irv1.CoreHello{IrVersion: b.GetVersion()}, irv1.PluginKind_PLUGIN_KIND_DIALECT)
+	if err == nil {
+		var res *irv1.InvokeResult
+		if res, err = client.Invoke(ctx, &irv1.Invoke{Bundle: b}); err == nil {
+			b.Capabilities = res.GetBundle().GetCapabilities()
+			var added []*irv1.Diagnostic
+			b.Operators, added = operators.Add(b.Operators, res.GetBundle().GetOperators(), irv1.OperatorOriginKind_OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN, name)
+			ds = append(res.GetDiagnostics(), added...)
+		}
+		if cerr := client.Close(); err == nil {
+			err = cerr
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("dialect %s: %w", name, err)
+	}
+	ds = append(ds, operators.Resolve(b, operators.Options{AllowApproximate: c.Operators.AllowApproximate})...)
+	diagnostics.Sort(ds)
+	b.Diagnostics = append(b.Diagnostics, ds...)
+	diagnostics.Sort(b.Diagnostics)
+	return ds, nil
 }
 
 // buildShapes is a variable so tests can make the shape layer fail.

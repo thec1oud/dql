@@ -69,7 +69,73 @@
                       "raw": "bigint"
                     }
                   },
-                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -96,7 +162,73 @@
                       "raw": "bigint"
                     }
                   },
-                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 }
               ],
               "uniqueness": [
@@ -319,7 +451,73 @@
                       "namespace": "app",
                       "object": "posts_id_seq"
                     }
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -346,7 +544,73 @@
                       "raw": "bigint"
                     }
                   },
-                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -374,7 +638,81 @@
                     }
                   },
                   "nullable": true,
-                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -407,7 +745,69 @@
                     "padSpace": "TRISTATE_FALSE",
                     "deterministic": "TRISTATE_TRUE",
                     "clientFold": "CLIENT_FOLD_NONE"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -445,7 +845,77 @@
                     "padSpace": "TRISTATE_FALSE",
                     "deterministic": "TRISTATE_TRUE",
                     "clientFold": "CLIENT_FOLD_NONE"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -483,7 +953,49 @@
                     "value": {
                       "string": "draft"
                     }
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -515,7 +1027,37 @@
                     }
                   },
                   "nullable": true,
-                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -555,7 +1097,45 @@
                     "padSpace": "TRISTATE_FALSE",
                     "deterministic": "TRISTATE_TRUE",
                     "clientFold": "CLIENT_FOLD_NONE"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "array_contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "array_overlaps",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -585,7 +1165,57 @@
                     }
                   },
                   "nullable": true,
-                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 }
               ],
               "constraints": [
@@ -950,7 +1580,73 @@
                       "raw": "bigint"
                     }
                   },
-                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -984,7 +1680,77 @@
                     "padSpace": "TRISTATE_FALSE",
                     "deterministic": "TRISTATE_TRUE",
                     "clientFold": "CLIENT_FOLD_NONE"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -1010,7 +1776,57 @@
                     }
                   },
                   "nullable": true,
-                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 }
               ],
               "uniqueness": [
@@ -1213,6 +2029,72 @@
                       "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
                       "text": "@nonnull"
                     }
+                  ],
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
                   ]
                 },
                 {
@@ -1262,6 +2144,68 @@
                       "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
                       "text": "@nonnull"
                     }
+                  ],
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
                   ]
                 },
                 {
@@ -1290,7 +2234,81 @@
                     }
                   },
                   "nullable": true,
-                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -1320,7 +2338,57 @@
                     }
                   },
                   "nullable": true,
-                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+                  "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 }
               ],
               "logicalKey": {
@@ -1425,7 +2493,73 @@
                       "namespace": "app",
                       "object": "tags_id_seq"
                     }
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -1464,7 +2598,69 @@
                     "padSpace": "TRISTATE_FALSE",
                     "deterministic": "TRISTATE_TRUE",
                     "clientFold": "CLIENT_FOLD_NONE"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 }
               ],
               "uniqueness": [
@@ -1648,7 +2844,49 @@
                   "default": {
                     "class": "DEFAULT_EXPRESSION",
                     "native": "gen_random_uuid()"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -1681,7 +2919,69 @@
                     "padSpace": "TRISTATE_FALSE",
                     "deterministic": "TRISTATE_TRUE",
                     "clientFold": "CLIENT_FOLD_NONE"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 }
               ],
               "uniqueness": [
@@ -1813,7 +3113,73 @@
                       "namespace": "app",
                       "object": "users_id_seq"
                     }
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -1856,6 +3222,48 @@
                       "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
                       "text": "@bound"
                     }
+                  ],
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
                   ]
                 },
                 {
@@ -1895,7 +3303,69 @@
                     "padSpace": "TRISTATE_FALSE",
                     "deterministic": "TRISTATE_TRUE",
                     "clientFold": "CLIENT_FOLD_NONE"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -1939,7 +3409,77 @@
                     "padSpace": "TRISTATE_FALSE",
                     "deterministic": "TRISTATE_TRUE",
                     "clientFold": "CLIENT_FOLD_NONE"
-                  }
+                  },
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_not_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_null",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
                 },
                 {
                   "name": {
@@ -1998,6 +3538,68 @@
                       "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
                       "text": "@write-only @sensitive"
                     }
+                  ],
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "contains",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ilike",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "like",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "regex_match",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "starts_with",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
                   ]
                 },
                 {
@@ -2046,6 +3648,48 @@
                     {
                       "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
                       "text": "@immutable"
+                    }
+                  ],
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
                     }
                   ]
                 },
@@ -2096,6 +3740,48 @@
                       "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
                       "text": "@db-updated"
                     }
+                  ],
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
                   ]
                 },
                 {
@@ -2143,6 +3829,72 @@
                     {
                       "@type": "type.dql.dev/dql.ext.postgres.v1.Comment",
                       "text": "@version"
+                    }
+                  ],
+                  "operators": [
+                    {
+                      "name": "add",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "between",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "div",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ge",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "le",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mod",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "mul",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "neg",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "sub",
+                      "fidelity": "FIDELITY_EXACT"
                     }
                   ]
                 }
@@ -3068,6 +4820,911 @@
           "namespace": "pg_catalog"
         }
       ]
+    }
+  ],
+  "capabilities": {
+    "dialect": "DIALECT_POSTGRES",
+    "operators": [
+      {
+        "name": "add",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "any",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "array_contains",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "array_overlaps",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "between",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "contains",
+        "fidelity": "FIDELITY_EXACT",
+        "when": {
+          "collation": {
+            "deterministic": "TRISTATE_TRUE"
+          }
+        }
+      },
+      {
+        "name": "div",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "eq",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "ge",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "gt",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "ilike",
+        "fidelity": "FIDELITY_EXACT",
+        "when": {
+          "collation": {
+            "deterministic": "TRISTATE_TRUE"
+          }
+        }
+      },
+      {
+        "name": "in",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "is_distinct_from",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "is_not_null",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "is_null",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "json_contains",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "json_get",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "json_path",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "le",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "like",
+        "fidelity": "FIDELITY_EXACT",
+        "when": {
+          "collation": {
+            "deterministic": "TRISTATE_TRUE"
+          }
+        }
+      },
+      {
+        "name": "lt",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "mod",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "mul",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "ne",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "neg",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "range_contains",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "range_overlaps",
+        "fidelity": "FIDELITY_EXACT"
+      },
+      {
+        "name": "regex_match",
+        "fidelity": "FIDELITY_EXACT",
+        "when": {
+          "collation": {
+            "deterministic": "TRISTATE_TRUE"
+          }
+        }
+      },
+      {
+        "name": "starts_with",
+        "fidelity": "FIDELITY_EXACT",
+        "when": {
+          "collation": {
+            "deterministic": "TRISTATE_TRUE"
+          }
+        }
+      },
+      {
+        "name": "sub",
+        "fidelity": "FIDELITY_EXACT"
+      }
+    ]
+  },
+  "operators": [
+    {
+      "name": "add",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "var": "T"
+        }
+      },
+      "requires": [
+        "numeric"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "any",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "array": {
+              "var": "T"
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "comparable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "array_contains",
+      "signature": {
+        "args": [
+          {
+            "array": {
+              "var": "T"
+            }
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "comparable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "array_overlaps",
+      "signature": {
+        "args": [
+          {
+            "array": {
+              "var": "T"
+            }
+          },
+          {
+            "array": {
+              "var": "T"
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "comparable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "between",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "orderable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "contains",
+      "signature": {
+        "args": [
+          {
+            "type": {
+              "text": {}
+            }
+          },
+          {
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "div",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "var": "T"
+        }
+      },
+      "requires": [
+        "numeric"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "eq",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "comparable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "ge",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "orderable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "gt",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "orderable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "ilike",
+      "signature": {
+        "args": [
+          {
+            "type": {
+              "text": {}
+            }
+          },
+          {
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "in",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "array": {
+              "var": "T"
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "comparable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "is_distinct_from",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "comparable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_NEVER_NULL",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "is_not_null",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "nullable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_NEVER_NULL",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "is_null",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "nullable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_NEVER_NULL",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "json_contains",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "json"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "json_get",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "returns": {
+          "var": "T"
+        }
+      },
+      "requires": [
+        "json"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "json_path",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "returns": {
+          "var": "T"
+        }
+      },
+      "requires": [
+        "json"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "le",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "orderable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "like",
+      "signature": {
+        "args": [
+          {
+            "type": {
+              "text": {}
+            }
+          },
+          {
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "lt",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "orderable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "mod",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "var": "T"
+        }
+      },
+      "requires": [
+        "numeric"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "mul",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "var": "T"
+        }
+      },
+      "requires": [
+        "numeric"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "ne",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "comparable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "neg",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "var": "T"
+        }
+      },
+      "requires": [
+        "numeric"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "range_contains",
+      "signature": {
+        "args": [
+          {
+            "range": {
+              "var": "T"
+            }
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "orderable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "range_overlaps",
+      "signature": {
+        "args": [
+          {
+            "range": {
+              "var": "T"
+            }
+          },
+          {
+            "range": {
+              "var": "T"
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "requires": [
+        "orderable"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "regex_match",
+      "signature": {
+        "args": [
+          {
+            "type": {
+              "text": {}
+            }
+          },
+          {
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "starts_with",
+      "signature": {
+        "args": [
+          {
+            "type": {
+              "text": {}
+            }
+          },
+          {
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "returns": {
+          "type": {
+            "bool": {}
+          }
+        }
+      },
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
+    },
+    {
+      "name": "sub",
+      "signature": {
+        "args": [
+          {
+            "var": "T"
+          },
+          {
+            "var": "T"
+          }
+        ],
+        "returns": {
+          "var": "T"
+        }
+      },
+      "requires": [
+        "numeric"
+      ],
+      "nullBehavior": "NULL_BEHAVIOR_STRICT",
+      "origin": {
+        "kind": "OPERATOR_ORIGIN_KIND_CORE"
+      }
     }
   ]
 }
