@@ -132,7 +132,7 @@ func TestInvokeWrites(t *testing.T) {
 	for _, e := range entries {
 		names = append(names, e.Name())
 	}
-	if want := []string{"dql-checks.dql.go", "dql-db.dql.go", "dql-dialect.dql.go", "dql-fragments.dql.go", "dql-types.dql.go", "dql-version.dql.go", "helpers.go", "mine.dql.go", "notes.dql.go.x",
+	if want := []string{"dql-checks.dql.go", "dql-db.dql.go", "dql-dialect.dql.go", "dql-fragments.dql.go", "dql-select.dql.go", "dql-types.dql.go", "dql-version.dql.go", "helpers.go", "mine.dql.go", "notes.dql.go.x",
 		"post.dql.go", "post_tag.dql.go", "profile.dql.go", "published_post.dql.go", "tag.dql.go", "tenant.dql.go", "user.dql.go"}; !slices.Equal(names, want) {
 		t.Errorf("files %q", names)
 	}

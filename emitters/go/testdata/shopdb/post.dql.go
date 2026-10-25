@@ -978,6 +978,7 @@ var (
 
 // PostsReadStore reads shop.app.posts (§26.3).
 type PostsReadStore interface {
+	from(PostsTable) dql.From
 	Get(ctx context.Context, k PostKey) (PostFull, error)
 	Find(ctx context.Context, k PostKey) (opt.Opt[PostFull], error)
 	Count(ctx context.Context) (int64, error)
@@ -1189,3 +1190,719 @@ func (s postsWrites) Delete(ctx context.Context, k PostKey) error {
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
 }
+
+// PostsTable is table shop.app.posts in builder reads (§18.2): its columns and relations
+// make predicates and order keys on its rows.
+type PostsTable struct {
+	ID          postsIDColumn
+	AuthorID    postsAuthorIDColumn
+	EditorID    postsEditorIDColumn
+	Title       postsTitleColumn
+	Slug        postsSlugColumn
+	Status      postsStatusColumn
+	Price       postsPriceColumn
+	Labels      postsLabelsColumn
+	PublishedAt postsPublishedAtColumn
+	Author      postsAuthorRelation
+	Editor      postsEditorRelation
+	PostTags    postsPostTagsRelation
+	Tags        postsTagsRelation
+}
+
+// Posts is table shop.app.posts in builder reads (§18.2).
+var Posts PostsTable
+
+// postsIDColumn is column id in builder reads (§9.4).
+type postsIDColumn struct{}
+
+// Any is operator any on id (§9.4).
+func (postsIDColumn) Any(v []int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.any", "col.posts.id", dql.Arg{Value: v})
+}
+
+// Between is operator between on id (§9.4).
+func (postsIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.between", "col.posts.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on id (§9.4).
+func (postsIDColumn) Eq(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on id (§9.4).
+func (postsIDColumn) Ge(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ge", "col.posts.id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on id (§9.4).
+func (postsIDColumn) Gt(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.gt", "col.posts.id", dql.Arg{Value: v})
+}
+
+// In is operator in on id (§9.4).
+func (postsIDColumn) In(v []int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.in", "col.posts.id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on id (§9.4).
+func (postsIDColumn) IsDistinctFrom(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.id", dql.Arg{Value: v})
+}
+
+// Le is operator le on id (§9.4).
+func (postsIDColumn) Le(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.le", "col.posts.id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on id (§9.4).
+func (postsIDColumn) Lt(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.lt", "col.posts.id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on id (§9.4).
+func (postsIDColumn) Ne(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.id", dql.Arg{Value: v})
+}
+
+// Asc orders by id, ascending.
+func (postsIDColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.id")
+}
+
+// Desc orders by id, descending.
+func (postsIDColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.id")
+}
+
+// postsAuthorIDColumn is column author_id in builder reads (§9.4).
+type postsAuthorIDColumn struct{}
+
+// Any is operator any on author_id (§9.4).
+func (postsAuthorIDColumn) Any(v []int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.any", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Between is operator between on author_id (§9.4).
+func (postsAuthorIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.between", "col.posts.author_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on author_id (§9.4).
+func (postsAuthorIDColumn) Eq(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on author_id (§9.4).
+func (postsAuthorIDColumn) Ge(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ge", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on author_id (§9.4).
+func (postsAuthorIDColumn) Gt(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.gt", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// In is operator in on author_id (§9.4).
+func (postsAuthorIDColumn) In(v []int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.in", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on author_id (§9.4).
+func (postsAuthorIDColumn) IsDistinctFrom(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Le is operator le on author_id (§9.4).
+func (postsAuthorIDColumn) Le(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.le", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on author_id (§9.4).
+func (postsAuthorIDColumn) Lt(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.lt", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on author_id (§9.4).
+func (postsAuthorIDColumn) Ne(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Asc orders by author_id, ascending.
+func (postsAuthorIDColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.author_id")
+}
+
+// Desc orders by author_id, descending.
+func (postsAuthorIDColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.author_id")
+}
+
+// postsEditorIDColumn is column editor_id in builder reads (§9.4).
+type postsEditorIDColumn struct{}
+
+// Any is operator any on editor_id (§9.4).
+func (postsEditorIDColumn) Any(v []int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.any", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// Between is operator between on editor_id (§9.4).
+func (postsEditorIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.between", "col.posts.editor_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on editor_id (§9.4).
+func (postsEditorIDColumn) Eq(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on editor_id (§9.4).
+func (postsEditorIDColumn) Ge(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ge", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on editor_id (§9.4).
+func (postsEditorIDColumn) Gt(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.gt", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// In is operator in on editor_id (§9.4).
+func (postsEditorIDColumn) In(v []int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.in", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on editor_id (§9.4).
+func (postsEditorIDColumn) IsDistinctFrom(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// IsNotNull is operator is_not_null on editor_id (§9.4).
+func (postsEditorIDColumn) IsNotNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_not_null", "col.posts.editor_id")
+}
+
+// IsNull is operator is_null on editor_id (§9.4).
+func (postsEditorIDColumn) IsNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_null", "col.posts.editor_id")
+}
+
+// Le is operator le on editor_id (§9.4).
+func (postsEditorIDColumn) Le(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.le", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on editor_id (§9.4).
+func (postsEditorIDColumn) Lt(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.lt", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on editor_id (§9.4).
+func (postsEditorIDColumn) Ne(v int64) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// Asc orders by editor_id, ascending.
+func (postsEditorIDColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.editor_id")
+}
+
+// Desc orders by editor_id, descending.
+func (postsEditorIDColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.editor_id")
+}
+
+// postsTitleColumn is column title in builder reads (§9.4).
+type postsTitleColumn struct{}
+
+// Any is operator any on title (§9.4).
+func (postsTitleColumn) Any(v []string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.any", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Between is operator between on title (§9.4).
+func (postsTitleColumn) Between(v0 string, v1 string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.between", "col.posts.title", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Contains is operator contains on title (§9.4).
+func (postsTitleColumn) Contains(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.contains", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on title (§9.4).
+func (postsTitleColumn) Eq(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on title (§9.4).
+func (postsTitleColumn) Ge(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ge", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on title (§9.4).
+func (postsTitleColumn) Gt(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.gt", "col.posts.title", dql.Arg{Value: v})
+}
+
+// ILike is operator ilike on title (§9.4).
+func (postsTitleColumn) ILike(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ilike", "col.posts.title", dql.Arg{Value: v})
+}
+
+// In is operator in on title (§9.4).
+func (postsTitleColumn) In(v []string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.in", "col.posts.title", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on title (§9.4).
+func (postsTitleColumn) IsDistinctFrom(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Le is operator le on title (§9.4).
+func (postsTitleColumn) Le(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.le", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Like is operator like on title (§9.4).
+func (postsTitleColumn) Like(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.like", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on title (§9.4).
+func (postsTitleColumn) Lt(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.lt", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on title (§9.4).
+func (postsTitleColumn) Ne(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.title", dql.Arg{Value: v})
+}
+
+// RegexMatch is operator regex_match on title (§9.4).
+func (postsTitleColumn) RegexMatch(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.regex_match", "col.posts.title", dql.Arg{Value: v})
+}
+
+// StartsWith is operator starts_with on title (§9.4).
+func (postsTitleColumn) StartsWith(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.starts_with", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Asc orders by title, ascending.
+func (postsTitleColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.title")
+}
+
+// Desc orders by title, descending.
+func (postsTitleColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.title")
+}
+
+// postsSlugColumn is column slug in builder reads (§9.4).
+type postsSlugColumn struct{}
+
+// Any is operator any on slug (§9.4).
+func (postsSlugColumn) Any(v []string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.any", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// Between is operator between on slug (§9.4).
+func (postsSlugColumn) Between(v0 string, v1 string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.between", "col.posts.slug", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Contains is operator contains on slug (§9.4).
+func (postsSlugColumn) Contains(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.contains", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on slug (§9.4).
+func (postsSlugColumn) Eq(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on slug (§9.4).
+func (postsSlugColumn) Ge(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ge", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on slug (§9.4).
+func (postsSlugColumn) Gt(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.gt", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// ILike is operator ilike on slug (§9.4).
+func (postsSlugColumn) ILike(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ilike", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// In is operator in on slug (§9.4).
+func (postsSlugColumn) In(v []string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.in", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on slug (§9.4).
+func (postsSlugColumn) IsDistinctFrom(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// IsNotNull is operator is_not_null on slug (§9.4).
+func (postsSlugColumn) IsNotNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_not_null", "col.posts.slug")
+}
+
+// IsNull is operator is_null on slug (§9.4).
+func (postsSlugColumn) IsNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_null", "col.posts.slug")
+}
+
+// Le is operator le on slug (§9.4).
+func (postsSlugColumn) Le(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.le", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// Like is operator like on slug (§9.4).
+func (postsSlugColumn) Like(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.like", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on slug (§9.4).
+func (postsSlugColumn) Lt(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.lt", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on slug (§9.4).
+func (postsSlugColumn) Ne(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// RegexMatch is operator regex_match on slug (§9.4).
+func (postsSlugColumn) RegexMatch(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.regex_match", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// StartsWith is operator starts_with on slug (§9.4).
+func (postsSlugColumn) StartsWith(v string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.starts_with", "col.posts.slug", dql.Arg{Value: v})
+}
+
+// Asc orders by slug, ascending.
+func (postsSlugColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.slug")
+}
+
+// Desc orders by slug, descending.
+func (postsSlugColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.slug")
+}
+
+// postsStatusColumn is column status in builder reads (§9.4).
+type postsStatusColumn struct{}
+
+// Any is operator any on status (§9.4).
+func (postsStatusColumn) Any(v []PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.any", "col.posts.status", dql.Arg{Value: v})
+}
+
+// Between is operator between on status (§9.4).
+func (postsStatusColumn) Between(v0 PostStatus, v1 PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.between", "col.posts.status", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on status (§9.4).
+func (postsStatusColumn) Eq(v PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.status", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on status (§9.4).
+func (postsStatusColumn) Ge(v PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ge", "col.posts.status", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on status (§9.4).
+func (postsStatusColumn) Gt(v PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.gt", "col.posts.status", dql.Arg{Value: v})
+}
+
+// In is operator in on status (§9.4).
+func (postsStatusColumn) In(v []PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.in", "col.posts.status", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on status (§9.4).
+func (postsStatusColumn) IsDistinctFrom(v PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.status", dql.Arg{Value: v})
+}
+
+// Le is operator le on status (§9.4).
+func (postsStatusColumn) Le(v PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.le", "col.posts.status", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on status (§9.4).
+func (postsStatusColumn) Lt(v PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.lt", "col.posts.status", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on status (§9.4).
+func (postsStatusColumn) Ne(v PostStatus) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.status", dql.Arg{Value: v})
+}
+
+// Asc orders by status, ascending.
+func (postsStatusColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.status")
+}
+
+// Desc orders by status, descending.
+func (postsStatusColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.status")
+}
+
+// postsPriceColumn is column price in builder reads (§9.4).
+type postsPriceColumn struct{}
+
+// Any is operator any on price (§9.4).
+func (postsPriceColumn) Any(v []MoneyAmount) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.any", "col.posts.price", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on price (§9.4).
+func (postsPriceColumn) Eq(v MoneyAmount) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.price", dql.Arg{Value: v})
+}
+
+// In is operator in on price (§9.4).
+func (postsPriceColumn) In(v []MoneyAmount) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.in", "col.posts.price", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on price (§9.4).
+func (postsPriceColumn) IsDistinctFrom(v MoneyAmount) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.price", dql.Arg{Value: v})
+}
+
+// IsNotNull is operator is_not_null on price (§9.4).
+func (postsPriceColumn) IsNotNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_not_null", "col.posts.price")
+}
+
+// IsNull is operator is_null on price (§9.4).
+func (postsPriceColumn) IsNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_null", "col.posts.price")
+}
+
+// Ne is operator ne on price (§9.4).
+func (postsPriceColumn) Ne(v MoneyAmount) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.price", dql.Arg{Value: v})
+}
+
+// Asc orders by price, ascending.
+func (postsPriceColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.price")
+}
+
+// Desc orders by price, descending.
+func (postsPriceColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.price")
+}
+
+// postsLabelsColumn is column labels in builder reads (§9.4).
+type postsLabelsColumn struct{}
+
+// ArrayContains is operator array_contains on labels (§9.4).
+func (postsLabelsColumn) ArrayContains(v *string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.array_contains", "col.posts.labels", dql.Arg{Value: v})
+}
+
+// ArrayOverlaps is operator array_overlaps on labels (§9.4).
+func (postsLabelsColumn) ArrayOverlaps(v []*string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.array_overlaps", "col.posts.labels", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on labels (§9.4).
+func (postsLabelsColumn) Eq(v []*string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.labels", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on labels (§9.4).
+func (postsLabelsColumn) IsDistinctFrom(v []*string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.labels", dql.Arg{Value: v})
+}
+
+// IsNotNull is operator is_not_null on labels (§9.4).
+func (postsLabelsColumn) IsNotNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_not_null", "col.posts.labels")
+}
+
+// IsNull is operator is_null on labels (§9.4).
+func (postsLabelsColumn) IsNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_null", "col.posts.labels")
+}
+
+// Ne is operator ne on labels (§9.4).
+func (postsLabelsColumn) Ne(v []*string) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.labels", dql.Arg{Value: v})
+}
+
+// Asc orders by labels, ascending.
+func (postsLabelsColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.labels")
+}
+
+// Desc orders by labels, descending.
+func (postsLabelsColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.labels")
+}
+
+// postsPublishedAtColumn is column published_at in builder reads (§9.4).
+type postsPublishedAtColumn struct{}
+
+// Any is operator any on published_at (§9.4).
+func (postsPublishedAtColumn) Any(v []time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.any", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// Between is operator between on published_at (§9.4).
+func (postsPublishedAtColumn) Between(v0 time.Time, v1 time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.between", "col.posts.published_at", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on published_at (§9.4).
+func (postsPublishedAtColumn) Eq(v time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.eq", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on published_at (§9.4).
+func (postsPublishedAtColumn) Ge(v time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ge", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on published_at (§9.4).
+func (postsPublishedAtColumn) Gt(v time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.gt", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// In is operator in on published_at (§9.4).
+func (postsPublishedAtColumn) In(v []time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.in", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on published_at (§9.4).
+func (postsPublishedAtColumn) IsDistinctFrom(v time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// IsNotNull is operator is_not_null on published_at (§9.4).
+func (postsPublishedAtColumn) IsNotNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_not_null", "col.posts.published_at")
+}
+
+// IsNull is operator is_null on published_at (§9.4).
+func (postsPublishedAtColumn) IsNull() dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.is_null", "col.posts.published_at")
+}
+
+// Le is operator le on published_at (§9.4).
+func (postsPublishedAtColumn) Le(v time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.le", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on published_at (§9.4).
+func (postsPublishedAtColumn) Lt(v time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.lt", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on published_at (§9.4).
+func (postsPublishedAtColumn) Ne(v time.Time) dql.Pred[PostsTable] {
+	return dql.Compare[PostsTable]("op.ne", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// Asc orders by published_at, ascending.
+func (postsPublishedAtColumn) Asc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.asc", "col.posts.published_at")
+}
+
+// Desc orders by published_at, descending.
+func (postsPublishedAtColumn) Desc() dql.Order[PostsTable] {
+	return dql.Ordered[PostsTable]("order.desc", "col.posts.published_at")
+}
+
+// postsAuthorRelation is relation author in builder reads (§18.2).
+type postsAuthorRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (postsAuthorRelation) Any(ps ...dql.Pred[UsersTable]) dql.Pred[PostsTable] {
+	return dql.Related[PostsTable]("rel.posts.author", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (postsAuthorRelation) None(ps ...dql.Pred[UsersTable]) dql.Pred[PostsTable] {
+	return dql.Not(dql.Related[PostsTable]("rel.posts.author", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (postsAuthorRelation) All(p dql.Pred[UsersTable]) dql.Pred[PostsTable] {
+	return dql.Not(dql.Related[PostsTable]("rel.posts.author", dql.Not(p)))
+}
+
+// postsEditorRelation is relation editor in builder reads (§18.2).
+type postsEditorRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (postsEditorRelation) Any(ps ...dql.Pred[UsersTable]) dql.Pred[PostsTable] {
+	return dql.Related[PostsTable]("rel.posts.editor", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (postsEditorRelation) None(ps ...dql.Pred[UsersTable]) dql.Pred[PostsTable] {
+	return dql.Not(dql.Related[PostsTable]("rel.posts.editor", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (postsEditorRelation) All(p dql.Pred[UsersTable]) dql.Pred[PostsTable] {
+	return dql.Not(dql.Related[PostsTable]("rel.posts.editor", dql.Not(p)))
+}
+
+// postsPostTagsRelation is relation post_tags in builder reads (§18.2).
+type postsPostTagsRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (postsPostTagsRelation) Any(ps ...dql.Pred[PostTagsTable]) dql.Pred[PostsTable] {
+	return dql.Related[PostsTable]("rel.posts.post_tags", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (postsPostTagsRelation) None(ps ...dql.Pred[PostTagsTable]) dql.Pred[PostsTable] {
+	return dql.Not(dql.Related[PostsTable]("rel.posts.post_tags", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (postsPostTagsRelation) All(p dql.Pred[PostTagsTable]) dql.Pred[PostsTable] {
+	return dql.Not(dql.Related[PostsTable]("rel.posts.post_tags", dql.Not(p)))
+}
+
+// postsTagsRelation is relation tags in builder reads (§18.2).
+type postsTagsRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (postsTagsRelation) Any(ps ...dql.Pred[TagsTable]) dql.Pred[PostsTable] {
+	return dql.Related[PostsTable]("rel.posts.tags", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (postsTagsRelation) None(ps ...dql.Pred[TagsTable]) dql.Pred[PostsTable] {
+	return dql.Not(dql.Related[PostsTable]("rel.posts.tags", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (postsTagsRelation) All(p dql.Pred[TagsTable]) dql.Pred[PostsTable] {
+	return dql.Not(dql.Related[PostsTable]("rel.posts.tags", dql.Not(p)))
+}
+
+func (s postsReads) from(PostsTable) dql.From { return dql.From{H: s.h} }

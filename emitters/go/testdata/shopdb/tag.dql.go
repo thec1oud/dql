@@ -507,6 +507,7 @@ var (
 
 // TagsReadStore reads shop.app.tags (§26.3).
 type TagsReadStore interface {
+	from(TagsTable) dql.From
 	GetByName(ctx context.Context, name SlugText) (TagFull, error)
 	Get(ctx context.Context, k TagKey) (TagFull, error)
 	FindByName(ctx context.Context, name SlugText) (opt.Opt[TagFull], error)
@@ -657,3 +658,206 @@ func (s tagsWrites) Delete(ctx context.Context, k TagKey) error {
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
 }
+
+// TagsTable is table shop.app.tags in builder reads (§18.2): its columns and relations
+// make predicates and order keys on its rows.
+type TagsTable struct {
+	ID       tagsIDColumn
+	Name     tagsNameColumn
+	PostTags tagsPostTagsRelation
+	Posts    tagsPostsRelation
+}
+
+// Tags is table shop.app.tags in builder reads (§18.2).
+var Tags TagsTable
+
+// tagsIDColumn is column id in builder reads (§9.4).
+type tagsIDColumn struct{}
+
+// Any is operator any on id (§9.4).
+func (tagsIDColumn) Any(v []int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.any", "col.tags.id", dql.Arg{Value: v})
+}
+
+// Between is operator between on id (§9.4).
+func (tagsIDColumn) Between(v0 int64, v1 int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.between", "col.tags.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on id (§9.4).
+func (tagsIDColumn) Eq(v int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.eq", "col.tags.id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on id (§9.4).
+func (tagsIDColumn) Ge(v int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.ge", "col.tags.id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on id (§9.4).
+func (tagsIDColumn) Gt(v int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.gt", "col.tags.id", dql.Arg{Value: v})
+}
+
+// In is operator in on id (§9.4).
+func (tagsIDColumn) In(v []int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.in", "col.tags.id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on id (§9.4).
+func (tagsIDColumn) IsDistinctFrom(v int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.is_distinct_from", "col.tags.id", dql.Arg{Value: v})
+}
+
+// Le is operator le on id (§9.4).
+func (tagsIDColumn) Le(v int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.le", "col.tags.id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on id (§9.4).
+func (tagsIDColumn) Lt(v int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.lt", "col.tags.id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on id (§9.4).
+func (tagsIDColumn) Ne(v int64) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.ne", "col.tags.id", dql.Arg{Value: v})
+}
+
+// Asc orders by id, ascending.
+func (tagsIDColumn) Asc() dql.Order[TagsTable] {
+	return dql.Ordered[TagsTable]("order.asc", "col.tags.id")
+}
+
+// Desc orders by id, descending.
+func (tagsIDColumn) Desc() dql.Order[TagsTable] {
+	return dql.Ordered[TagsTable]("order.desc", "col.tags.id")
+}
+
+// tagsNameColumn is column name in builder reads (§9.4).
+type tagsNameColumn struct{}
+
+// Any is operator any on name (§9.4).
+func (tagsNameColumn) Any(v []SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.any", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Between is operator between on name (§9.4).
+func (tagsNameColumn) Between(v0 SlugText, v1 SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.between", "col.tags.name", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Contains is operator contains on name (§9.4).
+func (tagsNameColumn) Contains(v string) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.contains", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on name (§9.4).
+func (tagsNameColumn) Eq(v SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.eq", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on name (§9.4).
+func (tagsNameColumn) Ge(v SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.ge", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on name (§9.4).
+func (tagsNameColumn) Gt(v SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.gt", "col.tags.name", dql.Arg{Value: v})
+}
+
+// ILike is operator ilike on name (§9.4).
+func (tagsNameColumn) ILike(v string) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.ilike", "col.tags.name", dql.Arg{Value: v})
+}
+
+// In is operator in on name (§9.4).
+func (tagsNameColumn) In(v []SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.in", "col.tags.name", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on name (§9.4).
+func (tagsNameColumn) IsDistinctFrom(v SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.is_distinct_from", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Le is operator le on name (§9.4).
+func (tagsNameColumn) Le(v SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.le", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Like is operator like on name (§9.4).
+func (tagsNameColumn) Like(v string) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.like", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on name (§9.4).
+func (tagsNameColumn) Lt(v SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.lt", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on name (§9.4).
+func (tagsNameColumn) Ne(v SlugText) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.ne", "col.tags.name", dql.Arg{Value: v})
+}
+
+// RegexMatch is operator regex_match on name (§9.4).
+func (tagsNameColumn) RegexMatch(v string) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.regex_match", "col.tags.name", dql.Arg{Value: v})
+}
+
+// StartsWith is operator starts_with on name (§9.4).
+func (tagsNameColumn) StartsWith(v string) dql.Pred[TagsTable] {
+	return dql.Compare[TagsTable]("op.starts_with", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Asc orders by name, ascending.
+func (tagsNameColumn) Asc() dql.Order[TagsTable] {
+	return dql.Ordered[TagsTable]("order.asc", "col.tags.name")
+}
+
+// Desc orders by name, descending.
+func (tagsNameColumn) Desc() dql.Order[TagsTable] {
+	return dql.Ordered[TagsTable]("order.desc", "col.tags.name")
+}
+
+// tagsPostTagsRelation is relation post_tags in builder reads (§18.2).
+type tagsPostTagsRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (tagsPostTagsRelation) Any(ps ...dql.Pred[PostTagsTable]) dql.Pred[TagsTable] {
+	return dql.Related[TagsTable]("rel.tags.post_tags", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (tagsPostTagsRelation) None(ps ...dql.Pred[PostTagsTable]) dql.Pred[TagsTable] {
+	return dql.Not(dql.Related[TagsTable]("rel.tags.post_tags", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (tagsPostTagsRelation) All(p dql.Pred[PostTagsTable]) dql.Pred[TagsTable] {
+	return dql.Not(dql.Related[TagsTable]("rel.tags.post_tags", dql.Not(p)))
+}
+
+// tagsPostsRelation is relation posts in builder reads (§18.2).
+type tagsPostsRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (tagsPostsRelation) Any(ps ...dql.Pred[PostsTable]) dql.Pred[TagsTable] {
+	return dql.Related[TagsTable]("rel.tags.posts", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (tagsPostsRelation) None(ps ...dql.Pred[PostsTable]) dql.Pred[TagsTable] {
+	return dql.Not(dql.Related[TagsTable]("rel.tags.posts", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (tagsPostsRelation) All(p dql.Pred[PostsTable]) dql.Pred[TagsTable] {
+	return dql.Not(dql.Related[TagsTable]("rel.tags.posts", dql.Not(p)))
+}
+
+func (s tagsReads) from(TagsTable) dql.From { return dql.From{H: s.h} }
