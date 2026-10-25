@@ -114,6 +114,11 @@ type generator struct {
 	// fragmentIDs holds the fragment table's ids (§16.2).
 	fragmentIDs map[string]bool
 	diags       []*irv1.Diagnostic
+	// byTable holds the entities with builder queries, by table.
+	byTable map[key]*entity
+	// scopedStores says, by interface name, whether each scoped store of an
+	// entity without a scope was generated.
+	scopedStores map[string]bool
 }
 
 // key identifies an object across catalogs.

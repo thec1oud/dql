@@ -557,6 +557,7 @@ type TagsStore interface {
 	TagsReadStore
 	Insert(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (TagFull, error)
 	InsertMany(ctx context.Context, ds []TagDraft, as ...dql.Assignment[TagsTable]) ([]TagFull, error)
+	InsertNested(ctx context.Context, d TagDraftNested, as ...dql.Assignment[TagsTable]) (TagFullNested, error)
 	InsertOrIgnoreByName(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (opt.Opt[TagFull], error)
 	InsertOrIgnore(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (opt.Opt[TagFull], error)
 	UpsertByName(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (TagFull, error)
@@ -664,6 +665,62 @@ func (s tagsWrites) InsertMany(ctx context.Context, ds []TagDraft, as ...dql.Ass
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, tagInsert, rows, DecodeTagFull)
+}
+
+// InsertNested runs tag.insert with the rows d nests, in one transaction: owning creates first,
+// then the row, then its dependents and links; it returns them read back (§20.5).
+func (s tagsWrites) InsertNested(ctx context.Context, d TagDraftNested, as ...dql.Assignment[TagsTable]) (TagFullNested, error) {
+	if err := d.Validate(); err != nil {
+		return TagFullNested{}, err
+	}
+	var out TagFullNested
+	err := dql.Atomic(ctx, s.w, func(ctx context.Context, w dql.Writer) error {
+		out = TagFullNested{}
+		tagsStore := tagsWrites{tagsReads{w}, w}
+		postTagsStore := postTagsWrites{postTagsReads{w}, w}
+		postsStore := postsWrites{postsReads{w}, w}
+		draft := TagDraft{Name: d.Name}
+		row, err := tagsStore.Insert(ctx, draft, as...)
+		if err != nil {
+			return err
+		}
+		out.TagFull = row
+		out.PostTags = []PostTagFull{}
+		out.Posts = []PostFull{}
+		for _, c := range d.PostTags {
+			child, err := postTagsStore.Insert(ctx, PostTagDraft{PostID: c.PostID, TagID: row.ID})
+			if err != nil {
+				return err
+			}
+			out.PostTags = append(out.PostTags, child)
+			far, err := postsStore.Get(ctx, PostKey{ID: child.PostID})
+			if err != nil {
+				return err
+			}
+			out.Posts = append(out.Posts, far)
+		}
+		for _, ref := range d.Posts {
+			var far PostFull
+			switch ref.change {
+			case dql.ChangeCreate:
+				if far, err = postsStore.Insert(ctx, ref.draft); err != nil {
+					return err
+				}
+			case dql.ChangeLink:
+				if far, err = postsStore.Get(ctx, ref.key); err != nil {
+					return err
+				}
+			}
+			junction, err := postTagsStore.Insert(ctx, PostTagDraft{TagID: row.ID, PostID: far.ID})
+			if err != nil {
+				return err
+			}
+			out.PostTags = append(out.PostTags, junction)
+			out.Posts = append(out.Posts, far)
+		}
+		return nil
+	})
+	return out, err
 }
 
 // InsertOrIgnoreByName runs tag.insert_or_ignore.by_name (§20.1).

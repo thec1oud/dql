@@ -150,6 +150,10 @@ func parseEntry(e *entity, q *irv1.Query) (entry, bool) {
 // stores generates each entity's queries, its store interfaces and the
 // types implementing them (§26.1, §26.3), into the entity's file.
 func (g *generator) stores(es []*entity) {
+	g.byTable, g.scopedStores = map[key]*entity{}, map[string]bool{}
+	for _, e := range es {
+		g.byTable[keyOf(e.q)] = e
+	}
 	for _, e := range es {
 		e.f = g.entityFile(e.q)
 		g.queryVars(e)
@@ -251,6 +255,8 @@ type signature struct {
 	x                     entry
 	// many: InsertMany, which runs the insert entry for each Draft.
 	many bool
+	// nested: InsertNested, which writes a Nested Draft (§20.5).
+	nested *nestedInsert
 }
 
 // signatures returns the entity's store methods, reads first.
@@ -301,6 +307,9 @@ func (g *generator) signatures(e *entity) []signature {
 		out = append(out, s)
 		if x.verb == "insert" {
 			out = append(out, signature{name: "InsertMany", params: "ds []" + Exported(e.draft.GetHostName().GetWords()) + values, results: "([]" + full + ", error)", x: x, many: true})
+			if p, ok := g.nestedInsert(e, e.scope); ok {
+				out = append(out, g.nestedSignature(e, p))
+			}
 		}
 	}
 	return out
@@ -369,10 +378,17 @@ func (g *generator) storeTypes(e *entity) {
 			typ = rtype
 		}
 		what := s.x.q.GetName().GetStored()
-		if s.many {
+		switch {
+		case s.many:
 			what += " for each draft, in one transaction"
+		case s.nested != nil:
+			what += " with the rows d nests, in one transaction: owning creates first,\n// then the row, then its dependents and links; it returns them read back"
 		}
-		f.printf("// %s runs %s (§%s).\nfunc (%s %s) %s(ctx %s.Context%s) %s {\n", s.name, what, section(s.x.verb), recv, typ, s.name, ctx, prefixComma(s.params), s.results)
+		sec := section(s.x.verb)
+		if s.nested != nil {
+			sec = "20.5"
+		}
+		f.printf("// %s runs %s (§%s).\nfunc (%s %s) %s(ctx %s.Context%s) %s {\n", s.name, what, sec, recv, typ, s.name, ctx, prefixComma(s.params), s.results)
 		g.methodBody(e, s)
 		f.printf("}\n\n")
 	}
@@ -447,8 +463,12 @@ func (g *generator) methodBody(e *entity, s signature) {
 	case "exists":
 		zero = "false, "
 	}
-	if s.many {
+	switch {
+	case s.many:
 		g.insertMany(e, s)
+		return
+	case s.nested != nil:
+		g.insertNested(e, s)
 		return
 	}
 	payload, pv := e.draft, "d"
