@@ -366,7 +366,10 @@ func TestDesignRecordExamples(t *testing.T) {
 		    "nullBehavior": "NULL_BEHAVIOR_STRICT" },
 		  { "name": "is_null",
 		    "signature": { "args": [{ "var": "T" }], "returns": { "type": { "bool": {} } } },
-		    "requires": ["nullable"], "nullBehavior": "NULL_BEHAVIOR_NEVER_NULL" }
+		    "requires": ["nullable"], "nullBehavior": "NULL_BEHAVIOR_NEVER_NULL" },
+		  { "name": "range_contains",
+		    "signature": { "args": [{ "range": { "var": "T" } }, { "var": "T" }], "returns": { "type": { "bool": {} } } },
+		    "requires": ["orderable"], "nullBehavior": "NULL_BEHAVIOR_STRICT" }
 		] }`},
 		{"§9.2 dialect support", &irv1.CapabilityProfile{}, `{
 		  "dialect": "DIALECT_MYSQL",
