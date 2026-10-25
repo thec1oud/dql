@@ -75,6 +75,56 @@ func (LengthUnit) EnumDescriptor() ([]byte, []int) {
 	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{0}
 }
 
+// The host type an unmapped opaque type falls back to (§8.3).
+type OpaqueFallback int32
+
+const (
+	OpaqueFallback_OPAQUE_FALLBACK_UNSPECIFIED OpaqueFallback = 0
+	OpaqueFallback_OPAQUE_FALLBACK_STRING      OpaqueFallback = 1
+	OpaqueFallback_OPAQUE_FALLBACK_BYTES       OpaqueFallback = 2
+)
+
+// Enum value maps for OpaqueFallback.
+var (
+	OpaqueFallback_name = map[int32]string{
+		0: "OPAQUE_FALLBACK_UNSPECIFIED",
+		1: "OPAQUE_FALLBACK_STRING",
+		2: "OPAQUE_FALLBACK_BYTES",
+	}
+	OpaqueFallback_value = map[string]int32{
+		"OPAQUE_FALLBACK_UNSPECIFIED": 0,
+		"OPAQUE_FALLBACK_STRING":      1,
+		"OPAQUE_FALLBACK_BYTES":       2,
+	}
+)
+
+func (x OpaqueFallback) Enum() *OpaqueFallback {
+	p := new(OpaqueFallback)
+	*p = x
+	return p
+}
+
+func (x OpaqueFallback) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OpaqueFallback) Descriptor() protoreflect.EnumDescriptor {
+	return file_dql_ir_v1_types_proto_enumTypes[1].Descriptor()
+}
+
+func (OpaqueFallback) Type() protoreflect.EnumType {
+	return &file_dql_ir_v1_types_proto_enumTypes[1]
+}
+
+func (x OpaqueFallback) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OpaqueFallback.Descriptor instead.
+func (OpaqueFallback) EnumDescriptor() ([]byte, []int) {
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{1}
+}
+
 type StorageClass int32
 
 const (
@@ -114,11 +164,11 @@ func (x StorageClass) String() string {
 }
 
 func (StorageClass) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_types_proto_enumTypes[1].Descriptor()
+	return file_dql_ir_v1_types_proto_enumTypes[2].Descriptor()
 }
 
 func (StorageClass) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_types_proto_enumTypes[1]
+	return &file_dql_ir_v1_types_proto_enumTypes[2]
 }
 
 func (x StorageClass) Number() protoreflect.EnumNumber {
@@ -127,7 +177,7 @@ func (x StorageClass) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use StorageClass.Descriptor instead.
 func (StorageClass) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{1}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{2}
 }
 
 // A column's logical type plus its structured native type (§8).
@@ -1375,7 +1425,10 @@ func (*NamedRef_Composite) isNamedRef_Kind() {}
 
 // A type the core cannot classify; its native type says what it is (§8.3).
 type Opaque struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The project's opaque-fallback, set by the core when neither a type plugin
+	// nor emitter config maps the type. The native type is kept.
+	Fallback      OpaqueFallback `protobuf:"varint,1,opt,name=fallback,proto3,enum=dql.ir.v1.OpaqueFallback" json:"fallback,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1408,6 +1461,13 @@ func (x *Opaque) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Opaque.ProtoReflect.Descriptor instead.
 func (*Opaque) Descriptor() ([]byte, []int) {
 	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *Opaque) GetFallback() OpaqueFallback {
+	if x != nil {
+		return x.Fallback
+	}
+	return OpaqueFallback_OPAQUE_FALLBACK_UNSPECIFIED
 }
 
 // A column that can hold any storage class (§8.10).
@@ -1696,8 +1756,9 @@ const file_dql_ir_v1_types_proto_rawDesc = "" +
 	"\x04enum\x18\x01 \x01(\v2\x18.dql.ir.v1.QualifiedNameH\x00R\x04enum\x122\n" +
 	"\x06domain\x18\x02 \x01(\v2\x18.dql.ir.v1.QualifiedNameH\x00R\x06domain\x128\n" +
 	"\tcomposite\x18\x03 \x01(\v2\x18.dql.ir.v1.QualifiedNameH\x00R\tcompositeB\x06\n" +
-	"\x04kind\"\b\n" +
-	"\x06Opaque\"u\n" +
+	"\x04kind\"?\n" +
+	"\x06Opaque\x125\n" +
+	"\bfallback\x18\x01 \x01(\x0e2\x19.dql.ir.v1.OpaqueFallbackR\bfallback\"u\n" +
 	"\x04Weak\x12+\n" +
 	"\baffinity\x18\x01 \x01(\v2\x0f.dql.ir.v1.TypeR\baffinity\x12@\n" +
 	"\x0fstorage_classes\x18\x02 \x03(\x0e2\x17.dql.ir.v1.StorageClassR\x0estorageClasses\"\x83\x01\n" +
@@ -1715,7 +1776,11 @@ const file_dql_ir_v1_types_proto_rawDesc = "" +
 	"\x17LENGTH_UNIT_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16LENGTH_UNIT_CHARACTERS\x10\x01\x12\x15\n" +
 	"\x11LENGTH_UNIT_BYTES\x10\x02\x12 \n" +
-	"\x1cLENGTH_UNIT_UTF16_CODE_UNITS\x10\x03*r\n" +
+	"\x1cLENGTH_UNIT_UTF16_CODE_UNITS\x10\x03*h\n" +
+	"\x0eOpaqueFallback\x12\x1f\n" +
+	"\x1bOPAQUE_FALLBACK_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16OPAQUE_FALLBACK_STRING\x10\x01\x12\x19\n" +
+	"\x15OPAQUE_FALLBACK_BYTES\x10\x02*r\n" +
 	"\fStorageClass\x12\x17\n" +
 	"\x13STORAGE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fSTORAGE_INTEGER\x10\x01\x12\x10\n" +
@@ -1735,85 +1800,87 @@ func file_dql_ir_v1_types_proto_rawDescGZIP() []byte {
 	return file_dql_ir_v1_types_proto_rawDescData
 }
 
-var file_dql_ir_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_dql_ir_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_dql_ir_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_dql_ir_v1_types_proto_goTypes = []any{
 	(LengthUnit)(0),       // 0: dql.ir.v1.LengthUnit
-	(StorageClass)(0),     // 1: dql.ir.v1.StorageClass
-	(*Type)(nil),          // 2: dql.ir.v1.Type
-	(*Empty)(nil),         // 3: dql.ir.v1.Empty
-	(*Decimal)(nil),       // 4: dql.ir.v1.Decimal
-	(*Text)(nil),          // 5: dql.ir.v1.Text
-	(*Varchar)(nil),       // 6: dql.ir.v1.Varchar
-	(*Char)(nil),          // 7: dql.ir.v1.Char
-	(*Bytes)(nil),         // 8: dql.ir.v1.Bytes
-	(*TimeType)(nil),      // 9: dql.ir.v1.TimeType
-	(*Bit)(nil),           // 10: dql.ir.v1.Bit
-	(*RangeType)(nil),     // 11: dql.ir.v1.RangeType
-	(*ArrayType)(nil),     // 12: dql.ir.v1.ArrayType
-	(*NamedRef)(nil),      // 13: dql.ir.v1.NamedRef
-	(*Opaque)(nil),        // 14: dql.ir.v1.Opaque
-	(*Weak)(nil),          // 15: dql.ir.v1.Weak
-	(*NativeType)(nil),    // 16: dql.ir.v1.NativeType
-	(*TypeModifier)(nil),  // 17: dql.ir.v1.TypeModifier
-	(*QualifiedName)(nil), // 18: dql.ir.v1.QualifiedName
+	(OpaqueFallback)(0),   // 1: dql.ir.v1.OpaqueFallback
+	(StorageClass)(0),     // 2: dql.ir.v1.StorageClass
+	(*Type)(nil),          // 3: dql.ir.v1.Type
+	(*Empty)(nil),         // 4: dql.ir.v1.Empty
+	(*Decimal)(nil),       // 5: dql.ir.v1.Decimal
+	(*Text)(nil),          // 6: dql.ir.v1.Text
+	(*Varchar)(nil),       // 7: dql.ir.v1.Varchar
+	(*Char)(nil),          // 8: dql.ir.v1.Char
+	(*Bytes)(nil),         // 9: dql.ir.v1.Bytes
+	(*TimeType)(nil),      // 10: dql.ir.v1.TimeType
+	(*Bit)(nil),           // 11: dql.ir.v1.Bit
+	(*RangeType)(nil),     // 12: dql.ir.v1.RangeType
+	(*ArrayType)(nil),     // 13: dql.ir.v1.ArrayType
+	(*NamedRef)(nil),      // 14: dql.ir.v1.NamedRef
+	(*Opaque)(nil),        // 15: dql.ir.v1.Opaque
+	(*Weak)(nil),          // 16: dql.ir.v1.Weak
+	(*NativeType)(nil),    // 17: dql.ir.v1.NativeType
+	(*TypeModifier)(nil),  // 18: dql.ir.v1.TypeModifier
+	(*QualifiedName)(nil), // 19: dql.ir.v1.QualifiedName
 }
 var file_dql_ir_v1_types_proto_depIdxs = []int32{
-	3,  // 0: dql.ir.v1.Type.bool:type_name -> dql.ir.v1.Empty
-	3,  // 1: dql.ir.v1.Type.int8:type_name -> dql.ir.v1.Empty
-	3,  // 2: dql.ir.v1.Type.int16:type_name -> dql.ir.v1.Empty
-	3,  // 3: dql.ir.v1.Type.int32:type_name -> dql.ir.v1.Empty
-	3,  // 4: dql.ir.v1.Type.int64:type_name -> dql.ir.v1.Empty
-	3,  // 5: dql.ir.v1.Type.uint8:type_name -> dql.ir.v1.Empty
-	3,  // 6: dql.ir.v1.Type.uint16:type_name -> dql.ir.v1.Empty
-	3,  // 7: dql.ir.v1.Type.uint32:type_name -> dql.ir.v1.Empty
-	3,  // 8: dql.ir.v1.Type.uint64:type_name -> dql.ir.v1.Empty
-	3,  // 9: dql.ir.v1.Type.float32:type_name -> dql.ir.v1.Empty
-	3,  // 10: dql.ir.v1.Type.float64:type_name -> dql.ir.v1.Empty
-	4,  // 11: dql.ir.v1.Type.decimal:type_name -> dql.ir.v1.Decimal
-	3,  // 12: dql.ir.v1.Type.money:type_name -> dql.ir.v1.Empty
-	5,  // 13: dql.ir.v1.Type.text:type_name -> dql.ir.v1.Text
-	6,  // 14: dql.ir.v1.Type.varchar:type_name -> dql.ir.v1.Varchar
-	7,  // 15: dql.ir.v1.Type.char:type_name -> dql.ir.v1.Char
-	8,  // 16: dql.ir.v1.Type.bytes:type_name -> dql.ir.v1.Bytes
-	9,  // 17: dql.ir.v1.Type.instant:type_name -> dql.ir.v1.TimeType
-	9,  // 18: dql.ir.v1.Type.instant_with_offset:type_name -> dql.ir.v1.TimeType
-	9,  // 19: dql.ir.v1.Type.local_datetime:type_name -> dql.ir.v1.TimeType
-	3,  // 20: dql.ir.v1.Type.date:type_name -> dql.ir.v1.Empty
-	9,  // 21: dql.ir.v1.Type.local_time:type_name -> dql.ir.v1.TimeType
-	9,  // 22: dql.ir.v1.Type.time_with_offset:type_name -> dql.ir.v1.TimeType
-	9,  // 23: dql.ir.v1.Type.interval:type_name -> dql.ir.v1.TimeType
-	3,  // 24: dql.ir.v1.Type.uuid:type_name -> dql.ir.v1.Empty
-	3,  // 25: dql.ir.v1.Type.json:type_name -> dql.ir.v1.Empty
-	3,  // 26: dql.ir.v1.Type.jsonb:type_name -> dql.ir.v1.Empty
-	3,  // 27: dql.ir.v1.Type.xml:type_name -> dql.ir.v1.Empty
-	3,  // 28: dql.ir.v1.Type.inet:type_name -> dql.ir.v1.Empty
-	3,  // 29: dql.ir.v1.Type.cidr:type_name -> dql.ir.v1.Empty
-	3,  // 30: dql.ir.v1.Type.macaddr:type_name -> dql.ir.v1.Empty
-	10, // 31: dql.ir.v1.Type.bit:type_name -> dql.ir.v1.Bit
-	11, // 32: dql.ir.v1.Type.range:type_name -> dql.ir.v1.RangeType
-	11, // 33: dql.ir.v1.Type.multirange:type_name -> dql.ir.v1.RangeType
-	12, // 34: dql.ir.v1.Type.array:type_name -> dql.ir.v1.ArrayType
-	13, // 35: dql.ir.v1.Type.named:type_name -> dql.ir.v1.NamedRef
-	14, // 36: dql.ir.v1.Type.opaque:type_name -> dql.ir.v1.Opaque
-	15, // 37: dql.ir.v1.Type.weak:type_name -> dql.ir.v1.Weak
-	16, // 38: dql.ir.v1.Type.native:type_name -> dql.ir.v1.NativeType
+	4,  // 0: dql.ir.v1.Type.bool:type_name -> dql.ir.v1.Empty
+	4,  // 1: dql.ir.v1.Type.int8:type_name -> dql.ir.v1.Empty
+	4,  // 2: dql.ir.v1.Type.int16:type_name -> dql.ir.v1.Empty
+	4,  // 3: dql.ir.v1.Type.int32:type_name -> dql.ir.v1.Empty
+	4,  // 4: dql.ir.v1.Type.int64:type_name -> dql.ir.v1.Empty
+	4,  // 5: dql.ir.v1.Type.uint8:type_name -> dql.ir.v1.Empty
+	4,  // 6: dql.ir.v1.Type.uint16:type_name -> dql.ir.v1.Empty
+	4,  // 7: dql.ir.v1.Type.uint32:type_name -> dql.ir.v1.Empty
+	4,  // 8: dql.ir.v1.Type.uint64:type_name -> dql.ir.v1.Empty
+	4,  // 9: dql.ir.v1.Type.float32:type_name -> dql.ir.v1.Empty
+	4,  // 10: dql.ir.v1.Type.float64:type_name -> dql.ir.v1.Empty
+	5,  // 11: dql.ir.v1.Type.decimal:type_name -> dql.ir.v1.Decimal
+	4,  // 12: dql.ir.v1.Type.money:type_name -> dql.ir.v1.Empty
+	6,  // 13: dql.ir.v1.Type.text:type_name -> dql.ir.v1.Text
+	7,  // 14: dql.ir.v1.Type.varchar:type_name -> dql.ir.v1.Varchar
+	8,  // 15: dql.ir.v1.Type.char:type_name -> dql.ir.v1.Char
+	9,  // 16: dql.ir.v1.Type.bytes:type_name -> dql.ir.v1.Bytes
+	10, // 17: dql.ir.v1.Type.instant:type_name -> dql.ir.v1.TimeType
+	10, // 18: dql.ir.v1.Type.instant_with_offset:type_name -> dql.ir.v1.TimeType
+	10, // 19: dql.ir.v1.Type.local_datetime:type_name -> dql.ir.v1.TimeType
+	4,  // 20: dql.ir.v1.Type.date:type_name -> dql.ir.v1.Empty
+	10, // 21: dql.ir.v1.Type.local_time:type_name -> dql.ir.v1.TimeType
+	10, // 22: dql.ir.v1.Type.time_with_offset:type_name -> dql.ir.v1.TimeType
+	10, // 23: dql.ir.v1.Type.interval:type_name -> dql.ir.v1.TimeType
+	4,  // 24: dql.ir.v1.Type.uuid:type_name -> dql.ir.v1.Empty
+	4,  // 25: dql.ir.v1.Type.json:type_name -> dql.ir.v1.Empty
+	4,  // 26: dql.ir.v1.Type.jsonb:type_name -> dql.ir.v1.Empty
+	4,  // 27: dql.ir.v1.Type.xml:type_name -> dql.ir.v1.Empty
+	4,  // 28: dql.ir.v1.Type.inet:type_name -> dql.ir.v1.Empty
+	4,  // 29: dql.ir.v1.Type.cidr:type_name -> dql.ir.v1.Empty
+	4,  // 30: dql.ir.v1.Type.macaddr:type_name -> dql.ir.v1.Empty
+	11, // 31: dql.ir.v1.Type.bit:type_name -> dql.ir.v1.Bit
+	12, // 32: dql.ir.v1.Type.range:type_name -> dql.ir.v1.RangeType
+	12, // 33: dql.ir.v1.Type.multirange:type_name -> dql.ir.v1.RangeType
+	13, // 34: dql.ir.v1.Type.array:type_name -> dql.ir.v1.ArrayType
+	14, // 35: dql.ir.v1.Type.named:type_name -> dql.ir.v1.NamedRef
+	15, // 36: dql.ir.v1.Type.opaque:type_name -> dql.ir.v1.Opaque
+	16, // 37: dql.ir.v1.Type.weak:type_name -> dql.ir.v1.Weak
+	17, // 38: dql.ir.v1.Type.native:type_name -> dql.ir.v1.NativeType
 	0,  // 39: dql.ir.v1.Varchar.unit:type_name -> dql.ir.v1.LengthUnit
 	0,  // 40: dql.ir.v1.Char.unit:type_name -> dql.ir.v1.LengthUnit
-	2,  // 41: dql.ir.v1.RangeType.element:type_name -> dql.ir.v1.Type
-	2,  // 42: dql.ir.v1.ArrayType.element:type_name -> dql.ir.v1.Type
-	18, // 43: dql.ir.v1.NamedRef.enum:type_name -> dql.ir.v1.QualifiedName
-	18, // 44: dql.ir.v1.NamedRef.domain:type_name -> dql.ir.v1.QualifiedName
-	18, // 45: dql.ir.v1.NamedRef.composite:type_name -> dql.ir.v1.QualifiedName
-	2,  // 46: dql.ir.v1.Weak.affinity:type_name -> dql.ir.v1.Type
-	1,  // 47: dql.ir.v1.Weak.storage_classes:type_name -> dql.ir.v1.StorageClass
-	18, // 48: dql.ir.v1.NativeType.name:type_name -> dql.ir.v1.QualifiedName
-	17, // 49: dql.ir.v1.NativeType.modifiers:type_name -> dql.ir.v1.TypeModifier
-	50, // [50:50] is the sub-list for method output_type
-	50, // [50:50] is the sub-list for method input_type
-	50, // [50:50] is the sub-list for extension type_name
-	50, // [50:50] is the sub-list for extension extendee
-	0,  // [0:50] is the sub-list for field type_name
+	3,  // 41: dql.ir.v1.RangeType.element:type_name -> dql.ir.v1.Type
+	3,  // 42: dql.ir.v1.ArrayType.element:type_name -> dql.ir.v1.Type
+	19, // 43: dql.ir.v1.NamedRef.enum:type_name -> dql.ir.v1.QualifiedName
+	19, // 44: dql.ir.v1.NamedRef.domain:type_name -> dql.ir.v1.QualifiedName
+	19, // 45: dql.ir.v1.NamedRef.composite:type_name -> dql.ir.v1.QualifiedName
+	1,  // 46: dql.ir.v1.Opaque.fallback:type_name -> dql.ir.v1.OpaqueFallback
+	3,  // 47: dql.ir.v1.Weak.affinity:type_name -> dql.ir.v1.Type
+	2,  // 48: dql.ir.v1.Weak.storage_classes:type_name -> dql.ir.v1.StorageClass
+	19, // 49: dql.ir.v1.NativeType.name:type_name -> dql.ir.v1.QualifiedName
+	18, // 50: dql.ir.v1.NativeType.modifiers:type_name -> dql.ir.v1.TypeModifier
+	51, // [51:51] is the sub-list for method output_type
+	51, // [51:51] is the sub-list for method input_type
+	51, // [51:51] is the sub-list for extension type_name
+	51, // [51:51] is the sub-list for extension extendee
+	0,  // [0:51] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_types_proto_init() }
@@ -1880,7 +1947,7 @@ func file_dql_ir_v1_types_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_types_proto_rawDesc), len(file_dql_ir_v1_types_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,

@@ -353,6 +353,10 @@ message Enum {
   QualifiedName derived_from = 5;
   repeated Annotation annotations = 6;
   repeated google.protobuf.Any extensions = 7;
+  // The labels as identifiers, in the order of labels: each label stored as
+  // written, with its word split (§4.2). Computed by the core; emitters name
+  // enum constants from these words (§8.4, §15.2).
+  repeated Identifier label_names = 8;
 }
 
 enum EnumOrigin {
