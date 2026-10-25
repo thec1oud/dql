@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"slices"
 	"time"
 
 	"github.com/thec1oud/dql/runtime/go/dql"
@@ -320,4 +321,155 @@ func PostTagsCreate(d TagDraft) PostTagsChange {
 // PostTagsUnlink returns the PostTagsChange that unlinks.
 func PostTagsUnlink(k TagKey) PostTagsChange {
 	return PostTagsChange{change: dql.ChangeUnlink, key: k}
+}
+
+// ToPartial converts d to PostPartial (§14.9).
+func (d PostDraft) ToPartial() PostPartial {
+	var p PostPartial
+	p.AuthorID = opt.Some(d.AuthorID)
+	p.EditorID = d.EditorID
+	p.Title = opt.Some(d.Title)
+	p.Status = d.Status
+	p.Price = d.Price
+	p.Labels = d.Labels
+	p.PublishedAt = d.PublishedAt
+	return p
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n PostDraftNested) Nests() PostDraftNests {
+	var n2 PostDraftNests
+	n2.Author = n.Author
+	n2.Editor = n.Editor
+	n2.PostTags = n.PostTags
+	n2.Tags = n.Tags
+	return n2
+}
+
+// ToDraft converts f to PostDraft (§14.9).
+func (f PostFull) ToDraft() PostDraft {
+	var d PostDraft
+	d.ID = opt.Some(f.ID)
+	d.AuthorID = f.AuthorID
+	d.EditorID = opt.Some(f.EditorID)
+	d.Title = f.Title
+	d.Status = opt.Some(f.Status)
+	d.Price = opt.Some(f.Price)
+	d.Labels = opt.Some(f.Labels)
+	d.PublishedAt = opt.Some(f.PublishedAt)
+	return d
+}
+
+// Key converts f to PostKey (§14.9).
+func (f PostFull) Key() PostKey {
+	var k PostKey
+	k.ID = f.ID
+	return k
+}
+
+// ToPartial converts f to PostPartial (§14.9).
+func (f PostFull) ToPartial() PostPartial {
+	var p PostPartial
+	p.AuthorID = opt.Some(f.AuthorID)
+	p.EditorID = opt.Some(f.EditorID)
+	p.Title = opt.Some(f.Title)
+	p.Status = opt.Some(f.Status)
+	p.Price = opt.Some(f.Price)
+	p.Labels = opt.Some(f.Labels)
+	p.PublishedAt = opt.Some(f.PublishedAt)
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n PostFullNested) Flat() PostFull {
+	return n.PostFull
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n PostFullNested) Nests() PostFullNests {
+	return n.PostFullNests
+}
+
+// ApplyToDraft returns d with the fields p holds set; fields PostDraft cannot hold are
+// ignored (§14.9).
+func (p PostPartial) ApplyToDraft(d PostDraft) PostDraft {
+	if v, ok := p.AuthorID.Get(); ok {
+		d.AuthorID = v
+	}
+	if v, ok := p.EditorID.Get(); ok {
+		d.EditorID = opt.Some(v)
+	}
+	if v, ok := p.Title.Get(); ok {
+		d.Title = v
+	}
+	if v, ok := p.Status.Get(); ok {
+		d.Status = opt.Some(v)
+	}
+	if v, ok := p.Price.Get(); ok {
+		d.Price = opt.Some(v)
+	}
+	if v, ok := p.Labels.Get(); ok {
+		d.Labels = opt.Some(v)
+	}
+	if v, ok := p.PublishedAt.Get(); ok {
+		d.PublishedAt = opt.Some(v)
+	}
+	return d
+}
+
+// ApplyTo returns f with the fields p holds set; fields PostFull cannot hold are
+// ignored (§14.9).
+func (p PostPartial) ApplyTo(f PostFull) PostFull {
+	if v, ok := p.AuthorID.Get(); ok {
+		f.AuthorID = v
+	}
+	if v, ok := p.EditorID.Get(); ok {
+		f.EditorID = v
+	}
+	if v, ok := p.Title.Get(); ok {
+		f.Title = v
+	}
+	if v, ok := p.Status.Get(); ok {
+		f.Status = v
+	}
+	if v, ok := p.Price.Get(); ok {
+		f.Price = v
+	}
+	if v, ok := p.Labels.Get(); ok {
+		f.Labels = v
+	}
+	if v, ok := p.PublishedAt.Get(); ok {
+		f.PublishedAt = v
+	}
+	return f
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n PostPartialNested) Flat() PostPartial {
+	return n.PostPartial
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n PostPartialNested) Nests() PostPartialNests {
+	return n.PostPartialNests
+}
+
+// MergePostByKey applies each change to the rows its key matches and returns
+// them, with the keys of changes that matched no row. Keys compare exactly, or
+// after a certified fold (§8.9, §14.9).
+func MergePostByKey(rows []PostFull, changes []dql.Keyed[PostKey, PostPartial]) (merged []PostFull, unmatched []PostKey) {
+	merged = slices.Clone(rows)
+	for _, c := range changes {
+		matched := false
+		for i, r := range merged {
+			if r.ID == c.Key.ID {
+				merged[i] = c.Value.ApplyTo(r)
+				matched = true
+			}
+		}
+		if !matched {
+			unmatched = append(unmatched, c.Key)
+		}
+	}
+	return merged, unmatched
 }

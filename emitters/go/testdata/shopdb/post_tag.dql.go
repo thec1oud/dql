@@ -7,6 +7,8 @@
 package shopdb
 
 import (
+	"slices"
+
 	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/opt"
 )
@@ -167,4 +169,96 @@ func (c PostTagTagChange) Change() dql.Change { return c.change }
 // PostTagTagUpdate returns the PostTagTagChange that updates.
 func PostTagTagUpdate(p TagPartial) PostTagTagChange {
 	return PostTagTagChange{change: dql.ChangeUpdate, partial: p}
+}
+
+// ToPartial converts d to PostTagPartial (§14.9).
+func (d PostTagDraft) ToPartial() PostTagPartial {
+	var p PostTagPartial
+	return p
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n PostTagDraftNested) Nests() PostTagDraftNests {
+	var n2 PostTagDraftNests
+	n2.Post = n.Post
+	n2.Tag = n.Tag
+	return n2
+}
+
+// ToDraft converts f to PostTagDraft (§14.9).
+func (f PostTagFull) ToDraft() PostTagDraft {
+	var d PostTagDraft
+	d.PostID = f.PostID
+	d.TagID = f.TagID
+	return d
+}
+
+// Key converts f to PostTagKey (§14.9).
+func (f PostTagFull) Key() PostTagKey {
+	var k PostTagKey
+	k.PostID = f.PostID
+	k.TagID = f.TagID
+	return k
+}
+
+// ToPartial converts f to PostTagPartial (§14.9).
+func (f PostTagFull) ToPartial() PostTagPartial {
+	var p PostTagPartial
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n PostTagFullNested) Flat() PostTagFull {
+	return n.PostTagFull
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n PostTagFullNested) Nests() PostTagFullNests {
+	return n.PostTagFullNests
+}
+
+// ApplyToDraft returns d with the fields p holds set; fields PostTagDraft cannot hold are
+// ignored (§14.9).
+func (p PostTagPartial) ApplyToDraft(d PostTagDraft) PostTagDraft {
+	return d
+}
+
+// ApplyTo returns f with the fields p holds set; fields PostTagFull cannot hold are
+// ignored (§14.9).
+func (p PostTagPartial) ApplyTo(f PostTagFull) PostTagFull {
+	return f
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n PostTagPartialNested) Flat() PostTagPartial {
+	var p PostTagPartial
+	return p
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n PostTagPartialNested) Nests() PostTagPartialNests {
+	var n2 PostTagPartialNests
+	n2.Post = n.Post
+	n2.Tag = n.Tag
+	return n2
+}
+
+// MergePostTagByKey applies each change to the rows its key matches and returns
+// them, with the keys of changes that matched no row. Keys compare exactly, or
+// after a certified fold (§8.9, §14.9).
+func MergePostTagByKey(rows []PostTagFull, changes []dql.Keyed[PostTagKey, PostTagPartial]) (merged []PostTagFull, unmatched []PostTagKey) {
+	merged = slices.Clone(rows)
+	for _, c := range changes {
+		matched := false
+		for i, r := range merged {
+			if r.PostID == c.Key.PostID && r.TagID == c.Key.TagID {
+				merged[i] = c.Value.ApplyTo(r)
+				matched = true
+			}
+		}
+		if !matched {
+			unmatched = append(unmatched, c.Key)
+		}
+	}
+	return merged, unmatched
 }

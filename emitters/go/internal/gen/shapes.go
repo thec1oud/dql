@@ -45,10 +45,19 @@ type shapeIndex struct {
 	tables map[key]*irv1.Table
 	shapes map[string]*irv1.Shape
 	unions map[string]*irv1.RelationUnion
+	// files holds each entity's file, custom the custom shapes' file.
+	files  map[key]*file
+	custom *file
+	// fields holds the names each shape struct declares itself, which its
+	// methods must not take (§15.2).
+	fields map[string]map[string]bool
+	// methods says what declares each method of a shape type so far.
+	methods map[string]map[string]string
 }
 
 func (g *generator) indexShapes() {
-	g.ix = shapeIndex{tables: map[key]*irv1.Table{}, shapes: map[string]*irv1.Shape{}, unions: map[string]*irv1.RelationUnion{}}
+	g.ix = shapeIndex{tables: map[key]*irv1.Table{}, shapes: map[string]*irv1.Shape{}, unions: map[string]*irv1.RelationUnion{},
+		files: map[key]*file{}, fields: map[string]map[string]bool{}, methods: map[string]map[string]string{}}
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, t := range ns.GetTables() {
 			g.ix.tables[keyOf(q(t.GetName().GetStored()))] = t
@@ -103,38 +112,43 @@ func (g *generator) unionType(id *irv1.RelationUnionId, at *irv1.QualifiedName, 
 // and its unions into one file per entity, custom shapes into
 // dql-shapes.dql.go. Fields keep column order (§3.2).
 func (g *generator) shapes() {
-	files := map[key]*file{}
-	entityFile := func(q *irv1.QualifiedName) *file {
-		k := keyOf(q)
-		if f, ok := files[k]; ok {
-			return f
-		}
-		f := g.newFile(strings.Join(g.ix.tables[k].GetHostName().GetWords(), "_"))
-		files[k] = f
-		return f
-	}
-	var custom *file
 	for _, s := range g.b.GetShapes().GetShapes() {
 		if _, ok := g.ix.tables[keyOf(s.GetEntity())]; !ok {
 			g.errorf(CodeReferenceUnknown, s.GetEntity(), "shape %s belongs to an entity the bundle does not hold", s.GetId().GetCustom())
 			continue
 		}
-		if s.GetId().GetCustom() != "" {
-			if custom == nil {
-				custom = g.newFile("dql-shapes")
-			}
-			g.shape(custom, s)
-			continue
-		}
-		g.shape(entityFile(s.GetEntity()), s)
+		g.shape(g.shapeFile(s), s)
 	}
 	for _, u := range g.b.GetShapes().GetUnions() {
 		if _, ok := g.ix.tables[keyOf(u.GetId().GetEntity())]; !ok {
 			g.errorf(CodeReferenceUnknown, u.GetId().GetEntity(), "relation union %s belongs to an entity the bundle does not hold", strings.Join(u.GetHostName().GetWords(), " "))
 			continue
 		}
-		g.union(entityFile(u.GetId().GetEntity()), u)
+		g.union(g.entityFile(u.GetId().GetEntity()), u)
 	}
+}
+
+// entityFile is the file of an entity's presets, unions and merges.
+func (g *generator) entityFile(q *irv1.QualifiedName) *file {
+	k := keyOf(q)
+	if f, ok := g.ix.files[k]; ok {
+		return f
+	}
+	f := g.newFile(strings.Join(g.ix.tables[k].GetHostName().GetWords(), "_"))
+	g.ix.files[k] = f
+	return f
+}
+
+// shapeFile is the file that declares s: its entity's file, or
+// dql-shapes.dql.go for a custom shape.
+func (g *generator) shapeFile(s *irv1.Shape) *file {
+	if s.GetId().GetCustom() == "" {
+		return g.entityFile(s.GetEntity())
+	}
+	if g.ix.custom == nil {
+		g.ix.custom = g.newFile("dql-shapes")
+	}
+	return g.ix.custom
 }
 
 // rootPreset is the preset a shape derives from: the first step of its
@@ -209,7 +223,9 @@ func (g *generator) shape(f *file, s *irv1.Shape) {
 	}
 	f.printf("type %s struct {\n", name)
 	fields := map[string]string{}
+	g.ix.fields[name] = map[string]bool{}
 	member := func(goName, stored string, at *irv1.QualifiedName) {
+		g.ix.fields[name][goName] = true
 		if prev, ok := fields[goName]; ok {
 			g.errorf(CodeNameCollision, at, "%s and %s of shape %s both get the Go name %s (§4.3, §15.2); give one of them a name annotation",
 				prev, stored, g.dotted(s.GetId()), goName)
@@ -218,6 +234,7 @@ func (g *generator) shape(f *file, s *irv1.Shape) {
 	}
 	base := g.embedded(s)
 	if base != nil {
+		g.ix.fields[name][Exported(base.GetHostName().GetWords())] = true
 		f.printf("\t%s\n", Exported(base.GetHostName().GetWords()))
 	} else {
 		for _, fld := range s.GetFields() {
@@ -237,6 +254,7 @@ func (g *generator) shape(f *file, s *irv1.Shape) {
 		}
 	}
 	if n := g.embeddedNests(s); n != nil && base != nil {
+		g.ix.fields[name][Exported(n.GetHostName().GetWords())] = true
 		f.printf("\t%s\n", Exported(n.GetHostName().GetWords()))
 	} else {
 		for _, n := range s.GetNests() {

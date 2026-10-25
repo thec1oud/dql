@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -111,4 +112,119 @@ func UserRefLink(k UserKey) UserRef {
 // UserRefCreate returns the UserRef that creates.
 func UserRefCreate(d UserDraft) UserRef {
 	return UserRef{change: dql.ChangeCreate, draft: d}
+}
+
+// ToPartial converts d to UserPartial (§14.9).
+func (d UserDraft) ToPartial() UserPartial {
+	var p UserPartial
+	p.Email = opt.Some(d.Email)
+	p.DisplayName = d.DisplayName
+	p.PasswordHash = opt.Some(d.PasswordHash)
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n UserDraftNested) Flat() UserDraft {
+	return n.UserDraft
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n UserDraftNested) Nests() UserDraftNests {
+	return n.UserDraftNests
+}
+
+// ToDraft converts f to UserDraft (§14.9).
+// UserFull cannot hold every field, so passwordHash supplies password_hash (§14.9).
+func (f UserFull) ToDraft(passwordHash string) UserDraft {
+	var d UserDraft
+	d.Email = f.Email
+	d.DisplayName = opt.Some(f.DisplayName)
+	d.PasswordHash = passwordHash
+	d.CreatedAt = opt.Some(f.CreatedAt)
+	d.UpdatedAt = opt.Some(f.UpdatedAt)
+	d.Version = opt.Some(f.Version)
+	return d
+}
+
+// Key converts f to UserKey (§14.9).
+func (f UserFull) Key() UserKey {
+	var k UserKey
+	k.ID = f.ID
+	k.Version = f.Version
+	return k
+}
+
+// ToPartial converts f to UserPartial (§14.9).
+func (f UserFull) ToPartial() UserPartial {
+	var p UserPartial
+	p.Email = opt.Some(f.Email)
+	p.DisplayName = opt.Some(f.DisplayName)
+	return p
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n UserFullNested) Flat() UserFull {
+	return n.UserFull
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n UserFullNested) Nests() UserFullNests {
+	return n.UserFullNests
+}
+
+// ApplyToDraft returns d with the fields p holds set; fields UserDraft cannot hold are
+// ignored (§14.9).
+func (p UserPartial) ApplyToDraft(d UserDraft) UserDraft {
+	if v, ok := p.Email.Get(); ok {
+		d.Email = v
+	}
+	if v, ok := p.DisplayName.Get(); ok {
+		d.DisplayName = opt.Some(v)
+	}
+	if v, ok := p.PasswordHash.Get(); ok {
+		d.PasswordHash = v
+	}
+	return d
+}
+
+// ApplyTo returns f with the fields p holds set; fields UserFull cannot hold are
+// ignored (§14.9).
+func (p UserPartial) ApplyTo(f UserFull) UserFull {
+	if v, ok := p.Email.Get(); ok {
+		f.Email = v
+	}
+	if v, ok := p.DisplayName.Get(); ok {
+		f.DisplayName = v
+	}
+	return f
+}
+
+// Flat returns n's own fields, without its relations (§14.4, §14.9).
+func (n UserPartialNested) Flat() UserPartial {
+	return n.UserPartial
+}
+
+// Nests returns n's relations, without its own fields (§14.4, §14.9).
+func (n UserPartialNested) Nests() UserPartialNests {
+	return n.UserPartialNests
+}
+
+// MergeUserByKey applies each change to the rows its key matches and returns
+// them, with the keys of changes that matched no row. Keys compare exactly, or
+// after a certified fold (§8.9, §14.9).
+func MergeUserByKey(rows []UserFull, changes []dql.Keyed[UserKey, UserPartial]) (merged []UserFull, unmatched []UserKey) {
+	merged = slices.Clone(rows)
+	for _, c := range changes {
+		matched := false
+		for i, r := range merged {
+			if r.ID == c.Key.ID {
+				merged[i] = c.Value.ApplyTo(r)
+				matched = true
+			}
+		}
+		if !matched {
+			unmatched = append(unmatched, c.Key)
+		}
+	}
+	return merged, unmatched
 }
