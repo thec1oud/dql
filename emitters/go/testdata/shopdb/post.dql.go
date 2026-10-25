@@ -937,6 +937,24 @@ var (
 			dql.Use{Fragment: "insert.posts", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}}},
 		},
 	}
+	postInsertOrIgnoreByPostsOnePublishedSlug = &dql.Query{
+		Name:    "post.insert_or_ignore.by_posts_one_published_slug",
+		Catalog: "shop",
+		Kind:    "insert_or_ignore",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.posts.posts_one_published_slug", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}}},
+		},
+	}
+	postInsertOrIgnoreByPrimary = &dql.Query{
+		Name:    "post.insert_or_ignore.by_primary",
+		Catalog: "shop",
+		Kind:    "insert_or_ignore",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.posts.posts_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}}},
+		},
+	}
 	postUpsertByPostsOnePublishedSlug = &dql.Query{
 		Name:    "post.upsert.by_posts_one_published_slug",
 		Catalog: "shop",
@@ -965,6 +983,15 @@ var (
 			dql.Use{Fragment: "update.posts", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.post.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Param("author_id")}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Param("editor_id")}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Param("title")}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Param("status")}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Param("price")}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Param("labels")}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Param("published_at")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}, "1": dql.Param("key.id")}}}}}},
 		},
 	}
+	postUpdateWhere = &dql.Query{
+		Name:    "post.update_where",
+		Catalog: "shop",
+		Kind:    "update_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.posts", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Param("author_id")}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Param("editor_id")}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Param("title")}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Param("status")}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Param("price")}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Param("labels")}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Param("published_at")}}}, Separator: ", "}}},
+		},
+	}
 	postDelete = &dql.Query{
 		Name:    "post.delete",
 		Catalog: "shop",
@@ -972,6 +999,15 @@ var (
 		Writes:  true,
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.posts", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+	postDeleteWhere = &dql.Query{
+		Name:    "post.delete_where",
+		Catalog: "shop",
+		Kind:    "delete_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.posts"},
 		},
 	}
 )
@@ -989,10 +1025,15 @@ type PostsReadStore interface {
 type PostsStore interface {
 	PostsReadStore
 	Insert(ctx context.Context, d PostDraft) (PostFull, error)
+	InsertMany(ctx context.Context, ds []PostDraft) ([]PostFull, error)
+	InsertOrIgnoreByPostsOnePublishedSlug(ctx context.Context, d PostDraft) (opt.Opt[PostFull], error)
+	InsertOrIgnore(ctx context.Context, d PostDraft) (opt.Opt[PostFull], error)
 	UpsertByPostsOnePublishedSlug(ctx context.Context, d PostDraft) (PostFull, error)
 	Upsert(ctx context.Context, d PostDraft) (PostFull, error)
 	Patch(ctx context.Context, k PostKey, p PostPartial) (PostFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[PostsTable], p PostPartial) (int64, error)
 	Delete(ctx context.Context, k PostKey) error
+	DeleteWhere(ctx context.Context, where dql.Pred[PostsTable]) (int64, error)
 }
 
 // postsReads implements PostsReadStore on a handle that reads.
@@ -1071,6 +1112,101 @@ func (s postsWrites) Insert(ctx context.Context, d PostDraft) (PostFull, error) 
 		return PostFull{}, err
 	}
 	return dql.OneOf(ctx, s.w, st, DecodePostFull)
+}
+
+// InsertMany runs post.insert for each draft, in one transaction (§20.1).
+func (s postsWrites) InsertMany(ctx context.Context, ds []PostDraft) ([]PostFull, error) {
+	for _, d := range ds {
+		if err := d.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	rows := make([]dql.Args, 0, len(ds))
+	for _, d := range ds {
+		args := dql.Args{"author_id": d.AuthorID, "title": d.Title}
+		if v, ok := d.ID.Get(); ok {
+			args["id"] = v
+		}
+		if v, ok := d.EditorID.Get(); ok {
+			args["editor_id"] = v
+		}
+		if v, ok := d.Status.Get(); ok {
+			args["status"] = v
+		}
+		if v, ok := d.Price.Get(); ok {
+			args["price"] = v
+		}
+		if v, ok := d.Labels.Get(); ok {
+			args["labels"] = v
+		}
+		if v, ok := d.PublishedAt.Get(); ok {
+			args["published_at"] = v
+		}
+		rows = append(rows, args)
+	}
+	return dql.InsertMany(ctx, s.w, fragments, postInsert, rows, DecodePostFull)
+}
+
+// InsertOrIgnoreByPostsOnePublishedSlug runs post.insert_or_ignore.by_posts_one_published_slug (§20.1).
+func (s postsWrites) InsertOrIgnoreByPostsOnePublishedSlug(ctx context.Context, d PostDraft) (opt.Opt[PostFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[PostFull](), err
+	}
+	args := dql.Args{"author_id": d.AuthorID, "title": d.Title}
+	if v, ok := d.ID.Get(); ok {
+		args["id"] = v
+	}
+	if v, ok := d.EditorID.Get(); ok {
+		args["editor_id"] = v
+	}
+	if v, ok := d.Status.Get(); ok {
+		args["status"] = v
+	}
+	if v, ok := d.Price.Get(); ok {
+		args["price"] = v
+	}
+	if v, ok := d.Labels.Get(); ok {
+		args["labels"] = v
+	}
+	if v, ok := d.PublishedAt.Get(); ok {
+		args["published_at"] = v
+	}
+	st, err := postInsertOrIgnoreByPostsOnePublishedSlug.Statement(fragments, args)
+	if err != nil {
+		return opt.None[PostFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodePostFull)
+}
+
+// InsertOrIgnore runs post.insert_or_ignore.by_primary (§20.1).
+func (s postsWrites) InsertOrIgnore(ctx context.Context, d PostDraft) (opt.Opt[PostFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[PostFull](), err
+	}
+	args := dql.Args{"author_id": d.AuthorID, "title": d.Title}
+	if v, ok := d.ID.Get(); ok {
+		args["id"] = v
+	}
+	if v, ok := d.EditorID.Get(); ok {
+		args["editor_id"] = v
+	}
+	if v, ok := d.Status.Get(); ok {
+		args["status"] = v
+	}
+	if v, ok := d.Price.Get(); ok {
+		args["price"] = v
+	}
+	if v, ok := d.Labels.Get(); ok {
+		args["labels"] = v
+	}
+	if v, ok := d.PublishedAt.Get(); ok {
+		args["published_at"] = v
+	}
+	st, err := postInsertOrIgnoreByPrimary.Statement(fragments, args)
+	if err != nil {
+		return opt.None[PostFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodePostFull)
 }
 
 // UpsertByPostsOnePublishedSlug runs post.upsert.by_posts_one_published_slug (§20.1).
@@ -1181,6 +1317,56 @@ func (s postsWrites) Patch(ctx context.Context, k PostKey, p PostPartial) (PostF
 	return dql.OneOf(ctx, s.w, st, DecodePostFull)
 }
 
+// UpdateWhere runs post.update_where (§20.1).
+func (s postsWrites) UpdateWhere(ctx context.Context, where dql.Pred[PostsTable], p PostPartial) (int64, error) {
+	if err := p.Validate(); err != nil {
+		return 0, err
+	}
+	q, err := dql.Filtered(postUpdateWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	args := dql.Args{}
+	set := false
+	if v, ok := p.AuthorID.Get(); ok {
+		args["author_id"] = v
+		set = true
+	}
+	if v, ok := p.EditorID.Get(); ok {
+		args["editor_id"] = v
+		set = true
+	}
+	if v, ok := p.Title.Get(); ok {
+		args["title"] = v
+		set = true
+	}
+	if v, ok := p.Status.Get(); ok {
+		args["status"] = v
+		set = true
+	}
+	if v, ok := p.Price.Get(); ok {
+		args["price"] = v
+		set = true
+	}
+	if v, ok := p.Labels.Get(); ok {
+		args["labels"] = v
+		set = true
+	}
+	if v, ok := p.PublishedAt.Get(); ok {
+		args["published_at"] = v
+		set = true
+	}
+	if !set {
+		// Nothing to change.
+		return 0, nil
+	}
+	st, err := q.Statement(fragments, args)
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
+}
+
 // Delete runs post.delete (§20.1).
 func (s postsWrites) Delete(ctx context.Context, k PostKey) error {
 	st, err := postDelete.Statement(fragments, dql.Args{"key.id": k.ID})
@@ -1189,6 +1375,19 @@ func (s postsWrites) Delete(ctx context.Context, k PostKey) error {
 	}
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
+}
+
+// DeleteWhere runs post.delete_where (§20.1).
+func (s postsWrites) DeleteWhere(ctx context.Context, where dql.Pred[PostsTable]) (int64, error) {
+	q, err := dql.Filtered(postDeleteWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	st, err := q.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
 }
 
 // PostsTable is table shop.app.posts in builder reads (§18.2): its columns and relations
@@ -1211,6 +1410,10 @@ type PostsTable struct {
 
 // Posts is table shop.app.posts in builder reads (§18.2).
 var Posts PostsTable
+
+// AllRows keeps every row: a filtered write must be given it to write them
+// all (§20.1).
+func (PostsTable) AllRows() dql.Pred[PostsTable] { return dql.AllRows[PostsTable]() }
 
 // postsIDColumn is column id in builder reads (§9.4).
 type postsIDColumn struct{}

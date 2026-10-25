@@ -515,6 +515,15 @@ var (
 			dql.Use{Fragment: "insert.post_tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}}},
 		},
 	}
+	postTagInsertOrIgnoreByPrimary = &dql.Query{
+		Name:    "post_tag.insert_or_ignore.by_primary",
+		Catalog: "shop",
+		Kind:    "insert_or_ignore",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.post_tags.post_tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}}},
+		},
+	}
 	postTagUpsertByPrimary = &dql.Query{
 		Name:    "post_tag.upsert.by_primary",
 		Catalog: "shop",
@@ -533,6 +542,15 @@ var (
 			dql.Use{Fragment: "delete.post_tags", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}, "1": dql.Param("key.post_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.tag_id"}, "1": dql.Param("key.tag_id")}}}}}}}},
 		},
 	}
+	postTagDeleteWhere = &dql.Query{
+		Name:    "post_tag.delete_where",
+		Catalog: "shop",
+		Kind:    "delete_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.post_tags"},
+		},
+	}
 )
 
 // PostTagsReadStore reads shop.app.post_tags (§26.3).
@@ -548,8 +566,11 @@ type PostTagsReadStore interface {
 type PostTagsStore interface {
 	PostTagsReadStore
 	Insert(ctx context.Context, d PostTagDraft) (PostTagFull, error)
+	InsertMany(ctx context.Context, ds []PostTagDraft) ([]PostTagFull, error)
+	InsertOrIgnore(ctx context.Context, d PostTagDraft) (opt.Opt[PostTagFull], error)
 	Upsert(ctx context.Context, d PostTagDraft) (PostTagFull, error)
 	Delete(ctx context.Context, k PostTagKey) error
+	DeleteWhere(ctx context.Context, where dql.Pred[PostTagsTable]) (int64, error)
 }
 
 // postTagsReads implements PostTagsReadStore on a handle that reads.
@@ -611,6 +632,33 @@ func (s postTagsWrites) Insert(ctx context.Context, d PostTagDraft) (PostTagFull
 	return dql.OneOf(ctx, s.w, st, DecodePostTagFull)
 }
 
+// InsertMany runs post_tag.insert for each draft, in one transaction (§20.1).
+func (s postTagsWrites) InsertMany(ctx context.Context, ds []PostTagDraft) ([]PostTagFull, error) {
+	for _, d := range ds {
+		if err := d.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	rows := make([]dql.Args, 0, len(ds))
+	for _, d := range ds {
+		args := dql.Args{"post_id": d.PostID, "tag_id": d.TagID}
+		rows = append(rows, args)
+	}
+	return dql.InsertMany(ctx, s.w, fragments, postTagInsert, rows, DecodePostTagFull)
+}
+
+// InsertOrIgnore runs post_tag.insert_or_ignore.by_primary (§20.1).
+func (s postTagsWrites) InsertOrIgnore(ctx context.Context, d PostTagDraft) (opt.Opt[PostTagFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[PostTagFull](), err
+	}
+	st, err := postTagInsertOrIgnoreByPrimary.Statement(fragments, dql.Args{"post_id": d.PostID, "tag_id": d.TagID})
+	if err != nil {
+		return opt.None[PostTagFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodePostTagFull)
+}
+
 // Upsert runs post_tag.upsert.by_primary (§20.1).
 func (s postTagsWrites) Upsert(ctx context.Context, d PostTagDraft) (PostTagFull, error) {
 	if err := d.Validate(); err != nil {
@@ -633,6 +681,19 @@ func (s postTagsWrites) Delete(ctx context.Context, k PostTagKey) error {
 	return err
 }
 
+// DeleteWhere runs post_tag.delete_where (§20.1).
+func (s postTagsWrites) DeleteWhere(ctx context.Context, where dql.Pred[PostTagsTable]) (int64, error) {
+	q, err := dql.Filtered(postTagDeleteWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	st, err := q.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
+}
+
 // PostTagsTable is table shop.app.post_tags in builder reads (§18.2): its columns and relations
 // make predicates and order keys on its rows.
 type PostTagsTable struct {
@@ -644,6 +705,10 @@ type PostTagsTable struct {
 
 // PostTags is table shop.app.post_tags in builder reads (§18.2).
 var PostTags PostTagsTable
+
+// AllRows keeps every row: a filtered write must be given it to write them
+// all (§20.1).
+func (PostTagsTable) AllRows() dql.Pred[PostTagsTable] { return dql.AllRows[PostTagsTable]() }
 
 // postTagsPostIDColumn is column post_id in builder reads (§9.4).
 type postTagsPostIDColumn struct{}

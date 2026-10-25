@@ -315,6 +315,15 @@ var (
 			dql.Use{Fragment: "insert.tenants", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}}},
 		},
 	}
+	tenantInsertOrIgnoreByPrimary = &dql.Query{
+		Name:    "tenant.insert_or_ignore.by_primary",
+		Catalog: "shop",
+		Kind:    "insert_or_ignore",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.tenants.tenants_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}}},
+		},
+	}
 	tenantUpsertByPrimary = &dql.Query{
 		Name:    "tenant.upsert.by_primary",
 		Catalog: "shop",
@@ -334,6 +343,15 @@ var (
 			dql.Use{Fragment: "update.tenants", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}}}},
 		},
 	}
+	tenantUpdateWhere = &dql.Query{
+		Name:    "tenant.update_where",
+		Catalog: "shop",
+		Kind:    "update_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.tenants", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}}},
+		},
+	}
 	tenantDelete = &dql.Query{
 		Name:    "tenant.delete",
 		Catalog: "shop",
@@ -341,6 +359,15 @@ var (
 		Writes:  true,
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.tenants", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+	tenantDeleteWhere = &dql.Query{
+		Name:    "tenant.delete_where",
+		Catalog: "shop",
+		Kind:    "delete_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.tenants"},
 		},
 	}
 )
@@ -358,9 +385,13 @@ type TenantsReadStore interface {
 type TenantsStore interface {
 	TenantsReadStore
 	Insert(ctx context.Context, d TenantDraft) (TenantFull, error)
+	InsertMany(ctx context.Context, ds []TenantDraft) ([]TenantFull, error)
+	InsertOrIgnore(ctx context.Context, d TenantDraft) (opt.Opt[TenantFull], error)
 	Upsert(ctx context.Context, d TenantDraft) (TenantFull, error)
 	Patch(ctx context.Context, k TenantKey, p TenantPartial) (TenantFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[TenantsTable], p TenantPartial) (int64, error)
 	Delete(ctx context.Context, k TenantKey) error
+	DeleteWhere(ctx context.Context, where dql.Pred[TenantsTable]) (int64, error)
 }
 
 // tenantsReads implements TenantsReadStore on a handle that reads.
@@ -426,6 +457,40 @@ func (s tenantsWrites) Insert(ctx context.Context, d TenantDraft) (TenantFull, e
 	return dql.OneOf(ctx, s.w, st, DecodeTenantFull)
 }
 
+// InsertMany runs tenant.insert for each draft, in one transaction (§20.1).
+func (s tenantsWrites) InsertMany(ctx context.Context, ds []TenantDraft) ([]TenantFull, error) {
+	for _, d := range ds {
+		if err := d.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	rows := make([]dql.Args, 0, len(ds))
+	for _, d := range ds {
+		args := dql.Args{"name": d.Name}
+		if v, ok := d.ID.Get(); ok {
+			args["id"] = v
+		}
+		rows = append(rows, args)
+	}
+	return dql.InsertMany(ctx, s.w, fragments, tenantInsert, rows, DecodeTenantFull)
+}
+
+// InsertOrIgnore runs tenant.insert_or_ignore.by_primary (§20.1).
+func (s tenantsWrites) InsertOrIgnore(ctx context.Context, d TenantDraft) (opt.Opt[TenantFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[TenantFull](), err
+	}
+	args := dql.Args{"name": d.Name}
+	if v, ok := d.ID.Get(); ok {
+		args["id"] = v
+	}
+	st, err := tenantInsertOrIgnoreByPrimary.Statement(fragments, args)
+	if err != nil {
+		return opt.None[TenantFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodeTenantFull)
+}
+
 // Upsert runs tenant.upsert.by_primary (§20.1).
 func (s tenantsWrites) Upsert(ctx context.Context, d TenantDraft) (TenantFull, error) {
 	if err := d.Validate(); err != nil {
@@ -464,6 +529,32 @@ func (s tenantsWrites) Patch(ctx context.Context, k TenantKey, p TenantPartial) 
 	return dql.OneOf(ctx, s.w, st, DecodeTenantFull)
 }
 
+// UpdateWhere runs tenant.update_where (§20.1).
+func (s tenantsWrites) UpdateWhere(ctx context.Context, where dql.Pred[TenantsTable], p TenantPartial) (int64, error) {
+	if err := p.Validate(); err != nil {
+		return 0, err
+	}
+	q, err := dql.Filtered(tenantUpdateWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	args := dql.Args{}
+	set := false
+	if v, ok := p.Name.Get(); ok {
+		args["name"] = v
+		set = true
+	}
+	if !set {
+		// Nothing to change.
+		return 0, nil
+	}
+	st, err := q.Statement(fragments, args)
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
+}
+
 // Delete runs tenant.delete (§20.1).
 func (s tenantsWrites) Delete(ctx context.Context, k TenantKey) error {
 	st, err := tenantDelete.Statement(fragments, dql.Args{"key.id": k.ID})
@@ -472,6 +563,19 @@ func (s tenantsWrites) Delete(ctx context.Context, k TenantKey) error {
 	}
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
+}
+
+// DeleteWhere runs tenant.delete_where (§20.1).
+func (s tenantsWrites) DeleteWhere(ctx context.Context, where dql.Pred[TenantsTable]) (int64, error) {
+	q, err := dql.Filtered(tenantDeleteWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	st, err := q.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
 }
 
 // TenantsTable is table shop.app.tenants in builder reads (§18.2): its columns and relations
@@ -484,6 +588,10 @@ type TenantsTable struct {
 
 // Tenants is table shop.app.tenants in builder reads (§18.2).
 var Tenants TenantsTable
+
+// AllRows keeps every row: a filtered write must be given it to write them
+// all (§20.1).
+func (TenantsTable) AllRows() dql.Pred[TenantsTable] { return dql.AllRows[TenantsTable]() }
 
 // tenantsIDColumn is column id in builder reads (§9.4).
 type tenantsIDColumn struct{}
