@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/thec1oud/dql/core/bundle"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
+	"github.com/thec1oud/dql/testkit/golden"
 )
 
 // queriesConfig is a queries: entry naming the running example's query
@@ -45,6 +48,55 @@ func TestGenerateQueryLayer(t *testing.T) {
 	if code, _, b := generateShapes(t, ""); code != 0 || b.GetQueries().GetQueries()[0].GetName().GetStored() != "post.count" {
 		t.Errorf("without query files: %d %v", code, b.GetQueries())
 	}
+}
+
+// withQueries copies the running example's query file next to the config
+// at cfg and lists it there, so locations name it queries.sql; it returns
+// cfg.
+func withQueries(t *testing.T, cfg string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(shopDir, "queries.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	conf, _ := os.ReadFile(cfg)
+	if err := os.WriteFile(filepath.Join(filepath.Dir(cfg), "queries.sql"), raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfg, append(conf, "queries: [queries.sql]\n"...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return cfg
+}
+
+// TestQueriesGolden pins the running example's query-file queries, as the
+// core resolved and checked them, in testdata/shop/queries.json: a query
+// layer without the builder's queries, for emitters' tests (guide §6.1).
+func TestQueriesGolden(t *testing.T) {
+	cfg := withQueries(t, shopConfig(t, ""))
+	out := filepath.Join(t.TempDir(), "bundle.json")
+	if code, _, stderr := dql("generate", "-config", cfg, "-bundle", out); code != 0 {
+		t.Fatalf("%d %q", code, stderr)
+	}
+	raw, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := &irv1.Bundle{}
+	if err := bundle.UnmarshalJSON(raw, b); err != nil {
+		t.Fatal(err)
+	}
+	layer := &irv1.QueryLayer{}
+	for _, q := range b.GetQueries().GetQueries() {
+		if q.GetSource() == irv1.QuerySource_QUERY_SOURCE_FILE {
+			layer.Queries = append(layer.Queries, q)
+		}
+	}
+	js, err := bundle.MarshalJSON(layer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	golden.Assert(t, filepath.Join(shopDir, "queries.json"), js)
 }
 
 func TestGenerateQueryFailures(t *testing.T) {
