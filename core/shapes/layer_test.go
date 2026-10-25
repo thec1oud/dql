@@ -163,3 +163,34 @@ func TestRef(t *testing.T) {
 		}
 	}
 }
+
+// §4.3: shapes, unions and their constructors share the generated package
+// with enums, domains and composite types, so equal words fail.
+func TestLayerHostNameCollisions(t *testing.T) {
+	catalogs := shop(t)
+	ns := catalogs[0].GetNamespaces()[0]
+	ns.Enums = append(ns.Enums, &irv1.Enum{Name: &irv1.Identifier{Stored: "user_full"}, HostName: &irv1.Identifier{Words: []string{"user", "full"}}})
+	ns.Domains = append(ns.Domains, &irv1.Domain{Name: &irv1.Identifier{Stored: "tlk"}, HostName: &irv1.Identifier{Words: []string{"tag", "link", "key"}}})
+	ns.Composites = append(ns.Composites, &irv1.Composite{Name: &irv1.Identifier{Stored: "pr"}, HostName: &irv1.Identifier{Words: []string{"post", "ref"}}})
+	_, ds, err := Layer(catalogs, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, d := range ds {
+		got = append(got, d.GetCode()+" "+d.GetMessage())
+	}
+	want := []string{
+		"host-name-collision composite type shop.app.pr gets the host name [post ref], the same as relation union post ref, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision relation union post ref gets the host name [post ref], the same as composite type shop.app.pr, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision enum shop.app.user_full gets the host name [user full], the same as shape user.full.flat, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision domain shop.app.tlk gets the host name [tag link key], the same as constructor tag link key of relation union tag link, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision constructor tag link key of relation union tag link gets the host name [tag link key], the same as domain shop.app.tlk, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision shape user.full.flat gets the host name [user full], the same as enum shop.app.user_full, and both generate into one package (§4.3); rename one of them",
+	}
+	slices.Sort(got)
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("diagnostics:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}

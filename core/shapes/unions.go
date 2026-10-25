@@ -40,8 +40,8 @@ func (w *nestWrite) variant(change irv1.RelationChange, needKey bool, key, paylo
 // variants that exist, and returns its id, or nil when no variant exists.
 // entity is the entity whose rows the variants write.
 //
-// Host words follow §14.5 and §14.6: UserRef with UserLink and UserCreate,
-// TagLink with TagLinkKey and TagLinkCreate, PostChangeForAuthor with
+// Host words follow §14.5 and §14.6: UserRef with UserRefLink and
+// UserRefCreate, TagLink with TagLinkKey and TagLinkCreate, PostChangeForAuthor with
 // PostUpdateForAuthor, PostAuthorChange with its changes. A union whose
 // variants hold a custom shape's rows belongs to the custom shape that
 // nests it, and its words start with that shape's words and the relation's.

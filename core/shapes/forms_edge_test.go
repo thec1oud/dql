@@ -165,7 +165,7 @@ func TestDraftNestsOfEdgeCases(t *testing.T) {
 		t.Errorf("forbidden = %q, want %q", got, want)
 	}
 	// A Ref to a view links only: views have no Draft.
-	if got, want := variantWords(findUnion(t, unions, "v ref")), "v link"; got != want {
+	if got, want := variantWords(findUnion(t, unions, "v ref")), "v ref link"; got != want {
 		t.Errorf("v ref = %q, want %q", got, want)
 	}
 	// k has no host name, so its words come from its name; its forward

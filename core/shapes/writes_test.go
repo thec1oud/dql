@@ -76,7 +76,7 @@ func TestNestWriteIntoCustomShape(t *testing.T) {
 	if got := strings.Join(u.GetHostName().GetWords(), " "); got != "cc pick a ref" || u.GetId().GetCustom() != "cc_pick" {
 		t.Errorf("union %q, custom %q", got, u.GetId().GetCustom())
 	}
-	if got, want := variantWords(u), "cc pick a link, cc pick a create"; got != want {
+	if got, want := variantWords(u), "cc pick a ref link, cc pick a ref create"; got != want {
 		t.Errorf("variants = %q, want %q", got, want)
 	}
 	if got := u.GetVariants()[1].GetPayload().GetCustom(); got != "a_pick" {
