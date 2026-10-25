@@ -30,7 +30,9 @@ func TestGenerateQueryLayer(t *testing.T) {
 	}
 	var names []string
 	for _, q := range b.GetQueries().GetQueries() {
-		names = append(names, q.GetName().GetStored())
+		if q.GetSource() == irv1.QuerySource_QUERY_SOURCE_FILE {
+			names = append(names, q.GetName().GetStored())
+		}
 	}
 	if got := strings.Join(names, " "); got != "AuthorPostCounts GetUserByEmail RenameUser" {
 		t.Errorf("queries %s", got)
@@ -39,8 +41,8 @@ func TestGenerateQueryLayer(t *testing.T) {
 	if r := b.GetQueries().GetQueries()[1].GetResult(); r.GetShape().GetPreset() != irv1.Preset_PRESET_FULL || len(r.GetColumns()) != 7 {
 		t.Errorf("GetUserByEmail result %v", r)
 	}
-	// Without query files the query layer holds only the fragment table.
-	if code, _, b := generateShapes(t, ""); code != 0 || len(b.GetQueries().GetQueries()) != 0 || len(b.GetQueries().GetFragments().GetFragments()) == 0 {
+	// Without query files the query layer holds the builder's queries.
+	if code, _, b := generateShapes(t, ""); code != 0 || b.GetQueries().GetQueries()[0].GetName().GetStored() != "post.count" {
 		t.Errorf("without query files: %d %v", code, b.GetQueries())
 	}
 }

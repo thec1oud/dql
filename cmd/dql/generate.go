@@ -244,12 +244,13 @@ func operatorLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) (ds []
 	return ds, nil
 }
 
-// queryLayer types the query files of c with the shipped query-source
-// plugin of b's dialect, adds their queries to b and checks them against the
-// catalogs and the shape layer (§16–21). It returns the diagnostics of both,
-// sorted, and adds them to the bundle's. Without query files the query
-// layer holds only the fragment table.
+// queryLayer plans the builder's queries on the fragment table (§16.2, §18
+// to §21), types the query files of c with the shipped query-source plugin
+// of b's dialect, and checks the files' queries against the catalogs and
+// the shape layer (§16–21). The query layer holds both, sorted by name. It
+// returns the diagnostics, sorted, and adds them to the bundle's.
 func queryLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) ([]*irv1.Diagnostic, error) {
+	b.Queries.Queries = queries.Plan(b)
 	files, err := c.QueryFiles()
 	if err != nil || len(files) == 0 {
 		return nil, err
@@ -265,7 +266,9 @@ func queryLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) ([]*irv1.
 	if err == nil {
 		var res *irv1.InvokeResult
 		if res, err = client.Invoke(ctx, &irv1.Invoke{Bundle: b, QueryFiles: files}); err == nil {
-			b.Queries.Queries = res.GetBundle().GetQueries().GetQueries()
+			qs := append(b.Queries.Queries, res.GetBundle().GetQueries().GetQueries()...)
+			slices.SortFunc(qs, func(a, b *irv1.Query) int { return strings.Compare(a.GetName().GetStored(), b.GetName().GetStored()) })
+			b.Queries.Queries = qs
 			ds = append(res.GetDiagnostics(), queries.Check(b)...)
 		}
 		if cerr := client.Close(); err == nil {
