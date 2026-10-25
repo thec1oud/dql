@@ -20,11 +20,6 @@ type nestedInsert struct {
 	scope *irv1.Shape
 }
 
-// scoped reports whether the plan reaches a scoped entity.
-func (p *nestedInsert) scoped() bool {
-	return slices.ContainsFunc(p.steps, func(s *nestStep) bool { return s.to.scope != nil || s.via != nil && s.via.scope != nil })
-}
-
 // nestStep is one relation of the Full Nested result: what the Nested Draft
 // writes for it, if anything, and how its value is read back.
 type nestStep struct {
@@ -73,25 +68,32 @@ func (g *generator) scopedStore(e *entity, sg *scopeGroup) (iface, impl string, 
 	if done, seen := g.scopedStores[iface]; seen {
 		return iface, impl, done
 	}
-	p, ok := g.nestedInsert(e, sg.shape)
-	ok = ok && p.scoped()
-	g.scopedStores[iface] = ok
-	if !ok {
+	var sigs []signature
+	if p, ok := g.nestedInsert(e, sg.shape); ok && scopedSteps(p.steps) {
+		sigs = append(sigs, g.nestedSignature(e, p))
+	}
+	if p, ok := g.nestedPatch(e, sg.shape); ok && scopedSteps(p.steps) {
+		sigs = append(sigs, g.nestedPatchSignature(e, p))
+	}
+	g.scopedStores[iface] = len(sigs) > 0
+	if len(sigs) == 0 {
 		return iface, impl, false
 	}
 	f := e.f
 	ctx := f.use("context", "context")
-	sig := g.nestedSignature(e, p)
 	what := displayName(e.q)
 	g.declare(iface, "the store interface "+iface, e.q)
 	g.declare(impl, "the scoped store of "+what, e.q)
-	f.printf("// %s reads and writes %s on a handle with scope %s, whose nested\n// writes reach scoped entities (§21.1, §26.3).\ntype %s interface {\n\t%s\n\t%s(ctx %s.Context, %s) %s\n}\n\n",
-		iface, what, sg.typ, iface, e.store(), sig.name, ctx, sig.params, sig.results)
-	f.printf("// %s implements %s.\ntype %s struct {\n\t%sWrites\n\tscope %s\n}\n\n", impl, iface, impl, e.lower(), sg.typ)
-	f.printf("// %s runs %s with the rows d nests, in one transaction: owning creates first,\n// then the row, then its dependents and links; it returns them read back (§20.5).\nfunc (s %s) %s(ctx %s.Context, %s) %s {\n",
-		sig.name, p.insert.q.GetName().GetStored(), impl, sig.name, ctx, sig.params, sig.results)
-	g.insertNested(e, sig)
-	f.printf("}\n\n")
+	f.printf("// %s reads and writes %s on a handle with scope %s, whose nested\n// writes reach scoped entities (§21.1, §26.3).\ntype %s interface {\n\t%s\n", iface, what, sg.typ, iface, e.store())
+	for _, sig := range sigs {
+		f.printf("\t%s(ctx %s.Context, %s) %s\n", sig.name, ctx, sig.params, sig.results)
+	}
+	f.printf("}\n\n// %s implements %s.\ntype %s struct {\n\t%sWrites\n\tscope %s\n}\n\n", impl, iface, impl, e.lower(), sg.typ)
+	for _, sig := range sigs {
+		f.printf("// %s runs %s%s (§20.5).\nfunc (s %s) %s(ctx %s.Context, %s) %s {\n", sig.name, sig.x.q.GetName().GetStored(), sig.doc(), impl, sig.name, ctx, sig.params, sig.results)
+		g.methodBody(e, sig)
+		f.printf("}\n\n")
+	}
 	return iface, impl, true
 }
 
@@ -107,10 +109,7 @@ func (g *generator) preset(q *irv1.QualifiedName, p irv1.Preset, form irv1.Form)
 // Otherwise that store gets no InsertNested.
 func (g *generator) nestedInsert(e *entity, sc *irv1.Shape) (*nestedInsert, bool) {
 	es := g.byTable
-	insert, ok := e.entries[e.entryName("insert", "")]
-	if !ok {
-		insert, ok = e.entries[strings.Join(e.t.GetHostName().GetWords(), "_")+".insert"]
-	}
+	insert, ok := e.entry("insert")
 	p := &nestedInsert{
 		draft:  g.preset(e.q, irv1.Preset_PRESET_DRAFT, irv1.Form_FORM_NESTED),
 		full:   g.preset(e.q, irv1.Preset_PRESET_FULL, irv1.Form_FORM_NESTED),
@@ -199,13 +198,26 @@ func (g *generator) presetUnion(n *irv1.Nest, to *entity) bool {
 	return true
 }
 
-func (e *entity) inserts() bool {
-	_, ok := e.entries[e.entryName("insert", "")]
-	if !ok {
-		_, ok = e.entries[strings.Join(e.t.GetHostName().GetWords(), "_")+".insert"]
+// entry returns e's entry of verb by its primary key, or of a verb that
+// names no key, as user.patch.
+func (e *entity) entry(verb string) (entry, bool) {
+	if x, ok := e.entries[e.entryName(verb, "")]; ok {
+		return x, true
 	}
-	return ok
+	x, ok := e.entries[strings.Join(e.t.GetHostName().GetWords(), "_")+"."+verb]
+	return x, ok
 }
+
+func (e *entity) has(verbs ...string) bool {
+	for _, v := range verbs {
+		if _, ok := e.entry(v); !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *entity) inserts() bool { return e.has("insert") }
 
 // owningStep checks an owning relation: a Draft nest, if any, Links or
 // Creates the related row, whose foreign key the flat Draft holds, and the

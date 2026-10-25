@@ -1419,6 +1419,7 @@ func (s postsWrites) DeleteWhere(ctx context.Context, where dql.Pred[PostsTable]
 type PostsUserScopedStore interface {
 	PostsStore
 	InsertNested(ctx context.Context, d PostDraftNested, as ...dql.Assignment[PostsTable]) (PostFullNested, error)
+	PatchNested(ctx context.Context, k PostKey, p PostPartialNested, as ...dql.Update[PostsTable]) (PostFullNested, error)
 }
 
 // postsUserScopedWrites implements PostsUserScopedStore.
@@ -1528,6 +1529,156 @@ func (s postsUserScopedWrites) InsertNested(ctx context.Context, d PostDraftNest
 				}
 			}
 			out.Editor = &related
+		}
+		return nil
+	})
+	return out, err
+}
+
+// PatchNested runs post.patch with the changes p nests, in one transaction: owning changes first,
+// then the row, then its dependents and links under their collection policies;
+// it returns the row and its relations as they now are (§20.5).
+func (s postsUserScopedWrites) PatchNested(ctx context.Context, k PostKey, p PostPartialNested, as ...dql.Update[PostsTable]) (PostFullNested, error) {
+	if err := p.Validate(); err != nil {
+		return PostFullNested{}, err
+	}
+	var out PostFullNested
+	err := dql.Atomic(ctx, s.w, func(ctx context.Context, w dql.Writer) error {
+		out = PostFullNested{}
+		postsStore := postsWrites{postsReads{w}, w}
+		usersStore := usersWrites{usersReads{w, UserScope{TenantID: s.scope.TenantID}}, w}
+		postTagsStore := postTagsWrites{postTagsReads{w}, w}
+		tagsStore := tagsWrites{tagsReads{w}, w}
+		part := PostPartial{AuthorID: p.AuthorID, EditorID: p.EditorID, Title: p.Title, Status: p.Status, Price: p.Price, Labels: p.Labels, PublishedAt: p.PublishedAt}
+		cur, err := postsStore.Get(ctx, k)
+		if err != nil {
+			return err
+		}
+		if ch, ok := p.Author.Get(); ok {
+			switch ch.change {
+			case dql.ChangeLink:
+				part.AuthorID = opt.Some(ch.key.ID)
+			case dql.ChangeCreate:
+				related, err := usersStore.Insert(ctx, ch.draft)
+				if err != nil {
+					return err
+				}
+				part.AuthorID = opt.Some(related.ID)
+			case dql.ChangeUpdate:
+				related, err := usersStore.Get(ctx, UserKey{ID: cur.AuthorID})
+				if err != nil {
+					return err
+				}
+				if _, err := usersStore.Patch(ctx, UserKey{ID: related.ID, Version: related.Version}, ch.partial); err != nil {
+					return err
+				}
+			}
+		}
+		if ch, ok := p.Editor.Get(); ok {
+			switch ch.change {
+			case dql.ChangeLink:
+				part.EditorID = opt.Some(dql.Ptr(ch.key.ID))
+			case dql.ChangeCreate:
+				related, err := usersStore.Insert(ctx, ch.draft)
+				if err != nil {
+					return err
+				}
+				part.EditorID = opt.Some(dql.Ptr(related.ID))
+			case dql.ChangeUpdate:
+				if !(cur.EditorID != nil) {
+					return &dql.NotFound{Origin: dql.Origin{Query: "user.patch"}}
+				}
+				related, err := usersStore.Get(ctx, UserKey{ID: *cur.EditorID})
+				if err != nil {
+					return err
+				}
+				if _, err := usersStore.Patch(ctx, UserKey{ID: related.ID, Version: related.Version}, ch.partial); err != nil {
+					return err
+				}
+			case dql.ChangeUnlink:
+				part.EditorID = opt.Some[*int64](nil)
+			}
+		}
+		row, err := postsStore.Patch(ctx, k, part, as...)
+		if err != nil {
+			return err
+		}
+		out.PostFull = row
+		if chs, ok := p.PostTags.Get(); ok {
+			for _, ch := range chs {
+				switch ch.change {
+				case dql.ChangeCreate:
+					if _, err := postTagsStore.Insert(ctx, PostTagDraft{TagID: ch.draft.TagID, PostID: row.ID}); err != nil {
+						return err
+					}
+				case dql.ChangeUpdate:
+					child, err := postTagsStore.Get(ctx, ch.key)
+					if err != nil {
+						return err
+					}
+					if child.PostID != row.ID {
+						return &dql.NotFound{Origin: dql.Origin{Query: "post_tag.get.by_primary"}}
+					}
+				case dql.ChangeDelete:
+					child, err := postTagsStore.Get(ctx, ch.key)
+					if err != nil {
+						return err
+					}
+					if child.PostID != row.ID {
+						return &dql.NotFound{Origin: dql.Origin{Query: "post_tag.get.by_primary"}}
+					}
+					if err := postTagsStore.Delete(ctx, ch.key); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		if chs, ok := p.Tags.Get(); ok {
+			for _, ch := range chs {
+				switch ch.change {
+				case dql.ChangeLink:
+					if _, err := postTagsStore.InsertOrIgnore(ctx, PostTagDraft{PostID: row.ID, TagID: ch.key.ID}); err != nil {
+						return err
+					}
+				case dql.ChangeCreate:
+					related, err := tagsStore.Insert(ctx, ch.draft)
+					if err != nil {
+						return err
+					}
+					if _, err := postTagsStore.InsertOrIgnore(ctx, PostTagDraft{PostID: row.ID, TagID: related.ID}); err != nil {
+						return err
+					}
+				case dql.ChangeUnlink:
+					if err := postTagsStore.Delete(ctx, PostTagKey{PostID: row.ID, TagID: ch.key.ID}); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		{
+			related, err := usersStore.Get(ctx, UserKey{ID: row.AuthorID})
+			if err != nil {
+				return err
+			}
+			out.Author = related
+		}
+		if row.EditorID != nil {
+			related, err := usersStore.Get(ctx, UserKey{ID: *row.EditorID})
+			if err != nil {
+				return err
+			}
+			out.Editor = &related
+		}
+		if out.PostTags, err = Select(postTagsStore, Shapes.PostTagFull).Where(dql.And(PostTags.PostID.Eq(row.ID))).OrderBy(PostTags.PostID.Asc(), PostTags.TagID.Asc()).All(ctx); err != nil {
+			return err
+		}
+		out.Tags = []TagFull{}
+		for _, j := range out.PostTags {
+			far, err := tagsStore.Get(ctx, TagKey{ID: j.TagID})
+			if err != nil {
+				return err
+			}
+			out.Tags = append(out.Tags, far)
 		}
 		return nil
 	})
