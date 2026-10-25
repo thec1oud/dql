@@ -135,3 +135,22 @@ shop.app.users NOT_NULL_VIOLATION id redact`
 		t.Errorf("invoke's violations\n got:\n%s", got)
 	}
 }
+
+func TestLimitsAndReplication(t *testing.T) {
+	p := postgres.Profile()
+	if p.GetMaxParams() != 65535 {
+		t.Errorf("max params %d", p.GetMaxParams())
+	}
+	if !slices.IsSorted(p.GetConsistencyLevels()) || len(p.GetConsistencyLevels()) != 4 {
+		t.Errorf("consistency levels %v", p.GetConsistencyLevels())
+	}
+	if !slices.IsSorted(p.GetStatementModes()) || p.GetStatementModes()[0] != irv1.StatementMode_STATEMENT_MODE_PREPARE {
+		t.Errorf("statement modes %v", p.GetStatementModes())
+	}
+	r := p.GetReplication()
+	for _, sql := range []string{r.GetPosition(), r.GetLag(), r.GetReplayed()} {
+		if !strings.HasPrefix(sql, "SELECT ") {
+			t.Errorf("replication statement %q", sql)
+		}
+	}
+}
