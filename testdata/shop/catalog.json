@@ -5440,6 +5440,23 @@
         "rule": "version",
         "redact": true
       }
+    ],
+    "maxParams": 65535,
+    "consistencyLevels": [
+      "CONSISTENCY_PRIMARY",
+      "CONSISTENCY_ANY",
+      "CONSISTENCY_BOUNDED_STALENESS",
+      "CONSISTENCY_READ_YOUR_WRITES"
+    ],
+    "replication": {
+      "position": "SELECT pg_current_wal_lsn()::text",
+      "lag": "SELECT (CASE WHEN NOT pg_is_in_recovery() THEN NULL WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0 ELSE extract(epoch FROM now() - pg_last_xact_replay_timestamp()) END)::float8",
+      "replayed": "SELECT pg_last_wal_replay_lsn() >= ALL (SELECT p::pg_lsn FROM unnest($1::text[]) p)"
+    },
+    "statementModes": [
+      "STATEMENT_MODE_PREPARE",
+      "STATEMENT_MODE_DESCRIBE",
+      "STATEMENT_MODE_SIMPLE"
     ]
   },
   "queries": {
