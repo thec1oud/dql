@@ -56,7 +56,9 @@ func (*Plugin) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, e
 // regular expressions reject a nondeterministic one, so a column with it
 // does not get them. An array column gets no any or in, whose list would
 // be an array of arrays. No reference may cross catalogs (§5.1). Every connection runs in UTC (§22.7), and
-// SQLSTATEs map into the error taxonomy (§23.1).
+// SQLSTATEs map into the error taxonomy (§23.1). A statement binds at most
+// 65,535 parameters (§25.2); replicas serve every consistency level through
+// WAL positions (§22.5); pgx sends statements in all three modes (§26.4).
 func Profile() *irv1.CapabilityProfile {
 	exact := irv1.Fidelity_FIDELITY_EXACT
 	deterministic := &irv1.OperatorCondition{Collation: &irv1.Collation{Deterministic: irv1.Tristate_TRISTATE_TRUE}}
@@ -81,8 +83,31 @@ func Profile() *irv1.CapabilityProfile {
 	for _, code := range slices.Sorted(maps.Keys(errorCodes)) {
 		codes = append(codes, &irv1.ErrorCode{Code: code, Kind: errorCodes[code]})
 	}
-	return &irv1.CapabilityProfile{Dialect: irv1.Dialect_DIALECT_POSTGRES, Operators: ops, SessionSetup: slices.Clone(sessionSetup), ErrorCodes: codes}
+	return &irv1.CapabilityProfile{
+		Dialect: irv1.Dialect_DIALECT_POSTGRES, Operators: ops, SessionSetup: slices.Clone(sessionSetup), ErrorCodes: codes,
+		MaxParams: 65535,
+		ConsistencyLevels: []irv1.ConsistencyLevel{
+			irv1.ConsistencyLevel_CONSISTENCY_PRIMARY, irv1.ConsistencyLevel_CONSISTENCY_ANY,
+			irv1.ConsistencyLevel_CONSISTENCY_BOUNDED_STALENESS, irv1.ConsistencyLevel_CONSISTENCY_READ_YOUR_WRITES,
+		},
+		Replication: &irv1.ReplicationQueries{Position: position, Lag: lag, Replayed: replayed},
+		StatementModes: []irv1.StatementMode{
+			irv1.StatementMode_STATEMENT_MODE_PREPARE, irv1.StatementMode_STATEMENT_MODE_DESCRIBE, irv1.StatementMode_STATEMENT_MODE_SIMPLE,
+		},
+	}
 }
+
+// Replica positions are WAL positions (§22.5). A commit's position is the
+// primary's current WAL position once it returns. A replica's lag is the
+// age of the last transaction it replayed, or none when it has replayed all
+// it received, so an idle primary does not make its replicas look behind.
+const (
+	position = "SELECT pg_current_wal_lsn()::text"
+	lag      = "SELECT (CASE WHEN NOT pg_is_in_recovery() THEN NULL " +
+		"WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0 " +
+		"ELSE extract(epoch FROM now() - pg_last_xact_replay_timestamp()) END)::float8"
+	replayed = "SELECT pg_last_wal_replay_lsn() >= ALL (SELECT p::pg_lsn FROM unnest($1::text[]) p)"
+)
 
 // listOperators take a list of the column's values, which for an array
 // column would be an array of arrays; Postgres has none.
