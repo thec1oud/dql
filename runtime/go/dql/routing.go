@@ -111,10 +111,10 @@ func (e *Executor) track(ctx context.Context) {
 // poll updates every replica's lag and rotation.
 func (e *Executor) poll(ctx context.Context) {
 	for _, s := range e.sources {
-		for _, r := range s.replicas {
+		for i, r := range s.replicas {
 			lag, ok := e.lag(ctx, r)
 			r.lag.Store(int64(lag))
-			r.in.Store(ok && lag <= s.maxLag)
+			e.rotate(s, i, ok && lag <= s.maxLag)
 		}
 	}
 }
@@ -151,26 +151,30 @@ func queryOne(ctx context.Context, c Conn, sql string, args []any) (any, error) 
 // route returns the connection a read outside a write transaction runs on
 // (guide §5.6): a replica when its consistency level allows one, else the
 // primary.
-func (e *Executor) route(ctx context.Context, s *sourcePool, c Consistency, independent bool, q string) (Conn, error) {
+func (e *Executor) route(ctx context.Context, s *sourcePool, c Consistency, independent bool, q string) (Conn, bool, error) {
 	if c.level == unset {
 		c = e.consistency
 	}
+	onPrimary := func() (Conn, bool, error) {
+		conn, err := e.conn(ctx, s, independent, q)
+		return conn, false, err
+	}
 	if c.level <= primary || len(s.replicas) == 0 {
-		return e.conn(ctx, s, independent, q)
+		return onPrimary()
 	}
 	var positions []string
 	if c.level == readYourWrites {
 		var primaryOnly bool
 		positions, primaryOnly = SessionFrom(ctx).pending(s.name)
 		if primaryOnly {
-			return e.conn(ctx, s, independent, q)
+			return onPrimary()
 		}
 	}
 	deadline := time.Now().Add(c.wait)
 	pause := time.Millisecond
 	for {
 		if conn := e.replicaConn(ctx, s, c, positions); conn != nil {
-			return conn, nil
+			return conn, true, nil
 		}
 		if len(positions) == 0 || !time.Now().Before(deadline) || ctx.Err() != nil {
 			break
@@ -181,9 +185,9 @@ func (e *Executor) route(ctx context.Context, s *sourcePool, c Consistency, inde
 		}
 	}
 	if len(positions) > 0 && c.orFail {
-		return nil, &ReplicaUnavailable{Origin: Origin{Dialect: e.dialect.Name, Query: q}, Source: s.name}
+		return nil, false, &ReplicaUnavailable{Origin: Origin{Dialect: e.dialect.Name, Query: q}, Source: s.name}
 	}
-	return e.conn(ctx, s, independent, q)
+	return onPrimary()
 }
 
 // replicaConn returns a connection to a replica in rotation that meets c
@@ -191,14 +195,15 @@ func (e *Executor) route(ctx context.Context, s *sourcePool, c Consistency, inde
 // that does not connect or answer leaves rotation.
 func (e *Executor) replicaConn(ctx context.Context, s *sourcePool, c Consistency, positions []string) Conn {
 	start := int(s.next.Add(1))
-	for i := range s.replicas {
-		r := s.replicas[(start+i)%len(s.replicas)]
+	for k := range s.replicas {
+		i := (start + k) % len(s.replicas)
+		r := s.replicas[i]
 		if !r.in.Load() || (c.level == bounded && time.Duration(r.lag.Load()) > c.bound) {
 			continue
 		}
-		conn, err := r.pool.Acquire(ctx)
+		conn, err := e.acquire(ctx, s, r.pool, true)
 		if err != nil {
-			r.in.Store(false)
+			e.rotate(s, i, false)
 			continue
 		}
 		if len(positions) == 0 {
@@ -210,7 +215,7 @@ func (e *Executor) replicaConn(ctx context.Context, s *sourcePool, c Consistency
 		}
 		conn.Release()
 		if err != nil {
-			r.in.Store(false)
+			e.rotate(s, i, false)
 		}
 	}
 	return nil

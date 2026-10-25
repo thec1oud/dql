@@ -39,7 +39,7 @@ func (p RetryPolicy) backoff(n int, r func() float64) time.Duration {
 // The rerun stops when the next backoff would pass the context's deadline
 // (§22.4).
 func wait(ctx context.Context, d time.Duration) bool {
-	if dl, ok := ctx.Deadline(); ok && time.Now().Add(d).After(dl) {
+	if !fits(ctx, d) {
 		return false
 	}
 	t := time.NewTimer(d)
@@ -50,6 +50,12 @@ func wait(ctx context.Context, d time.Duration) bool {
 	case <-ctx.Done():
 		return false
 	}
+}
+
+// fits reports whether d ends before ctx's deadline, if any.
+func fits(ctx context.Context, d time.Duration) bool {
+	dl, ok := ctx.Deadline()
+	return !ok || !time.Now().Add(d).After(dl)
 }
 
 // Retried is the error of a closure that ran more than once: the last
