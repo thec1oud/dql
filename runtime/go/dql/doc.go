@@ -5,7 +5,11 @@
 // range<T> and interval (Bits, Range and Interval).
 //
 // The executor holds no driver: it runs on a Driver, which an adapter
-// package such as dqlpgx provides, and a fake implements in tests.
+// package such as dqlpgx provides, and a fake implements in tests. Reads
+// outside write transactions leave the primary when their consistency
+// level allows: a tracker polls each replica's lag, and a Session records
+// a request's commit positions for read-your-writes, with the SQL for both
+// from the dialect's Replication.
 //
 // No error of this package carries a parameter or row value (§23, §23.3): a
 // message names classes, shapes, fields, constraints and queries, and a

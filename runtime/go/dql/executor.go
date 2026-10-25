@@ -8,23 +8,30 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
 // Config is the runtime configuration that lives with the application
-// (§22.1): its sources, which source serves each catalog, and the default
-// retry policy.
+// (§22.1): its sources, which source serves each catalog, the default read
+// consistency and the default retry policy.
 type Config struct {
 	Sources map[string]SourceConfig
 	// The source of each catalog of the generated package.
 	Catalogs map[string]string
+	// The level of a read whose statement sets none; unset is Primary.
+	Consistency Consistency
 	// The zero policy is DefaultRetry.
 	Retry RetryPolicy
 }
 
-// SourceConfig is one source's primary (§22.1).
+// SourceConfig is one source's primary and replicas (§22.1).
 type SourceConfig struct {
-	Primary ConnConfig
+	Primary  ConnConfig
+	Replicas []ConnConfig
+	// How far behind a replica may fall before it leaves rotation; zero is
+	// 2s (§22.5).
+	MaxLag time.Duration
 	// Connections kept for independent transactions only (§22.6).
 	IndependentReserve int
 }
@@ -37,12 +44,13 @@ type ConnConfig struct {
 }
 
 // Dialect is the generated description of the target dialect: its name,
-// the statements every new connection runs (§22.7) and its error map
-// (§23).
+// the statements every new connection runs (§22.7), its error map (§23)
+// and how it reads replica positions (§22.5).
 type Dialect struct {
-	Name   string
-	Setup  []string
-	Errors ErrorMap
+	Name        string
+	Setup       []string
+	Errors      ErrorMap
+	Replication *Replication
 }
 
 // Option configures an Executor.
@@ -77,15 +85,24 @@ type Executor struct {
 	independentTimeout time.Duration
 	independentDepth   int
 	rand               func() float64
+	consistency        Consistency
+	trackInterval      time.Duration
+	// Stops the replica tracker, and closes when it has stopped.
+	stopTracker func()
+	tracked     chan struct{}
 }
 
-// sourcePool is one source's primary pool.
+// sourcePool is one source's primary pool and its replicas.
 type sourcePool struct {
 	name string
 	pool Pool
 	// Limits the connections outside independent transactions when some
 	// are reserved for them; nil otherwise.
-	general chan struct{}
+	general  chan struct{}
+	replicas []*replica
+	maxLag   time.Duration
+	// Turns reads across the replicas.
+	next atomic.Uint32
 }
 
 // Errors of misuse.
@@ -100,14 +117,23 @@ var (
 	ErrIndependentDepth = errors.New("dql: independent transactions nest too deep")
 	// ErrDone: a transaction was used after it committed or rolled back.
 	ErrDone = errors.New("dql: the transaction has already committed or rolled back")
+	// ErrNoReplication: a source has replicas, and the dialect cannot route
+	// reads to them.
+	ErrNoReplication = errors.New("dql: the dialect cannot route reads to replicas")
 )
 
 // New opens every source of c and connects to each primary, failing when
-// one does not connect (§22.1).
+// one does not connect (§22.1). A replica need not connect: the tracker
+// puts it in rotation once it answers, and polls every replica until
+// Close.
 func New(ctx context.Context, d Driver, dialect Dialect, c Config, opts ...Option) (*Executor, error) {
 	e := &Executor{
 		driver: d, dialect: &dialect, catalogs: map[string]*sourcePool{}, retry: c.Retry,
 		independentTimeout: 250 * time.Millisecond, independentDepth: 2, rand: rand.Float64,
+		consistency: c.Consistency, trackInterval: defaultTrackInterval,
+	}
+	if e.consistency.level == unset {
+		e.consistency = Primary
 	}
 	if e.retry == (RetryPolicy{}) {
 		e.retry = DefaultRetry
@@ -138,37 +164,83 @@ func New(ctx context.Context, d Driver, dialect Dialect, c Config, opts ...Optio
 		}
 		e.catalogs[cat] = s
 	}
+	e.startTracker(ctx)
 	return e, nil
 }
 
+// startTracker polls the replicas once, then in the background.
+func (e *Executor) startTracker(ctx context.Context) {
+	e.poll(ctx)
+	tctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+	e.stopTracker = cancel
+	e.tracked = make(chan struct{})
+	go e.track(tctx)
+}
+
 func (e *Executor) open(ctx context.Context, name string, c SourceConfig) (*sourcePool, error) {
-	dsn := c.Primary.DSN
-	if v, ok := strings.CutPrefix(dsn, "env:"); ok {
-		if dsn = os.Getenv(v); dsn == "" {
-			return nil, fmt.Errorf("dql: source %s: environment variable %s is not set", name, v)
-		}
+	if len(c.Replicas) > 0 && e.dialect.Replication == nil {
+		return nil, fmt.Errorf("dql: source %s: %w", name, ErrNoReplication)
 	}
-	pool, err := e.driver.Open(ctx, PoolConfig{DSN: dsn, MaxConns: c.Primary.MaxConns, Setup: e.dialect.Setup})
+	pool, err := e.openPool(ctx, name, c.Primary)
 	if err != nil {
-		return nil, &ConnectionError{Origin: Origin{Dialect: e.dialect.Name}, Source: name, Err: err}
+		return nil, err
 	}
-	s := &sourcePool{name: name, pool: pool}
+	s := &sourcePool{name: name, pool: pool, maxLag: c.MaxLag}
+	if s.maxLag == 0 {
+		s.maxLag = defaultMaxLag
+	}
+	for _, rc := range c.Replicas {
+		rp, err := e.openPool(ctx, name, rc)
+		if err != nil {
+			s.close()
+			return nil, err
+		}
+		s.replicas = append(s.replicas, &replica{pool: rp})
+	}
 	if r := c.IndependentReserve; r > 0 {
 		s.general = make(chan struct{}, max(c.Primary.MaxConns-r, 1))
 	}
 	conn, err := pool.Acquire(ctx)
 	if err != nil {
-		pool.Close()
+		s.close()
 		return nil, &ConnectionError{Origin: Origin{Dialect: e.dialect.Name}, Source: name, Err: err}
 	}
 	conn.Release()
 	return s, nil
 }
 
-// Close closes every source's pool.
+// openPool opens a pool of one server of a source. A DSN written env:NAME
+// is the environment variable NAME.
+func (e *Executor) openPool(ctx context.Context, source string, c ConnConfig) (Pool, error) {
+	dsn := c.DSN
+	if v, ok := strings.CutPrefix(dsn, "env:"); ok {
+		if dsn = os.Getenv(v); dsn == "" {
+			return nil, fmt.Errorf("dql: source %s: environment variable %s is not set", source, v)
+		}
+	}
+	pool, err := e.driver.Open(ctx, PoolConfig{DSN: dsn, MaxConns: c.MaxConns, Setup: e.dialect.Setup})
+	if err != nil {
+		return nil, &ConnectionError{Origin: Origin{Dialect: e.dialect.Name}, Source: source, Err: err}
+	}
+	return pool, nil
+}
+
+// close closes the source's pools.
+func (s *sourcePool) close() {
+	s.pool.Close()
+	for _, r := range s.replicas {
+		r.pool.Close()
+	}
+}
+
+// Close stops the replica tracker and closes every source's pools.
 func (e *Executor) Close() {
+	if e.stopTracker != nil {
+		e.stopTracker()
+		<-e.tracked
+	}
 	for _, s := range e.sources {
-		s.pool.Close()
+		s.close()
 	}
 }
 

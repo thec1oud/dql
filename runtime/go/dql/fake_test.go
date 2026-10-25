@@ -17,8 +17,11 @@ type fakeDriver struct {
 	pools   []*fakePool
 	// handle answers a statement: its rows, rows affected, or an error.
 	handle func(sql string, args []any) ([]Row, int64, error)
+	// serve, when set, answers in place of handle, knowing the server.
+	serve func(dsn, sql string, args []any) ([]Row, int64, error)
 	// fail makes an operation fail: begin, commit, rollback, savepoint,
-	// rollback to, release, acquire, or rows (after the rows are read).
+	// rollback to, release, acquire, or rows (after the rows are read);
+	// "acquire <dsn>" fails acquiring from one server.
 	fail map[string]error
 }
 
@@ -47,6 +50,13 @@ func (d *fakeDriver) calls() string {
 	out := strings.Join(d.log, "; ")
 	d.log = nil
 	return out
+}
+
+func (d *fakeDriver) answer(dsn, sql string, args []any) ([]Row, int64, error) {
+	if d.serve != nil {
+		return d.serve(dsn, sql, args)
+	}
+	return d.handle(sql, args)
 }
 
 func (d *fakeDriver) Open(_ context.Context, c PoolConfig) (Pool, error) {
@@ -86,6 +96,9 @@ func (p *fakePool) Acquire(ctx context.Context) (Conn, error) {
 	if err := p.d.failure("acquire"); err != nil {
 		return nil, err
 	}
+	if err := p.d.failure("acquire " + p.cfg.DSN); err != nil {
+		return nil, err
+	}
 	select {
 	case <-p.free:
 	case <-ctx.Done():
@@ -115,7 +128,7 @@ func (c *fakeConn) op(name string, detail ...string) error {
 
 func (c *fakeConn) Query(_ context.Context, sql string, args []any) (Rows, error) {
 	c.p.d.record("%s query %s %v", c.id, sql, args)
-	rows, _, err := c.p.d.handle(sql, args)
+	rows, _, err := c.p.d.answer(c.p.cfg.DSN, sql, args)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +137,7 @@ func (c *fakeConn) Query(_ context.Context, sql string, args []any) (Rows, error
 
 func (c *fakeConn) Exec(_ context.Context, sql string, args []any) (int64, error) {
 	c.p.d.record("%s exec %s %v", c.id, sql, args)
-	_, n, err := c.p.d.handle(sql, args)
+	_, n, err := c.p.d.answer(c.p.cfg.DSN, sql, args)
 	return n, err
 }
 
