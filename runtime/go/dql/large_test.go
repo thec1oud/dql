@@ -166,3 +166,10 @@ func TestBulkChunks(t *testing.T) {
 		}
 	}
 }
+
+func TestQueryName(t *testing.T) {
+	ctx := context.Background()
+	if QueryName(ctx) != "" || QueryName(withQuery(ctx, "users.get")) != "users.get" {
+		t.Error("query name")
+	}
+}
