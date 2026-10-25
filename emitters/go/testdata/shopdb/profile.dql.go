@@ -814,6 +814,7 @@ func (s profilesWrites) DeleteWhere(ctx context.Context, where dql.Pred[Profiles
 type ProfilesUserScopedStore interface {
 	ProfilesStore
 	InsertNested(ctx context.Context, d ProfileDraftNested, as ...dql.Assignment[ProfilesTable]) (ProfileFullNested, error)
+	PatchNested(ctx context.Context, k ProfileKey, p ProfilePartialNested, as ...dql.Update[ProfilesTable]) (ProfileFullNested, error)
 }
 
 // profilesUserScopedWrites implements ProfilesUserScopedStore.
@@ -862,6 +863,52 @@ func (s profilesUserScopedWrites) InsertNested(ctx context.Context, d ProfileDra
 				if related, err = usersStore.Get(ctx, UserKey{ID: row.UserID}); err != nil {
 					return err
 				}
+			}
+			out.User = related
+		}
+		return nil
+	})
+	return out, err
+}
+
+// PatchNested runs profile.patch with the changes p nests, in one transaction: owning changes first,
+// then the row, then its dependents and links under their collection policies;
+// it returns the row and its relations as they now are (§20.5).
+func (s profilesUserScopedWrites) PatchNested(ctx context.Context, k ProfileKey, p ProfilePartialNested, as ...dql.Update[ProfilesTable]) (ProfileFullNested, error) {
+	if err := p.Validate(); err != nil {
+		return ProfileFullNested{}, err
+	}
+	var out ProfileFullNested
+	err := dql.Atomic(ctx, s.w, func(ctx context.Context, w dql.Writer) error {
+		out = ProfileFullNested{}
+		profilesStore := profilesWrites{profilesReads{w}, w}
+		usersStore := usersWrites{usersReads{w, UserScope{TenantID: s.scope.TenantID}}, w}
+		part := ProfilePartial{Bio: p.Bio, Birthday: p.Birthday}
+		cur, err := profilesStore.Get(ctx, k)
+		if err != nil {
+			return err
+		}
+		if ch, ok := p.User.Get(); ok {
+			switch ch.change {
+			case dql.ChangeUpdate:
+				related, err := usersStore.Get(ctx, UserKey{ID: cur.UserID})
+				if err != nil {
+					return err
+				}
+				if _, err := usersStore.Patch(ctx, UserKey{ID: related.ID, Version: related.Version}, ch.partial); err != nil {
+					return err
+				}
+			}
+		}
+		row, err := profilesStore.Patch(ctx, k, part, as...)
+		if err != nil {
+			return err
+		}
+		out.ProfileFull = row
+		{
+			related, err := usersStore.Get(ctx, UserKey{ID: row.UserID})
+			if err != nil {
+				return err
 			}
 			out.User = related
 		}

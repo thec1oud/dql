@@ -190,7 +190,7 @@ func TestWritesWithoutLookups(t *testing.T) {
 	if len(codes) != 0 {
 		t.Fatal(codes)
 	}
-	contains(t, files, "user.dql.go", "return dql.OneOf(ctx, s.w, st, DecodeUserFull)\n}\n\n// UpdateWhere runs user.update_where")
+	contains(t, files, "user.dql.go", "return dql.OneOf(ctx, s.w, st, DecodeUserFull)\n}\n\n// PatchNested runs user.patch")
 	contains(t, files, "profile.dql.go", "\targs := dql.Args{\"key.user_id\": k.UserID}\n\tif v, ok := p.Bio.Get(); ok {\n\t\targs[\"bio\"] = v\n\t}\n")
 	if strings.Contains(files["profile.dql.go"], "the row as it is") {
 		t.Error("empty Partial short-cut without Get")
