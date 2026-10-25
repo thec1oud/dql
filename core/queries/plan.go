@@ -42,8 +42,14 @@ func TableID(cats []*irv1.Catalog, q *irv1.QualifiedName) string {
 //   - <entity>.insert, <entity>.upsert.by_<key> and <entity>.patch take the
 //     Draft, Partial and Key presets, and <entity>.insert.<shape> and
 //     <entity>.patch.<shape> each custom write shape; all return the Full.
+//   - <entity>.insert_or_ignore.by_<key> inserts the Draft unless the row
+//     conflicts on the uniqueness fact, and returns the Full or no row.
 //   - <entity>.delete removes by Key, setting the soft-delete column on a
 //     soft-delete entity, which also has <entity>.hard_delete.
+//   - <entity>.update_where (and .update_where.<shape>), <entity>.delete_where
+//     and <entity>.hard_delete_where write the rows a filter keeps: their
+//     WHERE holds the scope's and the soft delete's filters, and the runtime
+//     adds the call's (§20.1).
 //
 // Every query filters on the entity's scope and leaves out soft-deleted
 // rows. A versioned write compares the Key's expected version and bumps it
@@ -309,6 +315,13 @@ func (p *planner) entity(e *entity) {
 			cols, row, params := e.values(s)
 			p.add(e, e.spelling+".insert"+suffix, irv1.Cardinality_CARDINALITY_ONE, true, params, full,
 				use("insert."+e.id, cols, row, returning))
+			// An insert that skips a row conflicting on a uniqueness fact
+			// returns no row.
+			for _, u := range e.t.GetUniqueness() {
+				cols, row, params := e.values(s)
+				p.add(e, e.spelling+".insert_or_ignore"+suffix+".by_"+keyName(u), irv1.Cardinality_CARDINALITY_OPTIONAL, true, params, full,
+					use("ignore."+e.id+"."+u.GetName(), cols, row, returning))
+			}
 		case irv1.Preset_PRESET_PARTIAL:
 			p.patch(e, s, suffix, full, returning)
 		}
@@ -405,10 +418,6 @@ func (e *entity) bump() []*irv1.ListItem {
 // patch adds the update by Key of the Partial s; each field is optional,
 // so a call sets only the fields it holds (§20.1).
 func (p *planner) patch(e *entity, s *irv1.Shape, suffix string, full *irv1.Shape, returning *irv1.HoleFill) {
-	preds, keyParams, ok := e.target()
-	if !ok {
-		return
-	}
 	// SET comes before WHERE, so its parameters come first.
 	var sets []*irv1.ListItem
 	var params []*irv1.Param
@@ -420,6 +429,14 @@ func (p *planner) patch(e *entity, s *irv1.Shape, suffix string, full *irv1.Shap
 	if len(sets) == 0 {
 		return
 	}
+	// The update of the rows a filter keeps: the runtime adds the call's
+	// filter to the scope's and the soft delete's (§20.1).
+	p.add(e, e.spelling+".update_where"+suffix, irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil,
+		use("update."+e.id, list("sets", sets), where(e.visible())))
+	preds, keyParams, ok := e.target()
+	if !ok {
+		return
+	}
 	if q := p.add(e, e.spelling+".patch"+suffix, irv1.Cardinality_CARDINALITY_ONE, true, append(params, keyParams...), full,
 		use("update."+e.id, list("sets", sets), where(append(e.visible(), preds...)), returning)); q != nil {
 		q.AtMostOne = true
@@ -429,24 +446,31 @@ func (p *planner) patch(e *entity, s *irv1.Shape, suffix string, full *irv1.Shap
 // delete adds the delete by Key: on a soft-delete entity an update setting
 // the column, plus a hard delete (§21.3).
 func (p *planner) delete(e *entity) {
-	preds, params, ok := e.target()
-	if !ok {
-		return
+	// The deletes of the rows a filter keeps come first: an entity without
+	// a Key has them too.
+	p.deletes(e, "_where", nil, nil)
+	if preds, params, ok := e.target(); ok {
+		p.deletes(e, "", preds, params)
 	}
+}
+
+// deletes adds the delete, and on a soft-delete entity the hard delete,
+// named with suffix and filtered on preds.
+func (p *planner) deletes(e *entity, suffix string, preds []*irv1.FragmentUse, params []*irv1.Param) {
 	if c := e.softDelete; c != nil {
 		value := "value.now"
 		if c.GetType().GetBool() != nil {
 			value = "value.true"
 		}
 		sets := append([]*irv1.ListItem{item(use("set."+e.id+"."+c.GetName().GetStored(), fill("0", use(value))))}, e.bump()...)
-		p.add(e, e.spelling+".delete", irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil,
+		p.add(e, e.spelling+".delete"+suffix, irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil,
 			use("update."+e.id, list("sets", sets), where(append(e.visible(), preds...))))
 		// A hard delete reaches deleted rows too, but stays in the scope.
-		p.add(e, e.spelling+".hard_delete", irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil,
+		p.add(e, e.spelling+".hard_delete"+suffix, irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil,
 			use("delete."+e.id, where(append(e.visible()[:len(e.scope)], preds...))))
 		return
 	}
-	p.add(e, e.spelling+".delete", irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil, use("delete."+e.id, where(append(e.visible(), preds...))))
+	p.add(e, e.spelling+".delete"+suffix, irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil, use("delete."+e.id, where(append(e.visible(), preds...))))
 }
 
 // upsert adds the upsert of one conflict target: on conflict it sets every

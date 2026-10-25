@@ -12,7 +12,11 @@ import (
 // Pred is a predicate on the rows of the entity E stands for (§18.2):
 // generated column and relation handles make them, so a predicate on one
 // entity cannot filter another.
-type Pred[E any] struct{ node Node }
+type Pred[E any] struct {
+	node Node
+	// all marks AllRows, which keeps every row.
+	all bool
+}
 
 // NewPred wraps a plan node as a predicate on E; generated code calls it.
 func NewPred[E any](n Node) Pred[E] { return Pred[E]{node: n} }

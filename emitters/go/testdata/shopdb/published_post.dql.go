@@ -201,6 +201,12 @@ type PublishedPostsTable struct {
 // PublishedPosts is table shop.app.published_posts in builder reads (§18.2).
 var PublishedPosts PublishedPostsTable
 
+// AllRows keeps every row: a filtered write must be given it to write them
+// all (§20.1).
+func (PublishedPostsTable) AllRows() dql.Pred[PublishedPostsTable] {
+	return dql.AllRows[PublishedPostsTable]()
+}
+
 // publishedPostsIDColumn is column id in builder reads (§9.4).
 type publishedPostsIDColumn struct{}
 

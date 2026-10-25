@@ -466,6 +466,24 @@ var (
 			dql.Use{Fragment: "insert.tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
 		},
 	}
+	tagInsertOrIgnoreByName = &dql.Query{
+		Name:    "tag.insert_or_ignore.by_name",
+		Catalog: "shop",
+		Kind:    "insert_or_ignore",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.tags.tags_name_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
+		},
+	}
+	tagInsertOrIgnoreByPrimary = &dql.Query{
+		Name:    "tag.insert_or_ignore.by_primary",
+		Catalog: "shop",
+		Kind:    "insert_or_ignore",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.tags.tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
+		},
+	}
 	tagUpsertByName = &dql.Query{
 		Name:    "tag.upsert.by_name",
 		Catalog: "shop",
@@ -494,6 +512,15 @@ var (
 			dql.Use{Fragment: "update.tags", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.tag.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}}}},
 		},
 	}
+	tagUpdateWhere = &dql.Query{
+		Name:    "tag.update_where",
+		Catalog: "shop",
+		Kind:    "update_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.tags", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}}},
+		},
+	}
 	tagDelete = &dql.Query{
 		Name:    "tag.delete",
 		Catalog: "shop",
@@ -501,6 +528,15 @@ var (
 		Writes:  true,
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.tags", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+	tagDeleteWhere = &dql.Query{
+		Name:    "tag.delete_where",
+		Catalog: "shop",
+		Kind:    "delete_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.tags"},
 		},
 	}
 )
@@ -520,10 +556,15 @@ type TagsReadStore interface {
 type TagsStore interface {
 	TagsReadStore
 	Insert(ctx context.Context, d TagDraft) (TagFull, error)
+	InsertMany(ctx context.Context, ds []TagDraft) ([]TagFull, error)
+	InsertOrIgnoreByName(ctx context.Context, d TagDraft) (opt.Opt[TagFull], error)
+	InsertOrIgnore(ctx context.Context, d TagDraft) (opt.Opt[TagFull], error)
 	UpsertByName(ctx context.Context, d TagDraft) (TagFull, error)
 	Upsert(ctx context.Context, d TagDraft) (TagFull, error)
 	Patch(ctx context.Context, k TagKey, p TagPartial) (TagFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[TagsTable], p TagPartial) (int64, error)
 	Delete(ctx context.Context, k TagKey) error
+	DeleteWhere(ctx context.Context, where dql.Pred[TagsTable]) (int64, error)
 }
 
 // tagsReads implements TagsReadStore on a handle that reads.
@@ -603,6 +644,45 @@ func (s tagsWrites) Insert(ctx context.Context, d TagDraft) (TagFull, error) {
 	return dql.OneOf(ctx, s.w, st, DecodeTagFull)
 }
 
+// InsertMany runs tag.insert for each draft, in one transaction (§20.1).
+func (s tagsWrites) InsertMany(ctx context.Context, ds []TagDraft) ([]TagFull, error) {
+	for _, d := range ds {
+		if err := d.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	rows := make([]dql.Args, 0, len(ds))
+	for _, d := range ds {
+		args := dql.Args{"name": d.Name}
+		rows = append(rows, args)
+	}
+	return dql.InsertMany(ctx, s.w, fragments, tagInsert, rows, DecodeTagFull)
+}
+
+// InsertOrIgnoreByName runs tag.insert_or_ignore.by_name (§20.1).
+func (s tagsWrites) InsertOrIgnoreByName(ctx context.Context, d TagDraft) (opt.Opt[TagFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[TagFull](), err
+	}
+	st, err := tagInsertOrIgnoreByName.Statement(fragments, dql.Args{"name": d.Name})
+	if err != nil {
+		return opt.None[TagFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodeTagFull)
+}
+
+// InsertOrIgnore runs tag.insert_or_ignore.by_primary (§20.1).
+func (s tagsWrites) InsertOrIgnore(ctx context.Context, d TagDraft) (opt.Opt[TagFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[TagFull](), err
+	}
+	st, err := tagInsertOrIgnoreByPrimary.Statement(fragments, dql.Args{"name": d.Name})
+	if err != nil {
+		return opt.None[TagFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodeTagFull)
+}
+
 // UpsertByName runs tag.upsert.by_name (§20.1).
 func (s tagsWrites) UpsertByName(ctx context.Context, d TagDraft) (TagFull, error) {
 	if err := d.Validate(); err != nil {
@@ -649,6 +729,32 @@ func (s tagsWrites) Patch(ctx context.Context, k TagKey, p TagPartial) (TagFull,
 	return dql.OneOf(ctx, s.w, st, DecodeTagFull)
 }
 
+// UpdateWhere runs tag.update_where (§20.1).
+func (s tagsWrites) UpdateWhere(ctx context.Context, where dql.Pred[TagsTable], p TagPartial) (int64, error) {
+	if err := p.Validate(); err != nil {
+		return 0, err
+	}
+	q, err := dql.Filtered(tagUpdateWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	args := dql.Args{}
+	set := false
+	if v, ok := p.Name.Get(); ok {
+		args["name"] = v
+		set = true
+	}
+	if !set {
+		// Nothing to change.
+		return 0, nil
+	}
+	st, err := q.Statement(fragments, args)
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
+}
+
 // Delete runs tag.delete (§20.1).
 func (s tagsWrites) Delete(ctx context.Context, k TagKey) error {
 	st, err := tagDelete.Statement(fragments, dql.Args{"key.id": k.ID})
@@ -657,6 +763,19 @@ func (s tagsWrites) Delete(ctx context.Context, k TagKey) error {
 	}
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
+}
+
+// DeleteWhere runs tag.delete_where (§20.1).
+func (s tagsWrites) DeleteWhere(ctx context.Context, where dql.Pred[TagsTable]) (int64, error) {
+	q, err := dql.Filtered(tagDeleteWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	st, err := q.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
 }
 
 // TagsTable is table shop.app.tags in builder reads (§18.2): its columns and relations
@@ -670,6 +789,10 @@ type TagsTable struct {
 
 // Tags is table shop.app.tags in builder reads (§18.2).
 var Tags TagsTable
+
+// AllRows keeps every row: a filtered write must be given it to write them
+// all (§20.1).
+func (TagsTable) AllRows() dql.Pred[TagsTable] { return dql.AllRows[TagsTable]() }
 
 // tagsIDColumn is column id in builder reads (§9.4).
 type tagsIDColumn struct{}

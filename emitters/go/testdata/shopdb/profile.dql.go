@@ -508,6 +508,15 @@ var (
 			dql.Use{Fragment: "insert.profiles", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}}},
 		},
 	}
+	profileInsertOrIgnoreByPrimary = &dql.Query{
+		Name:    "profile.insert_or_ignore.by_primary",
+		Catalog: "shop",
+		Kind:    "insert_or_ignore",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.profiles.profiles_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}}},
+		},
+	}
 	profileUpsertByPrimary = &dql.Query{
 		Name:    "profile.upsert.by_primary",
 		Catalog: "shop",
@@ -527,6 +536,15 @@ var (
 			dql.Use{Fragment: "update.profiles", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.profile.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Param("bio")}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Param("birthday")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}}}},
 		},
 	}
+	profileUpdateWhere = &dql.Query{
+		Name:    "profile.update_where",
+		Catalog: "shop",
+		Kind:    "update_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.profiles", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Param("bio")}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Param("birthday")}}}, Separator: ", "}}},
+		},
+	}
 	profileDelete = &dql.Query{
 		Name:    "profile.delete",
 		Catalog: "shop",
@@ -534,6 +552,15 @@ var (
 		Writes:  true,
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.profiles", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}}}},
+		},
+	}
+	profileDeleteWhere = &dql.Query{
+		Name:    "profile.delete_where",
+		Catalog: "shop",
+		Kind:    "delete_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.profiles"},
 		},
 	}
 )
@@ -551,9 +578,13 @@ type ProfilesReadStore interface {
 type ProfilesStore interface {
 	ProfilesReadStore
 	Insert(ctx context.Context, d ProfileDraft) (ProfileFull, error)
+	InsertMany(ctx context.Context, ds []ProfileDraft) ([]ProfileFull, error)
+	InsertOrIgnore(ctx context.Context, d ProfileDraft) (opt.Opt[ProfileFull], error)
 	Upsert(ctx context.Context, d ProfileDraft) (ProfileFull, error)
 	Patch(ctx context.Context, k ProfileKey, p ProfilePartial) (ProfileFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[ProfilesTable], p ProfilePartial) (int64, error)
 	Delete(ctx context.Context, k ProfileKey) error
+	DeleteWhere(ctx context.Context, where dql.Pred[ProfilesTable]) (int64, error)
 }
 
 // profilesReads implements ProfilesReadStore on a handle that reads.
@@ -622,6 +653,46 @@ func (s profilesWrites) Insert(ctx context.Context, d ProfileDraft) (ProfileFull
 	return dql.OneOf(ctx, s.w, st, DecodeProfileFull)
 }
 
+// InsertMany runs profile.insert for each draft, in one transaction (§20.1).
+func (s profilesWrites) InsertMany(ctx context.Context, ds []ProfileDraft) ([]ProfileFull, error) {
+	for _, d := range ds {
+		if err := d.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	rows := make([]dql.Args, 0, len(ds))
+	for _, d := range ds {
+		args := dql.Args{"user_id": d.UserID}
+		if v, ok := d.Bio.Get(); ok {
+			args["bio"] = v
+		}
+		if v, ok := d.Birthday.Get(); ok {
+			args["birthday"] = v
+		}
+		rows = append(rows, args)
+	}
+	return dql.InsertMany(ctx, s.w, fragments, profileInsert, rows, DecodeProfileFull)
+}
+
+// InsertOrIgnore runs profile.insert_or_ignore.by_primary (§20.1).
+func (s profilesWrites) InsertOrIgnore(ctx context.Context, d ProfileDraft) (opt.Opt[ProfileFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[ProfileFull](), err
+	}
+	args := dql.Args{"user_id": d.UserID}
+	if v, ok := d.Bio.Get(); ok {
+		args["bio"] = v
+	}
+	if v, ok := d.Birthday.Get(); ok {
+		args["birthday"] = v
+	}
+	st, err := profileInsertOrIgnoreByPrimary.Statement(fragments, args)
+	if err != nil {
+		return opt.None[ProfileFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodeProfileFull)
+}
+
 // Upsert runs profile.upsert.by_primary (§20.1).
 func (s profilesWrites) Upsert(ctx context.Context, d ProfileDraft) (ProfileFull, error) {
 	if err := d.Validate(); err != nil {
@@ -667,6 +738,36 @@ func (s profilesWrites) Patch(ctx context.Context, k ProfileKey, p ProfilePartia
 	return dql.OneOf(ctx, s.w, st, DecodeProfileFull)
 }
 
+// UpdateWhere runs profile.update_where (§20.1).
+func (s profilesWrites) UpdateWhere(ctx context.Context, where dql.Pred[ProfilesTable], p ProfilePartial) (int64, error) {
+	if err := p.Validate(); err != nil {
+		return 0, err
+	}
+	q, err := dql.Filtered(profileUpdateWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	args := dql.Args{}
+	set := false
+	if v, ok := p.Bio.Get(); ok {
+		args["bio"] = v
+		set = true
+	}
+	if v, ok := p.Birthday.Get(); ok {
+		args["birthday"] = v
+		set = true
+	}
+	if !set {
+		// Nothing to change.
+		return 0, nil
+	}
+	st, err := q.Statement(fragments, args)
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
+}
+
 // Delete runs profile.delete (§20.1).
 func (s profilesWrites) Delete(ctx context.Context, k ProfileKey) error {
 	st, err := profileDelete.Statement(fragments, dql.Args{"key.user_id": k.UserID})
@@ -675,6 +776,19 @@ func (s profilesWrites) Delete(ctx context.Context, k ProfileKey) error {
 	}
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
+}
+
+// DeleteWhere runs profile.delete_where (§20.1).
+func (s profilesWrites) DeleteWhere(ctx context.Context, where dql.Pred[ProfilesTable]) (int64, error) {
+	q, err := dql.Filtered(profileDeleteWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	st, err := q.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
 }
 
 // ProfilesTable is table shop.app.profiles in builder reads (§18.2): its columns and relations
@@ -688,6 +802,10 @@ type ProfilesTable struct {
 
 // Profiles is table shop.app.profiles in builder reads (§18.2).
 var Profiles ProfilesTable
+
+// AllRows keeps every row: a filtered write must be given it to write them
+// all (§20.1).
+func (ProfilesTable) AllRows() dql.Pred[ProfilesTable] { return dql.AllRows[ProfilesTable]() }
 
 // profilesUserIDColumn is column user_id in builder reads (§9.4).
 type profilesUserIDColumn struct{}

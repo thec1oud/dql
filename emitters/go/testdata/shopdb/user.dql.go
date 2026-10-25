@@ -581,6 +581,26 @@ var (
 			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
 		},
 	}
+	userInsertOrIgnoreByPrimary = &dql.Query{
+		Name:      "user.insert_or_ignore.by_primary",
+		Catalog:   "shop",
+		Kind:      "insert_or_ignore",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.users.users_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
+		},
+	}
+	userInsertOrIgnoreByTenantIDAndEmail = &dql.Query{
+		Name:      "user.insert_or_ignore.by_tenant_id_and_email",
+		Catalog:   "shop",
+		Kind:      "insert_or_ignore",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "ignore.users.users_tenant_email_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
+		},
+	}
 	userUpsertByPrimary = &dql.Query{
 		Name:      "user.upsert.by_primary",
 		Catalog:   "shop",
@@ -612,6 +632,16 @@ var (
 			dql.Use{Fragment: "update.users", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.user.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
 		},
 	}
+	userUpdateWhere = &dql.Query{
+		Name:      "user.update_where",
+		Catalog:   "shop",
+		Kind:      "update_where",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.users", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}}}}},
+		},
+	}
 	userDelete = &dql.Query{
 		Name:    "user.delete",
 		Catalog: "shop",
@@ -619,6 +649,15 @@ var (
 		Writes:  true,
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
+		},
+	}
+	userDeleteWhere = &dql.Query{
+		Name:    "user.delete_where",
+		Catalog: "shop",
+		Kind:    "delete_where",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}}}}},
 		},
 	}
 )
@@ -638,10 +677,15 @@ type UsersReadStore interface {
 type UsersStore interface {
 	UsersReadStore
 	Insert(ctx context.Context, d UserDraft) (UserFull, error)
+	InsertMany(ctx context.Context, ds []UserDraft) ([]UserFull, error)
+	InsertOrIgnore(ctx context.Context, d UserDraft) (opt.Opt[UserFull], error)
+	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft) (opt.Opt[UserFull], error)
 	Upsert(ctx context.Context, d UserDraft) (UserFull, error)
 	UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft) (UserFull, error)
 	Patch(ctx context.Context, k UserKey, p UserPartial) (UserFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial) (int64, error)
 	Delete(ctx context.Context, k UserKey) error
+	DeleteWhere(ctx context.Context, where dql.Pred[UsersTable]) (int64, error)
 }
 
 // UsersUnscopedReadStore reads, across scopes, shop.app.users (§26.3).
@@ -659,10 +703,15 @@ type UsersUnscopedReadStore interface {
 type UsersUnscopedStore interface {
 	UsersUnscopedReadStore
 	Insert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
+	InsertMany(ctx context.Context, scope UserScope, ds []UserDraft) ([]UserFull, error)
+	InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft) (opt.Opt[UserFull], error)
+	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (opt.Opt[UserFull], error)
 	Upsert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
 	UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
 	Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial) (UserFull, error)
+	UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial) (int64, error)
 	Delete(ctx context.Context, scope UserScope, k UserKey) error
+	DeleteWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable]) (int64, error)
 }
 
 // usersReads implements UsersReadStore on a handle that reads.
@@ -756,6 +805,83 @@ func (s usersWrites) Insert(ctx context.Context, d UserDraft) (UserFull, error) 
 	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
 }
 
+// InsertMany runs user.insert for each draft, in one transaction (§20.1).
+func (s usersWrites) InsertMany(ctx context.Context, ds []UserDraft) ([]UserFull, error) {
+	for _, d := range ds {
+		if err := d.Validate(); err != nil {
+			return nil, err
+		}
+	}
+	rows := make([]dql.Args, 0, len(ds))
+	for _, d := range ds {
+		args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+		if v, ok := d.DisplayName.Get(); ok {
+			args["display_name"] = v
+		}
+		if v, ok := d.CreatedAt.Get(); ok {
+			args["created_at"] = v
+		}
+		if v, ok := d.UpdatedAt.Get(); ok {
+			args["updated_at"] = v
+		}
+		if v, ok := d.Version.Get(); ok {
+			args["version"] = v
+		}
+		rows = append(rows, args)
+	}
+	return dql.InsertMany(ctx, s.w, fragments, userInsert, rows, DecodeUserFull)
+}
+
+// InsertOrIgnore runs user.insert_or_ignore.by_primary (§20.1).
+func (s usersWrites) InsertOrIgnore(ctx context.Context, d UserDraft) (opt.Opt[UserFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[UserFull](), err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := d.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := d.CreatedAt.Get(); ok {
+		args["created_at"] = v
+	}
+	if v, ok := d.UpdatedAt.Get(); ok {
+		args["updated_at"] = v
+	}
+	if v, ok := d.Version.Get(); ok {
+		args["version"] = v
+	}
+	st, err := userInsertOrIgnoreByPrimary.Statement(fragments, args)
+	if err != nil {
+		return opt.None[UserFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodeUserFull)
+}
+
+// InsertOrIgnoreByTenantIDAndEmail runs user.insert_or_ignore.by_tenant_id_and_email (§20.1).
+func (s usersWrites) InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft) (opt.Opt[UserFull], error) {
+	if err := d.Validate(); err != nil {
+		return opt.None[UserFull](), err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := d.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := d.CreatedAt.Get(); ok {
+		args["created_at"] = v
+	}
+	if v, ok := d.UpdatedAt.Get(); ok {
+		args["updated_at"] = v
+	}
+	if v, ok := d.Version.Get(); ok {
+		args["version"] = v
+	}
+	st, err := userInsertOrIgnoreByTenantIDAndEmail.Statement(fragments, args)
+	if err != nil {
+		return opt.None[UserFull](), err
+	}
+	return dql.OptionalOf(ctx, s.w, st, DecodeUserFull)
+}
+
 // Upsert runs user.upsert.by_primary (§20.1).
 func (s usersWrites) Upsert(ctx context.Context, d UserDraft) (UserFull, error) {
 	if err := d.Validate(); err != nil {
@@ -832,6 +958,32 @@ func (s usersWrites) Patch(ctx context.Context, k UserKey, p UserPartial) (UserF
 	return dql.VersionedOne(ctx, s.w, st, exists, DecodeUserFull)
 }
 
+// UpdateWhere runs user.update_where (§20.1).
+func (s usersWrites) UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial) (int64, error) {
+	if err := p.Validate(); err != nil {
+		return 0, err
+	}
+	q, err := dql.Filtered(userUpdateWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	args := dql.Args{"scope.tenant_id": s.scope.TenantID}
+	if v, ok := p.Email.Get(); ok {
+		args["email"] = v
+	}
+	if v, ok := p.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := p.PasswordHash.Get(); ok {
+		args["password_hash"] = v
+	}
+	st, err := q.Statement(fragments, args)
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
+}
+
 // Delete runs user.delete (§20.1).
 func (s usersWrites) Delete(ctx context.Context, k UserKey) error {
 	st, err := userDelete.Statement(fragments, dql.Args{"key.id": k.ID, "key.version": k.Version, "scope.tenant_id": s.scope.TenantID})
@@ -843,6 +995,19 @@ func (s usersWrites) Delete(ctx context.Context, k UserKey) error {
 		return err
 	}
 	return dql.VersionedExec(ctx, s.w, st, exists)
+}
+
+// DeleteWhere runs user.delete_where (§20.1).
+func (s usersWrites) DeleteWhere(ctx context.Context, where dql.Pred[UsersTable]) (int64, error) {
+	q, err := dql.Filtered(userDeleteWhere, where)
+	if err != nil {
+		return 0, err
+	}
+	st, err := q.Statement(fragments, dql.Args{"scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Exec(ctx, s.w, st)
 }
 
 // usersUnscopedReads implements UsersUnscopedReadStore on a handle that reads.
@@ -889,6 +1054,21 @@ func (u usersUnscoped) Insert(ctx context.Context, scope UserScope, d UserDraft)
 	return usersWrites{usersReads{u.w, scope}, u.w}.Insert(ctx, d)
 }
 
+// InsertMany runs user.insert in scope (§21.2).
+func (u usersUnscoped) InsertMany(ctx context.Context, scope UserScope, ds []UserDraft) ([]UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertMany(ctx, ds)
+}
+
+// InsertOrIgnore runs user.insert_or_ignore.by_primary in scope (§21.2).
+func (u usersUnscoped) InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft) (opt.Opt[UserFull], error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertOrIgnore(ctx, d)
+}
+
+// InsertOrIgnoreByTenantIDAndEmail runs user.insert_or_ignore.by_tenant_id_and_email in scope (§21.2).
+func (u usersUnscoped) InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (opt.Opt[UserFull], error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertOrIgnoreByTenantIDAndEmail(ctx, d)
+}
+
 // Upsert runs user.upsert.by_primary in scope (§21.2).
 func (u usersUnscoped) Upsert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error) {
 	return usersWrites{usersReads{u.w, scope}, u.w}.Upsert(ctx, d)
@@ -904,9 +1084,19 @@ func (u usersUnscoped) Patch(ctx context.Context, scope UserScope, k UserKey, p 
 	return usersWrites{usersReads{u.w, scope}, u.w}.Patch(ctx, k, p)
 }
 
+// UpdateWhere runs user.update_where in scope (§21.2).
+func (u usersUnscoped) UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial) (int64, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.UpdateWhere(ctx, where, p)
+}
+
 // Delete runs user.delete in scope (§21.2).
 func (u usersUnscoped) Delete(ctx context.Context, scope UserScope, k UserKey) error {
 	return usersWrites{usersReads{u.w, scope}, u.w}.Delete(ctx, k)
+}
+
+// DeleteWhere runs user.delete_where in scope (§21.2).
+func (u usersUnscoped) DeleteWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable]) (int64, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.DeleteWhere(ctx, where)
 }
 
 // UsersTable is table shop.app.users in builder reads (§18.2): its columns and relations
@@ -928,6 +1118,10 @@ type UsersTable struct {
 
 // Users is table shop.app.users in builder reads (§18.2).
 var Users UsersTable
+
+// AllRows keeps every row: a filtered write must be given it to write them
+// all (§20.1).
+func (UsersTable) AllRows() dql.Pred[UsersTable] { return dql.AllRows[UsersTable]() }
 
 // usersIDColumn is column id in builder reads (§9.4).
 type usersIDColumn struct{}

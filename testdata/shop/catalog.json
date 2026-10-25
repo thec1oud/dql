@@ -5551,6 +5551,29 @@
       },
       {
         "name": {
+          "stored": "post.delete_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "delete.posts"
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "post.exists"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -5983,6 +6006,538 @@
       },
       {
         "name": {
+          "stored": "post.insert_or_ignore.by_posts_one_published_slug"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "author_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            }
+          },
+          {
+            "name": "editor_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "title",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "named": {
+                "enum": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "post_status"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "post_status"
+                },
+                "raw": "app.post_status"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "price",
+            "type": {
+              "named": {
+                "composite": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "money_amount"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "money_amount"
+                },
+                "raw": "app.money_amount"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "labels",
+            "type": {
+              "array": {
+                "element": {
+                  "text": {}
+                },
+                "elementNullable": true,
+                "dimensions": 1
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "_text"
+                },
+                "raw": "text[]"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "published_at",
+            "type": {
+              "instant": {
+                "precision": 6
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "timestamptz"
+                },
+                "raw": "timestamp with time zone"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "posts"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.posts.posts_one_published_slug",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.author_id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.editor_id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.title"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.status"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.price"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.labels"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.published_at"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.post.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "id"
+                            },
+                            {
+                              "param": "author_id"
+                            },
+                            {
+                              "param": "editor_id"
+                            },
+                            {
+                              "param": "title"
+                            },
+                            {
+                              "param": "status"
+                            },
+                            {
+                              "param": "price"
+                            },
+                            {
+                              "param": "labels"
+                            },
+                            {
+                              "param": "published_at"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "post.insert_or_ignore.by_primary"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "author_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            }
+          },
+          {
+            "name": "editor_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "title",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "named": {
+                "enum": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "post_status"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "post_status"
+                },
+                "raw": "app.post_status"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "price",
+            "type": {
+              "named": {
+                "composite": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "money_amount"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "money_amount"
+                },
+                "raw": "app.money_amount"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "labels",
+            "type": {
+              "array": {
+                "element": {
+                  "text": {}
+                },
+                "elementNullable": true,
+                "dimensions": 1
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "_text"
+                },
+                "raw": "text[]"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "published_at",
+            "type": {
+              "instant": {
+                "precision": 6
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "timestamptz"
+                },
+                "raw": "timestamp with time zone"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "posts"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.posts.posts_pkey",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.author_id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.editor_id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.title"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.status"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.price"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.labels"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.published_at"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.post.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "id"
+                            },
+                            {
+                              "param": "author_id"
+                            },
+                            {
+                              "param": "editor_id"
+                            },
+                            {
+                              "param": "title"
+                            },
+                            {
+                              "param": "status"
+                            },
+                            {
+                              "param": "price"
+                            },
+                            {
+                              "param": "labels"
+                            },
+                            {
+                              "param": "published_at"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "post.patch"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -6271,6 +6826,240 @@
           }
         ],
         "atMostOne": true
+      },
+      {
+        "name": {
+          "stored": "post.update_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "params": [
+          {
+            "name": "author_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "editor_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "title",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "status",
+            "type": {
+              "named": {
+                "enum": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "post_status"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "post_status"
+                },
+                "raw": "app.post_status"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "price",
+            "type": {
+              "named": {
+                "composite": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "money_amount"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "money_amount"
+                },
+                "raw": "app.money_amount"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "labels",
+            "type": {
+              "array": {
+                "element": {
+                  "text": {}
+                },
+                "elementNullable": true,
+                "dimensions": 1
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "_text"
+                },
+                "raw": "text[]"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "published_at",
+            "type": {
+              "instant": {
+                "precision": 6
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "timestamptz"
+                },
+                "raw": "timestamp with time zone"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          }
+        ],
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "update.posts",
+              "holes": [
+                {
+                  "hole": "sets",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.author_id",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "author_id"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.editor_id",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "editor_id"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.title",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "title"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.status",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "status"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.price",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "price"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.labels",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "labels"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.published_at",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "published_at"
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          }
+        ]
       },
       {
         "name": {
@@ -7144,6 +7933,29 @@
       },
       {
         "name": {
+          "stored": "post_tag.delete_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "delete.post_tags"
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "post_tags"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "post_tag.exists"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -7498,6 +8310,116 @@
       },
       {
         "name": {
+          "stored": "post_tag.insert_or_ignore.by_primary"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "post_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            }
+          },
+          {
+            "name": "tag_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            }
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "post_tags"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.post_tags.post_tags_pkey",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.post_tags.post_id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.post_tags.tag_id"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.post_tag.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "post_id"
+                            },
+                            {
+                              "param": "tag_id"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "post_tags"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "post_tag.upsert.by_primary"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -7704,6 +8626,29 @@
                   }
                 }
               ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "profiles"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "profile.delete_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "delete.profiles"
             }
           ]
         },
@@ -8018,6 +8963,141 @@
       },
       {
         "name": {
+          "stored": "profile.insert_or_ignore.by_primary"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "user_id",
+            "type": {
+              "int64": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int8"
+                },
+                "raw": "bigint"
+              }
+            }
+          },
+          {
+            "name": "bio",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "birthday",
+            "type": {
+              "date": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "date"
+                },
+                "raw": "date"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "profiles"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.profiles.profiles_pkey",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.profiles.user_id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.profiles.bio"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.profiles.birthday"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.profile.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "user_id"
+                            },
+                            {
+                              "param": "bio"
+                            },
+                            {
+                              "param": "birthday"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "profiles"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "profile.patch"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -8159,6 +9239,93 @@
           }
         ],
         "atMostOne": true
+      },
+      {
+        "name": {
+          "stored": "profile.update_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "params": [
+          {
+            "name": "bio",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "birthday",
+            "type": {
+              "date": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "date"
+                },
+                "raw": "date"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          }
+        ],
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "update.profiles",
+              "holes": [
+                {
+                  "hole": "sets",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "set.profiles.bio",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "bio"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.profiles.birthday",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "birthday"
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "profiles"
+          }
+        ]
       },
       {
         "name": {
@@ -8607,6 +9774,29 @@
       },
       {
         "name": {
+          "stored": "tag.delete_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "delete.tags"
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "tag.exists"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -9024,6 +10214,196 @@
       },
       {
         "name": {
+          "stored": "tag.insert_or_ignore.by_name"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "name",
+            "type": {
+              "named": {
+                "domain": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "slug_text"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "slug_text"
+                },
+                "raw": "app.slug_text"
+              }
+            }
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "tags"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.tags.tags_name_key",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.tags.name"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.tag.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "name"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "tag.insert_or_ignore.by_primary"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "name",
+            "type": {
+              "named": {
+                "domain": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "slug_text"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "slug_text"
+                },
+                "raw": "app.slug_text"
+              }
+            }
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "tags"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.tags.tags_pkey",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.tags.name"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.tag.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "name"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "tag.patch"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -9144,6 +10524,72 @@
           }
         ],
         "atMostOne": true
+      },
+      {
+        "name": {
+          "stored": "tag.update_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "params": [
+          {
+            "name": "name",
+            "type": {
+              "named": {
+                "domain": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "slug_text"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "slug_text"
+                },
+                "raw": "app.slug_text"
+              }
+            },
+            "optional": true
+          }
+        ],
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "update.tags",
+              "holes": [
+                {
+                  "hole": "sets",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "set.tags.name",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "name"
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tags"
+          }
+        ]
       },
       {
         "name": {
@@ -9467,6 +10913,29 @@
       },
       {
         "name": {
+          "stored": "tenant.delete_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "delete.tenants"
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tenants"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "tenant.exists"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -9744,6 +11213,117 @@
       },
       {
         "name": {
+          "stored": "tenant.insert_or_ignore.by_primary"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "id",
+            "type": {
+              "uuid": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "uuid"
+                },
+                "raw": "uuid"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "name",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            }
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "tenants"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.tenants.tenants_pkey",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.tenants.id"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.tenants.name"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.tenant.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "id"
+                            },
+                            {
+                              "param": "name"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tenants"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "tenant.patch"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -9858,6 +11438,66 @@
           }
         ],
         "atMostOne": true
+      },
+      {
+        "name": {
+          "stored": "tenant.update_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "params": [
+          {
+            "name": "name",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            },
+            "optional": true
+          }
+        ],
+        "writes": true,
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "update.tenants",
+              "holes": [
+                {
+                  "hole": "sets",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "set.tenants.name",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "name"
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "tenants"
+          }
+        ]
       },
       {
         "name": {
@@ -10163,6 +11803,62 @@
                                   }
                                 ]
                               }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "user.delete_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "writes": true,
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "delete.users",
+              "holes": [
+                {
+                  "hole": "where",
+                  "fragment": {
+                    "fragment": "clause.where",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "fragment": {
+                          "fragment": "op.eq",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "fragment": {
+                                "fragment": "col.users.tenant_id"
+                              }
+                            },
+                            {
+                              "hole": "1",
+                              "param": "scope.tenant_id"
                             }
                           ]
                         }
@@ -10893,6 +12589,466 @@
       },
       {
         "name": {
+          "stored": "user.insert_or_ignore.by_primary"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "email",
+            "type": {
+              "named": {
+                "domain": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "email_address"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "email_address"
+                },
+                "raw": "app.email_address"
+              }
+            }
+          },
+          {
+            "name": "display_name",
+            "type": {
+              "varchar": {
+                "length": 80,
+                "unit": "LENGTH_UNIT_CHARACTERS"
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "varchar"
+                },
+                "modifiers": [
+                  {
+                    "int": 80
+                  }
+                ],
+                "raw": "character varying(80)"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "password_hash",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            }
+          },
+          {
+            "name": "created_at",
+            "type": {
+              "instant": {
+                "precision": 6
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "timestamptz"
+                },
+                "raw": "timestamp with time zone"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "updated_at",
+            "type": {
+              "instant": {
+                "precision": 6
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "timestamptz"
+                },
+                "raw": "timestamp with time zone"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "version",
+            "type": {
+              "int32": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int4"
+                },
+                "raw": "integer"
+              }
+            },
+            "optional": true
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "users"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.users.users_pkey",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.users.email"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.display_name"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.password_hash"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.created_at"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.updated_at"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.version"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.tenant_id"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.user.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "email"
+                            },
+                            {
+                              "param": "display_name"
+                            },
+                            {
+                              "param": "password_hash"
+                            },
+                            {
+                              "param": "created_at"
+                            },
+                            {
+                              "param": "updated_at"
+                            },
+                            {
+                              "param": "version"
+                            },
+                            {
+                              "param": "scope.tenant_id"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "user.insert_or_ignore.by_tenant_id_and_email"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_OPTIONAL",
+        "params": [
+          {
+            "name": "email",
+            "type": {
+              "named": {
+                "domain": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "email_address"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "email_address"
+                },
+                "raw": "app.email_address"
+              }
+            }
+          },
+          {
+            "name": "display_name",
+            "type": {
+              "varchar": {
+                "length": 80,
+                "unit": "LENGTH_UNIT_CHARACTERS"
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "varchar"
+                },
+                "modifiers": [
+                  {
+                    "int": 80
+                  }
+                ],
+                "raw": "character varying(80)"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "password_hash",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            }
+          },
+          {
+            "name": "created_at",
+            "type": {
+              "instant": {
+                "precision": 6
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "timestamptz"
+                },
+                "raw": "timestamp with time zone"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "updated_at",
+            "type": {
+              "instant": {
+                "precision": 6
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "timestamptz"
+                },
+                "raw": "timestamp with time zone"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "version",
+            "type": {
+              "int32": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "int4"
+                },
+                "raw": "integer"
+              }
+            },
+            "optional": true
+          }
+        ],
+        "result": {
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "users"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        },
+        "writes": true,
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "ignore.users.users_tenant_email_key",
+              "holes": [
+                {
+                  "hole": "cols",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "name.users.email"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.display_name"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.password_hash"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.created_at"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.updated_at"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.version"
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.users.tenant_id"
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "returning",
+                  "fragment": {
+                    "fragment": "returning.user.full.flat"
+                  }
+                },
+                {
+                  "hole": "rows",
+                  "fragment": {
+                    "fragment": "values.row",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "list": {
+                          "items": [
+                            {
+                              "param": "email"
+                            },
+                            {
+                              "param": "display_name"
+                            },
+                            {
+                              "param": "password_hash"
+                            },
+                            {
+                              "param": "created_at"
+                            },
+                            {
+                              "param": "updated_at"
+                            },
+                            {
+                              "param": "version"
+                            },
+                            {
+                              "param": "scope.tenant_id"
+                            }
+                          ],
+                          "separator": ", "
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
+      },
+      {
+        "name": {
           "stored": "user.patch"
         },
         "source": "QUERY_SOURCE_BUILDER",
@@ -11169,6 +13325,189 @@
           }
         ],
         "atMostOne": true
+      },
+      {
+        "name": {
+          "stored": "user.update_where"
+        },
+        "source": "QUERY_SOURCE_BUILDER",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "params": [
+          {
+            "name": "email",
+            "type": {
+              "named": {
+                "domain": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "email_address"
+                }
+              },
+              "native": {
+                "name": {
+                  "namespace": "app",
+                  "object": "email_address"
+                },
+                "raw": "app.email_address"
+              }
+            },
+            "optional": true
+          },
+          {
+            "name": "display_name",
+            "type": {
+              "varchar": {
+                "length": 80,
+                "unit": "LENGTH_UNIT_CHARACTERS"
+              },
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "varchar"
+                },
+                "modifiers": [
+                  {
+                    "int": 80
+                  }
+                ],
+                "raw": "character varying(80)"
+              }
+            },
+            "nullable": true,
+            "optional": true
+          },
+          {
+            "name": "password_hash",
+            "type": {
+              "text": {},
+              "native": {
+                "name": {
+                  "namespace": "pg_catalog",
+                  "object": "text"
+                },
+                "raw": "text"
+              }
+            },
+            "optional": true
+          }
+        ],
+        "writes": true,
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "plan": {
+          "parts": [
+            {
+              "fragment": "update.users",
+              "holes": [
+                {
+                  "hole": "sets",
+                  "list": {
+                    "items": [
+                      {
+                        "fragment": {
+                          "fragment": "set.users.email",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "email"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.users.display_name",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "display_name"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.users.password_hash",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "password_hash"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.users.version",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "fragment": {
+                                "fragment": "op.add",
+                                "holes": [
+                                  {
+                                    "hole": "0",
+                                    "fragment": {
+                                      "fragment": "col.users.version"
+                                    }
+                                  },
+                                  {
+                                    "hole": "1",
+                                    "fragment": {
+                                      "fragment": "value.one"
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "separator": ", "
+                  }
+                },
+                {
+                  "hole": "where",
+                  "fragment": {
+                    "fragment": "clause.where",
+                    "holes": [
+                      {
+                        "hole": "0",
+                        "fragment": {
+                          "fragment": "op.eq",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "fragment": {
+                                "fragment": "col.users.tenant_id"
+                              }
+                            },
+                            {
+                              "hole": "1",
+                              "param": "scope.tenant_id"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
       },
       {
         "name": {

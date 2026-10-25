@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -380,5 +381,78 @@ func TestQueries(t *testing.T) {
 	})
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestFilteredWrites(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	other := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "other"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+	o := db.WithScope(shopdb.UserScope{TenantID: other.ID})
+
+	// InsertMany inserts every draft, in order, or none of them.
+	us := must(h.Users.InsertMany(ctx, []shopdb.UserDraft{{Email: "ann@acme.com", PasswordHash: "x"}, {Email: "bob@acme.com", PasswordHash: "x"}}))
+	if len(us) != 2 || us[0].Email != "ann@acme.com" || us[1].Email != "bob@acme.com" || us[1].TenantID != acme.ID {
+		t.Errorf("many %+v", us)
+	}
+	if _, err := h.Users.InsertMany(ctx, []shopdb.UserDraft{{Email: "cid@acme.com", PasswordHash: "x"}, {Email: "ann@acme.com", PasswordHash: "x"}}); dql.ClassOf(err) != dql.ClassUniqueViolation {
+		t.Errorf("duplicate: %v", err)
+	}
+	long := shopdb.EmailAddress(strings.Repeat("a", 321))
+	if _, err := h.Users.InsertMany(ctx, []shopdb.UserDraft{{Email: "dan@acme.com", PasswordHash: "x"}, {Email: long, PasswordHash: "x"}}); err == nil {
+		t.Error("invalid draft inserted")
+	}
+	if got := must(h.Users.InsertMany(ctx, nil)); len(got) != 0 {
+		t.Errorf("none %+v", got)
+	}
+	must(o.Users.Insert(ctx, shopdb.UserDraft{Email: "ann@other.com", PasswordHash: "x"}))
+
+	// InsertOrIgnore returns None for a row its uniqueness fact already has.
+	if v := must(h.Users.InsertOrIgnoreByTenantIDAndEmail(ctx, shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "y"})); v.IsSome() {
+		t.Errorf("ignored %v", v)
+	}
+	if v := must(h.Users.InsertOrIgnoreByTenantIDAndEmail(ctx, shopdb.UserDraft{Email: "cid@acme.com", PasswordHash: "y"})); !v.IsSome() {
+		t.Error("not inserted")
+	}
+
+	// UpdateWhere writes the rows the filter keeps, in scope, and bumps
+	// their versions.
+	name := "Ann"
+	if n := must(h.Users.UpdateWhere(ctx, shopdb.Users.Email.StartsWith("ann@"), shopdb.UserPartial{DisplayName: opt.Some(&name)})); n != 1 {
+		t.Errorf("update %d", n)
+	}
+	if u := must(h.Users.Get(ctx, shopdb.UserKey{ID: us[0].ID, Version: us[0].Version + 1})); u.DisplayName == nil || *u.DisplayName != "Ann" {
+		t.Errorf("updated %+v", u)
+	}
+	if _, err := h.Users.UpdateWhere(ctx, dql.Pred[shopdb.UsersTable]{}, shopdb.UserPartial{}); err == nil {
+		t.Error("update without a filter")
+	}
+	if _, err := h.Users.UpdateWhere(ctx, shopdb.Users.AllRows(), shopdb.UserPartial{Email: opt.Some(long)}); err == nil {
+		t.Error("invalid partial written")
+	}
+	bio := "hi"
+	must(h.Profiles.Insert(ctx, shopdb.ProfileDraft{UserID: us[0].ID}))
+	if n := must(h.Profiles.UpdateWhere(ctx, shopdb.Profiles.AllRows(), shopdb.ProfilePartial{})); n != 0 {
+		t.Errorf("empty update %d", n)
+	}
+	if n := must(h.Profiles.UpdateWhere(ctx, shopdb.Profiles.AllRows(), shopdb.ProfilePartial{Bio: opt.Some(&bio)})); n != 1 {
+		t.Errorf("profile update %d", n)
+	}
+
+	// DeleteWhere deletes in scope; AllRows deletes every row of it.
+	if n := must(h.Users.DeleteWhere(ctx, shopdb.Users.Email.Eq("cid@acme.com"))); n != 1 {
+		t.Errorf("delete %d", n)
+	}
+	if _, err := h.Users.DeleteWhere(ctx, dql.Pred[shopdb.UsersTable]{}); err == nil {
+		t.Error("delete without a filter")
+	}
+	must(h.Profiles.DeleteWhere(ctx, shopdb.Profiles.AllRows()))
+	if n := must(shopdb.Unscoped(h).Users.DeleteWhere(ctx, shopdb.UserScope{TenantID: acme.ID}, shopdb.Users.AllRows())); n != 2 {
+		t.Errorf("delete all %d", n)
+	}
+	if n := must(o.Users.Count(ctx)); n != 1 {
+		t.Errorf("other tenant %d", n)
 	}
 }

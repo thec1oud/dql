@@ -20,7 +20,7 @@ const (
 
 // The operations of builder queries the stores generate (§26.2), in the
 // order their methods are written.
-var verbs = []string{"get", "find", "count", "exists", "insert", "upsert", "patch", "delete", "hard_delete"}
+var verbs = []string{"get", "find", "count", "exists", "insert", "insert_or_ignore", "upsert", "patch", "update_where", "delete", "delete_where", "hard_delete", "hard_delete_where"}
 
 // reads are the operations a read handle has (§22.2).
 var reads = map[string]bool{"get": true, "find": true, "count": true, "exists": true}
@@ -249,6 +249,8 @@ func (e *entity) lower() string { return Unexported(e.t.GetName().GetWords()) }
 type signature struct {
 	name, params, results string
 	x                     entry
+	// many: InsertMany, which runs the insert entry for each Draft.
+	many bool
 }
 
 // signatures returns the entity's store methods, reads first.
@@ -270,18 +272,23 @@ func (g *generator) signatures(e *entity) []signature {
 			}
 			s.params = strings.Join(ps, ", ")
 		}
+		pred := f.use(pkgDQL, "dql") + ".Pred[" + e.tableType() + "]"
 		switch x.verb {
-		case "insert", "upsert":
+		case "insert", "insert_or_ignore", "upsert":
 			s.params = "d " + Exported(e.draft.GetHostName().GetWords())
 		case "patch":
 			s.params += ", p " + Exported(e.part.GetHostName().GetWords())
+		case "update_where":
+			s.params = "where " + pred + ", p " + Exported(e.part.GetHostName().GetWords())
+		case "delete_where", "hard_delete_where":
+			s.params = "where " + pred
 		}
 		switch x.verb {
 		case "get", "insert", "upsert", "patch":
 			s.results = "(" + full + ", error)"
-		case "find":
+		case "find", "insert_or_ignore":
 			s.results = "(" + f.use(pkgOpt, "opt") + ".Opt[" + full + "], error)"
-		case "count":
+		case "count", "update_where", "delete_where", "hard_delete_where":
 			s.results = "(int64, error)"
 		case "exists":
 			s.results = "(bool, error)"
@@ -289,6 +296,9 @@ func (g *generator) signatures(e *entity) []signature {
 			s.results = "error"
 		}
 		out = append(out, s)
+		if x.verb == "insert" {
+			out = append(out, signature{name: "InsertMany", params: "ds []" + Exported(e.draft.GetHostName().GetWords()), results: "([]" + full + ", error)", x: x, many: true})
+		}
 	}
 	return out
 }
@@ -355,7 +365,11 @@ func (g *generator) storeTypes(e *entity) {
 		if reads[s.x.verb] {
 			typ = rtype
 		}
-		f.printf("// %s runs %s (§%s).\nfunc (%s %s) %s(ctx %s.Context%s) %s {\n", s.name, s.x.q.GetName().GetStored(), section(s.x.verb), recv, typ, s.name, ctx, prefixComma(s.params), s.results)
+		what := s.x.q.GetName().GetStored()
+		if s.many {
+			what += " for each draft, in one transaction"
+		}
+		f.printf("// %s runs %s (§%s).\nfunc (%s %s) %s(ctx %s.Context%s) %s {\n", s.name, what, section(s.x.verb), recv, typ, s.name, ctx, prefixComma(s.params), s.results)
 		g.methodBody(e, s)
 		f.printf("}\n\n")
 	}
@@ -414,21 +428,26 @@ func (g *generator) methodBody(e *entity, s signature) {
 	f := e.f
 	dql := f.use(pkgDQL, "dql")
 	x := s.x
+	full := Exported(e.full.GetHostName().GetWords())
 	zero := ""
 	switch x.verb {
 	case "get", "insert", "upsert", "patch":
-		zero = Exported(e.full.GetHostName().GetWords()) + "{}, "
-	case "find":
-		zero = f.use(pkgOpt, "opt") + ".None[" + Exported(e.full.GetHostName().GetWords()) + "](), "
-	case "count":
+		zero = full + "{}, "
+	case "find", "insert_or_ignore":
+		zero = f.use(pkgOpt, "opt") + ".None[" + full + "](), "
+	case "count", "update_where", "delete_where", "hard_delete_where":
 		zero = "0, "
 	case "exists":
 		zero = "false, "
 	}
+	if s.many {
+		g.insertMany(e, s)
+		return
+	}
 	payload, pv := e.draft, "d"
 	switch x.verb {
-	case "insert", "upsert":
-	case "patch":
+	case "insert", "insert_or_ignore", "upsert":
+	case "patch", "update_where":
 		payload, pv = e.part, "p"
 	default:
 		payload = nil
@@ -438,24 +457,34 @@ func (g *generator) methodBody(e *entity, s signature) {
 	}
 	get, fallback := e.entries[e.entryName("get", "")]
 	fallback = fallback && x.verb == "patch" && !e.versioned
-	lit, conds := g.args(e, x, payload, pv, fallback)
+	// An unversioned update_where with nothing set has nothing to write.
+	empty := x.verb == "update_where" && !e.versioned
+	lit, conds := g.args(e, x, payload, pv, fallback || empty)
+	q := x.v
+	if strings.HasSuffix(x.verb, "_where") {
+		f.printf("\tq, err := %s.Filtered(%s, where)\n\tif err != nil {\n\t\treturn %serr\n\t}\n", dql, x.v, zero)
+		q = "q"
+	}
 	if len(conds) == 0 {
-		f.printf("\tst, err := %s.Statement(fragments, %s.Args{%s})\n", x.v, dql, lit)
+		f.printf("\tst, err := %s.Statement(fragments, %s.Args{%s})\n", q, dql, lit)
 	} else {
 		f.printf("\targs := %s.Args{%s}\n", dql, lit)
-		if fallback {
+		if fallback || empty {
 			f.printf("\tset := false\n")
 		}
 		for _, c := range conds {
 			f.printf("%s", c)
 		}
-		if fallback {
+		switch {
+		case fallback:
 			f.printf("\tif !set {\n\t\t// Nothing to change: the row as it is.\n\t\treturn s.%s(ctx, k)\n\t}\n", get.method())
+		case empty:
+			f.printf("\tif !set {\n\t\t// Nothing to change.\n\t\treturn 0, nil\n\t}\n")
 		}
-		f.printf("\tst, err := %s.Statement(fragments, args)\n", x.v)
+		f.printf("\tst, err := %s.Statement(fragments, args)\n", q)
 	}
 	f.printf("\tif err != nil {\n\t\treturn %serr\n\t}\n", zero)
-	full := "Decode" + Exported(e.full.GetHostName().GetWords())
+	decode := "Decode" + full
 	versioned := e.versioned && (x.verb == "patch" || x.verb == "delete" || x.verb == "hard_delete")
 	var exists entry
 	if versioned {
@@ -469,7 +498,7 @@ func (g *generator) methodBody(e *entity, s signature) {
 	}
 	switch {
 	case versioned && x.verb == "patch":
-		f.printf("\treturn %s.VersionedOne(ctx, s.w, st, exists, %s)\n", dql, full)
+		f.printf("\treturn %s.VersionedOne(ctx, s.w, st, exists, %s)\n", dql, decode)
 	case versioned:
 		f.printf("\treturn %s.VersionedExec(ctx, s.w, st, exists)\n", dql)
 	case x.verb == "get" || x.verb == "insert" || x.verb == "upsert" || x.verb == "patch":
@@ -477,16 +506,35 @@ func (g *generator) methodBody(e *entity, s signature) {
 		if x.verb == "get" {
 			h = "s.h"
 		}
-		f.printf("\treturn %s.OneOf(ctx, %s, st, %s)\n", dql, h, full)
+		f.printf("\treturn %s.OneOf(ctx, %s, st, %s)\n", dql, h, decode)
 	case x.verb == "find":
-		f.printf("\treturn %s.OptionalOf(ctx, s.h, st, %s)\n", dql, full)
+		f.printf("\treturn %s.OptionalOf(ctx, s.h, st, %s)\n", dql, decode)
+	case x.verb == "insert_or_ignore":
+		f.printf("\treturn %s.OptionalOf(ctx, s.w, st, %s)\n", dql, decode)
 	case x.verb == "count":
 		f.printf("\treturn %s.Count(ctx, s.h, st)\n", dql)
 	case x.verb == "exists":
 		f.printf("\treturn %s.Exists(ctx, s.h, st)\n", dql)
+	case strings.HasSuffix(x.verb, "_where"):
+		f.printf("\treturn %s.Exec(ctx, s.w, st)\n", dql)
 	default:
 		f.printf("\t_, err = %s.Exec(ctx, s.w, st)\n\treturn err\n", dql)
 	}
+}
+
+// insertMany writes InsertMany: it validates every draft before writing
+// any (§20.3), then inserts them with the insert entry's row repeated.
+func (g *generator) insertMany(e *entity, s signature) {
+	f := e.f
+	dql := f.use(pkgDQL, "dql")
+	f.printf("\tfor _, d := range ds {\n\t\tif err := d.Validate(); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n")
+	lit, conds := g.args(e, s.x, e.draft, "d", false)
+	f.printf("\trows := make([]%s.Args, 0, len(ds))\n\tfor _, d := range ds {\n\t\targs := %s.Args{%s}\n", dql, dql, lit)
+	for _, c := range conds {
+		f.printf("%s", c)
+	}
+	f.printf("\t\trows = append(rows, args)\n\t}\n")
+	f.printf("\treturn %s.InsertMany(ctx, s.w, fragments, %s, rows, Decode%s)\n", dql, s.x.v, Exported(e.full.GetHostName().GetWords()))
 }
 
 // entryName is the name of an entity's entry of verb by the key by names,

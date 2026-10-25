@@ -50,7 +50,7 @@ type Bulk struct {
 	// The parameters each row binds.
 	ParamsPerRow int
 	// Statement returns the statement that writes rows [from, to).
-	Statement func(from, to int) Statement
+	Statement func(from, to int) (Statement, error)
 }
 
 // chunk returns how many rows each statement writes.
@@ -98,7 +98,11 @@ func bulk(ctx context.Context, h Writer, b Bulk, start func(), run func(context.
 	chunks := func(ctx context.Context, w Writer) error {
 		start()
 		for from := 0; from < b.Rows; from += size {
-			if err := run(ctx, w, b.Statement(from, min(from+size, b.Rows))); err != nil {
+			s, err := b.Statement(from, min(from+size, b.Rows))
+			if err != nil {
+				return err
+			}
+			if err := run(ctx, w, s); err != nil {
 				return err
 			}
 		}
