@@ -32,6 +32,8 @@ type Config struct {
 	Shapes map[string]Shape `yaml:"shapes"`
 	// Conversions to generate beyond the presets' and lineages' (§14.9).
 	Conversions []Conversion `yaml:"conversions"`
+	// Operator settings (§9.3).
+	Operators Operators `yaml:"operators"`
 	// Project-wide settings (§7.2).
 	DefaultCatalog string `yaml:"default-catalog"`
 	OpaqueFallback string `yaml:"opaque-fallback"`
@@ -63,6 +65,13 @@ type Shape struct {
 type Conversion struct {
 	From string `yaml:"from"`
 	To   string `yaml:"to"`
+}
+
+// Operators are the operators: settings (§9.3).
+type Operators struct {
+	// AllowApproximate names the operators generated where the dialect
+	// performs them only approximately, such as [ilike, regex_match].
+	AllowApproximate []string `yaml:"allow-approximate"`
 }
 
 // CustomShapes returns the shapes: entries for the shape layer, sorted by
