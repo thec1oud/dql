@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/objects.proto";
+import "dql/ir/v1/routines.proto";
+import "dql/ir/v1/types.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// An operator of the catalog (§9.1): defined once by the core, or by a type
+// plugin for its types (§9.3).
+message Operator {
+  // Such as eq, ilike or range_contains.
+  string name = 1;
+  Signature signature = 2;
+  // What the type variable must support: comparable, orderable or
+  // nullable. Sorted.
+  repeated string requires = 3;
+  NullBehavior null_behavior = 4;
+}
+
+// An operator's arguments and result, over logical types and type variables.
+message Signature {
+  repeated OperandType args = 1;
+  OperandType returns = 2;
+}
+
+// A logical type, or a type variable that stands for the type of every
+// operand it names, such as T in eq(T, T).
+message OperandType {
+  oneof kind {
+    string var = 1;
+    Type type = 2;
+  }
+}
+
+// A dialect's support for one operator (§9.2). How it renders as SQL stays
+// private to the dialect plugin.
+message OperatorSupport {
+  string name = 1;
+  // The fidelity, when no condition is given or the condition holds.
+  Fidelity fidelity = 2;
+  OperatorCondition when = 3;
+  // The fidelity when the condition does not hold. Unspecified means the
+  // operator is unsupported there.
+  Fidelity otherwise = 4;
+}
+
+// The column facts a fidelity depends on (§8.9, §9.2). A fact that is not
+// set matches anything; an unknown fact on the column never matches a set
+// one.
+message OperatorCondition {
+  Collation collation = 1;
+}
