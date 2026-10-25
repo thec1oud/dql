@@ -63,6 +63,10 @@ func TestIssueString(t *testing.T) {
 			"published_at: set by both the payload and an expression"},
 		{dql.ValidationIssue{Field: "x", Kind: "future_kind"},
 			"x: future_kind"},
+		{dql.ValidationIssue{Shape: "shop.app.slug_text", Kind: dql.KindPattern, Pattern: "^[a-z]+$", Constraint: "c"},
+			`shop.app.slug_text: does not match "^[a-z]+$" (c)`},
+		{dql.ValidationIssue{Kind: dql.KindNotEmpty},
+			"empty"},
 	}
 	for _, tt := range tests {
 		if got := tt.issue.String(); got != tt.want {
