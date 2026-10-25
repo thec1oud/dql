@@ -8,6 +8,7 @@ package shopdb
 
 import (
 	"slices"
+	"strconv"
 
 	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/opt"
@@ -90,6 +91,13 @@ func TagLinkCreate(d TagDraft) TagLink {
 	return TagLink{change: dql.ChangeCreate, draft: d}
 }
 
+func (l TagLink) validate() dql.ValidationErrors {
+	if l.change == dql.ChangeCreate {
+		return l.draft.validate()
+	}
+	return nil
+}
+
 // TagPostsChange holds one change to a related shop.app.posts: link, create, unlink (§14.5, §14.6).
 type TagPostsChange struct {
 	change dql.Change
@@ -115,6 +123,13 @@ func TagPostsUnlink(k PostKey) TagPostsChange {
 	return TagPostsChange{change: dql.ChangeUnlink, key: k}
 }
 
+func (c TagPostsChange) validate() dql.ValidationErrors {
+	if c.change == dql.ChangeCreate {
+		return c.draft.validate()
+	}
+	return nil
+}
+
 // TagRef holds one change to a related shop.app.tags: link, create (§14.5, §14.6).
 type TagRef struct {
 	change dql.Change
@@ -133,6 +148,13 @@ func TagRefLink(k TagKey) TagRef {
 // TagRefCreate returns the TagRef that creates.
 func TagRefCreate(d TagDraft) TagRef {
 	return TagRef{change: dql.ChangeCreate, draft: d}
+}
+
+func (r TagRef) validate() dql.ValidationErrors {
+	if r.change == dql.ChangeCreate {
+		return r.draft.validate()
+	}
+	return nil
 }
 
 // ToPartial converts d to TagPartial (§14.9).
@@ -229,4 +251,104 @@ func MergeTagByKey(rows []TagFull, changes []dql.Keyed[TagKey, TagPartial]) (mer
 		}
 	}
 	return merged, unmatched
+}
+
+// Validate checks d against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (d TagDraft) Validate() error { return d.validate().Err() }
+
+func (d TagDraft) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlSlugTextCheck.Check(&v, "tag.draft.flat", "name", string(d.Name))
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n TagDraftNested) Validate() error { return n.validate().Err() }
+
+func (n TagDraftNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlSlugTextCheck.Check(&v, "tag.draft.nested", "name", string(n.Name))
+	for i, x := range n.PostTags {
+		v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
+	}
+	for i, x := range n.Posts {
+		v = append(v, x.validate().At("posts["+strconv.Itoa(i)+"]")...)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n TagDraftNests) Validate() error { return n.validate().Err() }
+
+func (n TagDraftNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	for i, x := range n.PostTags {
+		v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
+	}
+	for i, x := range n.Posts {
+		v = append(v, x.validate().At("posts["+strconv.Itoa(i)+"]")...)
+	}
+	return v
+}
+
+// Validate checks p against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (p TagPartial) Validate() error { return p.validate().Err() }
+
+func (p TagPartial) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := p.Name.Get(); ok {
+		dqlSlugTextCheck.Check(&v, "tag.partial.flat", "name", string(x))
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n TagPartialNested) Validate() error { return n.validate().Err() }
+
+func (n TagPartialNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Name.Get(); ok {
+		dqlSlugTextCheck.Check(&v, "tag.partial.nested", "name", string(x))
+	}
+	if xs, ok := n.PostTags.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	if xs, ok := n.Posts.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("posts["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n TagPartialNests) Validate() error { return n.validate().Err() }
+
+func (n TagPartialNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if xs, ok := n.PostTags.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	if xs, ok := n.Posts.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("posts["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	return v
 }

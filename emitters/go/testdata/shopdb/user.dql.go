@@ -8,6 +8,7 @@ package shopdb
 
 import (
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -112,6 +113,13 @@ func UserRefLink(k UserKey) UserRef {
 // UserRefCreate returns the UserRef that creates.
 func UserRefCreate(d UserDraft) UserRef {
 	return UserRef{change: dql.ChangeCreate, draft: d}
+}
+
+func (r UserRef) validate() dql.ValidationErrors {
+	if r.change == dql.ChangeCreate {
+		return r.draft.validate()
+	}
+	return nil
 }
 
 // ToPartial converts d to UserPartial (§14.9).
@@ -227,4 +235,116 @@ func MergeUserByKey(rows []UserFull, changes []dql.Keyed[UserKey, UserPartial]) 
 		}
 	}
 	return merged, unmatched
+}
+
+// Validate checks d against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (d UserDraft) Validate() error { return d.validate().Err() }
+
+func (d UserDraft) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlEmailAddressCheck.Check(&v, "user.draft.flat", "email", string(d.Email))
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n UserDraftNested) Validate() error { return n.validate().Err() }
+
+func (n UserDraftNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlEmailAddressCheck.Check(&v, "user.draft.nested", "email", string(n.Email))
+	for i, x := range n.PostsToAuthor {
+		v = append(v, x.validate().At("posts_to_author["+strconv.Itoa(i)+"]")...)
+	}
+	for i, x := range n.PostsToEditor {
+		v = append(v, x.validate().At("posts_to_editor["+strconv.Itoa(i)+"]")...)
+	}
+	if x, ok := n.Profile.Get(); ok {
+		v = append(v, x.validate().At("profile")...)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n UserDraftNests) Validate() error { return n.validate().Err() }
+
+func (n UserDraftNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	for i, x := range n.PostsToAuthor {
+		v = append(v, x.validate().At("posts_to_author["+strconv.Itoa(i)+"]")...)
+	}
+	for i, x := range n.PostsToEditor {
+		v = append(v, x.validate().At("posts_to_editor["+strconv.Itoa(i)+"]")...)
+	}
+	if x, ok := n.Profile.Get(); ok {
+		v = append(v, x.validate().At("profile")...)
+	}
+	return v
+}
+
+// Validate checks p against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (p UserPartial) Validate() error { return p.validate().Err() }
+
+func (p UserPartial) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := p.Email.Get(); ok {
+		dqlEmailAddressCheck.Check(&v, "user.partial.flat", "email", string(x))
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n UserPartialNested) Validate() error { return n.validate().Err() }
+
+func (n UserPartialNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Email.Get(); ok {
+		dqlEmailAddressCheck.Check(&v, "user.partial.nested", "email", string(x))
+	}
+	if xs, ok := n.PostsToAuthor.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("posts_to_author["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	if xs, ok := n.PostsToEditor.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("posts_to_editor["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	if x, ok := n.Profile.Get(); ok {
+		v = append(v, x.validate().At("profile")...)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n UserPartialNests) Validate() error { return n.validate().Err() }
+
+func (n UserPartialNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if xs, ok := n.PostsToAuthor.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("posts_to_author["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	if xs, ok := n.PostsToEditor.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("posts_to_editor["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	if x, ok := n.Profile.Get(); ok {
+		v = append(v, x.validate().At("profile")...)
+	}
+	return v
 }

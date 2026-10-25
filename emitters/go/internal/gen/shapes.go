@@ -418,4 +418,5 @@ func (g *generator) union(f *file, u *irv1.RelationUnion) {
 			ctor, name, strings.ToLower(strings.TrimPrefix(changeWords[v.GetChange()], "Change")), ctor, strings.Join(params, ", "), name,
 			name, strings.Join(append([]string{"change: " + dql + "." + changeWords[v.GetChange()]}, sets...), ", "))
 	}
+	g.unionValidator(f, u, name, draftType, partialType)
 }

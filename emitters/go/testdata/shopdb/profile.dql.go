@@ -112,6 +112,16 @@ func ProfileDeleteForUser(k ProfileKey) ProfileChangeForUser {
 	return ProfileChangeForUser{change: dql.ChangeDelete, key: k}
 }
 
+func (u ProfileChangeForUser) validate() dql.ValidationErrors {
+	if u.change == dql.ChangeCreate {
+		return u.draft.validate()
+	}
+	if u.change == dql.ChangeUpdate {
+		return u.partial.validate()
+	}
+	return nil
+}
+
 // ProfileUserChange holds one change to a related shop.app.users: update (§14.5, §14.6).
 type ProfileUserChange struct {
 	change  dql.Change
@@ -124,6 +134,13 @@ func (c ProfileUserChange) Change() dql.Change { return c.change }
 // ProfileUserUpdate returns the ProfileUserChange that updates.
 func ProfileUserUpdate(p UserPartial) ProfileUserChange {
 	return ProfileUserChange{change: dql.ChangeUpdate, partial: p}
+}
+
+func (c ProfileUserChange) validate() dql.ValidationErrors {
+	if c.change == dql.ChangeUpdate {
+		return c.partial.validate()
+	}
+	return nil
 }
 
 // ToPartial converts d to ProfilePartial (§14.9).
@@ -227,4 +244,96 @@ func MergeProfileByKey(rows []ProfileFull, changes []dql.Keyed[ProfileKey, Profi
 		}
 	}
 	return merged, unmatched
+}
+
+// Validate checks d against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (d ProfileDraft) Validate() error { return d.validate().Err() }
+
+func (d ProfileDraft) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks u against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (u ProfileDraftForUser) Validate() error { return u.validate().Err() }
+
+func (u ProfileDraftForUser) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n ProfileDraftNested) Validate() error { return n.validate().Err() }
+
+func (n ProfileDraftNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.User.Get(); ok {
+		v = append(v, x.validate().At("user")...)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n ProfileDraftNests) Validate() error { return n.validate().Err() }
+
+func (n ProfileDraftNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.User.Get(); ok {
+		v = append(v, x.validate().At("user")...)
+	}
+	return v
+}
+
+// Validate checks p against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (p ProfilePartial) Validate() error { return p.validate().Err() }
+
+func (p ProfilePartial) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks u against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (u ProfilePartialForUser) Validate() error { return u.validate().Err() }
+
+func (u ProfilePartialForUser) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n ProfilePartialNested) Validate() error { return n.validate().Err() }
+
+func (n ProfilePartialNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.User.Get(); ok {
+		v = append(v, x.validate().At("user")...)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n ProfilePartialNests) Validate() error { return n.validate().Err() }
+
+func (n ProfilePartialNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.User.Get(); ok {
+		v = append(v, x.validate().At("user")...)
+	}
+	return v
 }

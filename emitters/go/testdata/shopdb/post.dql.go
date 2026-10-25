@@ -8,6 +8,7 @@ package shopdb
 
 import (
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/thec1oud/dql/runtime/go/dql"
@@ -175,6 +176,16 @@ func PostAuthorUpdate(p UserPartial) PostAuthorChange {
 	return PostAuthorChange{change: dql.ChangeUpdate, partial: p}
 }
 
+func (c PostAuthorChange) validate() dql.ValidationErrors {
+	if c.change == dql.ChangeCreate {
+		return c.draft.validate()
+	}
+	if c.change == dql.ChangeUpdate {
+		return c.partial.validate()
+	}
+	return nil
+}
+
 // PostChangeForAuthor holds one change to a related shop.app.posts: create, update, delete (§14.5, §14.6).
 type PostChangeForAuthor struct {
 	change  dql.Change
@@ -201,6 +212,16 @@ func PostDeleteForAuthor(k PostKey) PostChangeForAuthor {
 	return PostChangeForAuthor{change: dql.ChangeDelete, key: k}
 }
 
+func (a PostChangeForAuthor) validate() dql.ValidationErrors {
+	if a.change == dql.ChangeCreate {
+		return a.draft.validate()
+	}
+	if a.change == dql.ChangeUpdate {
+		return a.partial.validate()
+	}
+	return nil
+}
+
 // PostChangeForEditor holds one change to a related shop.app.posts: create, update, delete (§14.5, §14.6).
 type PostChangeForEditor struct {
 	change  dql.Change
@@ -225,6 +246,16 @@ func PostUpdateForEditor(k PostKey, p PostPartialForEditor) PostChangeForEditor 
 // PostDeleteForEditor returns the PostChangeForEditor that deletes.
 func PostDeleteForEditor(k PostKey) PostChangeForEditor {
 	return PostChangeForEditor{change: dql.ChangeDelete, key: k}
+}
+
+func (e PostChangeForEditor) validate() dql.ValidationErrors {
+	if e.change == dql.ChangeCreate {
+		return e.draft.validate()
+	}
+	if e.change == dql.ChangeUpdate {
+		return e.partial.validate()
+	}
+	return nil
 }
 
 // PostEditorChange holds one change to a related shop.app.users: link, create, update, unlink (§14.5, §14.6).
@@ -258,6 +289,16 @@ func PostEditorUnlink() PostEditorChange {
 	return PostEditorChange{change: dql.ChangeUnlink}
 }
 
+func (c PostEditorChange) validate() dql.ValidationErrors {
+	if c.change == dql.ChangeCreate {
+		return c.draft.validate()
+	}
+	if c.change == dql.ChangeUpdate {
+		return c.partial.validate()
+	}
+	return nil
+}
+
 // PostLink holds one change to a related shop.app.posts: link, create (§14.5, §14.6).
 type PostLink struct {
 	change dql.Change
@@ -278,6 +319,13 @@ func PostLinkCreate(d PostDraft) PostLink {
 	return PostLink{change: dql.ChangeCreate, draft: d}
 }
 
+func (l PostLink) validate() dql.ValidationErrors {
+	if l.change == dql.ChangeCreate {
+		return l.draft.validate()
+	}
+	return nil
+}
+
 // PostRef holds one change to a related shop.app.posts: link, create (§14.5, §14.6).
 type PostRef struct {
 	change dql.Change
@@ -296,6 +344,13 @@ func PostRefLink(k PostKey) PostRef {
 // PostRefCreate returns the PostRef that creates.
 func PostRefCreate(d PostDraft) PostRef {
 	return PostRef{change: dql.ChangeCreate, draft: d}
+}
+
+func (r PostRef) validate() dql.ValidationErrors {
+	if r.change == dql.ChangeCreate {
+		return r.draft.validate()
+	}
+	return nil
 }
 
 // PostTagsChange holds one change to a related shop.app.tags: link, create, unlink (§14.5, §14.6).
@@ -321,6 +376,13 @@ func PostTagsCreate(d TagDraft) PostTagsChange {
 // PostTagsUnlink returns the PostTagsChange that unlinks.
 func PostTagsUnlink(k TagKey) PostTagsChange {
 	return PostTagsChange{change: dql.ChangeUnlink, key: k}
+}
+
+func (c PostTagsChange) validate() dql.ValidationErrors {
+	if c.change == dql.ChangeCreate {
+		return c.draft.validate()
+	}
+	return nil
 }
 
 // ToPartial converts d to PostPartial (§14.9).
@@ -472,4 +534,176 @@ func MergePostByKey(rows []PostFull, changes []dql.Keyed[PostKey, PostPartial]) 
 		}
 	}
 	return merged, unmatched
+}
+
+// Validate checks d against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (d PostDraft) Validate() error { return d.validate().Err() }
+
+func (d PostDraft) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlPostsTitleCheck.Check(&v, "post.draft.flat", "title", d.Title)
+	return v
+}
+
+// Validate checks a against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (a PostDraftForAuthor) Validate() error { return a.validate().Err() }
+
+func (a PostDraftForAuthor) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlPostsTitleCheck.Check(&v, "post.draft.flat.for.author", "title", a.Title)
+	return v
+}
+
+// Validate checks e against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (e PostDraftForEditor) Validate() error { return e.validate().Err() }
+
+func (e PostDraftForEditor) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlPostsTitleCheck.Check(&v, "post.draft.flat.for.editor", "title", e.Title)
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n PostDraftNested) Validate() error { return n.validate().Err() }
+
+func (n PostDraftNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlPostsTitleCheck.Check(&v, "post.draft.nested", "title", n.Title)
+	if x, ok := n.Author.Get(); ok {
+		v = append(v, x.validate().At("author")...)
+	}
+	if x, ok := n.Editor.Get(); ok {
+		v = append(v, x.validate().At("editor")...)
+	}
+	for i, x := range n.PostTags {
+		v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
+	}
+	for i, x := range n.Tags {
+		v = append(v, x.validate().At("tags["+strconv.Itoa(i)+"]")...)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n PostDraftNests) Validate() error { return n.validate().Err() }
+
+func (n PostDraftNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Author.Get(); ok {
+		v = append(v, x.validate().At("author")...)
+	}
+	if x, ok := n.Editor.Get(); ok {
+		v = append(v, x.validate().At("editor")...)
+	}
+	for i, x := range n.PostTags {
+		v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
+	}
+	for i, x := range n.Tags {
+		v = append(v, x.validate().At("tags["+strconv.Itoa(i)+"]")...)
+	}
+	return v
+}
+
+// Validate checks p against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (p PostPartial) Validate() error { return p.validate().Err() }
+
+func (p PostPartial) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := p.Title.Get(); ok {
+		dqlPostsTitleCheck.Check(&v, "post.partial.flat", "title", x)
+	}
+	return v
+}
+
+// Validate checks a against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (a PostPartialForAuthor) Validate() error { return a.validate().Err() }
+
+func (a PostPartialForAuthor) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := a.Title.Get(); ok {
+		dqlPostsTitleCheck.Check(&v, "post.partial.flat.for.author", "title", x)
+	}
+	return v
+}
+
+// Validate checks e against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (e PostPartialForEditor) Validate() error { return e.validate().Err() }
+
+func (e PostPartialForEditor) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := e.Title.Get(); ok {
+		dqlPostsTitleCheck.Check(&v, "post.partial.flat.for.editor", "title", x)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n PostPartialNested) Validate() error { return n.validate().Err() }
+
+func (n PostPartialNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Title.Get(); ok {
+		dqlPostsTitleCheck.Check(&v, "post.partial.nested", "title", x)
+	}
+	if x, ok := n.Author.Get(); ok {
+		v = append(v, x.validate().At("author")...)
+	}
+	if x, ok := n.Editor.Get(); ok {
+		v = append(v, x.validate().At("editor")...)
+	}
+	if xs, ok := n.PostTags.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	if xs, ok := n.Tags.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("tags["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n PostPartialNests) Validate() error { return n.validate().Err() }
+
+func (n PostPartialNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Author.Get(); ok {
+		v = append(v, x.validate().At("author")...)
+	}
+	if x, ok := n.Editor.Get(); ok {
+		v = append(v, x.validate().At("editor")...)
+	}
+	if xs, ok := n.PostTags.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	if xs, ok := n.Tags.Get(); ok {
+		for i, x := range xs {
+			v = append(v, x.validate().At("tags["+strconv.Itoa(i)+"]")...)
+		}
+	}
+	return v
 }
