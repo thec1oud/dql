@@ -2,13 +2,18 @@
 // every column, the operators the target dialect supports on it (design
 // record §9, plans/operator-catalog-proposal.md).
 //
-// The core defines each operator's signature once. A dialect plugin
+// The core defines each portable operator's signature once, and type and
+// dialect plugins add their own under their name (Add). A dialect plugin
 // publishes its fidelity per operator in the capability profile, and the
 // core resolves fidelity per column, so an emitter generates exactly the
 // operators a column lists (§9.3).
 package operators
 
 import (
+	"slices"
+	"strings"
+
+	"github.com/thec1oud/dql/core/diagnostics"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -35,7 +40,8 @@ func Catalog() []*irv1.Operator {
 		never   = irv1.NullBehavior_NULL_BEHAVIOR_NEVER_NULL
 	)
 	op := func(name string, args []*irv1.OperandType, returns *irv1.OperandType, null irv1.NullBehavior, requires ...string) *irv1.Operator {
-		return &irv1.Operator{Name: name, Signature: &irv1.Signature{Args: args, Returns: returns}, Requires: requires, NullBehavior: null}
+		return &irv1.Operator{Name: name, Signature: &irv1.Signature{Args: args, Returns: returns}, Requires: requires, NullBehavior: null,
+			Origin: &irv1.OperatorOrigin{Kind: irv1.OperatorOriginKind_OPERATOR_ORIGIN_KIND_CORE}}
 	}
 	tt := []*irv1.OperandType{t, t}
 	texts := []*irv1.OperandType{text, text}
@@ -71,6 +77,45 @@ func Catalog() []*irv1.Operator {
 		op("starts_with", texts, boolean, strict),
 		op("sub", tt, t, strict, Numeric),
 	}
+}
+
+// Diagnostic codes of Add.
+const (
+	// A plugin's operator is not named <plugin>.<name>.
+	CodeOperatorUnprefixed = "operator-unprefixed"
+	// Two operators share a name.
+	CodeOperatorDuplicate = "operator-duplicate"
+)
+
+// Add adds the operators a type or dialect plugin contributes to the
+// catalog ops, recording their origin, and returns the catalog sorted by
+// name with the diagnostics, sorted. Each must be named <plugin>.<name>,
+// and no name may repeat one already in the catalog. An operator with an
+// error is left out.
+func Add(ops, contributed []*irv1.Operator, kind irv1.OperatorOriginKind, plugin string) ([]*irv1.Operator, []*irv1.Diagnostic) {
+	var ds []*irv1.Diagnostic
+	names := map[string]bool{}
+	for _, o := range ops {
+		names[o.GetName()] = true
+	}
+	for _, o := range contributed {
+		name := o.GetName()
+		switch rest, ok := strings.CutPrefix(name, plugin+"."); {
+		case !ok || rest == "":
+			ds = append(ds, diagnostics.Errorf(CodeOperatorUnprefixed, nil,
+				"plugin %s contributes operator %q; a plugin's operators are named %s.<name>", plugin, name, plugin))
+		case names[name]:
+			ds = append(ds, diagnostics.Errorf(CodeOperatorDuplicate, nil,
+				"plugin %s contributes operator %q, which the catalog already has", plugin, name))
+		default:
+			names[name] = true
+			o.Origin = &irv1.OperatorOrigin{Kind: kind, Plugin: plugin}
+			ops = append(ops, o)
+		}
+	}
+	slices.SortFunc(ops, func(a, b *irv1.Operator) int { return strings.Compare(a.GetName(), b.GetName()) })
+	diagnostics.Sort(ds)
+	return ops, ds
 }
 
 func typeVar(name string) *irv1.OperandType {

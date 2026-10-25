@@ -293,3 +293,34 @@ func TestResolveMalformedOperator(t *testing.T) {
 		t.Errorf("operators %q, want none", got)
 	}
 }
+
+func TestAdd(t *testing.T) {
+	sig := &irv1.Signature{Args: []*irv1.OperandType{{Kind: &irv1.OperandType_Var{Var: "T"}}}}
+	contributed := []*irv1.Operator{
+		{Name: "postgres.jsonb_has_key", Signature: sig},
+		{Name: "postgres.fts_match", Signature: sig},
+		{Name: "jsonb_has_key", Signature: sig},
+		{Name: "postgres.", Signature: sig},
+		{Name: "postgres.fts_match", Signature: sig},
+	}
+	ops, ds := operators.Add(operators.Catalog(), contributed, irv1.OperatorOriginKind_OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN, "postgres")
+	var codes []string
+	for _, d := range ds {
+		codes = append(codes, d.GetCode())
+	}
+	if want := []string{"operator-duplicate", "operator-unprefixed", "operator-unprefixed"}; !slices.Equal(codes, want) {
+		t.Errorf("codes %v, want %v: %v", codes, want, ds)
+	}
+	if len(ops) != 32 || !slices.IsSortedFunc(ops, func(a, b *irv1.Operator) int { return strings.Compare(a.GetName(), b.GetName()) }) {
+		t.Fatalf("%d operators, sorted %v", len(ops), ops)
+	}
+	for _, o := range ops {
+		want := &irv1.OperatorOrigin{Kind: irv1.OperatorOriginKind_OPERATOR_ORIGIN_KIND_CORE}
+		if strings.HasPrefix(o.GetName(), "postgres.") {
+			want = &irv1.OperatorOrigin{Kind: irv1.OperatorOriginKind_OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN, Plugin: "postgres"}
+		}
+		if o.GetOrigin().GetKind() != want.GetKind() || o.GetOrigin().GetPlugin() != want.GetPlugin() {
+			t.Errorf("%s: origin %v, want %v", o.GetName(), o.GetOrigin(), want)
+		}
+	}
+}
