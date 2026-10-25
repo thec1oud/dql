@@ -86,15 +86,13 @@ func table(b *irv1.Bundle, name string) *irv1.Table {
 
 func TestPlanShop(t *testing.T) {
 	qs := planned(shop(t))
-	want := "post.count post.delete post.exists post.find.by_primary post.get.by_primary post.insert post.patch " +
-		"post.upsert.by_posts_one_published_slug post.upsert.by_primary " +
-		"post_tag.count post_tag.delete post_tag.exists post_tag.find.by_primary post_tag.get.by_primary post_tag.insert post_tag.upsert.by_primary " +
-		"profile.count profile.delete profile.exists profile.find.by_primary profile.get.by_primary profile.insert profile.patch profile.upsert.by_primary " +
+	want := "post.count post.delete post.delete_where post.exists post.find.by_primary post.get.by_primary post.insert post.insert_or_ignore.by_posts_one_published_slug post.insert_or_ignore.by_primary post.patch post.update_where post.upsert.by_posts_one_published_slug post.upsert.by_primary " +
+		"post_tag.count post_tag.delete post_tag.delete_where post_tag.exists post_tag.find.by_primary post_tag.get.by_primary post_tag.insert post_tag.insert_or_ignore.by_primary post_tag.upsert.by_primary " +
+		"profile.count profile.delete profile.delete_where profile.exists profile.find.by_primary profile.get.by_primary profile.insert profile.insert_or_ignore.by_primary profile.patch profile.update_where profile.upsert.by_primary " +
 		"published_post.count published_post.exists published_post.find.by_logical_key published_post.get.by_logical_key " +
-		"tag.count tag.delete tag.exists tag.find.by_name tag.find.by_primary tag.get.by_name tag.get.by_primary tag.insert tag.patch tag.upsert.by_name tag.upsert.by_primary " +
-		"tenant.count tenant.delete tenant.exists tenant.find.by_primary tenant.get.by_primary tenant.insert tenant.patch tenant.upsert.by_primary " +
-		"user.count user.delete user.exists user.find.by_primary user.find.by_tenant_id_and_email user.get.by_primary user.get.by_tenant_id_and_email " +
-		"user.insert user.patch user.upsert.by_primary user.upsert.by_tenant_id_and_email"
+		"tag.count tag.delete tag.delete_where tag.exists tag.find.by_name tag.find.by_primary tag.get.by_name tag.get.by_primary tag.insert tag.insert_or_ignore.by_name tag.insert_or_ignore.by_primary tag.patch tag.update_where tag.upsert.by_name tag.upsert.by_primary " +
+		"tenant.count tenant.delete tenant.delete_where tenant.exists tenant.find.by_primary tenant.get.by_primary tenant.insert tenant.insert_or_ignore.by_primary tenant.patch tenant.update_where tenant.upsert.by_primary " +
+		"user.count user.delete user.delete_where user.exists user.find.by_primary user.find.by_tenant_id_and_email user.get.by_primary user.get.by_tenant_id_and_email user.insert user.insert_or_ignore.by_primary user.insert_or_ignore.by_tenant_id_and_email user.patch user.update_where user.upsert.by_primary user.upsert.by_tenant_id_and_email"
 	if got := names(qs); got != want {
 		t.Errorf("queries\n got %s\nwant %s", got, want)
 	}
@@ -113,7 +111,12 @@ func TestPlanShop(t *testing.T) {
 		"user.patch": "update.users(returning=" + full + ", sets=[set.users.email(0=$email), set.users.display_name(0=$display_name), set.users.password_hash(0=$password_hash), " +
 			"set.users.version(0=op.add(0=col.users.version, 1=value.one))], " +
 			"where=clause.where(0=bool.and(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.id, 1=$key.id)), 1=op.eq(0=col.users.version, 1=$key.version))))",
-		"user.delete": "delete.users(where=clause.where(0=bool.and(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.id, 1=$key.id)), 1=op.eq(0=col.users.version, 1=$key.version))))",
+		"user.update_where": "update.users(sets=[set.users.email(0=$email), set.users.display_name(0=$display_name), set.users.password_hash(0=$password_hash), " +
+			"set.users.version(0=op.add(0=col.users.version, 1=value.one))], where=clause.where(0=" + scope + "))",
+		"user.delete_where":                            "delete.users(where=clause.where(0=" + scope + "))",
+		"tenant.delete_where":                          "delete.tenants",
+		"user.insert_or_ignore.by_tenant_id_and_email": "ignore.users.users_tenant_email_key(cols=[" + draftCols + "], returning=" + full + ", rows=values.row(0=[" + draftVals + "]))",
+		"user.delete":                                  "delete.users(where=clause.where(0=bool.and(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.id, 1=$key.id)), 1=op.eq(0=col.users.version, 1=$key.version))))",
 		"user.upsert.by_tenant_id_and_email": "upsert.users.users_tenant_email_key(cols=[" + draftCols + "], returning=" + full + ", rows=values.row(0=[" + draftVals + "]), " +
 			"sets=[set.users.display_name(0=excluded.users.display_name), set.users.password_hash(0=excluded.users.password_hash), set.users.version(0=op.add(0=col.users.version, 1=value.one))])",
 		// Every field is the key: the upsert sets a key column to itself.
@@ -188,10 +191,12 @@ func TestPlanSoftDelete(t *testing.T) {
 	live := "op.is_null(0=col.posts.published_at)"
 	key := "op.eq(0=col.posts.id, 1=$key.id)"
 	for name, plan := range map[string]string{
-		"post.get.by_primary": "select.post.full.flat + clause.where(0=bool.and(0=" + live + ", 1=" + key + "))",
-		"post.delete":         "update.posts(sets=[set.posts.published_at(0=value.now)], where=clause.where(0=bool.and(0=" + live + ", 1=" + key + ")))",
-		"post.hard_delete":    "delete.posts(where=clause.where(0=" + key + "))",
-		"user.count":          "count.users(where=clause.where(0=bool.and(0=op.eq(0=col.users.tenant_id, 1=$scope.tenant_id), 1=op.is_distinct_from(0=col.users.hidden, 1=value.true))))",
+		"post.get.by_primary":    "select.post.full.flat + clause.where(0=bool.and(0=" + live + ", 1=" + key + "))",
+		"post.delete":            "update.posts(sets=[set.posts.published_at(0=value.now)], where=clause.where(0=bool.and(0=" + live + ", 1=" + key + ")))",
+		"post.hard_delete":       "delete.posts(where=clause.where(0=" + key + "))",
+		"post.delete_where":      "update.posts(sets=[set.posts.published_at(0=value.now)], where=clause.where(0=" + live + "))",
+		"post.hard_delete_where": "delete.posts",
+		"user.count":             "count.users(where=clause.where(0=bool.and(0=op.eq(0=col.users.tenant_id, 1=$scope.tenant_id), 1=op.is_distinct_from(0=col.users.hidden, 1=value.true))))",
 		"user.delete": "update.users(sets=[set.users.hidden(0=value.true), set.users.version(0=op.add(0=col.users.version, 1=value.one))], " +
 			"where=clause.where(0=bool.and(0=bool.and(0=bool.and(0=op.eq(0=col.users.tenant_id, 1=$scope.tenant_id), 1=op.is_distinct_from(0=col.users.hidden, 1=value.true)), " +
 			"1=op.eq(0=col.users.id, 1=$key.id)), 1=op.eq(0=col.users.version, 1=$key.version))))",
@@ -201,6 +206,19 @@ func TestPlanSoftDelete(t *testing.T) {
 		if got := describe(qs[name].GetPlan().GetParts()); got != plan {
 			t.Errorf("%s\n got %s\nwant %s", name, got, plan)
 		}
+	}
+}
+
+// An entity without a Key still updates and deletes the rows a filter
+// keeps (§20.1).
+func TestPlanWithoutKey(t *testing.T) {
+	b := shop(t)
+	b.Shapes.Shapes = slices.DeleteFunc(b.GetShapes().GetShapes(), func(s *irv1.Shape) bool {
+		return s.GetEntity().GetObject() == "tenants" && s.GetId().GetPreset() == irv1.Preset_PRESET_KEY
+	})
+	qs := planned(b)
+	if qs["tenant.patch"] != nil || qs["tenant.delete"] != nil || qs["tenant.update_where"] == nil || qs["tenant.delete_where"] == nil {
+		t.Error(names(qs))
 	}
 }
 
