@@ -38,6 +38,8 @@ type variant struct {
 	scope        *scopeGroup
 	unscoped     bool
 	entities     []*entity
+	// queries names the variant's Querier, when it has query-file queries.
+	queries *querierNames
 }
 
 // handles generates dql-db.dql.go: New, the handles of each variant, the
@@ -80,6 +82,13 @@ func (g *generator) handles(es []*entity) {
 	}
 	if len(groups) > 0 {
 		variants = append(variants, unscoped)
+	}
+	queries := g.queriers(variants, groups)
+	for v, n := range queries {
+		v.queries = &n
+	}
+	if len(queries) > 0 && slices.ContainsFunc(es, func(e *entity) bool { return e.plural == "Queries" }) {
+		g.errorf(CodeNameCollision, nil, "a table's store gets the handle field Queries, which the query files' queries have (§26.1); give the table a name annotation")
 	}
 	f.printf("// New returns the handle on exec: it reads and writes every entity without\n// a scope; a scoped entity needs a handle with its scope (§21.1).\n")
 	g.declare("New", "the handle constructor New", nil)
@@ -130,6 +139,13 @@ func (g *generator) variant(f *file, v *variant) {
 		for _, e := range v.entities {
 			f.printf("\t%s %s\n", e.plural, g.storeIface(e, v, h.write))
 		}
+		if q := v.queries; q != nil {
+			iface := q.read
+			if h.write {
+				iface = q.write
+			}
+			f.printf("\t// Queries runs the query files' queries (§17).\n\tQueries %s\n", iface)
+		}
 		f.printf("}\n\n")
 		recv := strings.Fields(h.held)[0]
 		f.printf("func new%s(%s%s) %s {\n\treturn %s{\n\t\t%s: %s", h.name, h.held, scopeParam, h.name, h.name, recv, recv)
@@ -138,6 +154,17 @@ func (g *generator) variant(f *file, v *variant) {
 		}
 		for _, e := range v.entities {
 			f.printf(",\n\t\t%s: %s", e.plural, g.storeValue(e, v, recv, h.write))
+		}
+		if q := v.queries; q != nil {
+			w := "nil"
+			if h.write {
+				w = recv
+			}
+			scope := ""
+			if v.scope != nil {
+				scope = ", s"
+			}
+			f.printf(",\n\t\tQueries: %s{%s, %s%s}", q.impl, recv, w, scope)
 		}
 		f.printf(",\n\t}\n}\n\n")
 		r := receiver(splitWords(h.name))

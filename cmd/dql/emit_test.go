@@ -48,7 +48,7 @@ func sameFiles(t *testing.T, dir, want string) {
 // example, writing the golden shopdb package to out relative to dql.yaml
 // (§1.3, §15).
 func TestGenerateEmitsGo(t *testing.T) {
-	cfg := shopConfig(t, "")
+	cfg := withQueries(t, shopConfig(t, ""))
 	if code, _, stderr := dql("generate", "-config", cfg); code != 0 {
 		t.Fatalf("%d %q", code, stderr)
 	}
@@ -64,7 +64,7 @@ func TestGenerateEmitsGoAsExecutable(t *testing.T) {
 	}
 	t.Setenv("SHOP_DATABASE_URL", shopURL)
 	raw, _ := os.ReadFile(filepath.Join(shopDir, "dql.yaml"))
-	cfg := write(t, "dql.yaml", strings.Replace(string(raw), "  - plugin: go\n", "  - plugin: go\n    path: "+bin+"\n", 1))
+	cfg := withQueries(t, write(t, "dql.yaml", strings.Replace(string(raw), "  - plugin: go\n", "  - plugin: go\n    path: "+bin+"\n", 1)))
 	if code, _, stderr := dql("generate", "-config", cfg); code != 0 {
 		t.Fatalf("%d %q", code, stderr)
 	}

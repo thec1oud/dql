@@ -340,3 +340,45 @@ func TestSelect(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestQueries(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	other := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "other"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+	a := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "x"}))
+	must(h.Posts.Insert(ctx, shopdb.PostDraft{AuthorID: a.ID, Title: "One"}))
+	must(h.Posts.Insert(ctx, shopdb.PostDraft{AuthorID: a.ID, Title: "Two"}))
+
+	// The handle's scope fills @scope.tenant_id.
+	if got := must(h.Queries.GetUserByEmail(ctx, "ann@acme.com")); got != a {
+		t.Errorf("get %+v", got)
+	}
+	if _, err := db.WithScope(shopdb.UserScope{TenantID: other.ID}).Queries.GetUserByEmail(ctx, "ann@acme.com"); dql.ClassOf(err) != dql.ClassNotFound {
+		t.Errorf("another scope: %v", err)
+	}
+	if got := must(h.Queries.AuthorPostCounts(ctx)); len(got) != 1 || got[0].AuthorID != a.ID || got[0].DisplayName != nil || got[0].Posts != 2 {
+		t.Errorf("counts %+v", got)
+	}
+	name := "Ann"
+	if n := must(h.Queries.RenameUser(ctx, &name, a.ID, a.Version)); n != 1 {
+		t.Errorf("rename %d", n)
+	}
+
+	// Across scopes the scope is an argument; a read transaction reads.
+	admin := shopdb.Unscoped(h)
+	if n := must(admin.Queries.RenameUser(ctx, shopdb.UserScope{TenantID: acme.ID}, nil, a.ID, a.Version)); n != 0 {
+		t.Errorf("stale rename %d", n)
+	}
+	err := admin.Read(ctx, func(ctx context.Context, tx shopdb.UnscopedReadTx) error {
+		u, err := tx.Queries.GetUserByEmail(ctx, shopdb.UserScope{TenantID: acme.ID}, "ann@acme.com")
+		if u.DisplayName == nil || *u.DisplayName != "Ann" || u.Version != a.Version+1 {
+			t.Errorf("renamed %+v", u)
+		}
+		return err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
