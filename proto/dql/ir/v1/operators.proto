@@ -8,16 +8,35 @@ import "dql/ir/v1/types.proto";
 
 option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
 
-// An operator of the catalog (§9.1): defined once by the core, or by a type
-// plugin for its types (§9.3).
+// An operator of the catalog (§9.1). The core defines the portable ones; a
+// type plugin adds operators for its types (§9.3), and a dialect plugin its
+// native ones.
 message Operator {
-  // Such as eq, ilike or range_contains.
+  // Such as eq, ilike or range_contains. A plugin's operator is named
+  // <plugin>.<name>, such as postgres.jsonb_has_key; a core operator has no
+  // prefix.
   string name = 1;
   Signature signature = 2;
   // What the type variable must support: comparable, orderable, numeric,
   // json, or nullable for the operand itself. Sorted.
   repeated string requires = 3;
   NullBehavior null_behavior = 4;
+  OperatorOrigin origin = 5;
+}
+
+// Who defined an operator.
+message OperatorOrigin {
+  OperatorOriginKind kind = 1;
+  // The type or dialect plugin, empty for the core.
+  string plugin = 2;
+}
+
+enum OperatorOriginKind {
+  OPERATOR_ORIGIN_KIND_UNSPECIFIED = 0;
+  // A portable operator of §9.1.
+  OPERATOR_ORIGIN_KIND_CORE = 1;
+  OPERATOR_ORIGIN_KIND_TYPE_PLUGIN = 2;
+  OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN = 3;
 }
 
 // An operator's arguments and result, over logical types and type variables.

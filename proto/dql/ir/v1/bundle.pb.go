@@ -95,8 +95,8 @@ type Bundle struct {
 	Queries *QueryLayer `protobuf:"bytes,7,opt,name=queries,proto3" json:"queries,omitempty"`
 	// Warnings carried through to emitters.
 	Diagnostics []*Diagnostic `protobuf:"bytes,8,rep,name=diagnostics,proto3" json:"diagnostics,omitempty"`
-	// The operator catalog, the core's and the type plugins', sorted by name
-	// (§9.1).
+	// The operator catalog: the core's, the type plugins' and the dialect
+	// plugin's, sorted by name (§9.1, §9.3).
 	Operators     []*Operator `protobuf:"bytes,9,rep,name=operators,proto3" json:"operators,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

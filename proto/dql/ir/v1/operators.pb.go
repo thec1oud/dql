@@ -21,17 +21,74 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// An operator of the catalog (§9.1): defined once by the core, or by a type
-// plugin for its types (§9.3).
+type OperatorOriginKind int32
+
+const (
+	OperatorOriginKind_OPERATOR_ORIGIN_KIND_UNSPECIFIED OperatorOriginKind = 0
+	// A portable operator of §9.1.
+	OperatorOriginKind_OPERATOR_ORIGIN_KIND_CORE           OperatorOriginKind = 1
+	OperatorOriginKind_OPERATOR_ORIGIN_KIND_TYPE_PLUGIN    OperatorOriginKind = 2
+	OperatorOriginKind_OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN OperatorOriginKind = 3
+)
+
+// Enum value maps for OperatorOriginKind.
+var (
+	OperatorOriginKind_name = map[int32]string{
+		0: "OPERATOR_ORIGIN_KIND_UNSPECIFIED",
+		1: "OPERATOR_ORIGIN_KIND_CORE",
+		2: "OPERATOR_ORIGIN_KIND_TYPE_PLUGIN",
+		3: "OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN",
+	}
+	OperatorOriginKind_value = map[string]int32{
+		"OPERATOR_ORIGIN_KIND_UNSPECIFIED":    0,
+		"OPERATOR_ORIGIN_KIND_CORE":           1,
+		"OPERATOR_ORIGIN_KIND_TYPE_PLUGIN":    2,
+		"OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN": 3,
+	}
+)
+
+func (x OperatorOriginKind) Enum() *OperatorOriginKind {
+	p := new(OperatorOriginKind)
+	*p = x
+	return p
+}
+
+func (x OperatorOriginKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OperatorOriginKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_dql_ir_v1_operators_proto_enumTypes[0].Descriptor()
+}
+
+func (OperatorOriginKind) Type() protoreflect.EnumType {
+	return &file_dql_ir_v1_operators_proto_enumTypes[0]
+}
+
+func (x OperatorOriginKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OperatorOriginKind.Descriptor instead.
+func (OperatorOriginKind) EnumDescriptor() ([]byte, []int) {
+	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{0}
+}
+
+// An operator of the catalog (§9.1). The core defines the portable ones; a
+// type plugin adds operators for its types (§9.3), and a dialect plugin its
+// native ones.
 type Operator struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Such as eq, ilike or range_contains.
+	// Such as eq, ilike or range_contains. A plugin's operator is named
+	// <plugin>.<name>, such as postgres.jsonb_has_key; a core operator has no
+	// prefix.
 	Name      string     `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Signature *Signature `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
 	// What the type variable must support: comparable, orderable, numeric,
 	// json, or nullable for the operand itself. Sorted.
-	Requires      []string     `protobuf:"bytes,3,rep,name=requires,proto3" json:"requires,omitempty"`
-	NullBehavior  NullBehavior `protobuf:"varint,4,opt,name=null_behavior,json=nullBehavior,proto3,enum=dql.ir.v1.NullBehavior" json:"null_behavior,omitempty"`
+	Requires      []string        `protobuf:"bytes,3,rep,name=requires,proto3" json:"requires,omitempty"`
+	NullBehavior  NullBehavior    `protobuf:"varint,4,opt,name=null_behavior,json=nullBehavior,proto3,enum=dql.ir.v1.NullBehavior" json:"null_behavior,omitempty"`
+	Origin        *OperatorOrigin `protobuf:"bytes,5,opt,name=origin,proto3" json:"origin,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -94,6 +151,67 @@ func (x *Operator) GetNullBehavior() NullBehavior {
 	return NullBehavior_NULL_BEHAVIOR_UNSPECIFIED
 }
 
+func (x *Operator) GetOrigin() *OperatorOrigin {
+	if x != nil {
+		return x.Origin
+	}
+	return nil
+}
+
+// Who defined an operator.
+type OperatorOrigin struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Kind  OperatorOriginKind     `protobuf:"varint,1,opt,name=kind,proto3,enum=dql.ir.v1.OperatorOriginKind" json:"kind,omitempty"`
+	// The type or dialect plugin, empty for the core.
+	Plugin        string `protobuf:"bytes,2,opt,name=plugin,proto3" json:"plugin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OperatorOrigin) Reset() {
+	*x = OperatorOrigin{}
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OperatorOrigin) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OperatorOrigin) ProtoMessage() {}
+
+func (x *OperatorOrigin) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OperatorOrigin.ProtoReflect.Descriptor instead.
+func (*OperatorOrigin) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *OperatorOrigin) GetKind() OperatorOriginKind {
+	if x != nil {
+		return x.Kind
+	}
+	return OperatorOriginKind_OPERATOR_ORIGIN_KIND_UNSPECIFIED
+}
+
+func (x *OperatorOrigin) GetPlugin() string {
+	if x != nil {
+		return x.Plugin
+	}
+	return ""
+}
+
 // An operator's arguments and result, over logical types and type variables.
 type Signature struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -105,7 +223,7 @@ type Signature struct {
 
 func (x *Signature) Reset() {
 	*x = Signature{}
-	mi := &file_dql_ir_v1_operators_proto_msgTypes[1]
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -117,7 +235,7 @@ func (x *Signature) String() string {
 func (*Signature) ProtoMessage() {}
 
 func (x *Signature) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_operators_proto_msgTypes[1]
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -130,7 +248,7 @@ func (x *Signature) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Signature.ProtoReflect.Descriptor instead.
 func (*Signature) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{1}
+	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Signature) GetArgs() []*OperandType {
@@ -164,7 +282,7 @@ type OperandType struct {
 
 func (x *OperandType) Reset() {
 	*x = OperandType{}
-	mi := &file_dql_ir_v1_operators_proto_msgTypes[2]
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -176,7 +294,7 @@ func (x *OperandType) String() string {
 func (*OperandType) ProtoMessage() {}
 
 func (x *OperandType) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_operators_proto_msgTypes[2]
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -189,7 +307,7 @@ func (x *OperandType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OperandType.ProtoReflect.Descriptor instead.
 func (*OperandType) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{2}
+	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *OperandType) GetKind() isOperandType_Kind {
@@ -282,7 +400,7 @@ type OperatorSupport struct {
 
 func (x *OperatorSupport) Reset() {
 	*x = OperatorSupport{}
-	mi := &file_dql_ir_v1_operators_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +412,7 @@ func (x *OperatorSupport) String() string {
 func (*OperatorSupport) ProtoMessage() {}
 
 func (x *OperatorSupport) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_operators_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +425,7 @@ func (x *OperatorSupport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OperatorSupport.ProtoReflect.Descriptor instead.
 func (*OperatorSupport) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{3}
+	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *OperatorSupport) GetName() string {
@@ -350,7 +468,7 @@ type OperatorCondition struct {
 
 func (x *OperatorCondition) Reset() {
 	*x = OperatorCondition{}
-	mi := &file_dql_ir_v1_operators_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -362,7 +480,7 @@ func (x *OperatorCondition) String() string {
 func (*OperatorCondition) ProtoMessage() {}
 
 func (x *OperatorCondition) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_operators_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_operators_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -375,7 +493,7 @@ func (x *OperatorCondition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OperatorCondition.ProtoReflect.Descriptor instead.
 func (*OperatorCondition) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{4}
+	return file_dql_ir_v1_operators_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *OperatorCondition) GetCollation() *Collation {
@@ -389,12 +507,16 @@ var File_dql_ir_v1_operators_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_operators_proto_rawDesc = "" +
 	"\n" +
-	"\x19dql/ir/v1/operators.proto\x12\tdql.ir.v1\x1a\x17dql/ir/v1/objects.proto\x1a\x18dql/ir/v1/routines.proto\x1a\x15dql/ir/v1/types.proto\"\xac\x01\n" +
+	"\x19dql/ir/v1/operators.proto\x12\tdql.ir.v1\x1a\x17dql/ir/v1/objects.proto\x1a\x18dql/ir/v1/routines.proto\x1a\x15dql/ir/v1/types.proto\"\xdf\x01\n" +
 	"\bOperator\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x122\n" +
 	"\tsignature\x18\x02 \x01(\v2\x14.dql.ir.v1.SignatureR\tsignature\x12\x1a\n" +
 	"\brequires\x18\x03 \x03(\tR\brequires\x12<\n" +
-	"\rnull_behavior\x18\x04 \x01(\x0e2\x17.dql.ir.v1.NullBehaviorR\fnullBehavior\"i\n" +
+	"\rnull_behavior\x18\x04 \x01(\x0e2\x17.dql.ir.v1.NullBehaviorR\fnullBehavior\x121\n" +
+	"\x06origin\x18\x05 \x01(\v2\x19.dql.ir.v1.OperatorOriginR\x06origin\"[\n" +
+	"\x0eOperatorOrigin\x121\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x1d.dql.ir.v1.OperatorOriginKindR\x04kind\x12\x16\n" +
+	"\x06plugin\x18\x02 \x01(\tR\x06plugin\"i\n" +
 	"\tSignature\x12*\n" +
 	"\x04args\x18\x01 \x03(\v2\x16.dql.ir.v1.OperandTypeR\x04args\x120\n" +
 	"\areturns\x18\x02 \x01(\v2\x16.dql.ir.v1.OperandTypeR\areturns\"\xb0\x01\n" +
@@ -410,7 +532,12 @@ const file_dql_ir_v1_operators_proto_rawDesc = "" +
 	"\x04when\x18\x03 \x01(\v2\x1c.dql.ir.v1.OperatorConditionR\x04when\x121\n" +
 	"\totherwise\x18\x04 \x01(\x0e2\x13.dql.ir.v1.FidelityR\totherwise\"G\n" +
 	"\x11OperatorCondition\x122\n" +
-	"\tcollation\x18\x01 \x01(\v2\x14.dql.ir.v1.CollationR\tcollationB.Z,github.com/thec1oud/dql/proto/dql/ir/v1;irv1b\x06proto3"
+	"\tcollation\x18\x01 \x01(\v2\x14.dql.ir.v1.CollationR\tcollation*\xa8\x01\n" +
+	"\x12OperatorOriginKind\x12$\n" +
+	" OPERATOR_ORIGIN_KIND_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19OPERATOR_ORIGIN_KIND_CORE\x10\x01\x12$\n" +
+	" OPERATOR_ORIGIN_KIND_TYPE_PLUGIN\x10\x02\x12'\n" +
+	"#OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN\x10\x03B.Z,github.com/thec1oud/dql/proto/dql/ir/v1;irv1b\x06proto3"
 
 var (
 	file_dql_ir_v1_operators_proto_rawDescOnce sync.Once
@@ -424,35 +551,40 @@ func file_dql_ir_v1_operators_proto_rawDescGZIP() []byte {
 	return file_dql_ir_v1_operators_proto_rawDescData
 }
 
-var file_dql_ir_v1_operators_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_dql_ir_v1_operators_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_dql_ir_v1_operators_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_dql_ir_v1_operators_proto_goTypes = []any{
-	(*Operator)(nil),          // 0: dql.ir.v1.Operator
-	(*Signature)(nil),         // 1: dql.ir.v1.Signature
-	(*OperandType)(nil),       // 2: dql.ir.v1.OperandType
-	(*OperatorSupport)(nil),   // 3: dql.ir.v1.OperatorSupport
-	(*OperatorCondition)(nil), // 4: dql.ir.v1.OperatorCondition
-	(NullBehavior)(0),         // 5: dql.ir.v1.NullBehavior
-	(*Type)(nil),              // 6: dql.ir.v1.Type
-	(Fidelity)(0),             // 7: dql.ir.v1.Fidelity
-	(*Collation)(nil),         // 8: dql.ir.v1.Collation
+	(OperatorOriginKind)(0),   // 0: dql.ir.v1.OperatorOriginKind
+	(*Operator)(nil),          // 1: dql.ir.v1.Operator
+	(*OperatorOrigin)(nil),    // 2: dql.ir.v1.OperatorOrigin
+	(*Signature)(nil),         // 3: dql.ir.v1.Signature
+	(*OperandType)(nil),       // 4: dql.ir.v1.OperandType
+	(*OperatorSupport)(nil),   // 5: dql.ir.v1.OperatorSupport
+	(*OperatorCondition)(nil), // 6: dql.ir.v1.OperatorCondition
+	(NullBehavior)(0),         // 7: dql.ir.v1.NullBehavior
+	(*Type)(nil),              // 8: dql.ir.v1.Type
+	(Fidelity)(0),             // 9: dql.ir.v1.Fidelity
+	(*Collation)(nil),         // 10: dql.ir.v1.Collation
 }
 var file_dql_ir_v1_operators_proto_depIdxs = []int32{
-	1,  // 0: dql.ir.v1.Operator.signature:type_name -> dql.ir.v1.Signature
-	5,  // 1: dql.ir.v1.Operator.null_behavior:type_name -> dql.ir.v1.NullBehavior
-	2,  // 2: dql.ir.v1.Signature.args:type_name -> dql.ir.v1.OperandType
-	2,  // 3: dql.ir.v1.Signature.returns:type_name -> dql.ir.v1.OperandType
-	6,  // 4: dql.ir.v1.OperandType.type:type_name -> dql.ir.v1.Type
-	2,  // 5: dql.ir.v1.OperandType.array:type_name -> dql.ir.v1.OperandType
-	2,  // 6: dql.ir.v1.OperandType.range:type_name -> dql.ir.v1.OperandType
-	7,  // 7: dql.ir.v1.OperatorSupport.fidelity:type_name -> dql.ir.v1.Fidelity
-	4,  // 8: dql.ir.v1.OperatorSupport.when:type_name -> dql.ir.v1.OperatorCondition
-	7,  // 9: dql.ir.v1.OperatorSupport.otherwise:type_name -> dql.ir.v1.Fidelity
-	8,  // 10: dql.ir.v1.OperatorCondition.collation:type_name -> dql.ir.v1.Collation
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	3,  // 0: dql.ir.v1.Operator.signature:type_name -> dql.ir.v1.Signature
+	7,  // 1: dql.ir.v1.Operator.null_behavior:type_name -> dql.ir.v1.NullBehavior
+	2,  // 2: dql.ir.v1.Operator.origin:type_name -> dql.ir.v1.OperatorOrigin
+	0,  // 3: dql.ir.v1.OperatorOrigin.kind:type_name -> dql.ir.v1.OperatorOriginKind
+	4,  // 4: dql.ir.v1.Signature.args:type_name -> dql.ir.v1.OperandType
+	4,  // 5: dql.ir.v1.Signature.returns:type_name -> dql.ir.v1.OperandType
+	8,  // 6: dql.ir.v1.OperandType.type:type_name -> dql.ir.v1.Type
+	4,  // 7: dql.ir.v1.OperandType.array:type_name -> dql.ir.v1.OperandType
+	4,  // 8: dql.ir.v1.OperandType.range:type_name -> dql.ir.v1.OperandType
+	9,  // 9: dql.ir.v1.OperatorSupport.fidelity:type_name -> dql.ir.v1.Fidelity
+	6,  // 10: dql.ir.v1.OperatorSupport.when:type_name -> dql.ir.v1.OperatorCondition
+	9,  // 11: dql.ir.v1.OperatorSupport.otherwise:type_name -> dql.ir.v1.Fidelity
+	10, // 12: dql.ir.v1.OperatorCondition.collation:type_name -> dql.ir.v1.Collation
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_operators_proto_init() }
@@ -463,7 +595,7 @@ func file_dql_ir_v1_operators_proto_init() {
 	file_dql_ir_v1_objects_proto_init()
 	file_dql_ir_v1_routines_proto_init()
 	file_dql_ir_v1_types_proto_init()
-	file_dql_ir_v1_operators_proto_msgTypes[2].OneofWrappers = []any{
+	file_dql_ir_v1_operators_proto_msgTypes[3].OneofWrappers = []any{
 		(*OperandType_Var)(nil),
 		(*OperandType_Type)(nil),
 		(*OperandType_Array)(nil),
@@ -474,13 +606,14 @@ func file_dql_ir_v1_operators_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_operators_proto_rawDesc), len(file_dql_ir_v1_operators_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   5,
+			NumEnums:      1,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_dql_ir_v1_operators_proto_goTypes,
 		DependencyIndexes: file_dql_ir_v1_operators_proto_depIdxs,
+		EnumInfos:         file_dql_ir_v1_operators_proto_enumTypes,
 		MessageInfos:      file_dql_ir_v1_operators_proto_msgTypes,
 	}.Build()
 	File_dql_ir_v1_operators_proto = out.File

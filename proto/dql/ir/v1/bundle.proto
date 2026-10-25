@@ -26,8 +26,8 @@ message Bundle {
   QueryLayer queries = 7;
   // Warnings carried through to emitters.
   repeated Diagnostic diagnostics = 8;
-  // The operator catalog, the core's and the type plugins', sorted by name
-  // (§9.1).
+  // The operator catalog: the core's, the type plugins' and the dialect
+  // plugin's, sorted by name (§9.1, §9.3).
   repeated Operator operators = 9;
 }
 
