@@ -59,6 +59,29 @@ message Column {
   Collation collation = 9;
   repeated Annotation annotations = 10;
   repeated google.protobuf.Any extensions = 11;
+  // The operators the column supports on the target dialect, sorted by name.
+  // Resolved by the core (§9.3).
+  repeated ColumnOperator operators = 12;
+}
+
+// An operator a column supports, resolved by the core from the operator's
+// requirements, the column's type and the dialect's support (§9.3). Only
+// what the emitter generates is listed: exact and emulated operators, and
+// approximate ones the project opted into.
+message ColumnOperator {
+  string name = 1;
+  Fidelity fidelity = 2;
+}
+
+// How faithfully a dialect performs an operator (§9.2).
+enum Fidelity {
+  FIDELITY_UNSPECIFIED = 0;
+  // The dialect has the operator with identical semantics.
+  FIDELITY_EXACT = 1;
+  // A rewrite with identical semantics.
+  FIDELITY_EMULATED = 2;
+  // A rewrite whose results can differ.
+  FIDELITY_APPROXIMATE = 3;
 }
 
 // Why a column is or is not nullable (§6.4, §13).

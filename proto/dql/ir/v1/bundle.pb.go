@@ -94,7 +94,10 @@ type Bundle struct {
 	// Query layer (§16).
 	Queries *QueryLayer `protobuf:"bytes,7,opt,name=queries,proto3" json:"queries,omitempty"`
 	// Warnings carried through to emitters.
-	Diagnostics   []*Diagnostic `protobuf:"bytes,8,rep,name=diagnostics,proto3" json:"diagnostics,omitempty"`
+	Diagnostics []*Diagnostic `protobuf:"bytes,8,rep,name=diagnostics,proto3" json:"diagnostics,omitempty"`
+	// The operator catalog, the core's and the type plugins', sorted by name
+	// (§9.1).
+	Operators     []*Operator `protobuf:"bytes,9,rep,name=operators,proto3" json:"operators,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -185,6 +188,13 @@ func (x *Bundle) GetDiagnostics() []*Diagnostic {
 	return nil
 }
 
+func (x *Bundle) GetOperators() []*Operator {
+	if x != nil {
+		return x.Operators
+	}
+	return nil
+}
+
 // The IR version, semver (§3.3). The parts are explicit-presence fields so a
 // zero minor or patch still appears in JSON, as in "version": {"major": 1,
 // "minor": 0, "patch": 0}.
@@ -248,11 +258,17 @@ func (x *IrVersion) GetPatch() uint32 {
 	return 0
 }
 
-// The dialect's capability profile (§9.2). Its fields arrive with M4.
+// The dialect's capability profile (§9.2). Its other fields arrive with the
+// dialect plugins.
 type CapabilityProfile struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Dialect Dialect                `protobuf:"varint,1,opt,name=dialect,proto3,enum=dql.ir.v1.Dialect" json:"dialect,omitempty"`
+	// The operators the dialect supports, sorted by name (§9.2).
+	Operators []*OperatorSupport `protobuf:"bytes,2,rep,name=operators,proto3" json:"operators,omitempty"`
+	// Whether a reference may cross catalogs (§5.1).
+	CrossCatalogReferences bool `protobuf:"varint,3,opt,name=cross_catalog_references,json=crossCatalogReferences,proto3" json:"cross_catalog_references,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CapabilityProfile) Reset() {
@@ -283,6 +299,27 @@ func (x *CapabilityProfile) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CapabilityProfile.ProtoReflect.Descriptor instead.
 func (*CapabilityProfile) Descriptor() ([]byte, []int) {
 	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CapabilityProfile) GetDialect() Dialect {
+	if x != nil {
+		return x.Dialect
+	}
+	return Dialect_DIALECT_UNSPECIFIED
+}
+
+func (x *CapabilityProfile) GetOperators() []*OperatorSupport {
+	if x != nil {
+		return x.Operators
+	}
+	return nil
+}
+
+func (x *CapabilityProfile) GetCrossCatalogReferences() bool {
+	if x != nil {
+		return x.CrossCatalogReferences
+	}
+	return false
 }
 
 // Shapes and the conversion table (§14), fully expanded so emitters never
@@ -412,7 +449,7 @@ var File_dql_ir_v1_bundle_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\n" +
-	"\x16dql/ir/v1/bundle.proto\x12\tdql.ir.v1\x1a\x17dql/ir/v1/catalog.proto\x1a\x1bdql/ir/v1/diagnostics.proto\x1a\x16dql/ir/v1/shapes.proto\"\x9e\x03\n" +
+	"\x16dql/ir/v1/bundle.proto\x12\tdql.ir.v1\x1a\x17dql/ir/v1/catalog.proto\x1a\x1bdql/ir/v1/diagnostics.proto\x1a\x19dql/ir/v1/operators.proto\x1a\x16dql/ir/v1/shapes.proto\"\xd1\x03\n" +
 	"\x06Bundle\x12.\n" +
 	"\aversion\x18\x01 \x01(\v2\x14.dql.ir.v1.IrVersionR\aversion\x12+\n" +
 	"\x11required_features\x18\x02 \x03(\tR\x10requiredFeatures\x12,\n" +
@@ -421,15 +458,19 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\fcapabilities\x18\x05 \x01(\v2\x1c.dql.ir.v1.CapabilityProfileR\fcapabilities\x12-\n" +
 	"\x06shapes\x18\x06 \x01(\v2\x15.dql.ir.v1.ShapeLayerR\x06shapes\x12/\n" +
 	"\aqueries\x18\a \x01(\v2\x15.dql.ir.v1.QueryLayerR\aqueries\x127\n" +
-	"\vdiagnostics\x18\b \x03(\v2\x15.dql.ir.v1.DiagnosticR\vdiagnostics\"z\n" +
+	"\vdiagnostics\x18\b \x03(\v2\x15.dql.ir.v1.DiagnosticR\vdiagnostics\x121\n" +
+	"\toperators\x18\t \x03(\v2\x13.dql.ir.v1.OperatorR\toperators\"z\n" +
 	"\tIrVersion\x12\x19\n" +
 	"\x05major\x18\x01 \x01(\rH\x00R\x05major\x88\x01\x01\x12\x19\n" +
 	"\x05minor\x18\x02 \x01(\rH\x01R\x05minor\x88\x01\x01\x12\x19\n" +
 	"\x05patch\x18\x03 \x01(\rH\x02R\x05patch\x88\x01\x01B\b\n" +
 	"\x06_majorB\b\n" +
 	"\x06_minorB\b\n" +
-	"\x06_patch\"\x13\n" +
-	"\x11CapabilityProfile\"\xfb\x01\n" +
+	"\x06_patch\"\xb5\x01\n" +
+	"\x11CapabilityProfile\x12,\n" +
+	"\adialect\x18\x01 \x01(\x0e2\x12.dql.ir.v1.DialectR\adialect\x128\n" +
+	"\toperators\x18\x02 \x03(\v2\x1a.dql.ir.v1.OperatorSupportR\toperators\x128\n" +
+	"\x18cross_catalog_references\x18\x03 \x01(\bR\x16crossCatalogReferences\"\xfb\x01\n" +
 	"\n" +
 	"ShapeLayer\x12(\n" +
 	"\x06shapes\x18\x01 \x03(\v2\x10.dql.ir.v1.ShapeR\x06shapes\x120\n" +
@@ -469,11 +510,13 @@ var file_dql_ir_v1_bundle_proto_goTypes = []any{
 	(*QueryLayer)(nil),        // 5: dql.ir.v1.QueryLayer
 	(*Catalog)(nil),           // 6: dql.ir.v1.Catalog
 	(*Diagnostic)(nil),        // 7: dql.ir.v1.Diagnostic
-	(*Shape)(nil),             // 8: dql.ir.v1.Shape
-	(*RelationUnion)(nil),     // 9: dql.ir.v1.RelationUnion
-	(*Conversion)(nil),        // 10: dql.ir.v1.Conversion
-	(*Upsert)(nil),            // 11: dql.ir.v1.Upsert
-	(*KeyMerge)(nil),          // 12: dql.ir.v1.KeyMerge
+	(*Operator)(nil),          // 8: dql.ir.v1.Operator
+	(*OperatorSupport)(nil),   // 9: dql.ir.v1.OperatorSupport
+	(*Shape)(nil),             // 10: dql.ir.v1.Shape
+	(*RelationUnion)(nil),     // 11: dql.ir.v1.RelationUnion
+	(*Conversion)(nil),        // 12: dql.ir.v1.Conversion
+	(*Upsert)(nil),            // 13: dql.ir.v1.Upsert
+	(*KeyMerge)(nil),          // 14: dql.ir.v1.KeyMerge
 }
 var file_dql_ir_v1_bundle_proto_depIdxs = []int32{
 	2,  // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
@@ -483,16 +526,19 @@ var file_dql_ir_v1_bundle_proto_depIdxs = []int32{
 	4,  // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
 	5,  // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
 	7,  // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
-	8,  // 7: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
-	9,  // 8: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
-	10, // 9: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
-	11, // 10: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
-	12, // 11: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	8,  // 7: dql.ir.v1.Bundle.operators:type_name -> dql.ir.v1.Operator
+	0,  // 8: dql.ir.v1.CapabilityProfile.dialect:type_name -> dql.ir.v1.Dialect
+	9,  // 9: dql.ir.v1.CapabilityProfile.operators:type_name -> dql.ir.v1.OperatorSupport
+	10, // 10: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
+	11, // 11: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
+	12, // 12: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
+	13, // 13: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
+	14, // 14: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_bundle_proto_init() }
@@ -502,6 +548,7 @@ func file_dql_ir_v1_bundle_proto_init() {
 	}
 	file_dql_ir_v1_catalog_proto_init()
 	file_dql_ir_v1_diagnostics_proto_init()
+	file_dql_ir_v1_operators_proto_init()
 	file_dql_ir_v1_shapes_proto_init()
 	file_dql_ir_v1_bundle_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
