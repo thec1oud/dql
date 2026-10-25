@@ -7,6 +7,7 @@ use (
 	./emitters/go
 	./plugin
 	./proto
+	./querysources
 	./runtime/go
 	./sources
 	./testkit
