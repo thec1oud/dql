@@ -684,6 +684,7 @@ type UsersStore interface {
 	Upsert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	Patch(ctx context.Context, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
+	PatchNested(ctx context.Context, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error)
 	UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error)
 	Delete(ctx context.Context, k UserKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[UsersTable]) (int64, error)
@@ -711,6 +712,7 @@ type UsersUnscopedStore interface {
 	Upsert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
+	PatchNested(ctx context.Context, scope UserScope, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error)
 	UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error)
 	Delete(ctx context.Context, scope UserScope, k UserKey) error
 	DeleteWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable]) (int64, error)
@@ -1035,6 +1037,159 @@ func (s usersWrites) Patch(ctx context.Context, k UserKey, p UserPartial, as ...
 	return dql.VersionedOne(ctx, s.w, st, exists, DecodeUserFull)
 }
 
+// PatchNested runs user.patch with the changes p nests, in one transaction: owning changes first,
+// then the row, then its dependents and links under their collection policies;
+// it returns the row and its relations as they now are (§20.5).
+func (s usersWrites) PatchNested(ctx context.Context, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error) {
+	if err := p.Validate(); err != nil {
+		return UserFullNested{}, err
+	}
+	var out UserFullNested
+	err := dql.Atomic(ctx, s.w, func(ctx context.Context, w dql.Writer) error {
+		out = UserFullNested{}
+		usersStore := usersWrites{usersReads{w, UserScope{TenantID: s.scope.TenantID}}, w}
+		postsStore := postsWrites{postsReads{w}, w}
+		profilesStore := profilesWrites{profilesReads{w}, w}
+		tenantsStore := tenantsWrites{tenantsReads{w}, w}
+		part := UserPartial{Email: p.Email, DisplayName: p.DisplayName, PasswordHash: p.PasswordHash}
+		row, err := usersStore.Patch(ctx, k, part, as...)
+		if err != nil {
+			return err
+		}
+		out.UserFull = row
+		if chs, ok := p.PostsToAuthor.Get(); ok {
+			var kept []PostKey
+			for _, ch := range chs {
+				switch ch.change {
+				case dql.ChangeCreate:
+					child, err := postsStore.Insert(ctx, PostDraft{ID: ch.draft.ID, EditorID: ch.draft.EditorID, Title: ch.draft.Title, Status: ch.draft.Status, Price: ch.draft.Price, Labels: ch.draft.Labels, PublishedAt: ch.draft.PublishedAt, AuthorID: row.ID})
+					if err != nil {
+						return err
+					}
+					kept = append(kept, PostKey{ID: child.ID})
+				case dql.ChangeUpdate:
+					child, err := postsStore.Get(ctx, ch.key)
+					if err != nil {
+						return err
+					}
+					if child.AuthorID != row.ID {
+						return &dql.NotFound{Origin: dql.Origin{Query: "post.get.by_primary"}}
+					}
+					if _, err := postsStore.Patch(ctx, ch.key, PostPartial{EditorID: ch.partial.EditorID, Title: ch.partial.Title, Status: ch.partial.Status, Price: ch.partial.Price, Labels: ch.partial.Labels, PublishedAt: ch.partial.PublishedAt}); err != nil {
+						return err
+					}
+					kept = append(kept, ch.key)
+				case dql.ChangeDelete:
+					child, err := postsStore.Get(ctx, ch.key)
+					if err != nil {
+						return err
+					}
+					if child.AuthorID != row.ID {
+						return &dql.NotFound{Origin: dql.Origin{Query: "post.get.by_primary"}}
+					}
+					if err := postsStore.Delete(ctx, ch.key); err != nil {
+						return err
+					}
+				}
+			}
+			// Replace removes the children the changes leave out.
+			where := dql.And(Posts.AuthorID.Eq(row.ID))
+			for _, k := range kept {
+				where = dql.And(where, dql.Not(dql.And(Posts.ID.Eq(k.ID))))
+			}
+			if _, err := postsStore.DeleteWhere(ctx, where); err != nil {
+				return err
+			}
+		}
+		if chs, ok := p.PostsToEditor.Get(); ok {
+			for _, ch := range chs {
+				switch ch.change {
+				case dql.ChangeCreate:
+					if _, err := postsStore.Insert(ctx, PostDraft{ID: ch.draft.ID, AuthorID: ch.draft.AuthorID, Title: ch.draft.Title, Status: ch.draft.Status, Price: ch.draft.Price, Labels: ch.draft.Labels, PublishedAt: ch.draft.PublishedAt, EditorID: opt.Some(dql.Ptr(row.ID))}); err != nil {
+						return err
+					}
+				case dql.ChangeUpdate:
+					child, err := postsStore.Get(ctx, ch.key)
+					if err != nil {
+						return err
+					}
+					if child.EditorID == nil || *child.EditorID != row.ID {
+						return &dql.NotFound{Origin: dql.Origin{Query: "post.get.by_primary"}}
+					}
+					if _, err := postsStore.Patch(ctx, ch.key, PostPartial{AuthorID: ch.partial.AuthorID, Title: ch.partial.Title, Status: ch.partial.Status, Price: ch.partial.Price, Labels: ch.partial.Labels, PublishedAt: ch.partial.PublishedAt}); err != nil {
+						return err
+					}
+				case dql.ChangeDelete:
+					child, err := postsStore.Get(ctx, ch.key)
+					if err != nil {
+						return err
+					}
+					if child.EditorID == nil || *child.EditorID != row.ID {
+						return &dql.NotFound{Origin: dql.Origin{Query: "post.get.by_primary"}}
+					}
+					if _, err := postsStore.Patch(ctx, ch.key, PostPartial{EditorID: opt.Some[*int64](nil)}); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		if ch, ok := p.Profile.Get(); ok {
+			switch ch.change {
+			case dql.ChangeCreate:
+				if _, err := profilesStore.Insert(ctx, ProfileDraft{Bio: ch.draft.Bio, Birthday: ch.draft.Birthday, UserID: row.ID}); err != nil {
+					return err
+				}
+			case dql.ChangeUpdate:
+				child, err := profilesStore.Get(ctx, ch.key)
+				if err != nil {
+					return err
+				}
+				if child.UserID != row.ID {
+					return &dql.NotFound{Origin: dql.Origin{Query: "profile.get.by_primary"}}
+				}
+				if _, err := profilesStore.Patch(ctx, ch.key, ProfilePartial{Bio: ch.partial.Bio, Birthday: ch.partial.Birthday}); err != nil {
+					return err
+				}
+			case dql.ChangeDelete:
+				child, err := profilesStore.Get(ctx, ch.key)
+				if err != nil {
+					return err
+				}
+				if child.UserID != row.ID {
+					return &dql.NotFound{Origin: dql.Origin{Query: "profile.get.by_primary"}}
+				}
+				if err := profilesStore.Delete(ctx, ch.key); err != nil {
+					return err
+				}
+			}
+		}
+		if out.PostsToAuthor, err = Select(postsStore, Shapes.PostFull).Where(dql.And(Posts.AuthorID.Eq(row.ID))).OrderBy(Posts.ID.Asc()).All(ctx); err != nil {
+			return err
+		}
+		if out.PostsToEditor, err = Select(postsStore, Shapes.PostFull).Where(dql.And(Posts.EditorID.Eq(row.ID))).OrderBy(Posts.ID.Asc()).All(ctx); err != nil {
+			return err
+		}
+		{
+			child, err := Select(profilesStore, Shapes.ProfileFull).Where(dql.And(Profiles.UserID.Eq(row.ID))).OrderBy(Profiles.UserID.Asc()).OptionalOne(ctx)
+			if err != nil {
+				return err
+			}
+			if v, ok := child.Get(); ok {
+				out.Profile = &v
+			}
+		}
+		{
+			related, err := tenantsStore.Get(ctx, TenantKey{ID: row.TenantID})
+			if err != nil {
+				return err
+			}
+			out.Tenant = related
+		}
+		return nil
+	})
+	return out, err
+}
+
 // UpdateWhere runs user.update_where (§20.1).
 func (s usersWrites) UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error) {
 	if err := p.Validate(); err != nil {
@@ -1167,6 +1322,11 @@ func (u usersUnscoped) UpsertByTenantIDAndEmail(ctx context.Context, scope UserS
 // Patch runs user.patch in scope (§21.2).
 func (u usersUnscoped) Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error) {
 	return usersWrites{usersReads{u.w, scope}, u.w}.Patch(ctx, k, p, as...)
+}
+
+// PatchNested runs user.patch in scope (§21.2).
+func (u usersUnscoped) PatchNested(ctx context.Context, scope UserScope, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.PatchNested(ctx, k, p, as...)
 }
 
 // UpdateWhere runs user.update_where in scope (§21.2).
