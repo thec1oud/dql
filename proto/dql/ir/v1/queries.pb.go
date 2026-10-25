@@ -228,7 +228,11 @@ type Query struct {
 	//	*Query_Plan
 	Sql isQuery_Sql `protobuf_oneof:"sql"`
 	// Where a query file holds the query, as file:line.
-	Location      string `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty"`
+	Location string `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty"`
+	// A query file's -- returns: header as written, such as user.full. The
+	// core resolves it to result.shape once the query's columns match the
+	// shape (§17.2).
+	Returns       string `protobuf:"bytes,13,opt,name=returns,proto3" json:"returns,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -354,6 +358,13 @@ func (x *Query) GetPlan() *FragmentPlan {
 func (x *Query) GetLocation() string {
 	if x != nil {
 		return x.Location
+	}
+	return ""
+}
+
+func (x *Query) GetReturns() string {
+	if x != nil {
+		return x.Returns
 	}
 	return ""
 }
@@ -1034,7 +1045,7 @@ var File_dql_ir_v1_queries_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\n" +
-	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\xf5\x03\n" +
+	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\x8f\x04\n" +
 	"\x05Query\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x12.\n" +
 	"\x06source\x18\x02 \x01(\x0e2\x16.dql.ir.v1.QuerySourceR\x06source\x128\n" +
@@ -1048,7 +1059,8 @@ const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\x04text\x18\n" +
 	" \x01(\tH\x00R\x04text\x12-\n" +
 	"\x04plan\x18\v \x01(\v2\x17.dql.ir.v1.FragmentPlanH\x00R\x04plan\x12\x1a\n" +
-	"\blocation\x18\f \x01(\tR\blocationB\x05\n" +
+	"\blocation\x18\f \x01(\tR\blocation\x12\x18\n" +
+	"\areturns\x18\r \x01(\tR\areturnsB\x05\n" +
 	"\x03sql\"p\n" +
 	"\x05Param\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
