@@ -30,6 +30,8 @@ const (
 	PluginKind_PLUGIN_KIND_DIALECT     PluginKind = 2
 	PluginKind_PLUGIN_KIND_TYPE        PluginKind = 3
 	PluginKind_PLUGIN_KIND_EMITTER     PluginKind = 4
+	// Parses and types query files (§16.1, §17).
+	PluginKind_PLUGIN_KIND_QUERY_SOURCE PluginKind = 5
 )
 
 // Enum value maps for PluginKind.
@@ -40,13 +42,15 @@ var (
 		2: "PLUGIN_KIND_DIALECT",
 		3: "PLUGIN_KIND_TYPE",
 		4: "PLUGIN_KIND_EMITTER",
+		5: "PLUGIN_KIND_QUERY_SOURCE",
 	}
 	PluginKind_value = map[string]int32{
-		"PLUGIN_KIND_UNSPECIFIED": 0,
-		"PLUGIN_KIND_SOURCE":      1,
-		"PLUGIN_KIND_DIALECT":     2,
-		"PLUGIN_KIND_TYPE":        3,
-		"PLUGIN_KIND_EMITTER":     4,
+		"PLUGIN_KIND_UNSPECIFIED":  0,
+		"PLUGIN_KIND_SOURCE":       1,
+		"PLUGIN_KIND_DIALECT":      2,
+		"PLUGIN_KIND_TYPE":         3,
+		"PLUGIN_KIND_EMITTER":      4,
+		"PLUGIN_KIND_QUERY_SOURCE": 5,
 	}
 )
 
@@ -581,7 +585,10 @@ type Invoke struct {
 	// The plugin's own dql.yaml entry, every key as written, plugin and path
 	// included. The plugin validates it; the core checks only the keys it
 	// reads itself.
-	Settings      *structpb.Struct `protobuf:"bytes,2,opt,name=settings,proto3" json:"settings,omitempty"`
+	Settings *structpb.Struct `protobuf:"bytes,2,opt,name=settings,proto3" json:"settings,omitempty"`
+	// For a query-source plugin: the query files dql.yaml lists, sorted by
+	// path (§17).
+	QueryFiles    []*QueryFile `protobuf:"bytes,3,rep,name=query_files,json=queryFiles,proto3" json:"query_files,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -630,6 +637,67 @@ func (x *Invoke) GetSettings() *structpb.Struct {
 	return nil
 }
 
+func (x *Invoke) GetQueryFiles() []*QueryFile {
+	if x != nil {
+		return x.QueryFiles
+	}
+	return nil
+}
+
+// A query file as the core read it.
+type QueryFile struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Relative to the directory of dql.yaml, with forward slashes.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Text          string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueryFile) Reset() {
+	*x = QueryFile{}
+	mi := &file_dql_ir_v1_plugin_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueryFile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryFile) ProtoMessage() {}
+
+func (x *QueryFile) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_plugin_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryFile.ProtoReflect.Descriptor instead.
+func (*QueryFile) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_plugin_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *QueryFile) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *QueryFile) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 type InvokeResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Bundle        *Bundle                `protobuf:"bytes,1,opt,name=bundle,proto3" json:"bundle,omitempty"`
@@ -640,7 +708,7 @@ type InvokeResult struct {
 
 func (x *InvokeResult) Reset() {
 	*x = InvokeResult{}
-	mi := &file_dql_ir_v1_plugin_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_plugin_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -652,7 +720,7 @@ func (x *InvokeResult) String() string {
 func (*InvokeResult) ProtoMessage() {}
 
 func (x *InvokeResult) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_plugin_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_plugin_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -665,7 +733,7 @@ func (x *InvokeResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvokeResult.ProtoReflect.Descriptor instead.
 func (*InvokeResult) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_plugin_proto_rawDescGZIP(), []int{8}
+	return file_dql_ir_v1_plugin_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *InvokeResult) GetBundle() *Bundle {
@@ -692,7 +760,7 @@ type PluginError struct {
 
 func (x *PluginError) Reset() {
 	*x = PluginError{}
-	mi := &file_dql_ir_v1_plugin_proto_msgTypes[9]
+	mi := &file_dql_ir_v1_plugin_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -704,7 +772,7 @@ func (x *PluginError) String() string {
 func (*PluginError) ProtoMessage() {}
 
 func (x *PluginError) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_plugin_proto_msgTypes[9]
+	mi := &file_dql_ir_v1_plugin_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -717,7 +785,7 @@ func (x *PluginError) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginError.ProtoReflect.Descriptor instead.
 func (*PluginError) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_plugin_proto_rawDescGZIP(), []int{9}
+	return file_dql_ir_v1_plugin_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PluginError) GetMessage() string {
@@ -736,7 +804,7 @@ type Shutdown struct {
 
 func (x *Shutdown) Reset() {
 	*x = Shutdown{}
-	mi := &file_dql_ir_v1_plugin_proto_msgTypes[10]
+	mi := &file_dql_ir_v1_plugin_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -748,7 +816,7 @@ func (x *Shutdown) String() string {
 func (*Shutdown) ProtoMessage() {}
 
 func (x *Shutdown) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_plugin_proto_msgTypes[10]
+	mi := &file_dql_ir_v1_plugin_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -761,7 +829,7 @@ func (x *Shutdown) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Shutdown.ProtoReflect.Descriptor instead.
 func (*Shutdown) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_plugin_proto_rawDescGZIP(), []int{10}
+	return file_dql_ir_v1_plugin_proto_rawDescGZIP(), []int{11}
 }
 
 var File_dql_ir_v1_plugin_proto protoreflect.FileDescriptor
@@ -799,24 +867,30 @@ const file_dql_ir_v1_plugin_proto_rawDesc = "" +
 	"\tmax_major\x18\x02 \x01(\rR\bmaxMajor\"E\n" +
 	"\x0fHandshakeResult\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\bR\baccepted\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"h\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\x9f\x01\n" +
 	"\x06Invoke\x12)\n" +
 	"\x06bundle\x18\x01 \x01(\v2\x11.dql.ir.v1.BundleR\x06bundle\x123\n" +
-	"\bsettings\x18\x02 \x01(\v2\x17.google.protobuf.StructR\bsettings\"r\n" +
+	"\bsettings\x18\x02 \x01(\v2\x17.google.protobuf.StructR\bsettings\x125\n" +
+	"\vquery_files\x18\x03 \x03(\v2\x14.dql.ir.v1.QueryFileR\n" +
+	"queryFiles\"3\n" +
+	"\tQueryFile\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\"r\n" +
 	"\fInvokeResult\x12)\n" +
 	"\x06bundle\x18\x01 \x01(\v2\x11.dql.ir.v1.BundleR\x06bundle\x127\n" +
 	"\vdiagnostics\x18\x02 \x03(\v2\x15.dql.ir.v1.DiagnosticR\vdiagnostics\"'\n" +
 	"\vPluginError\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"\n" +
 	"\n" +
-	"\bShutdown*\x89\x01\n" +
+	"\bShutdown*\xa7\x01\n" +
 	"\n" +
 	"PluginKind\x12\x1b\n" +
 	"\x17PLUGIN_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12PLUGIN_KIND_SOURCE\x10\x01\x12\x17\n" +
 	"\x13PLUGIN_KIND_DIALECT\x10\x02\x12\x14\n" +
 	"\x10PLUGIN_KIND_TYPE\x10\x03\x12\x17\n" +
-	"\x13PLUGIN_KIND_EMITTER\x10\x04B.Z,github.com/thec1oud/dql/proto/dql/ir/v1;irv1b\x06proto3"
+	"\x13PLUGIN_KIND_EMITTER\x10\x04\x12\x1c\n" +
+	"\x18PLUGIN_KIND_QUERY_SOURCE\x10\x05B.Z,github.com/thec1oud/dql/proto/dql/ir/v1;irv1b\x06proto3"
 
 var (
 	file_dql_ir_v1_plugin_proto_rawDescOnce sync.Once
@@ -831,7 +905,7 @@ func file_dql_ir_v1_plugin_proto_rawDescGZIP() []byte {
 }
 
 var file_dql_ir_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_dql_ir_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_dql_ir_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_dql_ir_v1_plugin_proto_goTypes = []any{
 	(PluginKind)(0),         // 0: dql.ir.v1.PluginKind
 	(*CoreMessage)(nil),     // 1: dql.ir.v1.CoreMessage
@@ -842,35 +916,37 @@ var file_dql_ir_v1_plugin_proto_goTypes = []any{
 	(*IrVersionRange)(nil),  // 6: dql.ir.v1.IrVersionRange
 	(*HandshakeResult)(nil), // 7: dql.ir.v1.HandshakeResult
 	(*Invoke)(nil),          // 8: dql.ir.v1.Invoke
-	(*InvokeResult)(nil),    // 9: dql.ir.v1.InvokeResult
-	(*PluginError)(nil),     // 10: dql.ir.v1.PluginError
-	(*Shutdown)(nil),        // 11: dql.ir.v1.Shutdown
-	(*IrVersion)(nil),       // 12: dql.ir.v1.IrVersion
-	(*Bundle)(nil),          // 13: dql.ir.v1.Bundle
-	(*structpb.Struct)(nil), // 14: google.protobuf.Struct
-	(*Diagnostic)(nil),      // 15: dql.ir.v1.Diagnostic
+	(*QueryFile)(nil),       // 9: dql.ir.v1.QueryFile
+	(*InvokeResult)(nil),    // 10: dql.ir.v1.InvokeResult
+	(*PluginError)(nil),     // 11: dql.ir.v1.PluginError
+	(*Shutdown)(nil),        // 12: dql.ir.v1.Shutdown
+	(*IrVersion)(nil),       // 13: dql.ir.v1.IrVersion
+	(*Bundle)(nil),          // 14: dql.ir.v1.Bundle
+	(*structpb.Struct)(nil), // 15: google.protobuf.Struct
+	(*Diagnostic)(nil),      // 16: dql.ir.v1.Diagnostic
 }
 var file_dql_ir_v1_plugin_proto_depIdxs = []int32{
 	3,  // 0: dql.ir.v1.CoreMessage.hello:type_name -> dql.ir.v1.CoreHello
 	7,  // 1: dql.ir.v1.CoreMessage.handshake_result:type_name -> dql.ir.v1.HandshakeResult
 	8,  // 2: dql.ir.v1.CoreMessage.invoke:type_name -> dql.ir.v1.Invoke
-	11, // 3: dql.ir.v1.CoreMessage.shutdown:type_name -> dql.ir.v1.Shutdown
+	12, // 3: dql.ir.v1.CoreMessage.shutdown:type_name -> dql.ir.v1.Shutdown
 	4,  // 4: dql.ir.v1.PluginMessage.handshake:type_name -> dql.ir.v1.PluginHandshake
-	9,  // 5: dql.ir.v1.PluginMessage.result:type_name -> dql.ir.v1.InvokeResult
-	10, // 6: dql.ir.v1.PluginMessage.error:type_name -> dql.ir.v1.PluginError
-	12, // 7: dql.ir.v1.CoreHello.ir_version:type_name -> dql.ir.v1.IrVersion
+	10, // 5: dql.ir.v1.PluginMessage.result:type_name -> dql.ir.v1.InvokeResult
+	11, // 6: dql.ir.v1.PluginMessage.error:type_name -> dql.ir.v1.PluginError
+	13, // 7: dql.ir.v1.CoreHello.ir_version:type_name -> dql.ir.v1.IrVersion
 	5,  // 8: dql.ir.v1.PluginHandshake.plugin:type_name -> dql.ir.v1.PluginInfo
 	6,  // 9: dql.ir.v1.PluginHandshake.ir_versions:type_name -> dql.ir.v1.IrVersionRange
 	0,  // 10: dql.ir.v1.PluginInfo.kind:type_name -> dql.ir.v1.PluginKind
-	13, // 11: dql.ir.v1.Invoke.bundle:type_name -> dql.ir.v1.Bundle
-	14, // 12: dql.ir.v1.Invoke.settings:type_name -> google.protobuf.Struct
-	13, // 13: dql.ir.v1.InvokeResult.bundle:type_name -> dql.ir.v1.Bundle
-	15, // 14: dql.ir.v1.InvokeResult.diagnostics:type_name -> dql.ir.v1.Diagnostic
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	14, // 11: dql.ir.v1.Invoke.bundle:type_name -> dql.ir.v1.Bundle
+	15, // 12: dql.ir.v1.Invoke.settings:type_name -> google.protobuf.Struct
+	9,  // 13: dql.ir.v1.Invoke.query_files:type_name -> dql.ir.v1.QueryFile
+	14, // 14: dql.ir.v1.InvokeResult.bundle:type_name -> dql.ir.v1.Bundle
+	16, // 15: dql.ir.v1.InvokeResult.diagnostics:type_name -> dql.ir.v1.Diagnostic
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_plugin_proto_init() }
@@ -897,7 +973,7 @@ func file_dql_ir_v1_plugin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_plugin_proto_rawDesc), len(file_dql_ir_v1_plugin_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

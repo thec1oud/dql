@@ -36,6 +36,10 @@ message Query {
   }
   // Where a query file holds the query, as file:line.
   string location = 12;
+  // A query file's -- returns: header as written, such as user.full. The
+  // core resolves it to result.shape once the query's columns match the
+  // shape (§17.2).
+  string returns = 13;
 }
 
 enum QuerySource {
