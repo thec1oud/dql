@@ -371,6 +371,50 @@ func TestDesignRecordExamples(t *testing.T) {
 		    "signature": { "args": [{ "range": { "var": "T" } }, { "var": "T" }], "returns": { "type": { "bool": {} } } },
 		    "requires": ["orderable"], "nullBehavior": "NULL_BEHAVIOR_STRICT" }
 		] }`},
+		{"§17.3 query", &irv1.Query{}, `{
+		  "name": { "stored": "AuthorPostCounts", "words": ["author", "post", "counts"] },
+		  "source": "QUERY_SOURCE_FILE",
+		  "cardinality": "CARDINALITY_MANY",
+		  "params": [],
+		  "scope": { "columns": ["tenant_id"] },
+		  "consistency": { "level": "CONSISTENCY_ANY" },
+		  "writes": false,
+		  "result": {
+		    "anonymous": {
+		      "fields": [
+		        { "name": "author_id", "type": { "int64": {} }, "nullable": false,
+		          "origin": { "catalog": "shop", "namespace": "app", "object": "users", "member": "id" } },
+		        { "name": "display_name", "type": { "varchar": { "length": 80, "unit": "LENGTH_UNIT_CHARACTERS" } }, "nullable": true,
+		          "origin": { "catalog": "shop", "namespace": "app", "object": "users", "member": "display_name" } },
+		        { "name": "posts", "type": { "int64": {} }, "nullable": false }
+		      ]
+		    }
+		  },
+		  "text": "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts FROM app.users u ..."
+		}`},
+		{"§17.3 unscoped query", &irv1.Diagnostic{}, `{
+		  "severity": "SEVERITY_ERROR",
+		  "code": "query-unscoped",
+		  "query": "AllUsers",
+		  "message": "query reads shop.app.users, which is scoped by tenant_id, without filtering on @scope.tenant_id; filter on it or mark the query -- unscoped"
+		}`},
+		{"§18.4 fragment table", &irv1.FragmentTable{}, `{
+		  "dialect": "DIALECT_POSTGRES",
+		  "placeholder": "PLACEHOLDER_DOLLAR_NUMBERED",
+		  "fragments": [
+		    { "id": "select.user_summary", "template": "SELECT u.\"id\", u.\"email\", u.\"display_name\" FROM \"app\".\"users\" u" },
+		    { "id": "col.users.email", "template": "u.\"email\"" },
+		    { "id": "op.ilike", "template": "{0} ILIKE {1}", "fidelity": "FIDELITY_EXACT" },
+		    { "id": "clause.where", "template": " WHERE {0}" },
+		    { "id": "clause.order", "template": " ORDER BY {0}" },
+		    { "id": "clause.limit", "template": " LIMIT {0}" }
+		  ]
+		}`},
+		{"§18.4 emulation wrapper", &irv1.Fragment{}, `{
+		  "id": "wrap.distinct_on",
+		  "fidelity": "FIDELITY_EMULATED",
+		  "template": "SELECT {cols} FROM (SELECT {cols}, ROW_NUMBER() OVER (PARTITION BY {keys} ORDER BY {order}) AS rn__ FROM {from}{where}) t WHERE rn__ = 1{outer_order}"
+		}`},
 		{"§9.2 dialect support", &irv1.CapabilityProfile{}, `{
 		  "dialect": "DIALECT_MYSQL",
 		  "operators": [
