@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"context"
 	"log/slog"
 	"slices"
 
@@ -459,3 +460,218 @@ func (c ProfileUserChange) String() string { return c.LogValue().String() }
 
 // GoString formats c as String does, for %#v.
 func (c ProfileUserChange) GoString() string { return c.String() }
+
+// The builder queries of shop.app.profiles (§16.3).
+var (
+	profileGetByPrimary = &dql.Query{
+		Name:      "profile.get.by_primary",
+		Catalog:   "shop",
+		Kind:      "get",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.profile.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}},
+		},
+	}
+	profileFindByPrimary = &dql.Query{
+		Name:      "profile.find.by_primary",
+		Catalog:   "shop",
+		Kind:      "find",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.profile.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}},
+		},
+	}
+	profileCount = &dql.Query{
+		Name:    "profile.count",
+		Catalog: "shop",
+		Kind:    "count",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "count.profiles"},
+		},
+	}
+	profileExists = &dql.Query{
+		Name:    "profile.exists",
+		Catalog: "shop",
+		Kind:    "exists",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "exists.profiles"},
+		},
+	}
+	profileInsert = &dql.Query{
+		Name:    "profile.insert",
+		Catalog: "shop",
+		Kind:    "insert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "insert.profiles", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}}},
+		},
+	}
+	profileUpsertByPrimary = &dql.Query{
+		Name:    "profile.upsert.by_primary",
+		Catalog: "shop",
+		Kind:    "upsert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.profiles.profiles_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.profiles.bio"}}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.profiles.birthday"}}}}, Separator: ", "}}},
+		},
+	}
+	profilePatch = &dql.Query{
+		Name:      "profile.patch",
+		Catalog:   "shop",
+		Kind:      "patch",
+		Writes:    true,
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.profiles", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.profile.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Param("bio")}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Param("birthday")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}}}},
+		},
+	}
+	profileDelete = &dql.Query{
+		Name:    "profile.delete",
+		Catalog: "shop",
+		Kind:    "delete",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.profiles", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}}}},
+		},
+	}
+)
+
+// ProfilesReadStore reads shop.app.profiles (§26.3).
+type ProfilesReadStore interface {
+	Get(ctx context.Context, k ProfileKey) (ProfileFull, error)
+	Find(ctx context.Context, k ProfileKey) (opt.Opt[ProfileFull], error)
+	Count(ctx context.Context) (int64, error)
+	Exists(ctx context.Context) (bool, error)
+}
+
+// ProfilesStore reads and writes shop.app.profiles (§26.3).
+type ProfilesStore interface {
+	ProfilesReadStore
+	Insert(ctx context.Context, d ProfileDraft) (ProfileFull, error)
+	Upsert(ctx context.Context, d ProfileDraft) (ProfileFull, error)
+	Patch(ctx context.Context, k ProfileKey, p ProfilePartial) (ProfileFull, error)
+	Delete(ctx context.Context, k ProfileKey) error
+}
+
+// profilesReads implements ProfilesReadStore on a handle that reads.
+type profilesReads struct {
+	h dql.Reader
+}
+
+// profilesWrites implements ProfilesStore on a handle that writes.
+type profilesWrites struct {
+	profilesReads
+	w dql.Writer
+}
+
+// Get runs profile.get.by_primary (§19).
+func (s profilesReads) Get(ctx context.Context, k ProfileKey) (ProfileFull, error) {
+	st, err := profileGetByPrimary.Statement(fragments, dql.Args{"key.user_id": k.UserID})
+	if err != nil {
+		return ProfileFull{}, err
+	}
+	return dql.OneOf(ctx, s.h, st, DecodeProfileFull)
+}
+
+// Find runs profile.find.by_primary (§19).
+func (s profilesReads) Find(ctx context.Context, k ProfileKey) (opt.Opt[ProfileFull], error) {
+	st, err := profileFindByPrimary.Statement(fragments, dql.Args{"key.user_id": k.UserID})
+	if err != nil {
+		return opt.None[ProfileFull](), err
+	}
+	return dql.OptionalOf(ctx, s.h, st, DecodeProfileFull)
+}
+
+// Count runs profile.count (§19).
+func (s profilesReads) Count(ctx context.Context) (int64, error) {
+	st, err := profileCount.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Count(ctx, s.h, st)
+}
+
+// Exists runs profile.exists (§19).
+func (s profilesReads) Exists(ctx context.Context) (bool, error) {
+	st, err := profileExists.Statement(fragments, dql.Args{})
+	if err != nil {
+		return false, err
+	}
+	return dql.Exists(ctx, s.h, st)
+}
+
+// Insert runs profile.insert (§20.1).
+func (s profilesWrites) Insert(ctx context.Context, d ProfileDraft) (ProfileFull, error) {
+	if err := d.Validate(); err != nil {
+		return ProfileFull{}, err
+	}
+	args := dql.Args{"user_id": d.UserID}
+	if v, ok := d.Bio.Get(); ok {
+		args["bio"] = v
+	}
+	if v, ok := d.Birthday.Get(); ok {
+		args["birthday"] = v
+	}
+	st, err := profileInsert.Statement(fragments, args)
+	if err != nil {
+		return ProfileFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeProfileFull)
+}
+
+// Upsert runs profile.upsert.by_primary (§20.1).
+func (s profilesWrites) Upsert(ctx context.Context, d ProfileDraft) (ProfileFull, error) {
+	if err := d.Validate(); err != nil {
+		return ProfileFull{}, err
+	}
+	args := dql.Args{"user_id": d.UserID}
+	if v, ok := d.Bio.Get(); ok {
+		args["bio"] = v
+	}
+	if v, ok := d.Birthday.Get(); ok {
+		args["birthday"] = v
+	}
+	st, err := profileUpsertByPrimary.Statement(fragments, args)
+	if err != nil {
+		return ProfileFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeProfileFull)
+}
+
+// Patch runs profile.patch (§20.1).
+func (s profilesWrites) Patch(ctx context.Context, k ProfileKey, p ProfilePartial) (ProfileFull, error) {
+	if err := p.Validate(); err != nil {
+		return ProfileFull{}, err
+	}
+	args := dql.Args{"key.user_id": k.UserID}
+	set := false
+	if v, ok := p.Bio.Get(); ok {
+		args["bio"] = v
+		set = true
+	}
+	if v, ok := p.Birthday.Get(); ok {
+		args["birthday"] = v
+		set = true
+	}
+	if !set {
+		// Nothing to change: the row as it is.
+		return s.Get(ctx, k)
+	}
+	st, err := profilePatch.Statement(fragments, args)
+	if err != nil {
+		return ProfileFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeProfileFull)
+}
+
+// Delete runs profile.delete (§20.1).
+func (s profilesWrites) Delete(ctx context.Context, k ProfileKey) error {
+	st, err := profileDelete.Statement(fragments, dql.Args{"key.user_id": k.UserID})
+	if err != nil {
+		return err
+	}
+	_, err = dql.Exec(ctx, s.w, st)
+	return err
+}

@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"context"
 	"log/slog"
 	"slices"
 	"strconv"
@@ -511,3 +512,397 @@ func (r UserRef) String() string { return r.LogValue().String() }
 
 // GoString formats r as String does, for %#v.
 func (r UserRef) GoString() string { return r.String() }
+
+// The builder queries of shop.app.users (§16.3).
+var (
+	userGetByPrimary = &dql.Query{
+		Name:      "user.get.by_primary",
+		Catalog:   "shop",
+		Kind:      "get",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.user.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+	userGetByTenantIDAndEmail = &dql.Query{
+		Name:      "user.get.by_tenant_id_and_email",
+		Catalog:   "shop",
+		Kind:      "get",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.user.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.email"}, "1": dql.Param("key.email")}}}}}},
+		},
+	}
+	userFindByPrimary = &dql.Query{
+		Name:      "user.find.by_primary",
+		Catalog:   "shop",
+		Kind:      "find",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.user.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+	userFindByTenantIDAndEmail = &dql.Query{
+		Name:      "user.find.by_tenant_id_and_email",
+		Catalog:   "shop",
+		Kind:      "find",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.user.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.email"}, "1": dql.Param("key.email")}}}}}},
+		},
+	}
+	userCount = &dql.Query{
+		Name:    "user.count",
+		Catalog: "shop",
+		Kind:    "count",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "count.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}}}}},
+		},
+	}
+	userExists = &dql.Query{
+		Name:    "user.exists",
+		Catalog: "shop",
+		Kind:    "exists",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "exists.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}}}}},
+		},
+	}
+	userInsert = &dql.Query{
+		Name:      "user.insert",
+		Catalog:   "shop",
+		Kind:      "insert",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
+		},
+	}
+	userUpsertByPrimary = &dql.Query{
+		Name:      "user.upsert.by_primary",
+		Catalog:   "shop",
+		Kind:      "upsert",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.users.users_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.email"}}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.display_name"}}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.password_hash"}}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
+		},
+	}
+	userUpsertByTenantIDAndEmail = &dql.Query{
+		Name:      "user.upsert.by_tenant_id_and_email",
+		Catalog:   "shop",
+		Kind:      "upsert",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.users.users_tenant_email_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.display_name"}}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.password_hash"}}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
+		},
+	}
+	userPatch = &dql.Query{
+		Name:      "user.patch",
+		Catalog:   "shop",
+		Kind:      "patch",
+		Writes:    true,
+		AtMostOne: true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.users", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.user.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
+		},
+	}
+	userDelete = &dql.Query{
+		Name:    "user.delete",
+		Catalog: "shop",
+		Kind:    "delete",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
+		},
+	}
+)
+
+// UsersReadStore reads shop.app.users (§26.3).
+type UsersReadStore interface {
+	Get(ctx context.Context, k UserKey) (UserFull, error)
+	GetByTenantIDAndEmail(ctx context.Context, email EmailAddress) (UserFull, error)
+	Find(ctx context.Context, k UserKey) (opt.Opt[UserFull], error)
+	FindByTenantIDAndEmail(ctx context.Context, email EmailAddress) (opt.Opt[UserFull], error)
+	Count(ctx context.Context) (int64, error)
+	Exists(ctx context.Context) (bool, error)
+}
+
+// UsersStore reads and writes shop.app.users (§26.3).
+type UsersStore interface {
+	UsersReadStore
+	Insert(ctx context.Context, d UserDraft) (UserFull, error)
+	Upsert(ctx context.Context, d UserDraft) (UserFull, error)
+	UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft) (UserFull, error)
+	Patch(ctx context.Context, k UserKey, p UserPartial) (UserFull, error)
+	Delete(ctx context.Context, k UserKey) error
+}
+
+// UsersUnscopedReadStore reads, across scopes, shop.app.users (§26.3).
+type UsersUnscopedReadStore interface {
+	Get(ctx context.Context, scope UserScope, k UserKey) (UserFull, error)
+	GetByTenantIDAndEmail(ctx context.Context, scope UserScope, email EmailAddress) (UserFull, error)
+	Find(ctx context.Context, scope UserScope, k UserKey) (opt.Opt[UserFull], error)
+	FindByTenantIDAndEmail(ctx context.Context, scope UserScope, email EmailAddress) (opt.Opt[UserFull], error)
+	Count(ctx context.Context, scope UserScope) (int64, error)
+	Exists(ctx context.Context, scope UserScope) (bool, error)
+}
+
+// UsersUnscopedStore reads and writes, across scopes, shop.app.users (§26.3).
+type UsersUnscopedStore interface {
+	UsersUnscopedReadStore
+	Insert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
+	Upsert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
+	UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
+	Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial) (UserFull, error)
+	Delete(ctx context.Context, scope UserScope, k UserKey) error
+}
+
+// usersReads implements UsersReadStore on a handle that reads.
+type usersReads struct {
+	h     dql.Reader
+	scope UserScope
+}
+
+// usersWrites implements UsersStore on a handle that writes.
+type usersWrites struct {
+	usersReads
+	w dql.Writer
+}
+
+// Get runs user.get.by_primary (§19).
+func (s usersReads) Get(ctx context.Context, k UserKey) (UserFull, error) {
+	st, err := userGetByPrimary.Statement(fragments, dql.Args{"key.id": k.ID, "scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.h, st, DecodeUserFull)
+}
+
+// GetByTenantIDAndEmail runs user.get.by_tenant_id_and_email (§19).
+func (s usersReads) GetByTenantIDAndEmail(ctx context.Context, email EmailAddress) (UserFull, error) {
+	st, err := userGetByTenantIDAndEmail.Statement(fragments, dql.Args{"key.email": email, "scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.h, st, DecodeUserFull)
+}
+
+// Find runs user.find.by_primary (§19).
+func (s usersReads) Find(ctx context.Context, k UserKey) (opt.Opt[UserFull], error) {
+	st, err := userFindByPrimary.Statement(fragments, dql.Args{"key.id": k.ID, "scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return opt.None[UserFull](), err
+	}
+	return dql.OptionalOf(ctx, s.h, st, DecodeUserFull)
+}
+
+// FindByTenantIDAndEmail runs user.find.by_tenant_id_and_email (§19).
+func (s usersReads) FindByTenantIDAndEmail(ctx context.Context, email EmailAddress) (opt.Opt[UserFull], error) {
+	st, err := userFindByTenantIDAndEmail.Statement(fragments, dql.Args{"key.email": email, "scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return opt.None[UserFull](), err
+	}
+	return dql.OptionalOf(ctx, s.h, st, DecodeUserFull)
+}
+
+// Count runs user.count (§19).
+func (s usersReads) Count(ctx context.Context) (int64, error) {
+	st, err := userCount.Statement(fragments, dql.Args{"scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Count(ctx, s.h, st)
+}
+
+// Exists runs user.exists (§19).
+func (s usersReads) Exists(ctx context.Context) (bool, error) {
+	st, err := userExists.Statement(fragments, dql.Args{"scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return false, err
+	}
+	return dql.Exists(ctx, s.h, st)
+}
+
+// Insert runs user.insert (§20.1).
+func (s usersWrites) Insert(ctx context.Context, d UserDraft) (UserFull, error) {
+	if err := d.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := d.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := d.CreatedAt.Get(); ok {
+		args["created_at"] = v
+	}
+	if v, ok := d.UpdatedAt.Get(); ok {
+		args["updated_at"] = v
+	}
+	if v, ok := d.Version.Get(); ok {
+		args["version"] = v
+	}
+	st, err := userInsert.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
+}
+
+// Upsert runs user.upsert.by_primary (§20.1).
+func (s usersWrites) Upsert(ctx context.Context, d UserDraft) (UserFull, error) {
+	if err := d.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := d.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := d.CreatedAt.Get(); ok {
+		args["created_at"] = v
+	}
+	if v, ok := d.UpdatedAt.Get(); ok {
+		args["updated_at"] = v
+	}
+	if v, ok := d.Version.Get(); ok {
+		args["version"] = v
+	}
+	st, err := userUpsertByPrimary.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
+}
+
+// UpsertByTenantIDAndEmail runs user.upsert.by_tenant_id_and_email (§20.1).
+func (s usersWrites) UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft) (UserFull, error) {
+	if err := d.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := d.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := d.CreatedAt.Get(); ok {
+		args["created_at"] = v
+	}
+	if v, ok := d.UpdatedAt.Get(); ok {
+		args["updated_at"] = v
+	}
+	if v, ok := d.Version.Get(); ok {
+		args["version"] = v
+	}
+	st, err := userUpsertByTenantIDAndEmail.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
+}
+
+// Patch runs user.patch (§20.1).
+func (s usersWrites) Patch(ctx context.Context, k UserKey, p UserPartial) (UserFull, error) {
+	if err := p.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"key.id": k.ID, "key.version": k.Version, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := p.Email.Get(); ok {
+		args["email"] = v
+	}
+	if v, ok := p.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if v, ok := p.PasswordHash.Get(); ok {
+		args["password_hash"] = v
+	}
+	st, err := userPatch.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	exists, err := userFindByPrimary.Statement(fragments, dql.Args{"key.id": k.ID, "scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.VersionedOne(ctx, s.w, st, exists, DecodeUserFull)
+}
+
+// Delete runs user.delete (§20.1).
+func (s usersWrites) Delete(ctx context.Context, k UserKey) error {
+	st, err := userDelete.Statement(fragments, dql.Args{"key.id": k.ID, "key.version": k.Version, "scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return err
+	}
+	exists, err := userFindByPrimary.Statement(fragments, dql.Args{"key.id": k.ID, "scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return err
+	}
+	return dql.VersionedExec(ctx, s.w, st, exists)
+}
+
+// usersUnscopedReads implements UsersUnscopedReadStore on a handle that reads.
+type usersUnscopedReads struct{ h dql.Reader }
+
+// usersUnscoped implements UsersUnscopedStore on a handle that writes.
+type usersUnscoped struct {
+	usersUnscopedReads
+	w dql.Writer
+}
+
+// Get runs user.get.by_primary in scope (§21.2).
+func (u usersUnscopedReads) Get(ctx context.Context, scope UserScope, k UserKey) (UserFull, error) {
+	return usersReads{u.h, scope}.Get(ctx, k)
+}
+
+// GetByTenantIDAndEmail runs user.get.by_tenant_id_and_email in scope (§21.2).
+func (u usersUnscopedReads) GetByTenantIDAndEmail(ctx context.Context, scope UserScope, email EmailAddress) (UserFull, error) {
+	return usersReads{u.h, scope}.GetByTenantIDAndEmail(ctx, email)
+}
+
+// Find runs user.find.by_primary in scope (§21.2).
+func (u usersUnscopedReads) Find(ctx context.Context, scope UserScope, k UserKey) (opt.Opt[UserFull], error) {
+	return usersReads{u.h, scope}.Find(ctx, k)
+}
+
+// FindByTenantIDAndEmail runs user.find.by_tenant_id_and_email in scope (§21.2).
+func (u usersUnscopedReads) FindByTenantIDAndEmail(ctx context.Context, scope UserScope, email EmailAddress) (opt.Opt[UserFull], error) {
+	return usersReads{u.h, scope}.FindByTenantIDAndEmail(ctx, email)
+}
+
+// Count runs user.count in scope (§21.2).
+func (u usersUnscopedReads) Count(ctx context.Context, scope UserScope) (int64, error) {
+	return usersReads{u.h, scope}.Count(ctx)
+}
+
+// Exists runs user.exists in scope (§21.2).
+func (u usersUnscopedReads) Exists(ctx context.Context, scope UserScope) (bool, error) {
+	return usersReads{u.h, scope}.Exists(ctx)
+}
+
+// Insert runs user.insert in scope (§21.2).
+func (u usersUnscoped) Insert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.Insert(ctx, d)
+}
+
+// Upsert runs user.upsert.by_primary in scope (§21.2).
+func (u usersUnscoped) Upsert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.Upsert(ctx, d)
+}
+
+// UpsertByTenantIDAndEmail runs user.upsert.by_tenant_id_and_email in scope (§21.2).
+func (u usersUnscoped) UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.UpsertByTenantIDAndEmail(ctx, d)
+}
+
+// Patch runs user.patch in scope (§21.2).
+func (u usersUnscoped) Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.Patch(ctx, k, p)
+}
+
+// Delete runs user.delete in scope (§21.2).
+func (u usersUnscoped) Delete(ctx context.Context, scope UserScope, k UserKey) error {
+	return usersWrites{usersReads{u.w, scope}, u.w}.Delete(ctx, k)
+}

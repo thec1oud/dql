@@ -71,6 +71,14 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 		g.validators()
 		g.decoders()
 		g.redaction()
+		if g.b.GetCapabilities() != nil {
+			g.dialect()
+		}
+		if g.b.GetQueries().GetFragments() != nil {
+			es := g.entities()
+			g.stores(es)
+			g.handles(es)
+		}
 	}
 	if g.failed() {
 		sortDiagnostics(g.diags)
@@ -102,7 +110,9 @@ type generator struct {
 	// types declared in it so far (§13).
 	typesFile     *file
 	namedDecoders map[key]string
-	diags         []*irv1.Diagnostic
+	// fragmentIDs holds the fragment table's ids (§16.2).
+	fragmentIDs map[string]bool
+	diags       []*irv1.Diagnostic
 }
 
 // key identifies an object across catalogs.

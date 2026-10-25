@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"context"
 	"slices"
 	"strconv"
 
@@ -396,4 +397,263 @@ func DecodeTagKey(r dql.Row) (TagKey, error) {
 	var out TagKey
 	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
 	return out, d.Err()
+}
+
+// The builder queries of shop.app.tags (§16.3).
+var (
+	tagGetByName = &dql.Query{
+		Name:      "tag.get.by_name",
+		Catalog:   "shop",
+		Kind:      "get",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.tag.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.name"}, "1": dql.Param("key.name")}}}},
+		},
+	}
+	tagGetByPrimary = &dql.Query{
+		Name:      "tag.get.by_primary",
+		Catalog:   "shop",
+		Kind:      "get",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.tag.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}},
+		},
+	}
+	tagFindByName = &dql.Query{
+		Name:      "tag.find.by_name",
+		Catalog:   "shop",
+		Kind:      "find",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.tag.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.name"}, "1": dql.Param("key.name")}}}},
+		},
+	}
+	tagFindByPrimary = &dql.Query{
+		Name:      "tag.find.by_primary",
+		Catalog:   "shop",
+		Kind:      "find",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.tag.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}},
+		},
+	}
+	tagCount = &dql.Query{
+		Name:    "tag.count",
+		Catalog: "shop",
+		Kind:    "count",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "count.tags"},
+		},
+	}
+	tagExists = &dql.Query{
+		Name:    "tag.exists",
+		Catalog: "shop",
+		Kind:    "exists",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "exists.tags"},
+		},
+	}
+	tagInsert = &dql.Query{
+		Name:    "tag.insert",
+		Catalog: "shop",
+		Kind:    "insert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "insert.tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
+		},
+	}
+	tagUpsertByName = &dql.Query{
+		Name:    "tag.upsert.by_name",
+		Catalog: "shop",
+		Kind:    "upsert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.tags.tags_name_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.tags.name"}}}}, Separator: ", "}}},
+		},
+	}
+	tagUpsertByPrimary = &dql.Query{
+		Name:    "tag.upsert.by_primary",
+		Catalog: "shop",
+		Kind:    "upsert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.tags.tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.tags.name"}}}}, Separator: ", "}}},
+		},
+	}
+	tagPatch = &dql.Query{
+		Name:      "tag.patch",
+		Catalog:   "shop",
+		Kind:      "patch",
+		Writes:    true,
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.tags", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.tag.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+	tagDelete = &dql.Query{
+		Name:    "tag.delete",
+		Catalog: "shop",
+		Kind:    "delete",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.tags", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+)
+
+// TagsReadStore reads shop.app.tags (§26.3).
+type TagsReadStore interface {
+	GetByName(ctx context.Context, name SlugText) (TagFull, error)
+	Get(ctx context.Context, k TagKey) (TagFull, error)
+	FindByName(ctx context.Context, name SlugText) (opt.Opt[TagFull], error)
+	Find(ctx context.Context, k TagKey) (opt.Opt[TagFull], error)
+	Count(ctx context.Context) (int64, error)
+	Exists(ctx context.Context) (bool, error)
+}
+
+// TagsStore reads and writes shop.app.tags (§26.3).
+type TagsStore interface {
+	TagsReadStore
+	Insert(ctx context.Context, d TagDraft) (TagFull, error)
+	UpsertByName(ctx context.Context, d TagDraft) (TagFull, error)
+	Upsert(ctx context.Context, d TagDraft) (TagFull, error)
+	Patch(ctx context.Context, k TagKey, p TagPartial) (TagFull, error)
+	Delete(ctx context.Context, k TagKey) error
+}
+
+// tagsReads implements TagsReadStore on a handle that reads.
+type tagsReads struct {
+	h dql.Reader
+}
+
+// tagsWrites implements TagsStore on a handle that writes.
+type tagsWrites struct {
+	tagsReads
+	w dql.Writer
+}
+
+// GetByName runs tag.get.by_name (§19).
+func (s tagsReads) GetByName(ctx context.Context, name SlugText) (TagFull, error) {
+	st, err := tagGetByName.Statement(fragments, dql.Args{"key.name": name})
+	if err != nil {
+		return TagFull{}, err
+	}
+	return dql.OneOf(ctx, s.h, st, DecodeTagFull)
+}
+
+// Get runs tag.get.by_primary (§19).
+func (s tagsReads) Get(ctx context.Context, k TagKey) (TagFull, error) {
+	st, err := tagGetByPrimary.Statement(fragments, dql.Args{"key.id": k.ID})
+	if err != nil {
+		return TagFull{}, err
+	}
+	return dql.OneOf(ctx, s.h, st, DecodeTagFull)
+}
+
+// FindByName runs tag.find.by_name (§19).
+func (s tagsReads) FindByName(ctx context.Context, name SlugText) (opt.Opt[TagFull], error) {
+	st, err := tagFindByName.Statement(fragments, dql.Args{"key.name": name})
+	if err != nil {
+		return opt.None[TagFull](), err
+	}
+	return dql.OptionalOf(ctx, s.h, st, DecodeTagFull)
+}
+
+// Find runs tag.find.by_primary (§19).
+func (s tagsReads) Find(ctx context.Context, k TagKey) (opt.Opt[TagFull], error) {
+	st, err := tagFindByPrimary.Statement(fragments, dql.Args{"key.id": k.ID})
+	if err != nil {
+		return opt.None[TagFull](), err
+	}
+	return dql.OptionalOf(ctx, s.h, st, DecodeTagFull)
+}
+
+// Count runs tag.count (§19).
+func (s tagsReads) Count(ctx context.Context) (int64, error) {
+	st, err := tagCount.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Count(ctx, s.h, st)
+}
+
+// Exists runs tag.exists (§19).
+func (s tagsReads) Exists(ctx context.Context) (bool, error) {
+	st, err := tagExists.Statement(fragments, dql.Args{})
+	if err != nil {
+		return false, err
+	}
+	return dql.Exists(ctx, s.h, st)
+}
+
+// Insert runs tag.insert (§20.1).
+func (s tagsWrites) Insert(ctx context.Context, d TagDraft) (TagFull, error) {
+	if err := d.Validate(); err != nil {
+		return TagFull{}, err
+	}
+	st, err := tagInsert.Statement(fragments, dql.Args{"name": d.Name})
+	if err != nil {
+		return TagFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeTagFull)
+}
+
+// UpsertByName runs tag.upsert.by_name (§20.1).
+func (s tagsWrites) UpsertByName(ctx context.Context, d TagDraft) (TagFull, error) {
+	if err := d.Validate(); err != nil {
+		return TagFull{}, err
+	}
+	st, err := tagUpsertByName.Statement(fragments, dql.Args{"name": d.Name})
+	if err != nil {
+		return TagFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeTagFull)
+}
+
+// Upsert runs tag.upsert.by_primary (§20.1).
+func (s tagsWrites) Upsert(ctx context.Context, d TagDraft) (TagFull, error) {
+	if err := d.Validate(); err != nil {
+		return TagFull{}, err
+	}
+	st, err := tagUpsertByPrimary.Statement(fragments, dql.Args{"name": d.Name})
+	if err != nil {
+		return TagFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeTagFull)
+}
+
+// Patch runs tag.patch (§20.1).
+func (s tagsWrites) Patch(ctx context.Context, k TagKey, p TagPartial) (TagFull, error) {
+	if err := p.Validate(); err != nil {
+		return TagFull{}, err
+	}
+	args := dql.Args{"key.id": k.ID}
+	set := false
+	if v, ok := p.Name.Get(); ok {
+		args["name"] = v
+		set = true
+	}
+	if !set {
+		// Nothing to change: the row as it is.
+		return s.Get(ctx, k)
+	}
+	st, err := tagPatch.Statement(fragments, args)
+	if err != nil {
+		return TagFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeTagFull)
+}
+
+// Delete runs tag.delete (§20.1).
+func (s tagsWrites) Delete(ctx context.Context, k TagKey) error {
+	st, err := tagDelete.Statement(fragments, dql.Args{"key.id": k.ID})
+	if err != nil {
+		return err
+	}
+	_, err = dql.Exec(ctx, s.w, st)
+	return err
 }
