@@ -9,6 +9,7 @@ use (
 	./proto
 	./querysources
 	./runtime/go
+	./runtime/go/dqlpgx
 	./sources
 	./testkit
 )
