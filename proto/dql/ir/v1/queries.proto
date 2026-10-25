@@ -40,6 +40,9 @@ message Query {
   // core resolves it to result.shape once the query's columns match the
   // shape (§17.2).
   string returns = 13;
+  // The tables and views the query reads or writes, sorted, for the scope
+  // checks (§21.2).
+  repeated QualifiedName tables = 14;
 }
 
 enum QuerySource {
@@ -85,6 +88,9 @@ message ResultShape {
     ShapeId shape = 1;
     AnonymousShape anonymous = 2;
   }
+  // For a shape from -- returns:, the shape's fields by column name in the
+  // order the query returns them, which decoding follows.
+  repeated string columns = 3;
 }
 
 // A result the query defines itself, such as a join's (§17.3).
