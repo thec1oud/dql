@@ -101,7 +101,7 @@ func typeQuery(ix *index, path string, blk *block) (*irv1.Query, *irv1.Diagnosti
 		return fail("query-statements", -1, "holds %d statements; a query is one statement", len(tree.GetStmts()))
 	}
 	stmt := tree.GetStmts()[0]
-	a := &analyzer{ix: ix, catalogs: map[string]bool{}}
+	a := &analyzer{ix: ix, catalogs: map[string]bool{}, tables: map[string]*irv1.QualifiedName{}}
 	for _, p := range r.params {
 		a.params = append(a.params, &param{raw: p})
 	}
@@ -126,6 +126,9 @@ func typeQuery(ix *index, path string, blk *block) (*irv1.Query, *irv1.Diagnosti
 	}
 	for c := range a.catalogs {
 		q.Catalog = c
+	}
+	for _, k := range slices.Sorted(maps.Keys(a.tables)) {
+		q.Tables = append(q.Tables, a.tables[k])
 	}
 	scope := &irv1.ScopeUse{Unscoped: blk.unscoped}
 	for _, p := range a.params {
