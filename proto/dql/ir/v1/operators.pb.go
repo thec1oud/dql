@@ -460,8 +460,11 @@ func (x *OperatorSupport) GetOtherwise() Fidelity {
 // set matches anything; an unknown fact on the column never matches a set
 // one.
 type OperatorCondition struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Collation     *Collation             `protobuf:"bytes,1,opt,name=collation,proto3" json:"collation,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Collation *Collation             `protobuf:"bytes,1,opt,name=collation,proto3" json:"collation,omitempty"`
+	// The column's type is not an array, such as where an operator's list
+	// operand would need an array of arrays, which Postgres does not have.
+	Scalar        bool `protobuf:"varint,2,opt,name=scalar,proto3" json:"scalar,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -503,6 +506,13 @@ func (x *OperatorCondition) GetCollation() *Collation {
 	return nil
 }
 
+func (x *OperatorCondition) GetScalar() bool {
+	if x != nil {
+		return x.Scalar
+	}
+	return false
+}
+
 var File_dql_ir_v1_operators_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_operators_proto_rawDesc = "" +
@@ -530,9 +540,10 @@ const file_dql_ir_v1_operators_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12/\n" +
 	"\bfidelity\x18\x02 \x01(\x0e2\x13.dql.ir.v1.FidelityR\bfidelity\x120\n" +
 	"\x04when\x18\x03 \x01(\v2\x1c.dql.ir.v1.OperatorConditionR\x04when\x121\n" +
-	"\totherwise\x18\x04 \x01(\x0e2\x13.dql.ir.v1.FidelityR\totherwise\"G\n" +
+	"\totherwise\x18\x04 \x01(\x0e2\x13.dql.ir.v1.FidelityR\totherwise\"_\n" +
 	"\x11OperatorCondition\x122\n" +
-	"\tcollation\x18\x01 \x01(\v2\x14.dql.ir.v1.CollationR\tcollation*\xa8\x01\n" +
+	"\tcollation\x18\x01 \x01(\v2\x14.dql.ir.v1.CollationR\tcollation\x12\x16\n" +
+	"\x06scalar\x18\x02 \x01(\bR\x06scalar*\xa8\x01\n" +
 	"\x12OperatorOriginKind\x12$\n" +
 	" OPERATOR_ORIGIN_KIND_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19OPERATOR_ORIGIN_KIND_CORE\x10\x01\x12$\n" +

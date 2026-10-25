@@ -3,8 +3,8 @@
 // It runs in-process through the plugin.Plugin interface, and as the
 // executable dql-plugin-postgres (ADR 0002).
 //
-// How an operator renders as SQL stays private to the plugin (§9.2); the
-// fragment table that carries it arrives with the query layer (§16.2). The
+// How an operator renders as SQL stays private to the plugin (§9.2): it
+// reaches the runtime only through the fragment table (§16.2, §18.4). The
 // profile also carries the session setup and the error mapping (§22.7, §23).
 package postgres
 
@@ -38,27 +38,29 @@ func (*Plugin) Handshake() *irv1.PluginHandshake {
 }
 
 // Invoke returns a bundle holding the capability profile, with how
-// Postgres reports a violation of each rule of the bundle's catalogs. It
-// refuses a bundle of another dialect.
+// Postgres reports a violation of each rule of the bundle's catalogs, and
+// the fragment table of its catalogs and shapes. It refuses a bundle of
+// another dialect.
 func (*Plugin) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, error) {
 	if d := in.GetBundle().GetDialect(); d != irv1.Dialect_DIALECT_POSTGRES {
 		return nil, fmt.Errorf("postgres: the bundle's catalogs are %s, not Postgres", d)
 	}
 	p := Profile()
 	p.Violations = Violations(in.GetBundle().GetCatalogs())
-	return &irv1.InvokeResult{Bundle: &irv1.Bundle{Capabilities: p}}, nil
+	return &irv1.InvokeResult{Bundle: &irv1.Bundle{Capabilities: p, Queries: &irv1.QueryLayer{Fragments: Fragments(in.GetBundle(), p)}}}, nil
 }
 
 // Profile returns the capability profile of Postgres 15 and newer. Every
 // operator of the catalog is exact (§9.1, §9.2). The text operators need a
 // deterministic collation: before Postgres 18, LIKE, ILIKE, starts_with and
 // regular expressions reject a nondeterministic one, so a column with it
-// does not get them. No reference may cross catalogs (§5.1). Every
-// connection runs in UTC (§22.7), and SQLSTATEs map into the error
-// taxonomy (§23.1).
+// does not get them. An array column gets no any or in, whose list would
+// be an array of arrays. No reference may cross catalogs (§5.1). Every connection runs in UTC (§22.7), and
+// SQLSTATEs map into the error taxonomy (§23.1).
 func Profile() *irv1.CapabilityProfile {
 	exact := irv1.Fidelity_FIDELITY_EXACT
 	deterministic := &irv1.OperatorCondition{Collation: &irv1.Collation{Deterministic: irv1.Tristate_TRISTATE_TRUE}}
+	scalar := &irv1.OperatorCondition{Scalar: true}
 	var ops []*irv1.OperatorSupport
 	for _, name := range []string{
 		"add", "any", "array_contains", "array_overlaps", "between", "contains", "div", "eq", "ge", "gt",
@@ -67,8 +69,11 @@ func Profile() *irv1.CapabilityProfile {
 		"starts_with", "sub",
 	} {
 		s := &irv1.OperatorSupport{Name: name, Fidelity: exact}
-		if textOperators[name] {
+		switch {
+		case textOperators[name]:
 			s.When = deterministic
+		case listOperators[name]:
+			s.When = scalar
 		}
 		ops = append(ops, s)
 	}
@@ -78,6 +83,10 @@ func Profile() *irv1.CapabilityProfile {
 	}
 	return &irv1.CapabilityProfile{Dialect: irv1.Dialect_DIALECT_POSTGRES, Operators: ops, SessionSetup: slices.Clone(sessionSetup), ErrorCodes: codes}
 }
+
+// listOperators take a list of the column's values, which for an array
+// column would be an array of arrays; Postgres has none.
+var listOperators = map[string]bool{"any": true, "in": true}
 
 // textOperators are the pattern-matching operators Postgres before 18 runs
 // only under a deterministic collation.

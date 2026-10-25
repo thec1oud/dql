@@ -66,7 +66,7 @@ func (r *resolver) column(ops []*irv1.Operator, col *irv1.Column, approximate []
 		if len(args) == 0 || !r.fits(op, args[0], t, col.GetNullable()) {
 			continue
 		}
-		f := fidelity(r.support[op.GetName()], coll)
+		f := fidelity(r.support[op.GetName()], t, coll)
 		if f == irv1.Fidelity_FIDELITY_UNSPECIFIED || f == irv1.Fidelity_FIDELITY_APPROXIMATE && !slices.Contains(approximate, op.GetName()) {
 			continue
 		}
@@ -195,10 +195,10 @@ func textual(t *irv1.Type) bool {
 	return t.GetText() != nil || t.GetVarchar() != nil || t.GetChar() != nil
 }
 
-// fidelity returns the fidelity s gives a column of collation coll:
-// unspecified when the dialect does not support the operator (§9.2).
-func fidelity(s *irv1.OperatorSupport, coll *irv1.Collation) irv1.Fidelity {
-	if s.GetWhen() == nil || holds(s.GetWhen(), coll) {
+// fidelity returns the fidelity s gives a column of type t and collation
+// coll: unspecified when the dialect does not support the operator (§9.2).
+func fidelity(s *irv1.OperatorSupport, t *irv1.Type, coll *irv1.Collation) irv1.Fidelity {
+	if s.GetWhen() == nil || holds(s.GetWhen(), t, coll) {
 		return s.GetFidelity()
 	}
 	return s.GetOtherwise()
@@ -206,7 +206,10 @@ func fidelity(s *irv1.OperatorSupport, coll *irv1.Collation) irv1.Fidelity {
 
 // holds reports whether the column facts match the condition: every fact
 // the condition sets is known and equal on the column.
-func holds(c *irv1.OperatorCondition, coll *irv1.Collation) bool {
+func holds(c *irv1.OperatorCondition, t *irv1.Type, coll *irv1.Collation) bool {
+	if c.GetScalar() && t.GetArray() != nil {
+		return false
+	}
 	w := c.GetCollation()
 	if w.GetName() != "" && w.GetName() != coll.GetName() {
 		return false
