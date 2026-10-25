@@ -53,7 +53,8 @@ enum Dialect {
 }
 
 // The dialect's capability profile (§9.2), with its session setup and error
-// mapping (§22.7, §23). Its other fields arrive with the dialect plugins.
+// mapping (§22.7, §23), its limits and its replica support (§22.5, §25.2,
+// §26.4).
 message CapabilityProfile {
   Dialect dialect = 1;
   // The operators the dialect supports, sorted by name (§9.2).
@@ -69,6 +70,43 @@ message CapabilityProfile {
   // How the database reports a violation of each of the catalogs' rules,
   // sorted by object, then kind, then what is reported (§23.2).
   repeated ViolationReport violations = 6;
+  // The most parameters one statement may bind, which bulk writes split to
+  // stay under (§25.2). Zero when the dialect's limit is not a count.
+  uint32 max_params = 7;
+  // The read consistency levels the dialect supports, sorted (§22.5). A read
+  // at a level not listed runs on the primary.
+  repeated ConsistencyLevel consistency_levels = 8;
+  // How the runtime reads replica positions, set when consistency_levels
+  // has a level beyond primary (§22.5).
+  ReplicationQueries replication = 9;
+  // The statement modes the dialect's drivers support, sorted; the first is
+  // the default (§26.4).
+  repeated StatementMode statement_modes = 10;
+}
+
+// The statements the runtime runs to route reads to replicas (§22.5).
+message ReplicationQueries {
+  // Runs on a primary after a commit and returns, as text, a position at
+  // which a replica has replayed the commit.
+  string position = 1;
+  // Runs on a replica and returns how far behind it is in seconds, as a
+  // float, or NULL when the server is not a replica.
+  string lag = 2;
+  // Runs on a replica with one parameter, a list of positions as text, and
+  // returns whether it has replayed every one.
+  string replayed = 3;
+}
+
+// How a driver sends statements (§26.4).
+enum StatementMode {
+  STATEMENT_MODE_UNSPECIFIED = 0;
+  // Prepared and cached as named statements, for direct connections.
+  STATEMENT_MODE_PREPARE = 1;
+  // Unnamed statements, for transaction-level poolers such as PgBouncer in
+  // transaction mode.
+  STATEMENT_MODE_DESCRIBE = 2;
+  // No preparation, for proxies that support nothing else.
+  STATEMENT_MODE_SIMPLE = 3;
 }
 
 // A native error code and the taxonomy error it is (§23.1).
