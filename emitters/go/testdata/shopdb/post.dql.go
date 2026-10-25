@@ -1024,14 +1024,14 @@ type PostsReadStore interface {
 // PostsStore reads and writes shop.app.posts (§26.3).
 type PostsStore interface {
 	PostsReadStore
-	Insert(ctx context.Context, d PostDraft) (PostFull, error)
-	InsertMany(ctx context.Context, ds []PostDraft) ([]PostFull, error)
-	InsertOrIgnoreByPostsOnePublishedSlug(ctx context.Context, d PostDraft) (opt.Opt[PostFull], error)
-	InsertOrIgnore(ctx context.Context, d PostDraft) (opt.Opt[PostFull], error)
-	UpsertByPostsOnePublishedSlug(ctx context.Context, d PostDraft) (PostFull, error)
-	Upsert(ctx context.Context, d PostDraft) (PostFull, error)
-	Patch(ctx context.Context, k PostKey, p PostPartial) (PostFull, error)
-	UpdateWhere(ctx context.Context, where dql.Pred[PostsTable], p PostPartial) (int64, error)
+	Insert(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (PostFull, error)
+	InsertMany(ctx context.Context, ds []PostDraft, as ...dql.Assignment[PostsTable]) ([]PostFull, error)
+	InsertOrIgnoreByPostsOnePublishedSlug(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (opt.Opt[PostFull], error)
+	InsertOrIgnore(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (opt.Opt[PostFull], error)
+	UpsertByPostsOnePublishedSlug(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (PostFull, error)
+	Upsert(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (PostFull, error)
+	Patch(ctx context.Context, k PostKey, p PostPartial, as ...dql.Update[PostsTable]) (PostFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[PostsTable], p PostPartial, as ...dql.Update[PostsTable]) (int64, error)
 	Delete(ctx context.Context, k PostKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[PostsTable]) (int64, error)
 }
@@ -1084,7 +1084,7 @@ func (s postsReads) Exists(ctx context.Context) (bool, error) {
 }
 
 // Insert runs post.insert (§20.1).
-func (s postsWrites) Insert(ctx context.Context, d PostDraft) (PostFull, error) {
+func (s postsWrites) Insert(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (PostFull, error) {
 	if err := d.Validate(); err != nil {
 		return PostFull{}, err
 	}
@@ -1107,6 +1107,9 @@ func (s postsWrites) Insert(ctx context.Context, d PostDraft) (PostFull, error) 
 	if v, ok := d.PublishedAt.Get(); ok {
 		args["published_at"] = v
 	}
+	if err := dql.Assign(postInsert, "post.draft.flat", args, dql.Values(as)); err != nil {
+		return PostFull{}, err
+	}
 	st, err := postInsert.Statement(fragments, args)
 	if err != nil {
 		return PostFull{}, err
@@ -1115,7 +1118,7 @@ func (s postsWrites) Insert(ctx context.Context, d PostDraft) (PostFull, error) 
 }
 
 // InsertMany runs post.insert for each draft, in one transaction (§20.1).
-func (s postsWrites) InsertMany(ctx context.Context, ds []PostDraft) ([]PostFull, error) {
+func (s postsWrites) InsertMany(ctx context.Context, ds []PostDraft, as ...dql.Assignment[PostsTable]) ([]PostFull, error) {
 	for _, d := range ds {
 		if err := d.Validate(); err != nil {
 			return nil, err
@@ -1142,13 +1145,16 @@ func (s postsWrites) InsertMany(ctx context.Context, ds []PostDraft) ([]PostFull
 		if v, ok := d.PublishedAt.Get(); ok {
 			args["published_at"] = v
 		}
+		if err := dql.Assign(postInsert, "post.draft.flat", args, dql.Values(as)); err != nil {
+			return nil, err
+		}
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, postInsert, rows, DecodePostFull)
 }
 
 // InsertOrIgnoreByPostsOnePublishedSlug runs post.insert_or_ignore.by_posts_one_published_slug (§20.1).
-func (s postsWrites) InsertOrIgnoreByPostsOnePublishedSlug(ctx context.Context, d PostDraft) (opt.Opt[PostFull], error) {
+func (s postsWrites) InsertOrIgnoreByPostsOnePublishedSlug(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (opt.Opt[PostFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[PostFull](), err
 	}
@@ -1170,6 +1176,9 @@ func (s postsWrites) InsertOrIgnoreByPostsOnePublishedSlug(ctx context.Context, 
 	}
 	if v, ok := d.PublishedAt.Get(); ok {
 		args["published_at"] = v
+	}
+	if err := dql.Assign(postInsertOrIgnoreByPostsOnePublishedSlug, "post.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[PostFull](), err
 	}
 	st, err := postInsertOrIgnoreByPostsOnePublishedSlug.Statement(fragments, args)
 	if err != nil {
@@ -1179,7 +1188,7 @@ func (s postsWrites) InsertOrIgnoreByPostsOnePublishedSlug(ctx context.Context, 
 }
 
 // InsertOrIgnore runs post.insert_or_ignore.by_primary (§20.1).
-func (s postsWrites) InsertOrIgnore(ctx context.Context, d PostDraft) (opt.Opt[PostFull], error) {
+func (s postsWrites) InsertOrIgnore(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (opt.Opt[PostFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[PostFull](), err
 	}
@@ -1201,6 +1210,9 @@ func (s postsWrites) InsertOrIgnore(ctx context.Context, d PostDraft) (opt.Opt[P
 	}
 	if v, ok := d.PublishedAt.Get(); ok {
 		args["published_at"] = v
+	}
+	if err := dql.Assign(postInsertOrIgnoreByPrimary, "post.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[PostFull](), err
 	}
 	st, err := postInsertOrIgnoreByPrimary.Statement(fragments, args)
 	if err != nil {
@@ -1210,7 +1222,7 @@ func (s postsWrites) InsertOrIgnore(ctx context.Context, d PostDraft) (opt.Opt[P
 }
 
 // UpsertByPostsOnePublishedSlug runs post.upsert.by_posts_one_published_slug (§20.1).
-func (s postsWrites) UpsertByPostsOnePublishedSlug(ctx context.Context, d PostDraft) (PostFull, error) {
+func (s postsWrites) UpsertByPostsOnePublishedSlug(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (PostFull, error) {
 	if err := d.Validate(); err != nil {
 		return PostFull{}, err
 	}
@@ -1232,6 +1244,9 @@ func (s postsWrites) UpsertByPostsOnePublishedSlug(ctx context.Context, d PostDr
 	}
 	if v, ok := d.PublishedAt.Get(); ok {
 		args["published_at"] = v
+	}
+	if err := dql.Assign(postUpsertByPostsOnePublishedSlug, "post.draft.flat", args, dql.Values(as)); err != nil {
+		return PostFull{}, err
 	}
 	st, err := postUpsertByPostsOnePublishedSlug.Statement(fragments, args)
 	if err != nil {
@@ -1241,7 +1256,7 @@ func (s postsWrites) UpsertByPostsOnePublishedSlug(ctx context.Context, d PostDr
 }
 
 // Upsert runs post.upsert.by_primary (§20.1).
-func (s postsWrites) Upsert(ctx context.Context, d PostDraft) (PostFull, error) {
+func (s postsWrites) Upsert(ctx context.Context, d PostDraft, as ...dql.Assignment[PostsTable]) (PostFull, error) {
 	if err := d.Validate(); err != nil {
 		return PostFull{}, err
 	}
@@ -1264,6 +1279,9 @@ func (s postsWrites) Upsert(ctx context.Context, d PostDraft) (PostFull, error) 
 	if v, ok := d.PublishedAt.Get(); ok {
 		args["published_at"] = v
 	}
+	if err := dql.Assign(postUpsertByPrimary, "post.draft.flat", args, dql.Values(as)); err != nil {
+		return PostFull{}, err
+	}
 	st, err := postUpsertByPrimary.Statement(fragments, args)
 	if err != nil {
 		return PostFull{}, err
@@ -1272,7 +1290,7 @@ func (s postsWrites) Upsert(ctx context.Context, d PostDraft) (PostFull, error) 
 }
 
 // Patch runs post.patch (§20.1).
-func (s postsWrites) Patch(ctx context.Context, k PostKey, p PostPartial) (PostFull, error) {
+func (s postsWrites) Patch(ctx context.Context, k PostKey, p PostPartial, as ...dql.Update[PostsTable]) (PostFull, error) {
 	if err := p.Validate(); err != nil {
 		return PostFull{}, err
 	}
@@ -1306,7 +1324,10 @@ func (s postsWrites) Patch(ctx context.Context, k PostKey, p PostPartial) (PostF
 		args["published_at"] = v
 		set = true
 	}
-	if !set {
+	if err := dql.Assign(postPatch, "post.partial.flat", args, as); err != nil {
+		return PostFull{}, err
+	}
+	if !set && len(as) == 0 {
 		// Nothing to change: the row as it is.
 		return s.Get(ctx, k)
 	}
@@ -1318,7 +1339,7 @@ func (s postsWrites) Patch(ctx context.Context, k PostKey, p PostPartial) (PostF
 }
 
 // UpdateWhere runs post.update_where (§20.1).
-func (s postsWrites) UpdateWhere(ctx context.Context, where dql.Pred[PostsTable], p PostPartial) (int64, error) {
+func (s postsWrites) UpdateWhere(ctx context.Context, where dql.Pred[PostsTable], p PostPartial, as ...dql.Update[PostsTable]) (int64, error) {
 	if err := p.Validate(); err != nil {
 		return 0, err
 	}
@@ -1356,7 +1377,10 @@ func (s postsWrites) UpdateWhere(ctx context.Context, where dql.Pred[PostsTable]
 		args["published_at"] = v
 		set = true
 	}
-	if !set {
+	if err := dql.Assign(q, "post.partial.flat", args, as); err != nil {
+		return 0, err
+	}
+	if !set && len(as) == 0 {
 		// Nothing to change.
 		return 0, nil
 	}
@@ -1468,6 +1492,11 @@ func (postsIDColumn) Ne(v int64) dql.Pred[PostsTable] {
 	return dql.Compare[PostsTable]("op.ne", "col.posts.id", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to id on a write, in place of a value (§20.2).
+func (postsIDColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
+	return dql.Set[PostsTable]("id", e)
+}
+
 // Asc orders by id, ascending.
 func (postsIDColumn) Asc() dql.Order[PostsTable] {
 	return dql.Ordered[PostsTable]("order.asc", "col.posts.id")
@@ -1529,6 +1558,21 @@ func (postsAuthorIDColumn) Lt(v int64) dql.Pred[PostsTable] {
 // Ne is operator ne on author_id (§9.4).
 func (postsAuthorIDColumn) Ne(v int64) dql.Pred[PostsTable] {
 	return dql.Compare[PostsTable]("op.ne", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Default() to author_id on a write, in place of a value (§20.2).
+func (postsAuthorIDColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
+	return dql.Set[PostsTable]("author_id", e)
+}
+
+// Add sets author_id to author_id + v on an update (§20.2).
+func (postsAuthorIDColumn) Add(v int64) dql.Update[PostsTable] {
+	return dql.Arith[PostsTable]("op.add", "author_id", "col.posts.author_id", dql.Arg{Value: v})
+}
+
+// Sub sets author_id to author_id - v on an update (§20.2).
+func (postsAuthorIDColumn) Sub(v int64) dql.Update[PostsTable] {
+	return dql.Arith[PostsTable]("op.sub", "author_id", "col.posts.author_id", dql.Arg{Value: v})
 }
 
 // Asc orders by author_id, ascending.
@@ -1602,6 +1646,21 @@ func (postsEditorIDColumn) Lt(v int64) dql.Pred[PostsTable] {
 // Ne is operator ne on editor_id (§9.4).
 func (postsEditorIDColumn) Ne(v int64) dql.Pred[PostsTable] {
 	return dql.Compare[PostsTable]("op.ne", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Default() to editor_id on a write, in place of a value (§20.2).
+func (postsEditorIDColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
+	return dql.Set[PostsTable]("editor_id", e)
+}
+
+// Add sets editor_id to editor_id + v on an update (§20.2).
+func (postsEditorIDColumn) Add(v int64) dql.Update[PostsTable] {
+	return dql.Arith[PostsTable]("op.add", "editor_id", "col.posts.editor_id", dql.Arg{Value: v})
+}
+
+// Sub sets editor_id to editor_id - v on an update (§20.2).
+func (postsEditorIDColumn) Sub(v int64) dql.Update[PostsTable] {
+	return dql.Arith[PostsTable]("op.sub", "editor_id", "col.posts.editor_id", dql.Arg{Value: v})
 }
 
 // Asc orders by editor_id, ascending.
@@ -1690,6 +1749,11 @@ func (postsTitleColumn) RegexMatch(v string) dql.Pred[PostsTable] {
 // StartsWith is operator starts_with on title (§9.4).
 func (postsTitleColumn) StartsWith(v string) dql.Pred[PostsTable] {
 	return dql.Compare[PostsTable]("op.starts_with", "col.posts.title", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Default() to title on a write, in place of a value (§20.2).
+func (postsTitleColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
+	return dql.Set[PostsTable]("title", e)
 }
 
 // Asc orders by title, ascending.
@@ -1853,6 +1917,11 @@ func (postsStatusColumn) Ne(v PostStatus) dql.Pred[PostsTable] {
 	return dql.Compare[PostsTable]("op.ne", "col.posts.status", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to status on a write, in place of a value (§20.2).
+func (postsStatusColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
+	return dql.Set[PostsTable]("status", e)
+}
+
 // Asc orders by status, ascending.
 func (postsStatusColumn) Asc() dql.Order[PostsTable] {
 	return dql.Ordered[PostsTable]("order.asc", "col.posts.status")
@@ -1901,6 +1970,11 @@ func (postsPriceColumn) Ne(v MoneyAmount) dql.Pred[PostsTable] {
 	return dql.Compare[PostsTable]("op.ne", "col.posts.price", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to price on a write, in place of a value (§20.2).
+func (postsPriceColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
+	return dql.Set[PostsTable]("price", e)
+}
+
 // Asc orders by price, ascending.
 func (postsPriceColumn) Asc() dql.Order[PostsTable] {
 	return dql.Ordered[PostsTable]("order.asc", "col.posts.price")
@@ -1947,6 +2021,11 @@ func (postsLabelsColumn) IsNull() dql.Pred[PostsTable] {
 // Ne is operator ne on labels (§9.4).
 func (postsLabelsColumn) Ne(v []*string) dql.Pred[PostsTable] {
 	return dql.Compare[PostsTable]("op.ne", "col.posts.labels", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Default() to labels on a write, in place of a value (§20.2).
+func (postsLabelsColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
+	return dql.Set[PostsTable]("labels", e)
 }
 
 // Asc orders by labels, ascending.
@@ -2020,6 +2099,11 @@ func (postsPublishedAtColumn) Lt(v time.Time) dql.Pred[PostsTable] {
 // Ne is operator ne on published_at (§9.4).
 func (postsPublishedAtColumn) Ne(v time.Time) dql.Pred[PostsTable] {
 	return dql.Compare[PostsTable]("op.ne", "col.posts.published_at", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Now() or dql.Default() to published_at on a write, in place of a value (§20.2).
+func (postsPublishedAtColumn) Set(e dql.TimeExpr) dql.Assignment[PostsTable] {
+	return dql.Set[PostsTable]("published_at", e)
 }
 
 // Asc orders by published_at, ascending.
