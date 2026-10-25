@@ -107,8 +107,5 @@ func bulk(ctx context.Context, h Writer, b Bulk, start func(), run func(context.
 	if b.Rows <= size {
 		return chunks(ctx, h)
 	}
-	if tx, ok := h.(*WriteTx); ok {
-		ctx = tx.Context(ctx)
-	}
-	return e.Write(ctx, func(ctx context.Context, tx *WriteTx) error { return chunks(ctx, tx) })
+	return Atomic(ctx, h, chunks)
 }
