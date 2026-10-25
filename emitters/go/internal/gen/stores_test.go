@@ -341,3 +341,25 @@ func TestSelectShapes(t *testing.T) {
 	}
 	contains(t, files, "user.dql.go", `dql.Arg{Value: s.scope.TenantID, Sensitive: true}`)
 }
+
+// §18.4: fragment ids name a table behind its namespace when that is not
+// its catalog's default, and behind its catalog when there are several.
+func TestTableID(t *testing.T) {
+	cat := func(name string) *irv1.Catalog {
+		return &irv1.Catalog{Name: &irv1.Identifier{Stored: name}, DefaultNamespace: "app"}
+	}
+	g := &generator{b: &irv1.Bundle{Catalogs: []*irv1.Catalog{cat("shop")}}}
+	for q, want := range map[*irv1.QualifiedName]string{
+		{Catalog: "shop", Namespace: "app", Object: "users"}:   "users",
+		{Catalog: "shop", Namespace: "audit", Object: "users"}: "audit.users",
+		{Catalog: "other", Namespace: "app", Object: "users"}:  "app.users",
+	} {
+		if got := g.tableID(q); got != want {
+			t.Errorf("%v: %s", q, got)
+		}
+	}
+	g.b.Catalogs = append(g.b.Catalogs, cat("crm"))
+	if got := g.tableID(&irv1.QualifiedName{Catalog: "crm", Namespace: "app", Object: "leads"}); got != "crm.leads" {
+		t.Error(got)
+	}
+}
