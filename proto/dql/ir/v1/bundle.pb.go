@@ -77,6 +77,62 @@ func (Dialect) EnumDescriptor() ([]byte, []int) {
 	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{0}
 }
 
+// How a dialect writes the n-th placeholder.
+type Placeholder int32
+
+const (
+	Placeholder_PLACEHOLDER_UNSPECIFIED Placeholder = 0
+	// $1, Postgres.
+	Placeholder_PLACEHOLDER_DOLLAR_NUMBERED Placeholder = 1
+	// ?, MySQL, MariaDB and SQLite.
+	Placeholder_PLACEHOLDER_QUESTION Placeholder = 2
+	// @p1, SQL Server.
+	Placeholder_PLACEHOLDER_AT_NUMBERED Placeholder = 3
+)
+
+// Enum value maps for Placeholder.
+var (
+	Placeholder_name = map[int32]string{
+		0: "PLACEHOLDER_UNSPECIFIED",
+		1: "PLACEHOLDER_DOLLAR_NUMBERED",
+		2: "PLACEHOLDER_QUESTION",
+		3: "PLACEHOLDER_AT_NUMBERED",
+	}
+	Placeholder_value = map[string]int32{
+		"PLACEHOLDER_UNSPECIFIED":     0,
+		"PLACEHOLDER_DOLLAR_NUMBERED": 1,
+		"PLACEHOLDER_QUESTION":        2,
+		"PLACEHOLDER_AT_NUMBERED":     3,
+	}
+)
+
+func (x Placeholder) Enum() *Placeholder {
+	p := new(Placeholder)
+	*p = x
+	return p
+}
+
+func (x Placeholder) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Placeholder) Descriptor() protoreflect.EnumDescriptor {
+	return file_dql_ir_v1_bundle_proto_enumTypes[1].Descriptor()
+}
+
+func (Placeholder) Type() protoreflect.EnumType {
+	return &file_dql_ir_v1_bundle_proto_enumTypes[1]
+}
+
+func (x Placeholder) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Placeholder.Descriptor instead.
+func (Placeholder) EnumDescriptor() ([]byte, []int) {
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{1}
+}
+
 // The three IR layers travelling together at every plugin boundary (§2.2, §3.1).
 type Bundle struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
@@ -408,9 +464,13 @@ func (x *ShapeLayer) GetMerges() []*KeyMerge {
 	return nil
 }
 
-// Query entries (§16). Its fields arrive with M4.
+// Query entries and the fragment table they are assembled from (§16).
 type QueryLayer struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// From query files and the builder, sorted by name.
+	Queries []*Query `protobuf:"bytes,1,rep,name=queries,proto3" json:"queries,omitempty"`
+	// Rendered by the dialect plugin (§16.2, §18.4).
+	Fragments     *FragmentTable `protobuf:"bytes,2,opt,name=fragments,proto3" json:"fragments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -445,11 +505,153 @@ func (*QueryLayer) Descriptor() ([]byte, []int) {
 	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{4}
 }
 
+func (x *QueryLayer) GetQueries() []*Query {
+	if x != nil {
+		return x.Queries
+	}
+	return nil
+}
+
+func (x *QueryLayer) GetFragments() *FragmentTable {
+	if x != nil {
+		return x.Fragments
+	}
+	return nil
+}
+
+// The SQL pieces a dialect plugin renders for the builder, as templates
+// with holes (§16.2, §18.4). The runtime fills holes and numbers
+// placeholders; it never renders SQL itself.
+type FragmentTable struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Dialect     Dialect                `protobuf:"varint,1,opt,name=dialect,proto3,enum=dql.ir.v1.Dialect" json:"dialect,omitempty"`
+	Placeholder Placeholder            `protobuf:"varint,2,opt,name=placeholder,proto3,enum=dql.ir.v1.Placeholder" json:"placeholder,omitempty"`
+	// Sorted by id.
+	Fragments     []*Fragment `protobuf:"bytes,3,rep,name=fragments,proto3" json:"fragments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FragmentTable) Reset() {
+	*x = FragmentTable{}
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FragmentTable) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FragmentTable) ProtoMessage() {}
+
+func (x *FragmentTable) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FragmentTable.ProtoReflect.Descriptor instead.
+func (*FragmentTable) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *FragmentTable) GetDialect() Dialect {
+	if x != nil {
+		return x.Dialect
+	}
+	return Dialect_DIALECT_UNSPECIFIED
+}
+
+func (x *FragmentTable) GetPlaceholder() Placeholder {
+	if x != nil {
+		return x.Placeholder
+	}
+	return Placeholder_PLACEHOLDER_UNSPECIFIED
+}
+
+func (x *FragmentTable) GetFragments() []*Fragment {
+	if x != nil {
+		return x.Fragments
+	}
+	return nil
+}
+
+type Fragment struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Such as select.user_summary, col.users.email, op.ilike, clause.where
+	// or wrap.distinct_on.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// SQL with holes written {0} or {name}.
+	Template string `protobuf:"bytes,2,opt,name=template,proto3" json:"template,omitempty"`
+	// Set on operators and emulation wrappers (§9.2).
+	Fidelity      Fidelity `protobuf:"varint,3,opt,name=fidelity,proto3,enum=dql.ir.v1.Fidelity" json:"fidelity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Fragment) Reset() {
+	*x = Fragment{}
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Fragment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Fragment) ProtoMessage() {}
+
+func (x *Fragment) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Fragment.ProtoReflect.Descriptor instead.
+func (*Fragment) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Fragment) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Fragment) GetTemplate() string {
+	if x != nil {
+		return x.Template
+	}
+	return ""
+}
+
+func (x *Fragment) GetFidelity() Fidelity {
+	if x != nil {
+		return x.Fidelity
+	}
+	return Fidelity_FIDELITY_UNSPECIFIED
+}
+
 var File_dql_ir_v1_bundle_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\n" +
-	"\x16dql/ir/v1/bundle.proto\x12\tdql.ir.v1\x1a\x17dql/ir/v1/catalog.proto\x1a\x1bdql/ir/v1/diagnostics.proto\x1a\x19dql/ir/v1/operators.proto\x1a\x16dql/ir/v1/shapes.proto\"\xd1\x03\n" +
+	"\x16dql/ir/v1/bundle.proto\x12\tdql.ir.v1\x1a\x17dql/ir/v1/catalog.proto\x1a\x1bdql/ir/v1/diagnostics.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x19dql/ir/v1/operators.proto\x1a\x17dql/ir/v1/queries.proto\x1a\x16dql/ir/v1/shapes.proto\"\xd1\x03\n" +
 	"\x06Bundle\x12.\n" +
 	"\aversion\x18\x01 \x01(\v2\x14.dql.ir.v1.IrVersionR\aversion\x12+\n" +
 	"\x11required_features\x18\x02 \x03(\tR\x10requiredFeatures\x12,\n" +
@@ -477,15 +679,30 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\x06unions\x18\x02 \x03(\v2\x18.dql.ir.v1.RelationUnionR\x06unions\x127\n" +
 	"\vconversions\x18\x03 \x03(\v2\x15.dql.ir.v1.ConversionR\vconversions\x12+\n" +
 	"\aupserts\x18\x04 \x03(\v2\x11.dql.ir.v1.UpsertR\aupserts\x12+\n" +
-	"\x06merges\x18\x05 \x03(\v2\x13.dql.ir.v1.KeyMergeR\x06merges\"\f\n" +
+	"\x06merges\x18\x05 \x03(\v2\x13.dql.ir.v1.KeyMergeR\x06merges\"p\n" +
 	"\n" +
-	"QueryLayer*v\n" +
+	"QueryLayer\x12*\n" +
+	"\aqueries\x18\x01 \x03(\v2\x10.dql.ir.v1.QueryR\aqueries\x126\n" +
+	"\tfragments\x18\x02 \x01(\v2\x18.dql.ir.v1.FragmentTableR\tfragments\"\xaa\x01\n" +
+	"\rFragmentTable\x12,\n" +
+	"\adialect\x18\x01 \x01(\x0e2\x12.dql.ir.v1.DialectR\adialect\x128\n" +
+	"\vplaceholder\x18\x02 \x01(\x0e2\x16.dql.ir.v1.PlaceholderR\vplaceholder\x121\n" +
+	"\tfragments\x18\x03 \x03(\v2\x13.dql.ir.v1.FragmentR\tfragments\"g\n" +
+	"\bFragment\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
+	"\btemplate\x18\x02 \x01(\tR\btemplate\x12/\n" +
+	"\bfidelity\x18\x03 \x01(\x0e2\x13.dql.ir.v1.FidelityR\bfidelity*v\n" +
 	"\aDialect\x12\x17\n" +
 	"\x13DIALECT_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10DIALECT_POSTGRES\x10\x01\x12\x11\n" +
 	"\rDIALECT_MYSQL\x10\x02\x12\x12\n" +
 	"\x0eDIALECT_SQLITE\x10\x03\x12\x15\n" +
-	"\x11DIALECT_SQLSERVER\x10\x04B.Z,github.com/thec1oud/dql/proto/dql/ir/v1;irv1b\x06proto3"
+	"\x11DIALECT_SQLSERVER\x10\x04*\x82\x01\n" +
+	"\vPlaceholder\x12\x1b\n" +
+	"\x17PLACEHOLDER_UNSPECIFIED\x10\x00\x12\x1f\n" +
+	"\x1bPLACEHOLDER_DOLLAR_NUMBERED\x10\x01\x12\x18\n" +
+	"\x14PLACEHOLDER_QUESTION\x10\x02\x12\x1b\n" +
+	"\x17PLACEHOLDER_AT_NUMBERED\x10\x03B.Z,github.com/thec1oud/dql/proto/dql/ir/v1;irv1b\x06proto3"
 
 var (
 	file_dql_ir_v1_bundle_proto_rawDescOnce sync.Once
@@ -499,46 +716,57 @@ func file_dql_ir_v1_bundle_proto_rawDescGZIP() []byte {
 	return file_dql_ir_v1_bundle_proto_rawDescData
 }
 
-var file_dql_ir_v1_bundle_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_dql_ir_v1_bundle_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_dql_ir_v1_bundle_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_dql_ir_v1_bundle_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_dql_ir_v1_bundle_proto_goTypes = []any{
 	(Dialect)(0),              // 0: dql.ir.v1.Dialect
-	(*Bundle)(nil),            // 1: dql.ir.v1.Bundle
-	(*IrVersion)(nil),         // 2: dql.ir.v1.IrVersion
-	(*CapabilityProfile)(nil), // 3: dql.ir.v1.CapabilityProfile
-	(*ShapeLayer)(nil),        // 4: dql.ir.v1.ShapeLayer
-	(*QueryLayer)(nil),        // 5: dql.ir.v1.QueryLayer
-	(*Catalog)(nil),           // 6: dql.ir.v1.Catalog
-	(*Diagnostic)(nil),        // 7: dql.ir.v1.Diagnostic
-	(*Operator)(nil),          // 8: dql.ir.v1.Operator
-	(*OperatorSupport)(nil),   // 9: dql.ir.v1.OperatorSupport
-	(*Shape)(nil),             // 10: dql.ir.v1.Shape
-	(*RelationUnion)(nil),     // 11: dql.ir.v1.RelationUnion
-	(*Conversion)(nil),        // 12: dql.ir.v1.Conversion
-	(*Upsert)(nil),            // 13: dql.ir.v1.Upsert
-	(*KeyMerge)(nil),          // 14: dql.ir.v1.KeyMerge
+	(Placeholder)(0),          // 1: dql.ir.v1.Placeholder
+	(*Bundle)(nil),            // 2: dql.ir.v1.Bundle
+	(*IrVersion)(nil),         // 3: dql.ir.v1.IrVersion
+	(*CapabilityProfile)(nil), // 4: dql.ir.v1.CapabilityProfile
+	(*ShapeLayer)(nil),        // 5: dql.ir.v1.ShapeLayer
+	(*QueryLayer)(nil),        // 6: dql.ir.v1.QueryLayer
+	(*FragmentTable)(nil),     // 7: dql.ir.v1.FragmentTable
+	(*Fragment)(nil),          // 8: dql.ir.v1.Fragment
+	(*Catalog)(nil),           // 9: dql.ir.v1.Catalog
+	(*Diagnostic)(nil),        // 10: dql.ir.v1.Diagnostic
+	(*Operator)(nil),          // 11: dql.ir.v1.Operator
+	(*OperatorSupport)(nil),   // 12: dql.ir.v1.OperatorSupport
+	(*Shape)(nil),             // 13: dql.ir.v1.Shape
+	(*RelationUnion)(nil),     // 14: dql.ir.v1.RelationUnion
+	(*Conversion)(nil),        // 15: dql.ir.v1.Conversion
+	(*Upsert)(nil),            // 16: dql.ir.v1.Upsert
+	(*KeyMerge)(nil),          // 17: dql.ir.v1.KeyMerge
+	(*Query)(nil),             // 18: dql.ir.v1.Query
+	(Fidelity)(0),             // 19: dql.ir.v1.Fidelity
 }
 var file_dql_ir_v1_bundle_proto_depIdxs = []int32{
-	2,  // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
+	3,  // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
 	0,  // 1: dql.ir.v1.Bundle.dialect:type_name -> dql.ir.v1.Dialect
-	6,  // 2: dql.ir.v1.Bundle.catalogs:type_name -> dql.ir.v1.Catalog
-	3,  // 3: dql.ir.v1.Bundle.capabilities:type_name -> dql.ir.v1.CapabilityProfile
-	4,  // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
-	5,  // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
-	7,  // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
-	8,  // 7: dql.ir.v1.Bundle.operators:type_name -> dql.ir.v1.Operator
+	9,  // 2: dql.ir.v1.Bundle.catalogs:type_name -> dql.ir.v1.Catalog
+	4,  // 3: dql.ir.v1.Bundle.capabilities:type_name -> dql.ir.v1.CapabilityProfile
+	5,  // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
+	6,  // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
+	10, // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
+	11, // 7: dql.ir.v1.Bundle.operators:type_name -> dql.ir.v1.Operator
 	0,  // 8: dql.ir.v1.CapabilityProfile.dialect:type_name -> dql.ir.v1.Dialect
-	9,  // 9: dql.ir.v1.CapabilityProfile.operators:type_name -> dql.ir.v1.OperatorSupport
-	10, // 10: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
-	11, // 11: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
-	12, // 12: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
-	13, // 13: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
-	14, // 14: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	12, // 9: dql.ir.v1.CapabilityProfile.operators:type_name -> dql.ir.v1.OperatorSupport
+	13, // 10: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
+	14, // 11: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
+	15, // 12: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
+	16, // 13: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
+	17, // 14: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
+	18, // 15: dql.ir.v1.QueryLayer.queries:type_name -> dql.ir.v1.Query
+	7,  // 16: dql.ir.v1.QueryLayer.fragments:type_name -> dql.ir.v1.FragmentTable
+	0,  // 17: dql.ir.v1.FragmentTable.dialect:type_name -> dql.ir.v1.Dialect
+	1,  // 18: dql.ir.v1.FragmentTable.placeholder:type_name -> dql.ir.v1.Placeholder
+	8,  // 19: dql.ir.v1.FragmentTable.fragments:type_name -> dql.ir.v1.Fragment
+	19, // 20: dql.ir.v1.Fragment.fidelity:type_name -> dql.ir.v1.Fidelity
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_bundle_proto_init() }
@@ -548,7 +776,9 @@ func file_dql_ir_v1_bundle_proto_init() {
 	}
 	file_dql_ir_v1_catalog_proto_init()
 	file_dql_ir_v1_diagnostics_proto_init()
+	file_dql_ir_v1_objects_proto_init()
 	file_dql_ir_v1_operators_proto_init()
+	file_dql_ir_v1_queries_proto_init()
 	file_dql_ir_v1_shapes_proto_init()
 	file_dql_ir_v1_bundle_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
@@ -556,8 +786,8 @@ func file_dql_ir_v1_bundle_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_bundle_proto_rawDesc), len(file_dql_ir_v1_bundle_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   5,
+			NumEnums:      2,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
