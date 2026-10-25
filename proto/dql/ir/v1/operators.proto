@@ -75,4 +75,7 @@ message OperatorSupport {
 // one.
 message OperatorCondition {
   Collation collation = 1;
+  // The column's type is not an array, such as where an operator's list
+  // operand would need an array of arrays, which Postgres does not have.
+  bool scalar = 2;
 }

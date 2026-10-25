@@ -261,6 +261,24 @@ func TestFidelity(t *testing.T) {
 	}
 }
 
+// A scalar condition holds on every column but an array one.
+func TestScalarCondition(t *testing.T) {
+	p := &irv1.CapabilityProfile{Operators: []*irv1.OperatorSupport{
+		{Name: "eq", Fidelity: irv1.Fidelity_FIDELITY_EXACT},
+		{Name: "in", Fidelity: irv1.Fidelity_FIDELITY_EXACT, When: &irv1.OperatorCondition{Scalar: true}},
+	}}
+	scalar := col("c", ty("int64"))
+	array := col("a", &irv1.Type{Kind: &irv1.Type_Array{Array: &irv1.ArrayType{Element: ty("int64")}}})
+	operators.Resolve(bundle(p, scalar), operators.Options{})
+	operators.Resolve(bundle(p, array), operators.Options{})
+	if got := names(scalar); got != "eq in" {
+		t.Errorf("scalar column: %s", got)
+	}
+	if got := names(array); got != "eq" {
+		t.Errorf("array column: %s", got)
+	}
+}
+
 func TestResolveUnknownOperator(t *testing.T) {
 	column := col("c", ty("text"))
 	ds := operators.Resolve(bundle(every(), column), operators.Options{AllowApproximate: []string{"ilike", "fuzzy", "soundex"}})
