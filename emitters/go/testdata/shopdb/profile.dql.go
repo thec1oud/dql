@@ -809,6 +809,67 @@ func (s profilesWrites) DeleteWhere(ctx context.Context, where dql.Pred[Profiles
 	return dql.Exec(ctx, s.w, st)
 }
 
+// ProfilesUserScopedStore reads and writes shop.app.profiles on a handle with scope UserScope, whose nested
+// writes reach scoped entities (§21.1, §26.3).
+type ProfilesUserScopedStore interface {
+	ProfilesStore
+	InsertNested(ctx context.Context, d ProfileDraftNested, as ...dql.Assignment[ProfilesTable]) (ProfileFullNested, error)
+}
+
+// profilesUserScopedWrites implements ProfilesUserScopedStore.
+type profilesUserScopedWrites struct {
+	profilesWrites
+	scope UserScope
+}
+
+// InsertNested runs profile.insert with the rows d nests, in one transaction: owning creates first,
+// then the row, then its dependents and links; it returns them read back (§20.5).
+func (s profilesUserScopedWrites) InsertNested(ctx context.Context, d ProfileDraftNested, as ...dql.Assignment[ProfilesTable]) (ProfileFullNested, error) {
+	if err := d.Validate(); err != nil {
+		return ProfileFullNested{}, err
+	}
+	var out ProfileFullNested
+	err := dql.Atomic(ctx, s.w, func(ctx context.Context, w dql.Writer) error {
+		out = ProfileFullNested{}
+		profilesStore := profilesWrites{profilesReads{w}, w}
+		usersStore := usersWrites{usersReads{w, UserScope{TenantID: s.scope.TenantID}}, w}
+		draft := ProfileDraft{Bio: d.Bio, Birthday: d.Birthday}
+		var createdUser opt.Opt[UserFull]
+		if v, ok := d.UserID.Get(); ok {
+			draft.UserID = v
+		}
+		if ref, ok := d.User.Get(); ok {
+			switch ref.change {
+			case dql.ChangeCreate:
+				row, err := usersStore.Insert(ctx, ref.draft)
+				if err != nil {
+					return err
+				}
+				createdUser = opt.Some(row)
+				draft.UserID = row.ID
+			case dql.ChangeLink:
+				draft.UserID = ref.key.ID
+			}
+		}
+		row, err := profilesStore.Insert(ctx, draft, as...)
+		if err != nil {
+			return err
+		}
+		out.ProfileFull = row
+		{
+			related, ok := createdUser.Get()
+			if !ok {
+				if related, err = usersStore.Get(ctx, UserKey{ID: row.UserID}); err != nil {
+					return err
+				}
+			}
+			out.User = related
+		}
+		return nil
+	})
+	return out, err
+}
+
 // ProfilesTable is table shop.app.profiles in builder reads (§18.2): its columns and relations
 // make predicates and order keys on its rows.
 type ProfilesTable struct {

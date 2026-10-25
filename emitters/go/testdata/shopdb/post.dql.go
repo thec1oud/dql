@@ -1414,6 +1414,126 @@ func (s postsWrites) DeleteWhere(ctx context.Context, where dql.Pred[PostsTable]
 	return dql.Exec(ctx, s.w, st)
 }
 
+// PostsUserScopedStore reads and writes shop.app.posts on a handle with scope UserScope, whose nested
+// writes reach scoped entities (§21.1, §26.3).
+type PostsUserScopedStore interface {
+	PostsStore
+	InsertNested(ctx context.Context, d PostDraftNested, as ...dql.Assignment[PostsTable]) (PostFullNested, error)
+}
+
+// postsUserScopedWrites implements PostsUserScopedStore.
+type postsUserScopedWrites struct {
+	postsWrites
+	scope UserScope
+}
+
+// InsertNested runs post.insert with the rows d nests, in one transaction: owning creates first,
+// then the row, then its dependents and links; it returns them read back (§20.5).
+func (s postsUserScopedWrites) InsertNested(ctx context.Context, d PostDraftNested, as ...dql.Assignment[PostsTable]) (PostFullNested, error) {
+	if err := d.Validate(); err != nil {
+		return PostFullNested{}, err
+	}
+	var out PostFullNested
+	err := dql.Atomic(ctx, s.w, func(ctx context.Context, w dql.Writer) error {
+		out = PostFullNested{}
+		postsStore := postsWrites{postsReads{w}, w}
+		usersStore := usersWrites{usersReads{w, UserScope{TenantID: s.scope.TenantID}}, w}
+		postTagsStore := postTagsWrites{postTagsReads{w}, w}
+		tagsStore := tagsWrites{tagsReads{w}, w}
+		draft := PostDraft{ID: d.ID, Title: d.Title, Status: d.Status, Price: d.Price, Labels: d.Labels, PublishedAt: d.PublishedAt}
+		var createdAuthor opt.Opt[UserFull]
+		if v, ok := d.AuthorID.Get(); ok {
+			draft.AuthorID = v
+		}
+		if ref, ok := d.Author.Get(); ok {
+			switch ref.change {
+			case dql.ChangeCreate:
+				row, err := usersStore.Insert(ctx, ref.draft)
+				if err != nil {
+					return err
+				}
+				createdAuthor = opt.Some(row)
+				draft.AuthorID = row.ID
+			case dql.ChangeLink:
+				draft.AuthorID = ref.key.ID
+			}
+		}
+		var createdEditor opt.Opt[UserFull]
+		draft.EditorID = d.EditorID
+		if ref, ok := d.Editor.Get(); ok {
+			switch ref.change {
+			case dql.ChangeCreate:
+				row, err := usersStore.Insert(ctx, ref.draft)
+				if err != nil {
+					return err
+				}
+				createdEditor = opt.Some(row)
+				draft.EditorID = opt.Some(dql.Ptr(row.ID))
+			case dql.ChangeLink:
+				draft.EditorID = opt.Some(dql.Ptr(ref.key.ID))
+			}
+		}
+		row, err := postsStore.Insert(ctx, draft, as...)
+		if err != nil {
+			return err
+		}
+		out.PostFull = row
+		out.PostTags = []PostTagFull{}
+		out.Tags = []TagFull{}
+		for _, c := range d.PostTags {
+			child, err := postTagsStore.Insert(ctx, PostTagDraft{TagID: c.TagID, PostID: row.ID})
+			if err != nil {
+				return err
+			}
+			out.PostTags = append(out.PostTags, child)
+			far, err := tagsStore.Get(ctx, TagKey{ID: child.TagID})
+			if err != nil {
+				return err
+			}
+			out.Tags = append(out.Tags, far)
+		}
+		for _, ref := range d.Tags {
+			var far TagFull
+			switch ref.change {
+			case dql.ChangeCreate:
+				if far, err = tagsStore.Insert(ctx, ref.draft); err != nil {
+					return err
+				}
+			case dql.ChangeLink:
+				if far, err = tagsStore.Get(ctx, ref.key); err != nil {
+					return err
+				}
+			}
+			junction, err := postTagsStore.Insert(ctx, PostTagDraft{PostID: row.ID, TagID: far.ID})
+			if err != nil {
+				return err
+			}
+			out.PostTags = append(out.PostTags, junction)
+			out.Tags = append(out.Tags, far)
+		}
+		{
+			related, ok := createdAuthor.Get()
+			if !ok {
+				if related, err = usersStore.Get(ctx, UserKey{ID: row.AuthorID}); err != nil {
+					return err
+				}
+			}
+			out.Author = related
+		}
+		if row.EditorID != nil {
+			related, ok := createdEditor.Get()
+			if !ok {
+				if related, err = usersStore.Get(ctx, UserKey{ID: *row.EditorID}); err != nil {
+					return err
+				}
+			}
+			out.Editor = &related
+		}
+		return nil
+	})
+	return out, err
+}
+
 // PostsTable is table shop.app.posts in builder reads (§18.2): its columns and relations
 // make predicates and order keys on its rows.
 type PostsTable struct {

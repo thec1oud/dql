@@ -143,8 +143,8 @@ type UserScoped struct {
 	exec           *dql.Executor
 	scope          UserScope
 	PostTags       PostTagsStore
-	Posts          PostsStore
-	Profiles       ProfilesStore
+	Posts          PostsUserScopedStore
+	Profiles       ProfilesUserScopedStore
 	PublishedPosts PublishedPostsReadStore
 	Tags           TagsStore
 	Tenants        TenantsStore
@@ -157,8 +157,8 @@ func newUserScoped(exec *dql.Executor, s UserScope) UserScoped {
 	return UserScoped{
 		exec: exec, scope: s,
 		PostTags:       postTagsWrites{postTagsReads{exec}, exec},
-		Posts:          postsWrites{postsReads{exec}, exec},
-		Profiles:       profilesWrites{profilesReads{exec}, exec},
+		Posts:          postsUserScopedWrites{postsWrites{postsReads{exec}, exec}, s},
+		Profiles:       profilesUserScopedWrites{profilesWrites{profilesReads{exec}, exec}, s},
 		PublishedPosts: publishedPostsReads{exec},
 		Tags:           tagsWrites{tagsReads{exec}, exec},
 		Tenants:        tenantsWrites{tenantsReads{exec}, exec},
@@ -205,8 +205,8 @@ type UserScopedWriteTx struct {
 	tx             *dql.WriteTx
 	scope          UserScope
 	PostTags       PostTagsStore
-	Posts          PostsStore
-	Profiles       ProfilesStore
+	Posts          PostsUserScopedStore
+	Profiles       ProfilesUserScopedStore
 	PublishedPosts PublishedPostsReadStore
 	Tags           TagsStore
 	Tenants        TenantsStore
@@ -219,8 +219,8 @@ func newUserScopedWriteTx(tx *dql.WriteTx, s UserScope) UserScopedWriteTx {
 	return UserScopedWriteTx{
 		tx: tx, scope: s,
 		PostTags:       postTagsWrites{postTagsReads{tx}, tx},
-		Posts:          postsWrites{postsReads{tx}, tx},
-		Profiles:       profilesWrites{profilesReads{tx}, tx},
+		Posts:          postsUserScopedWrites{postsWrites{postsReads{tx}, tx}, s},
+		Profiles:       profilesUserScopedWrites{profilesWrites{profilesReads{tx}, tx}, s},
 		PublishedPosts: publishedPostsReads{tx},
 		Tags:           tagsWrites{tagsReads{tx}, tx},
 		Tenants:        tenantsWrites{tenantsReads{tx}, tx},
