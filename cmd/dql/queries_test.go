@@ -35,6 +35,10 @@ func TestGenerateQueryLayer(t *testing.T) {
 	if got := strings.Join(names, " "); got != "AuthorPostCounts GetUserByEmail RenameUser" {
 		t.Errorf("queries %s", got)
 	}
+	// The core resolved GetUserByEmail's -- returns: user.full (§17.2).
+	if r := b.GetQueries().GetQueries()[1].GetResult(); r.GetShape().GetPreset() != irv1.Preset_PRESET_FULL || len(r.GetColumns()) != 7 {
+		t.Errorf("GetUserByEmail result %v", r)
+	}
 	if code, _, b := generateShapes(t, ""); code != 0 || b.GetQueries() != nil {
 		t.Errorf("without query files: %d %v", code, b.GetQueries())
 	}
@@ -45,6 +49,10 @@ func TestGenerateQueryFailures(t *testing.T) {
 	code, stderr, b := generateShapes(t, "queries: ["+bad+"]\n")
 	if code != 1 || b != nil || !strings.Contains(stderr, "/bad.sql:2:8: query Bad: column nope is not a column of the FROM clause") {
 		t.Errorf("bad query: %d %q", code, stderr)
+	}
+	unscoped := write(t, "unscoped.sql", "-- name: AllUsers :many\nSELECT id FROM app.users")
+	if code, stderr, _ := generateShapes(t, "queries: ["+unscoped+"]\n"); code != 1 || !strings.Contains(stderr, "error query-unscoped: query reads shop.app.users, which is scoped by tenant_id") {
+		t.Errorf("unscoped: %d %q", code, stderr)
 	}
 	if code, stderr, _ := generateShapes(t, "queries: [none/*.sql]\n"); code != 1 || !strings.Contains(stderr, `dql generate: queries: "none/*.sql" matches no file`) {
 		t.Errorf("no files: %d %q", code, stderr)
