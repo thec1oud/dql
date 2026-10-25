@@ -54,4 +54,23 @@ func TestAssign(t *testing.T) {
 	if err := Assign(update, "user.partial.flat", Args{}, []Update[userE]{Set[userE]("c", Now())}); err == nil || err.Error() != "dql: user.patch does not write c" {
 		t.Errorf("unwritten: %v", err)
 	}
+
+	// An upsert's update side takes set.<field>, apart from the Draft's.
+	upsert := &Query{Name: "user.upsert_set.by_primary", Plan: []Node{Use{Fragment: "update.users", Holes: map[string]Node{"sets": List{Items: []Node{
+		Use{Fragment: "set.users.a", Holes: map[string]Node{"0": Param("set.a")}},
+	}, Separator: ", "}}}}}
+	args := Args{"a": 1}
+	if err := AssignPrefixed(upsert, "user.partial.flat", "set.", args, []Update[userE]{Set[userE]("a", Now())}); err != nil {
+		t.Fatal(err)
+	}
+	if s, err := upsert.Statement(setTable, args); err != nil || s.SQL != `UPDATE "app"."users" AS u SET "a" = now()` {
+		t.Errorf("prefixed: %v %s", err, s.SQL)
+	}
+	err = AssignPrefixed(upsert, "user.partial.flat", "set.", args, []Update[userE]{Set[userE]("a", Now())})
+	if !errors.As(err, &v) || v[0].Field != "a" || v[0].Kind != KindFieldSetTwice {
+		t.Errorf("prefixed twice: %v", err)
+	}
+	if err := AssignPrefixed(upsert, "user.partial.flat", "set.", Args{}, []Update[userE]{Set[userE]("b", Now())}); err == nil || err.Error() != "dql: user.upsert_set.by_primary does not write b" {
+		t.Errorf("prefixed unwritten: %v", err)
+	}
 }

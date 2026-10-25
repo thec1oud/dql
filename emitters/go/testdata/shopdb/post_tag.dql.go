@@ -533,6 +533,15 @@ var (
 			dql.Use{Fragment: "upsert.post_tags.post_tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.post_tags.post_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.post_tags.post_id"}}}}, Separator: ", "}}},
 		},
 	}
+	postTagUpsertSetByPrimary = &dql.Query{
+		Name:    "post_tag.upsert_set.by_primary",
+		Catalog: "shop",
+		Kind:    "upsert_set",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.post_tags.post_tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.post_tags.post_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}}}}, Separator: ", "}}},
+		},
+	}
 	postTagDelete = &dql.Query{
 		Name:    "post_tag.delete",
 		Catalog: "shop",
@@ -570,6 +579,7 @@ type PostTagsStore interface {
 	InsertNested(ctx context.Context, d PostTagDraftNested, as ...dql.Assignment[PostTagsTable]) (PostTagFullNested, error)
 	InsertOrIgnore(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (opt.Opt[PostTagFull], error)
 	Upsert(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (PostTagFull, error)
+	UpsertSet(ctx context.Context, d PostTagDraft, p PostTagPartial, as ...dql.Update[PostTagsTable]) (PostTagFull, error)
 	Delete(ctx context.Context, k PostTagKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[PostTagsTable]) (int64, error)
 }
@@ -756,6 +766,25 @@ func (s postTagsWrites) Upsert(ctx context.Context, d PostTagDraft, as ...dql.As
 		return PostTagFull{}, err
 	}
 	st, err := postTagUpsertByPrimary.Statement(fragments, args)
+	if err != nil {
+		return PostTagFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodePostTagFull)
+}
+
+// UpsertSet runs post_tag.upsert_set.by_primary (§20.1).
+func (s postTagsWrites) UpsertSet(ctx context.Context, d PostTagDraft, p PostTagPartial, as ...dql.Update[PostTagsTable]) (PostTagFull, error) {
+	if err := d.Validate(); err != nil {
+		return PostTagFull{}, err
+	}
+	if err := p.Validate(); err != nil {
+		return PostTagFull{}, err
+	}
+	args := dql.Args{"post_id": d.PostID, "tag_id": d.TagID}
+	if err := dql.AssignPrefixed(postTagUpsertSetByPrimary, "post_tag.partial.flat", "set.", args, as); err != nil {
+		return PostTagFull{}, err
+	}
+	st, err := postTagUpsertSetByPrimary.Statement(fragments, args)
 	if err != nil {
 		return PostTagFull{}, err
 	}
