@@ -4,7 +4,7 @@
 // filters on the scope of every scoped table it reads, that it selects no
 // write-only column, and that a :count query returns one count.
 //
-// The builder's queries and their fragment plans join the layer with the
+// Plan adds the builder's queries: each generated operation as a plan of the
 // dialect's fragment table (§16.2, §18).
 package queries
 
@@ -24,9 +24,10 @@ const (
 	keyWriteOnly = "core.write-only"
 )
 
-// Check checks every query of b's query layer, resolves each -- returns:
-// into its shape, and returns the diagnostics, sorted. A query whose
-// returns fails keeps its anonymous result.
+// Check checks the query-file queries of b's query layer, resolves each
+// -- returns: into its shape, and returns the diagnostics, sorted. A query
+// whose returns fails keeps its anonymous result. The builder's queries
+// are right by construction.
 func Check(b *irv1.Bundle) []*irv1.Diagnostic {
 	c := &checker{b: b, tables: map[string]*irv1.Table{}, columns: map[string]*irv1.Column{}}
 	for _, cat := range b.GetCatalogs() {
@@ -42,6 +43,9 @@ func Check(b *irv1.Bundle) []*irv1.Diagnostic {
 		}
 	}
 	for _, q := range b.GetQueries().GetQueries() {
+		if q.GetSource() == irv1.QuerySource_QUERY_SOURCE_BUILDER {
+			continue
+		}
 		c.writeOnly(q)
 		c.scope(q)
 		c.count(q)

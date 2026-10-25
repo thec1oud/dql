@@ -235,7 +235,10 @@ type Query struct {
 	Returns string `protobuf:"bytes,13,opt,name=returns,proto3" json:"returns,omitempty"`
 	// The tables and views the query reads or writes, sorted, for the scope
 	// checks (§21.2).
-	Tables        []*QualifiedName `protobuf:"bytes,14,rep,name=tables,proto3" json:"tables,omitempty"`
+	Tables []*QualifiedName `protobuf:"bytes,14,rep,name=tables,proto3" json:"tables,omitempty"`
+	// Proven to return at most one row, through an equality filter on every
+	// column of an identifying key, so the extra-row check is skipped (§19).
+	AtMostOne     bool `protobuf:"varint,15,opt,name=at_most_one,json=atMostOne,proto3" json:"at_most_one,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -379,6 +382,13 @@ func (x *Query) GetTables() []*QualifiedName {
 	return nil
 }
 
+func (x *Query) GetAtMostOne() bool {
+	if x != nil {
+		return x.AtMostOne
+	}
+	return false
+}
+
 type isQuery_Sql interface {
 	isQuery_Sql()
 }
@@ -406,7 +416,11 @@ type Param struct {
 	// Written sqlc.narg; parameters are non-null otherwise.
 	Nullable bool `protobuf:"varint,3,opt,name=nullable,proto3" json:"nullable,omitempty"`
 	// Written sqlc.slice: one placeholder holding a list (§25).
-	List          bool `protobuf:"varint,4,opt,name=list,proto3" json:"list,omitempty"`
+	List bool `protobuf:"varint,4,opt,name=list,proto3" json:"list,omitempty"`
+	// An optional field of a builder write, which a call may leave out (§14.2).
+	// Left out, it renders DEFAULT where it fills a VALUES row, and the set
+	// fragment it fills is dropped from its list.
+	Optional      bool `protobuf:"varint,5,opt,name=optional,proto3" json:"optional,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -465,6 +479,13 @@ func (x *Param) GetNullable() bool {
 func (x *Param) GetList() bool {
 	if x != nil {
 		return x.List
+	}
+	return false
+}
+
+func (x *Param) GetOptional() bool {
+	if x != nil {
+		return x.Optional
 	}
 	return false
 }
@@ -803,8 +824,9 @@ func (x *ScopeUse) GetUnscoped() bool {
 // A builder query as fragments of the fragment table, with their holes
 // filled (§16.2).
 type FragmentPlan struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Root          *FragmentUse           `protobuf:"bytes,1,opt,name=root,proto3" json:"root,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Joined in order, with nothing between them.
+	Parts         []*FragmentUse `protobuf:"bytes,1,rep,name=parts,proto3" json:"parts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -839,14 +861,15 @@ func (*FragmentPlan) Descriptor() ([]byte, []int) {
 	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *FragmentPlan) GetRoot() *FragmentUse {
+func (x *FragmentPlan) GetParts() []*FragmentUse {
 	if x != nil {
-		return x.Root
+		return x.Parts
 	}
 	return nil
 }
 
-// One fragment of the table and what fills its holes.
+// One fragment of the table and what fills its holes. A hole nothing fills
+// renders as nothing.
 type FragmentUse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The fragment's id, such as op.ilike.
@@ -996,7 +1019,9 @@ type HoleFill_Fragment struct {
 }
 
 type HoleFill_Param struct {
-	// A parameter by name; the runtime numbers its placeholder.
+	// A parameter by name; the runtime numbers its placeholder. A builder
+	// query names a key column key.<column> and a scope column
+	// scope.<column>, whose value comes from the handle's scope (§21.1).
 	Param string `protobuf:"bytes,3,opt,name=param,proto3,oneof"`
 }
 
@@ -1013,7 +1038,7 @@ func (*HoleFill_List) isHoleFill_Value() {}
 
 type FragmentList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Items         []*FragmentUse         `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Items         []*ListItem            `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
 	Separator     string                 `protobuf:"bytes,2,opt,name=separator,proto3" json:"separator,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1049,7 +1074,7 @@ func (*FragmentList) Descriptor() ([]byte, []int) {
 	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *FragmentList) GetItems() []*FragmentUse {
+func (x *FragmentList) GetItems() []*ListItem {
 	if x != nil {
 		return x.Items
 	}
@@ -1063,11 +1088,95 @@ func (x *FragmentList) GetSeparator() string {
 	return ""
 }
 
+// One item of a list: a fragment, or a parameter, such as in a VALUES row.
+type ListItem struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Value:
+	//
+	//	*ListItem_Fragment
+	//	*ListItem_Param
+	Value         isListItem_Value `protobuf_oneof:"value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListItem) Reset() {
+	*x = ListItem{}
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListItem) ProtoMessage() {}
+
+func (x *ListItem) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListItem.ProtoReflect.Descriptor instead.
+func (*ListItem) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListItem) GetValue() isListItem_Value {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+func (x *ListItem) GetFragment() *FragmentUse {
+	if x != nil {
+		if x, ok := x.Value.(*ListItem_Fragment); ok {
+			return x.Fragment
+		}
+	}
+	return nil
+}
+
+func (x *ListItem) GetParam() string {
+	if x != nil {
+		if x, ok := x.Value.(*ListItem_Param); ok {
+			return x.Param
+		}
+	}
+	return ""
+}
+
+type isListItem_Value interface {
+	isListItem_Value()
+}
+
+type ListItem_Fragment struct {
+	Fragment *FragmentUse `protobuf:"bytes,1,opt,name=fragment,proto3,oneof"`
+}
+
+type ListItem_Param struct {
+	// A parameter by name, as in HoleFill.
+	Param string `protobuf:"bytes,2,opt,name=param,proto3,oneof"`
+}
+
+func (*ListItem_Fragment) isListItem_Value() {}
+
+func (*ListItem_Param) isListItem_Value() {}
+
 var File_dql_ir_v1_queries_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\n" +
-	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\xc1\x04\n" +
+	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\xe1\x04\n" +
 	"\x05Query\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x12.\n" +
 	"\x06source\x18\x02 \x01(\x0e2\x16.dql.ir.v1.QuerySourceR\x06source\x128\n" +
@@ -1083,13 +1192,15 @@ const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\x04plan\x18\v \x01(\v2\x17.dql.ir.v1.FragmentPlanH\x00R\x04plan\x12\x1a\n" +
 	"\blocation\x18\f \x01(\tR\blocation\x12\x18\n" +
 	"\areturns\x18\r \x01(\tR\areturns\x120\n" +
-	"\x06tables\x18\x0e \x03(\v2\x18.dql.ir.v1.QualifiedNameR\x06tablesB\x05\n" +
-	"\x03sql\"p\n" +
+	"\x06tables\x18\x0e \x03(\v2\x18.dql.ir.v1.QualifiedNameR\x06tables\x12\x1e\n" +
+	"\vat_most_one\x18\x0f \x01(\bR\tatMostOneB\x05\n" +
+	"\x03sql\"\x8c\x01\n" +
 	"\x05Param\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
 	"\x04type\x18\x02 \x01(\v2\x0f.dql.ir.v1.TypeR\x04type\x12\x1a\n" +
 	"\bnullable\x18\x03 \x01(\bR\bnullable\x12\x12\n" +
-	"\x04list\x18\x04 \x01(\bR\x04list\"\x96\x01\n" +
+	"\x04list\x18\x04 \x01(\bR\x04list\x12\x1a\n" +
+	"\boptional\x18\x05 \x01(\bR\boptional\"\x96\x01\n" +
 	"\vResultShape\x12*\n" +
 	"\x05shape\x18\x01 \x01(\v2\x12.dql.ir.v1.ShapeIdH\x00R\x05shape\x129\n" +
 	"\tanonymous\x18\x02 \x01(\v2\x19.dql.ir.v1.AnonymousShapeH\x00R\tanonymous\x12\x18\n" +
@@ -1108,9 +1219,9 @@ const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\rmax_staleness\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\fmaxStaleness\"@\n" +
 	"\bScopeUse\x12\x18\n" +
 	"\acolumns\x18\x01 \x03(\tR\acolumns\x12\x1a\n" +
-	"\bunscoped\x18\x02 \x01(\bR\bunscoped\":\n" +
-	"\fFragmentPlan\x12*\n" +
-	"\x04root\x18\x01 \x01(\v2\x16.dql.ir.v1.FragmentUseR\x04root\"T\n" +
+	"\bunscoped\x18\x02 \x01(\bR\bunscoped\"<\n" +
+	"\fFragmentPlan\x12,\n" +
+	"\x05parts\x18\x01 \x03(\v2\x16.dql.ir.v1.FragmentUseR\x05parts\"T\n" +
 	"\vFragmentUse\x12\x1a\n" +
 	"\bfragment\x18\x01 \x01(\tR\bfragment\x12)\n" +
 	"\x05holes\x18\x02 \x03(\v2\x13.dql.ir.v1.HoleFillR\x05holes\"\xa4\x01\n" +
@@ -1119,10 +1230,14 @@ const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\bfragment\x18\x02 \x01(\v2\x16.dql.ir.v1.FragmentUseH\x00R\bfragment\x12\x16\n" +
 	"\x05param\x18\x03 \x01(\tH\x00R\x05param\x12-\n" +
 	"\x04list\x18\x04 \x01(\v2\x17.dql.ir.v1.FragmentListH\x00R\x04listB\a\n" +
-	"\x05value\"Z\n" +
-	"\fFragmentList\x12,\n" +
-	"\x05items\x18\x01 \x03(\v2\x16.dql.ir.v1.FragmentUseR\x05items\x12\x1c\n" +
-	"\tseparator\x18\x02 \x01(\tR\tseparator*\\\n" +
+	"\x05value\"W\n" +
+	"\fFragmentList\x12)\n" +
+	"\x05items\x18\x01 \x03(\v2\x13.dql.ir.v1.ListItemR\x05items\x12\x1c\n" +
+	"\tseparator\x18\x02 \x01(\tR\tseparator\"a\n" +
+	"\bListItem\x124\n" +
+	"\bfragment\x18\x01 \x01(\v2\x16.dql.ir.v1.FragmentUseH\x00R\bfragment\x12\x16\n" +
+	"\x05param\x18\x02 \x01(\tH\x00R\x05paramB\a\n" +
+	"\x05value*\\\n" +
 	"\vQuerySource\x12\x1c\n" +
 	"\x18QUERY_SOURCE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11QUERY_SOURCE_FILE\x10\x01\x12\x18\n" +
@@ -1156,7 +1271,7 @@ func file_dql_ir_v1_queries_proto_rawDescGZIP() []byte {
 }
 
 var file_dql_ir_v1_queries_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_dql_ir_v1_queries_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_dql_ir_v1_queries_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_dql_ir_v1_queries_proto_goTypes = []any{
 	(QuerySource)(0),            // 0: dql.ir.v1.QuerySource
 	(Cardinality)(0),            // 1: dql.ir.v1.Cardinality
@@ -1172,15 +1287,16 @@ var file_dql_ir_v1_queries_proto_goTypes = []any{
 	(*FragmentUse)(nil),         // 11: dql.ir.v1.FragmentUse
 	(*HoleFill)(nil),            // 12: dql.ir.v1.HoleFill
 	(*FragmentList)(nil),        // 13: dql.ir.v1.FragmentList
-	(*Identifier)(nil),          // 14: dql.ir.v1.Identifier
-	(*QualifiedName)(nil),       // 15: dql.ir.v1.QualifiedName
-	(*Type)(nil),                // 16: dql.ir.v1.Type
-	(*ShapeId)(nil),             // 17: dql.ir.v1.ShapeId
-	(NullabilitySource)(0),      // 18: dql.ir.v1.NullabilitySource
-	(*durationpb.Duration)(nil), // 19: google.protobuf.Duration
+	(*ListItem)(nil),            // 14: dql.ir.v1.ListItem
+	(*Identifier)(nil),          // 15: dql.ir.v1.Identifier
+	(*QualifiedName)(nil),       // 16: dql.ir.v1.QualifiedName
+	(*Type)(nil),                // 17: dql.ir.v1.Type
+	(*ShapeId)(nil),             // 18: dql.ir.v1.ShapeId
+	(NullabilitySource)(0),      // 19: dql.ir.v1.NullabilitySource
+	(*durationpb.Duration)(nil), // 20: google.protobuf.Duration
 }
 var file_dql_ir_v1_queries_proto_depIdxs = []int32{
-	14, // 0: dql.ir.v1.Query.name:type_name -> dql.ir.v1.Identifier
+	15, // 0: dql.ir.v1.Query.name:type_name -> dql.ir.v1.Identifier
 	0,  // 1: dql.ir.v1.Query.source:type_name -> dql.ir.v1.QuerySource
 	1,  // 2: dql.ir.v1.Query.cardinality:type_name -> dql.ir.v1.Cardinality
 	4,  // 3: dql.ir.v1.Query.params:type_name -> dql.ir.v1.Param
@@ -1188,26 +1304,27 @@ var file_dql_ir_v1_queries_proto_depIdxs = []int32{
 	8,  // 5: dql.ir.v1.Query.consistency:type_name -> dql.ir.v1.Consistency
 	9,  // 6: dql.ir.v1.Query.scope:type_name -> dql.ir.v1.ScopeUse
 	10, // 7: dql.ir.v1.Query.plan:type_name -> dql.ir.v1.FragmentPlan
-	15, // 8: dql.ir.v1.Query.tables:type_name -> dql.ir.v1.QualifiedName
-	16, // 9: dql.ir.v1.Param.type:type_name -> dql.ir.v1.Type
-	17, // 10: dql.ir.v1.ResultShape.shape:type_name -> dql.ir.v1.ShapeId
+	16, // 8: dql.ir.v1.Query.tables:type_name -> dql.ir.v1.QualifiedName
+	17, // 9: dql.ir.v1.Param.type:type_name -> dql.ir.v1.Type
+	18, // 10: dql.ir.v1.ResultShape.shape:type_name -> dql.ir.v1.ShapeId
 	6,  // 11: dql.ir.v1.ResultShape.anonymous:type_name -> dql.ir.v1.AnonymousShape
 	7,  // 12: dql.ir.v1.AnonymousShape.fields:type_name -> dql.ir.v1.ResultField
-	16, // 13: dql.ir.v1.ResultField.type:type_name -> dql.ir.v1.Type
-	15, // 14: dql.ir.v1.ResultField.origin:type_name -> dql.ir.v1.QualifiedName
-	18, // 15: dql.ir.v1.ResultField.nullability_source:type_name -> dql.ir.v1.NullabilitySource
+	17, // 13: dql.ir.v1.ResultField.type:type_name -> dql.ir.v1.Type
+	16, // 14: dql.ir.v1.ResultField.origin:type_name -> dql.ir.v1.QualifiedName
+	19, // 15: dql.ir.v1.ResultField.nullability_source:type_name -> dql.ir.v1.NullabilitySource
 	2,  // 16: dql.ir.v1.Consistency.level:type_name -> dql.ir.v1.ConsistencyLevel
-	19, // 17: dql.ir.v1.Consistency.max_staleness:type_name -> google.protobuf.Duration
-	11, // 18: dql.ir.v1.FragmentPlan.root:type_name -> dql.ir.v1.FragmentUse
+	20, // 17: dql.ir.v1.Consistency.max_staleness:type_name -> google.protobuf.Duration
+	11, // 18: dql.ir.v1.FragmentPlan.parts:type_name -> dql.ir.v1.FragmentUse
 	12, // 19: dql.ir.v1.FragmentUse.holes:type_name -> dql.ir.v1.HoleFill
 	11, // 20: dql.ir.v1.HoleFill.fragment:type_name -> dql.ir.v1.FragmentUse
 	13, // 21: dql.ir.v1.HoleFill.list:type_name -> dql.ir.v1.FragmentList
-	11, // 22: dql.ir.v1.FragmentList.items:type_name -> dql.ir.v1.FragmentUse
-	23, // [23:23] is the sub-list for method output_type
-	23, // [23:23] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	14, // 22: dql.ir.v1.FragmentList.items:type_name -> dql.ir.v1.ListItem
+	11, // 23: dql.ir.v1.ListItem.fragment:type_name -> dql.ir.v1.FragmentUse
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_queries_proto_init() }
@@ -1232,13 +1349,17 @@ func file_dql_ir_v1_queries_proto_init() {
 		(*HoleFill_Param)(nil),
 		(*HoleFill_List)(nil),
 	}
+	file_dql_ir_v1_queries_proto_msgTypes[11].OneofWrappers = []any{
+		(*ListItem_Fragment)(nil),
+		(*ListItem_Param)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_queries_proto_rawDesc), len(file_dql_ir_v1_queries_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   11,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
