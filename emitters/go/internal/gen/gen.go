@@ -64,10 +64,11 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 	g.types()
 	g.shapes()
 	if !g.failed() {
-		// Conversions and merges read the shapes' types, so they wait for
+		// Conversions, merges and validators read the shapes' types, so they wait for
 		// shapes without errors.
 		g.conversions()
 		g.merges()
+		g.validators()
 	}
 	if g.failed() {
 		sortDiagnostics(g.diags)
@@ -90,7 +91,12 @@ type generator struct {
 	files []*file
 	// decls says what declares each package-level name so far.
 	decls map[string]string
-	diags []*irv1.Diagnostic
+	// checks names the variable of each constraint's check by the
+	// constraint's qualified name, declared in checkFile (§10.5).
+	checks     map[string]string
+	checkNames map[string]bool
+	checkFile  *file
+	diags      []*irv1.Diagnostic
 }
 
 // key identifies an object across catalogs.
@@ -103,18 +109,21 @@ func keyOf(q *irv1.QualifiedName) key {
 // named is an enum, domain or composite type a type can reference.
 type named struct {
 	words []string
-	// base is a domain's base type.
-	base *irv1.Type
+	// base is a domain's base type, and q and constraints its name and
+	// constraints.
+	base        *irv1.Type
+	q           *irv1.QualifiedName
+	constraints []*irv1.Constraint
 }
 
 func newGenerator(b *irv1.Bundle, o Options) *generator {
-	g := &generator{b: b, o: o, named: map[key]named{}, decls: map[string]string{}}
+	g := &generator{b: b, o: o, named: map[key]named{}, decls: map[string]string{}, checks: map[string]string{}, checkNames: map[string]bool{}}
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, e := range ns.GetEnums() {
 			g.named[keyOf(q(e.GetName().GetStored()))] = named{words: e.GetHostName().GetWords()}
 		}
 		for _, d := range ns.GetDomains() {
-			g.named[keyOf(q(d.GetName().GetStored()))] = named{words: d.GetHostName().GetWords(), base: d.GetBase()}
+			g.named[keyOf(q(d.GetName().GetStored()))] = named{words: d.GetHostName().GetWords(), base: d.GetBase(), q: q(d.GetName().GetStored()), constraints: d.GetConstraints()}
 		}
 		for _, c := range ns.GetComposites() {
 			g.named[keyOf(q(c.GetName().GetStored()))] = named{words: c.GetHostName().GetWords()}

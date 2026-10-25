@@ -80,6 +80,7 @@ func (g *generator) domain(f *file, q *irv1.QualifiedName, d *irv1.Domain) {
 	g.declare(name, "domain "+displayName(q), q)
 	base := g.goType(f, d.GetBase(), q, "domain "+displayName(q))
 	f.printf("// %s is the domain %s.\ntype %s %s\n\n", name, displayName(q), name, base)
+	g.domainParse(f, q, d)
 }
 
 // composite generates a struct of the attributes in their order (§8.5).

@@ -8,6 +8,7 @@ package shopdb
 
 import (
 	"github.com/thec1oud/dql/runtime/go/dec"
+	"github.com/thec1oud/dql/runtime/go/dql"
 )
 
 // PostStatus is the enum shop.app.post_status.
@@ -37,8 +38,32 @@ func PostStatusValues() []PostStatus {
 // EmailAddress is the domain shop.app.email_address.
 type EmailAddress string
 
+// ParseEmailAddress converts x to EmailAddress when it passes the
+// domain's constraints (§8.5, §10.5), and returns dql.ValidationErrors
+// otherwise.
+func ParseEmailAddress(x string) (EmailAddress, error) {
+	var issues dql.ValidationErrors
+	dqlEmailAddressCheck.Check(&issues, "shop.app.email_address", "", x)
+	if err := issues.Err(); err != nil {
+		return *new(EmailAddress), err
+	}
+	return EmailAddress(x), nil
+}
+
 // SlugText is the domain shop.app.slug_text.
 type SlugText string
+
+// ParseSlugText converts x to SlugText when it passes the
+// domain's constraints (§8.5, §10.5), and returns dql.ValidationErrors
+// otherwise.
+func ParseSlugText(x string) (SlugText, error) {
+	var issues dql.ValidationErrors
+	dqlSlugTextCheck.Check(&issues, "shop.app.slug_text", "", x)
+	if err := issues.Err(); err != nil {
+		return *new(SlugText), err
+	}
+	return SlugText(x), nil
+}
 
 // MoneyAmount is the composite type shop.app.money_amount.
 type MoneyAmount struct {

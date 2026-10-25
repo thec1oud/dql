@@ -159,7 +159,7 @@ func TestConversions(t *testing.T) {
 			}
 		}
 	}
-	for _, absent := range []string{"func (d ItemDraft)", "func (k ItemKey)"} {
+	for _, absent := range []string{"func (d ItemDraft) To", "func (k ItemKey)"} {
 		if strings.Contains(files["item.dql.go"], absent) {
 			t.Errorf("item.dql.go has %q", absent)
 		}

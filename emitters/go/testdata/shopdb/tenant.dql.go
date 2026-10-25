@@ -163,3 +163,63 @@ func MergeTenantByKey(rows []TenantFull, changes []dql.Keyed[TenantKey, TenantPa
 	}
 	return merged, unmatched
 }
+
+// Validate checks d against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (d TenantDraft) Validate() error { return d.validate().Err() }
+
+func (d TenantDraft) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n TenantDraftNested) Validate() error { return n.validate().Err() }
+
+func (n TenantDraftNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n TenantDraftNests) Validate() error { return n.validate().Err() }
+
+func (n TenantDraftNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks p against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (p TenantPartial) Validate() error { return p.validate().Err() }
+
+func (p TenantPartial) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n TenantPartialNested) Validate() error { return n.validate().Err() }
+
+func (n TenantPartialNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n TenantPartialNests) Validate() error { return n.validate().Err() }
+
+func (n TenantPartialNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}

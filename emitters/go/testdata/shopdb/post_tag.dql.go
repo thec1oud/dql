@@ -117,6 +117,16 @@ func PostTagDeleteForPost(k PostTagKey) PostTagChangeForPost {
 	return PostTagChangeForPost{change: dql.ChangeDelete, key: k}
 }
 
+func (p PostTagChangeForPost) validate() dql.ValidationErrors {
+	if p.change == dql.ChangeCreate {
+		return p.draft.validate()
+	}
+	if p.change == dql.ChangeUpdate {
+		return p.partial.validate()
+	}
+	return nil
+}
+
 // PostTagChangeForTag holds one change to a related shop.app.post_tags: create, update, delete (§14.5, §14.6).
 type PostTagChangeForTag struct {
 	change  dql.Change
@@ -143,6 +153,16 @@ func PostTagDeleteForTag(k PostTagKey) PostTagChangeForTag {
 	return PostTagChangeForTag{change: dql.ChangeDelete, key: k}
 }
 
+func (t PostTagChangeForTag) validate() dql.ValidationErrors {
+	if t.change == dql.ChangeCreate {
+		return t.draft.validate()
+	}
+	if t.change == dql.ChangeUpdate {
+		return t.partial.validate()
+	}
+	return nil
+}
+
 // PostTagPostChange holds one change to a related shop.app.posts: update (§14.5, §14.6).
 type PostTagPostChange struct {
 	change  dql.Change
@@ -157,6 +177,13 @@ func PostTagPostUpdate(p PostPartial) PostTagPostChange {
 	return PostTagPostChange{change: dql.ChangeUpdate, partial: p}
 }
 
+func (c PostTagPostChange) validate() dql.ValidationErrors {
+	if c.change == dql.ChangeUpdate {
+		return c.partial.validate()
+	}
+	return nil
+}
+
 // PostTagTagChange holds one change to a related shop.app.tags: update (§14.5, §14.6).
 type PostTagTagChange struct {
 	change  dql.Change
@@ -169,6 +196,13 @@ func (c PostTagTagChange) Change() dql.Change { return c.change }
 // PostTagTagUpdate returns the PostTagTagChange that updates.
 func PostTagTagUpdate(p TagPartial) PostTagTagChange {
 	return PostTagTagChange{change: dql.ChangeUpdate, partial: p}
+}
+
+func (c PostTagTagChange) validate() dql.ValidationErrors {
+	if c.change == dql.ChangeUpdate {
+		return c.partial.validate()
+	}
+	return nil
 }
 
 // ToPartial converts d to PostTagPartial (§14.9).
@@ -261,4 +295,128 @@ func MergePostTagByKey(rows []PostTagFull, changes []dql.Keyed[PostTagKey, PostT
 		}
 	}
 	return merged, unmatched
+}
+
+// Validate checks d against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (d PostTagDraft) Validate() error { return d.validate().Err() }
+
+func (d PostTagDraft) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks p against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (p PostTagDraftForPost) Validate() error { return p.validate().Err() }
+
+func (p PostTagDraftForPost) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks t against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (t PostTagDraftForTag) Validate() error { return t.validate().Err() }
+
+func (t PostTagDraftForTag) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n PostTagDraftNested) Validate() error { return n.validate().Err() }
+
+func (n PostTagDraftNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Post.Get(); ok {
+		v = append(v, x.validate().At("post")...)
+	}
+	if x, ok := n.Tag.Get(); ok {
+		v = append(v, x.validate().At("tag")...)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n PostTagDraftNests) Validate() error { return n.validate().Err() }
+
+func (n PostTagDraftNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Post.Get(); ok {
+		v = append(v, x.validate().At("post")...)
+	}
+	if x, ok := n.Tag.Get(); ok {
+		v = append(v, x.validate().At("tag")...)
+	}
+	return v
+}
+
+// Validate checks p against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (p PostTagPartial) Validate() error { return p.validate().Err() }
+
+func (p PostTagPartial) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks p against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (p PostTagPartialForPost) Validate() error { return p.validate().Err() }
+
+func (p PostTagPartialForPost) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks t against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (t PostTagPartialForTag) Validate() error { return t.validate().Err() }
+
+func (t PostTagPartialForTag) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n PostTagPartialNested) Validate() error { return n.validate().Err() }
+
+func (n PostTagPartialNested) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Post.Get(); ok {
+		v = append(v, x.validate().At("post")...)
+	}
+	if x, ok := n.Tag.Get(); ok {
+		v = append(v, x.validate().At("tag")...)
+	}
+	return v
+}
+
+// Validate checks n against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (n PostTagPartialNests) Validate() error { return n.validate().Err() }
+
+func (n PostTagPartialNests) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	if x, ok := n.Post.Get(); ok {
+		v = append(v, x.validate().At("post")...)
+	}
+	if x, ok := n.Tag.Get(); ok {
+		v = append(v, x.validate().At("tag")...)
+	}
+	return v
 }
