@@ -45,6 +45,10 @@ func shop(t *testing.T) *irv1.Bundle {
 	read("catalog.json", func(raw []byte) error { return protojson.Unmarshal(raw, b) })
 	read("shapes.json", func(raw []byte) error { return protojson.Unmarshal(raw, layer) })
 	b.Shapes = layer
+	// The query files' queries, as the core resolved them.
+	files := &irv1.QueryLayer{}
+	read("queries.json", func(raw []byte) error { return protojson.Unmarshal(raw, files) })
+	b.Queries.Queries = append(b.Queries.Queries, files.GetQueries()...)
 	return b
 }
 
