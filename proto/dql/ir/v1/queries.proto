@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/names.proto";
+import "dql/ir/v1/objects.proto";
+import "dql/ir/v1/shapes.proto";
+import "dql/ir/v1/types.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// A query of the query layer, from a query file or from the builder (§16.3).
+message Query {
+  Identifier name = 1;
+  QuerySource source = 2;
+  // §19.
+  Cardinality cardinality = 3;
+  // In the order the query first uses them. Scope parameters are not
+  // parameters: scope lists them (§21).
+  repeated Param params = 4;
+  // Unset for a query that returns no rows.
+  ResultShape result = 5;
+  // The default; a call may override it (§22.5).
+  Consistency consistency = 6;
+  // True also for a read that calls a volatile function (§17.2, §22.2).
+  bool writes = 7;
+  ScopeUse scope = 8;
+  // The catalog whose source the query runs on (§22.1).
+  string catalog = 9;
+  oneof sql {
+    // Query files: verbatim, in the target dialect.
+    string text = 10;
+    // Builder: references into the fragment table (§16.2).
+    FragmentPlan plan = 11;
+  }
+  // Where a query file holds the query, as file:line.
+  string location = 12;
+}
+
+enum QuerySource {
+  QUERY_SOURCE_UNSPECIFIED = 0;
+  QUERY_SOURCE_FILE = 1;
+  QUERY_SOURCE_BUILDER = 2;
+}
+
+// What a query returns, and what zero or extra rows mean (§19).
+enum Cardinality {
+  CARDINALITY_UNSPECIFIED = 0;
+  // :one. Zero rows is NotFound, more than one TooManyRows.
+  CARDINALITY_ONE = 1;
+  // :optional. Zero rows is absent, more than one TooManyRows.
+  CARDINALITY_OPTIONAL = 2;
+  // :many.
+  CARDINALITY_MANY = 3;
+  // :count: the number of matching rows.
+  CARDINALITY_COUNT = 4;
+  // The builder's Exists.
+  CARDINALITY_EXISTS = 5;
+  // :exec: nothing.
+  CARDINALITY_EXEC = 6;
+  // :execrows: the number of rows a write affected.
+  CARDINALITY_EXEC_ROWS = 7;
+}
+
+// A query parameter (§17.1, §17.2).
+message Param {
+  string name = 1;
+  // Inferred from where the query uses it. A list's element type.
+  Type type = 2;
+  // Written sqlc.narg; parameters are non-null otherwise.
+  bool nullable = 3;
+  // Written sqlc.slice: one placeholder holding a list (§25).
+  bool list = 4;
+}
+
+// The rows a query returns: a shape of the shape layer, or the query's own.
+message ResultShape {
+  oneof kind {
+    // Given by -- returns: (§17.1), or the builder's shape.
+    ShapeId shape = 1;
+    AnonymousShape anonymous = 2;
+  }
+}
+
+// A result the query defines itself, such as a join's (§17.3).
+message AnonymousShape {
+  // In the order the query returns them.
+  repeated ResultField fields = 1;
+}
+
+message ResultField {
+  string name = 1;
+  Type type = 2;
+  bool nullable = 3;
+  // The column it reads unchanged, when it does.
+  QualifiedName origin = 4;
+  // Why it is non-null: proven by the parser, or narrowed by -- nonnull:,
+  // which decoding enforces (§13, §17.2).
+  NullabilitySource nullability_source = 5;
+}
+
+// A read's consistency (§22.5). A call's own option wins over the query's
+// default, which wins over the project's config.
+message Consistency {
+  ConsistencyLevel level = 1;
+  // For bounded staleness: how far behind a replica may be.
+  google.protobuf.Duration max_staleness = 2;
+}
+
+enum ConsistencyLevel {
+  CONSISTENCY_UNSPECIFIED = 0;
+  // Always the primary.
+  CONSISTENCY_PRIMARY = 1;
+  // Any replica in rotation, or the primary when none qualifies.
+  CONSISTENCY_ANY = 2;
+  // A replica no more than max_staleness behind, or the primary.
+  CONSISTENCY_BOUNDED_STALENESS = 3;
+  // A replica that has replayed everything the request committed, or the
+  // primary at once. The default.
+  CONSISTENCY_READ_YOUR_WRITES = 4;
+}
+
+// The scope a query filters on (§21).
+message ScopeUse {
+  // The bound columns it filters on through @scope.<column>, sorted.
+  repeated string columns = 1;
+  // Written -- unscoped: exempt from the scope checks.
+  bool unscoped = 2;
+}
+
+// A builder query as fragments of the fragment table, with their holes
+// filled (§16.2).
+message FragmentPlan {
+  FragmentUse root = 1;
+}
+
+// One fragment of the table and what fills its holes.
+message FragmentUse {
+  // The fragment's id, such as op.ilike.
+  string fragment = 1;
+  // Sorted by hole.
+  repeated HoleFill holes = 2;
+}
+
+// What fills one hole of a template: {0} or {cols}.
+message HoleFill {
+  // The hole's name, such as 0 or cols.
+  string hole = 1;
+  oneof value {
+    FragmentUse fragment = 2;
+    // A parameter by name; the runtime numbers its placeholder.
+    string param = 3;
+    // Fragments joined by a separator, such as a column list.
+    FragmentList list = 4;
+  }
+}
+
+message FragmentList {
+  repeated FragmentUse items = 1;
+  string separator = 2;
+}
