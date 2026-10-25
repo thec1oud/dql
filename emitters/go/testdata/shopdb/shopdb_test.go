@@ -255,3 +255,88 @@ func TestStores(t *testing.T) {
 		t.Errorf("delete of no row: %v", err)
 	}
 }
+
+func TestSelect(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	other := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "other"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+	o := db.WithScope(shopdb.UserScope{TenantID: other.ID})
+	ann := "Ann"
+	a := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "x", DisplayName: opt.Some(&ann)}))
+	b := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "bob@acme.com", PasswordHash: "x"}))
+	must(o.Users.Insert(ctx, shopdb.UserDraft{Email: "ann@other.com", PasswordHash: "x"}))
+	labels := []*string{&ann}
+	p := must(h.Posts.Insert(ctx, shopdb.PostDraft{AuthorID: a.ID, Title: "Hello", Labels: opt.Some(&labels)}))
+
+	// The scope filters every read; Where, OrderBy, Limit and Offset compose.
+	users := shopdb.Select(h.Users, shopdb.Shapes.UserFull)
+	all := must(users.OrderBy(shopdb.Users.Email.Desc()).All(ctx))
+	if len(all) != 2 || all[0].ID != b.ID || all[1].ID != a.ID {
+		t.Errorf("all %+v", all)
+	}
+	if got := must(users.Where(shopdb.Users.Email.ILike("ANN%")).One(ctx)); got.ID != a.ID {
+		t.Errorf("ilike %+v", got)
+	}
+	if got := must(users.OrderBy(shopdb.Users.ID.Asc()).Limit(1).Offset(1).All(ctx)); len(got) != 1 || got[0].ID != b.ID {
+		t.Errorf("page %+v", got)
+	}
+	if n := must(users.Where(dql.Or(shopdb.Users.DisplayName.IsNull(), shopdb.Users.ID.In([]int64{a.ID}))).Count(ctx)); n != 2 {
+		t.Errorf("count %d", n)
+	}
+	if v := must(users.Where(dql.Not(shopdb.Users.Email.Eq("ann@acme.com")), shopdb.Users.DisplayName.IsNotNull()).OptionalOne(ctx)); v.IsSome() {
+		t.Errorf("optional %v", v)
+	}
+	if _, err := users.One(ctx); dql.ClassOf(err) != dql.ClassTooManyRows {
+		t.Errorf("one of two: %v", err)
+	}
+
+	// Across scopes, every tenant's rows.
+	if n := must(shopdb.Select(shopdb.Unscoped(h).Users, shopdb.Shapes.UserFull).Where(shopdb.Users.Email.StartsWith("ann@")).Count(ctx)); n != 2 {
+		t.Errorf("unscoped count %d", n)
+	}
+
+	// Relation predicates.
+	if got := must(users.Where(shopdb.Users.PostsToAuthor.Any(shopdb.Posts.Title.Eq("Hello"))).All(ctx)); len(got) != 1 || got[0].ID != a.ID {
+		t.Errorf("any %+v", got)
+	}
+	if got := must(users.Where(shopdb.Users.PostsToAuthor.None()).All(ctx)); len(got) != 1 || got[0].ID != b.ID {
+		t.Errorf("none %+v", got)
+	}
+	if n := must(users.Where(shopdb.Users.PostsToAuthor.All(shopdb.Posts.Title.Eq("Hello"))).Count(ctx)); n != 2 {
+		t.Errorf("all %d", n)
+	}
+	posts := shopdb.Select(h.Posts, shopdb.Shapes.PostFull)
+	if ok := must(posts.Where(shopdb.Posts.Labels.ArrayContains(&ann), shopdb.Posts.Author.Any(shopdb.Users.Email.Contains("acme"))).Exists(ctx)); !ok {
+		t.Error("exists")
+	}
+
+	// Distinct, locks and Iter.
+	if got := must(shopdb.Select(h.Tenants, shopdb.Shapes.TenantFull).Distinct().All(ctx)); len(got) != 2 {
+		t.Errorf("distinct %+v", got)
+	}
+	err := h.Write(ctx, func(ctx context.Context, tx shopdb.UserScopedWriteTx) error {
+		got, err := shopdb.Select(tx.Posts, shopdb.Shapes.PostFull).Where(shopdb.Posts.ID.Eq(p.ID)).ForUpdate().NoWait().One(ctx)
+		if got.ID != p.ID {
+			t.Errorf("locked %+v", got)
+		}
+		return err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+	n := 0
+	for u, err := range users.NoLog().Consistency(dql.Primary).Iter(ctx) {
+		if err != nil || u.TenantID != acme.ID {
+			t.Error(u, err)
+		}
+		n++
+	}
+	if n != 2 {
+		t.Errorf("iter %d", n)
+	}
+	if _, err := shopdb.Select(h.Users, shopdb.Shapes.UserFull).ForShare().SkipLocked().All(ctx); err != nil {
+		t.Error(err)
+	}
+}

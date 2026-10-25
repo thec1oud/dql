@@ -55,6 +55,8 @@ type entity struct {
 	q *irv1.QualifiedName
 	t *irv1.Table
 	f *file
+	// id names the table in fragment ids (§18.4).
+	id string
 	// plural names the store, its handle field and its types, from the
 	// table's own name, as the record's h.Users does (§26.1).
 	plural string
@@ -81,7 +83,7 @@ func (g *generator) entities() []*entity {
 	var out []*entity
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, t := range ns.GetTables() {
-			e := &entity{q: q(t.GetName().GetStored()), t: t, plural: Exported(t.GetName().GetWords()), sensitive: map[string]bool{}, entries: map[string]entry{}}
+			e := &entity{q: q(t.GetName().GetStored()), t: t, id: g.tableID(q(t.GetName().GetStored())), plural: Exported(t.GetName().GetWords()), sensitive: map[string]bool{}, entries: map[string]entry{}}
 			preset := func(p irv1.Preset, form irv1.Form) *irv1.Shape {
 				return g.ix.shapes[shapeKey(&irv1.ShapeId{Base: &irv1.ShapeId_Entity{Entity: e.q}, Preset: p, Form: form})]
 			}
@@ -309,6 +311,9 @@ func (g *generator) storeTypes(e *entity) {
 		f.printf("// %s %s %s (§26.3).\ntype %s interface {\n", name, doc, what, name)
 		if embed != "" {
 			f.printf("\t%s\n", embed)
+		} else {
+			// Select reads through the store (§18.2).
+			f.printf("\tfrom(%s) %s.From\n", e.tableType(), dql)
 		}
 		for _, s := range sigs {
 			if reads[s.x.verb] == write {

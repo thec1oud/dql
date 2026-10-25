@@ -625,6 +625,7 @@ var (
 
 // UsersReadStore reads shop.app.users (§26.3).
 type UsersReadStore interface {
+	from(UsersTable) dql.From
 	Get(ctx context.Context, k UserKey) (UserFull, error)
 	GetByTenantIDAndEmail(ctx context.Context, email EmailAddress) (UserFull, error)
 	Find(ctx context.Context, k UserKey) (opt.Opt[UserFull], error)
@@ -645,6 +646,7 @@ type UsersStore interface {
 
 // UsersUnscopedReadStore reads, across scopes, shop.app.users (§26.3).
 type UsersUnscopedReadStore interface {
+	from(UsersTable) dql.From
 	Get(ctx context.Context, scope UserScope, k UserKey) (UserFull, error)
 	GetByTenantIDAndEmail(ctx context.Context, scope UserScope, email EmailAddress) (UserFull, error)
 	Find(ctx context.Context, scope UserScope, k UserKey) (opt.Opt[UserFull], error)
@@ -906,3 +908,694 @@ func (u usersUnscoped) Patch(ctx context.Context, scope UserScope, k UserKey, p 
 func (u usersUnscoped) Delete(ctx context.Context, scope UserScope, k UserKey) error {
 	return usersWrites{usersReads{u.w, scope}, u.w}.Delete(ctx, k)
 }
+
+// UsersTable is table shop.app.users in builder reads (§18.2): its columns and relations
+// make predicates and order keys on its rows.
+type UsersTable struct {
+	ID            usersIDColumn
+	TenantID      usersTenantIDColumn
+	Email         usersEmailColumn
+	DisplayName   usersDisplayNameColumn
+	PasswordHash  usersPasswordHashColumn
+	CreatedAt     usersCreatedAtColumn
+	UpdatedAt     usersUpdatedAtColumn
+	Version       usersVersionColumn
+	PostsToAuthor usersPostsToAuthorRelation
+	PostsToEditor usersPostsToEditorRelation
+	Profile       usersProfileRelation
+	Tenant        usersTenantRelation
+}
+
+// Users is table shop.app.users in builder reads (§18.2).
+var Users UsersTable
+
+// usersIDColumn is column id in builder reads (§9.4).
+type usersIDColumn struct{}
+
+// Any is operator any on id (§9.4).
+func (usersIDColumn) Any(v []int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.any", "col.users.id", dql.Arg{Value: v})
+}
+
+// Between is operator between on id (§9.4).
+func (usersIDColumn) Between(v0 int64, v1 int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.between", "col.users.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on id (§9.4).
+func (usersIDColumn) Eq(v int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.eq", "col.users.id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on id (§9.4).
+func (usersIDColumn) Ge(v int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ge", "col.users.id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on id (§9.4).
+func (usersIDColumn) Gt(v int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.gt", "col.users.id", dql.Arg{Value: v})
+}
+
+// In is operator in on id (§9.4).
+func (usersIDColumn) In(v []int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.in", "col.users.id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on id (§9.4).
+func (usersIDColumn) IsDistinctFrom(v int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.id", dql.Arg{Value: v})
+}
+
+// Le is operator le on id (§9.4).
+func (usersIDColumn) Le(v int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.le", "col.users.id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on id (§9.4).
+func (usersIDColumn) Lt(v int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.lt", "col.users.id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on id (§9.4).
+func (usersIDColumn) Ne(v int64) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ne", "col.users.id", dql.Arg{Value: v})
+}
+
+// Asc orders by id, ascending.
+func (usersIDColumn) Asc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.asc", "col.users.id")
+}
+
+// Desc orders by id, descending.
+func (usersIDColumn) Desc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.desc", "col.users.id")
+}
+
+// usersTenantIDColumn is column tenant_id in builder reads (§9.4).
+type usersTenantIDColumn struct{}
+
+// Any is operator any on tenant_id (§9.4).
+func (usersTenantIDColumn) Any(v []uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.any", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// Between is operator between on tenant_id (§9.4).
+func (usersTenantIDColumn) Between(v0 uuid.UUID, v1 uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.between", "col.users.tenant_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on tenant_id (§9.4).
+func (usersTenantIDColumn) Eq(v uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.eq", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on tenant_id (§9.4).
+func (usersTenantIDColumn) Ge(v uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ge", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on tenant_id (§9.4).
+func (usersTenantIDColumn) Gt(v uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.gt", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// In is operator in on tenant_id (§9.4).
+func (usersTenantIDColumn) In(v []uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.in", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on tenant_id (§9.4).
+func (usersTenantIDColumn) IsDistinctFrom(v uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// Le is operator le on tenant_id (§9.4).
+func (usersTenantIDColumn) Le(v uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.le", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on tenant_id (§9.4).
+func (usersTenantIDColumn) Lt(v uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.lt", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on tenant_id (§9.4).
+func (usersTenantIDColumn) Ne(v uuid.UUID) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ne", "col.users.tenant_id", dql.Arg{Value: v})
+}
+
+// Asc orders by tenant_id, ascending.
+func (usersTenantIDColumn) Asc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.asc", "col.users.tenant_id")
+}
+
+// Desc orders by tenant_id, descending.
+func (usersTenantIDColumn) Desc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.desc", "col.users.tenant_id")
+}
+
+// usersEmailColumn is column email in builder reads (§9.4).
+type usersEmailColumn struct{}
+
+// Any is operator any on email (§9.4).
+func (usersEmailColumn) Any(v []EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.any", "col.users.email", dql.Arg{Value: v})
+}
+
+// Between is operator between on email (§9.4).
+func (usersEmailColumn) Between(v0 EmailAddress, v1 EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.between", "col.users.email", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Contains is operator contains on email (§9.4).
+func (usersEmailColumn) Contains(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.contains", "col.users.email", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on email (§9.4).
+func (usersEmailColumn) Eq(v EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.eq", "col.users.email", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on email (§9.4).
+func (usersEmailColumn) Ge(v EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ge", "col.users.email", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on email (§9.4).
+func (usersEmailColumn) Gt(v EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.gt", "col.users.email", dql.Arg{Value: v})
+}
+
+// ILike is operator ilike on email (§9.4).
+func (usersEmailColumn) ILike(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ilike", "col.users.email", dql.Arg{Value: v})
+}
+
+// In is operator in on email (§9.4).
+func (usersEmailColumn) In(v []EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.in", "col.users.email", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on email (§9.4).
+func (usersEmailColumn) IsDistinctFrom(v EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.email", dql.Arg{Value: v})
+}
+
+// Le is operator le on email (§9.4).
+func (usersEmailColumn) Le(v EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.le", "col.users.email", dql.Arg{Value: v})
+}
+
+// Like is operator like on email (§9.4).
+func (usersEmailColumn) Like(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.like", "col.users.email", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on email (§9.4).
+func (usersEmailColumn) Lt(v EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.lt", "col.users.email", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on email (§9.4).
+func (usersEmailColumn) Ne(v EmailAddress) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ne", "col.users.email", dql.Arg{Value: v})
+}
+
+// RegexMatch is operator regex_match on email (§9.4).
+func (usersEmailColumn) RegexMatch(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.regex_match", "col.users.email", dql.Arg{Value: v})
+}
+
+// StartsWith is operator starts_with on email (§9.4).
+func (usersEmailColumn) StartsWith(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.starts_with", "col.users.email", dql.Arg{Value: v})
+}
+
+// Asc orders by email, ascending.
+func (usersEmailColumn) Asc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.asc", "col.users.email")
+}
+
+// Desc orders by email, descending.
+func (usersEmailColumn) Desc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.desc", "col.users.email")
+}
+
+// usersDisplayNameColumn is column display_name in builder reads (§9.4).
+type usersDisplayNameColumn struct{}
+
+// Any is operator any on display_name (§9.4).
+func (usersDisplayNameColumn) Any(v []string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.any", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// Between is operator between on display_name (§9.4).
+func (usersDisplayNameColumn) Between(v0 string, v1 string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.between", "col.users.display_name", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Contains is operator contains on display_name (§9.4).
+func (usersDisplayNameColumn) Contains(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.contains", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on display_name (§9.4).
+func (usersDisplayNameColumn) Eq(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.eq", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on display_name (§9.4).
+func (usersDisplayNameColumn) Ge(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ge", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on display_name (§9.4).
+func (usersDisplayNameColumn) Gt(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.gt", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// ILike is operator ilike on display_name (§9.4).
+func (usersDisplayNameColumn) ILike(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ilike", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// In is operator in on display_name (§9.4).
+func (usersDisplayNameColumn) In(v []string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.in", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on display_name (§9.4).
+func (usersDisplayNameColumn) IsDistinctFrom(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// IsNotNull is operator is_not_null on display_name (§9.4).
+func (usersDisplayNameColumn) IsNotNull() dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_not_null", "col.users.display_name")
+}
+
+// IsNull is operator is_null on display_name (§9.4).
+func (usersDisplayNameColumn) IsNull() dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_null", "col.users.display_name")
+}
+
+// Le is operator le on display_name (§9.4).
+func (usersDisplayNameColumn) Le(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.le", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// Like is operator like on display_name (§9.4).
+func (usersDisplayNameColumn) Like(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.like", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on display_name (§9.4).
+func (usersDisplayNameColumn) Lt(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.lt", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on display_name (§9.4).
+func (usersDisplayNameColumn) Ne(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ne", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// RegexMatch is operator regex_match on display_name (§9.4).
+func (usersDisplayNameColumn) RegexMatch(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.regex_match", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// StartsWith is operator starts_with on display_name (§9.4).
+func (usersDisplayNameColumn) StartsWith(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.starts_with", "col.users.display_name", dql.Arg{Value: v})
+}
+
+// Asc orders by display_name, ascending.
+func (usersDisplayNameColumn) Asc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.asc", "col.users.display_name")
+}
+
+// Desc orders by display_name, descending.
+func (usersDisplayNameColumn) Desc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.desc", "col.users.display_name")
+}
+
+// usersPasswordHashColumn is column password_hash in builder reads (§9.4).
+type usersPasswordHashColumn struct{}
+
+// Any is operator any on password_hash (§9.4).
+func (usersPasswordHashColumn) Any(v []string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.any", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Between is operator between on password_hash (§9.4).
+func (usersPasswordHashColumn) Between(v0 string, v1 string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.between", "col.users.password_hash", dql.Arg{Value: v0, Sensitive: true}, dql.Arg{Value: v1, Sensitive: true})
+}
+
+// Contains is operator contains on password_hash (§9.4).
+func (usersPasswordHashColumn) Contains(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.contains", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Eq is operator eq on password_hash (§9.4).
+func (usersPasswordHashColumn) Eq(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.eq", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Ge is operator ge on password_hash (§9.4).
+func (usersPasswordHashColumn) Ge(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ge", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Gt is operator gt on password_hash (§9.4).
+func (usersPasswordHashColumn) Gt(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.gt", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// ILike is operator ilike on password_hash (§9.4).
+func (usersPasswordHashColumn) ILike(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ilike", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// In is operator in on password_hash (§9.4).
+func (usersPasswordHashColumn) In(v []string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.in", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// IsDistinctFrom is operator is_distinct_from on password_hash (§9.4).
+func (usersPasswordHashColumn) IsDistinctFrom(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Le is operator le on password_hash (§9.4).
+func (usersPasswordHashColumn) Le(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.le", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Like is operator like on password_hash (§9.4).
+func (usersPasswordHashColumn) Like(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.like", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Lt is operator lt on password_hash (§9.4).
+func (usersPasswordHashColumn) Lt(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.lt", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Ne is operator ne on password_hash (§9.4).
+func (usersPasswordHashColumn) Ne(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ne", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// RegexMatch is operator regex_match on password_hash (§9.4).
+func (usersPasswordHashColumn) RegexMatch(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.regex_match", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// StartsWith is operator starts_with on password_hash (§9.4).
+func (usersPasswordHashColumn) StartsWith(v string) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.starts_with", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+}
+
+// Asc orders by password_hash, ascending.
+func (usersPasswordHashColumn) Asc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.asc", "col.users.password_hash")
+}
+
+// Desc orders by password_hash, descending.
+func (usersPasswordHashColumn) Desc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.desc", "col.users.password_hash")
+}
+
+// usersCreatedAtColumn is column created_at in builder reads (§9.4).
+type usersCreatedAtColumn struct{}
+
+// Any is operator any on created_at (§9.4).
+func (usersCreatedAtColumn) Any(v []time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.any", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// Between is operator between on created_at (§9.4).
+func (usersCreatedAtColumn) Between(v0 time.Time, v1 time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.between", "col.users.created_at", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on created_at (§9.4).
+func (usersCreatedAtColumn) Eq(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.eq", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on created_at (§9.4).
+func (usersCreatedAtColumn) Ge(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ge", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on created_at (§9.4).
+func (usersCreatedAtColumn) Gt(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.gt", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// In is operator in on created_at (§9.4).
+func (usersCreatedAtColumn) In(v []time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.in", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on created_at (§9.4).
+func (usersCreatedAtColumn) IsDistinctFrom(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// Le is operator le on created_at (§9.4).
+func (usersCreatedAtColumn) Le(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.le", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on created_at (§9.4).
+func (usersCreatedAtColumn) Lt(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.lt", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on created_at (§9.4).
+func (usersCreatedAtColumn) Ne(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ne", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// Asc orders by created_at, ascending.
+func (usersCreatedAtColumn) Asc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.asc", "col.users.created_at")
+}
+
+// Desc orders by created_at, descending.
+func (usersCreatedAtColumn) Desc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.desc", "col.users.created_at")
+}
+
+// usersUpdatedAtColumn is column updated_at in builder reads (§9.4).
+type usersUpdatedAtColumn struct{}
+
+// Any is operator any on updated_at (§9.4).
+func (usersUpdatedAtColumn) Any(v []time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.any", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// Between is operator between on updated_at (§9.4).
+func (usersUpdatedAtColumn) Between(v0 time.Time, v1 time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.between", "col.users.updated_at", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on updated_at (§9.4).
+func (usersUpdatedAtColumn) Eq(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.eq", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on updated_at (§9.4).
+func (usersUpdatedAtColumn) Ge(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ge", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on updated_at (§9.4).
+func (usersUpdatedAtColumn) Gt(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.gt", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// In is operator in on updated_at (§9.4).
+func (usersUpdatedAtColumn) In(v []time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.in", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on updated_at (§9.4).
+func (usersUpdatedAtColumn) IsDistinctFrom(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// Le is operator le on updated_at (§9.4).
+func (usersUpdatedAtColumn) Le(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.le", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on updated_at (§9.4).
+func (usersUpdatedAtColumn) Lt(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.lt", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on updated_at (§9.4).
+func (usersUpdatedAtColumn) Ne(v time.Time) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ne", "col.users.updated_at", dql.Arg{Value: v})
+}
+
+// Asc orders by updated_at, ascending.
+func (usersUpdatedAtColumn) Asc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.asc", "col.users.updated_at")
+}
+
+// Desc orders by updated_at, descending.
+func (usersUpdatedAtColumn) Desc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.desc", "col.users.updated_at")
+}
+
+// usersVersionColumn is column version in builder reads (§9.4).
+type usersVersionColumn struct{}
+
+// Any is operator any on version (§9.4).
+func (usersVersionColumn) Any(v []int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.any", "col.users.version", dql.Arg{Value: v})
+}
+
+// Between is operator between on version (§9.4).
+func (usersVersionColumn) Between(v0 int32, v1 int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.between", "col.users.version", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on version (§9.4).
+func (usersVersionColumn) Eq(v int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.eq", "col.users.version", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on version (§9.4).
+func (usersVersionColumn) Ge(v int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ge", "col.users.version", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on version (§9.4).
+func (usersVersionColumn) Gt(v int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.gt", "col.users.version", dql.Arg{Value: v})
+}
+
+// In is operator in on version (§9.4).
+func (usersVersionColumn) In(v []int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.in", "col.users.version", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on version (§9.4).
+func (usersVersionColumn) IsDistinctFrom(v int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.version", dql.Arg{Value: v})
+}
+
+// Le is operator le on version (§9.4).
+func (usersVersionColumn) Le(v int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.le", "col.users.version", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on version (§9.4).
+func (usersVersionColumn) Lt(v int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.lt", "col.users.version", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on version (§9.4).
+func (usersVersionColumn) Ne(v int32) dql.Pred[UsersTable] {
+	return dql.Compare[UsersTable]("op.ne", "col.users.version", dql.Arg{Value: v})
+}
+
+// Asc orders by version, ascending.
+func (usersVersionColumn) Asc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.asc", "col.users.version")
+}
+
+// Desc orders by version, descending.
+func (usersVersionColumn) Desc() dql.Order[UsersTable] {
+	return dql.Ordered[UsersTable]("order.desc", "col.users.version")
+}
+
+// usersPostsToAuthorRelation is relation posts_to_author in builder reads (§18.2).
+type usersPostsToAuthorRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (usersPostsToAuthorRelation) Any(ps ...dql.Pred[PostsTable]) dql.Pred[UsersTable] {
+	return dql.Related[UsersTable]("rel.users.posts_to_author", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (usersPostsToAuthorRelation) None(ps ...dql.Pred[PostsTable]) dql.Pred[UsersTable] {
+	return dql.Not(dql.Related[UsersTable]("rel.users.posts_to_author", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (usersPostsToAuthorRelation) All(p dql.Pred[PostsTable]) dql.Pred[UsersTable] {
+	return dql.Not(dql.Related[UsersTable]("rel.users.posts_to_author", dql.Not(p)))
+}
+
+// usersPostsToEditorRelation is relation posts_to_editor in builder reads (§18.2).
+type usersPostsToEditorRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (usersPostsToEditorRelation) Any(ps ...dql.Pred[PostsTable]) dql.Pred[UsersTable] {
+	return dql.Related[UsersTable]("rel.users.posts_to_editor", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (usersPostsToEditorRelation) None(ps ...dql.Pred[PostsTable]) dql.Pred[UsersTable] {
+	return dql.Not(dql.Related[UsersTable]("rel.users.posts_to_editor", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (usersPostsToEditorRelation) All(p dql.Pred[PostsTable]) dql.Pred[UsersTable] {
+	return dql.Not(dql.Related[UsersTable]("rel.users.posts_to_editor", dql.Not(p)))
+}
+
+// usersProfileRelation is relation profile in builder reads (§18.2).
+type usersProfileRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (usersProfileRelation) Any(ps ...dql.Pred[ProfilesTable]) dql.Pred[UsersTable] {
+	return dql.Related[UsersTable]("rel.users.profile", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (usersProfileRelation) None(ps ...dql.Pred[ProfilesTable]) dql.Pred[UsersTable] {
+	return dql.Not(dql.Related[UsersTable]("rel.users.profile", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (usersProfileRelation) All(p dql.Pred[ProfilesTable]) dql.Pred[UsersTable] {
+	return dql.Not(dql.Related[UsersTable]("rel.users.profile", dql.Not(p)))
+}
+
+// usersTenantRelation is relation tenant in builder reads (§18.2).
+type usersTenantRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (usersTenantRelation) Any(ps ...dql.Pred[TenantsTable]) dql.Pred[UsersTable] {
+	return dql.Related[UsersTable]("rel.users.tenant", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (usersTenantRelation) None(ps ...dql.Pred[TenantsTable]) dql.Pred[UsersTable] {
+	return dql.Not(dql.Related[UsersTable]("rel.users.tenant", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (usersTenantRelation) All(p dql.Pred[TenantsTable]) dql.Pred[UsersTable] {
+	return dql.Not(dql.Related[UsersTable]("rel.users.tenant", dql.Not(p)))
+}
+
+func (s usersReads) from(UsersTable) dql.From {
+	return dql.From{H: s.h, Scope: []dql.Node{dql.Compare[UsersTable]("op.eq", "col.users.tenant_id", dql.Arg{Value: s.scope.TenantID}).Node()}}
+}
+
+func (u usersUnscopedReads) from(UsersTable) dql.From { return dql.From{H: u.h} }

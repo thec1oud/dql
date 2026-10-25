@@ -537,6 +537,7 @@ var (
 
 // PostTagsReadStore reads shop.app.post_tags (§26.3).
 type PostTagsReadStore interface {
+	from(PostTagsTable) dql.From
 	Get(ctx context.Context, k PostTagKey) (PostTagFull, error)
 	Find(ctx context.Context, k PostTagKey) (opt.Opt[PostTagFull], error)
 	Count(ctx context.Context) (int64, error)
@@ -631,3 +632,181 @@ func (s postTagsWrites) Delete(ctx context.Context, k PostTagKey) error {
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
 }
+
+// PostTagsTable is table shop.app.post_tags in builder reads (§18.2): its columns and relations
+// make predicates and order keys on its rows.
+type PostTagsTable struct {
+	PostID postTagsPostIDColumn
+	TagID  postTagsTagIDColumn
+	Post   postTagsPostRelation
+	Tag    postTagsTagRelation
+}
+
+// PostTags is table shop.app.post_tags in builder reads (§18.2).
+var PostTags PostTagsTable
+
+// postTagsPostIDColumn is column post_id in builder reads (§9.4).
+type postTagsPostIDColumn struct{}
+
+// Any is operator any on post_id (§9.4).
+func (postTagsPostIDColumn) Any(v []int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.any", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// Between is operator between on post_id (§9.4).
+func (postTagsPostIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.between", "col.post_tags.post_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on post_id (§9.4).
+func (postTagsPostIDColumn) Eq(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.eq", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on post_id (§9.4).
+func (postTagsPostIDColumn) Ge(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.ge", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on post_id (§9.4).
+func (postTagsPostIDColumn) Gt(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.gt", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// In is operator in on post_id (§9.4).
+func (postTagsPostIDColumn) In(v []int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.in", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on post_id (§9.4).
+func (postTagsPostIDColumn) IsDistinctFrom(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.is_distinct_from", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// Le is operator le on post_id (§9.4).
+func (postTagsPostIDColumn) Le(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.le", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on post_id (§9.4).
+func (postTagsPostIDColumn) Lt(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.lt", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on post_id (§9.4).
+func (postTagsPostIDColumn) Ne(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.ne", "col.post_tags.post_id", dql.Arg{Value: v})
+}
+
+// Asc orders by post_id, ascending.
+func (postTagsPostIDColumn) Asc() dql.Order[PostTagsTable] {
+	return dql.Ordered[PostTagsTable]("order.asc", "col.post_tags.post_id")
+}
+
+// Desc orders by post_id, descending.
+func (postTagsPostIDColumn) Desc() dql.Order[PostTagsTable] {
+	return dql.Ordered[PostTagsTable]("order.desc", "col.post_tags.post_id")
+}
+
+// postTagsTagIDColumn is column tag_id in builder reads (§9.4).
+type postTagsTagIDColumn struct{}
+
+// Any is operator any on tag_id (§9.4).
+func (postTagsTagIDColumn) Any(v []int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.any", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// Between is operator between on tag_id (§9.4).
+func (postTagsTagIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.between", "col.post_tags.tag_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on tag_id (§9.4).
+func (postTagsTagIDColumn) Eq(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.eq", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on tag_id (§9.4).
+func (postTagsTagIDColumn) Ge(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.ge", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on tag_id (§9.4).
+func (postTagsTagIDColumn) Gt(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.gt", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// In is operator in on tag_id (§9.4).
+func (postTagsTagIDColumn) In(v []int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.in", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on tag_id (§9.4).
+func (postTagsTagIDColumn) IsDistinctFrom(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.is_distinct_from", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// Le is operator le on tag_id (§9.4).
+func (postTagsTagIDColumn) Le(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.le", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on tag_id (§9.4).
+func (postTagsTagIDColumn) Lt(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.lt", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on tag_id (§9.4).
+func (postTagsTagIDColumn) Ne(v int64) dql.Pred[PostTagsTable] {
+	return dql.Compare[PostTagsTable]("op.ne", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// Asc orders by tag_id, ascending.
+func (postTagsTagIDColumn) Asc() dql.Order[PostTagsTable] {
+	return dql.Ordered[PostTagsTable]("order.asc", "col.post_tags.tag_id")
+}
+
+// Desc orders by tag_id, descending.
+func (postTagsTagIDColumn) Desc() dql.Order[PostTagsTable] {
+	return dql.Ordered[PostTagsTable]("order.desc", "col.post_tags.tag_id")
+}
+
+// postTagsPostRelation is relation post in builder reads (§18.2).
+type postTagsPostRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (postTagsPostRelation) Any(ps ...dql.Pred[PostsTable]) dql.Pred[PostTagsTable] {
+	return dql.Related[PostTagsTable]("rel.post_tags.post", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (postTagsPostRelation) None(ps ...dql.Pred[PostsTable]) dql.Pred[PostTagsTable] {
+	return dql.Not(dql.Related[PostTagsTable]("rel.post_tags.post", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (postTagsPostRelation) All(p dql.Pred[PostsTable]) dql.Pred[PostTagsTable] {
+	return dql.Not(dql.Related[PostTagsTable]("rel.post_tags.post", dql.Not(p)))
+}
+
+// postTagsTagRelation is relation tag in builder reads (§18.2).
+type postTagsTagRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (postTagsTagRelation) Any(ps ...dql.Pred[TagsTable]) dql.Pred[PostTagsTable] {
+	return dql.Related[PostTagsTable]("rel.post_tags.tag", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (postTagsTagRelation) None(ps ...dql.Pred[TagsTable]) dql.Pred[PostTagsTable] {
+	return dql.Not(dql.Related[PostTagsTable]("rel.post_tags.tag", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (postTagsTagRelation) All(p dql.Pred[TagsTable]) dql.Pred[PostTagsTable] {
+	return dql.Not(dql.Related[PostTagsTable]("rel.post_tags.tag", dql.Not(p)))
+}
+
+func (s postTagsReads) from(PostTagsTable) dql.From { return dql.From{H: s.h} }

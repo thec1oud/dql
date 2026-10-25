@@ -78,6 +78,7 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 			es := g.entities()
 			g.stores(es)
 			g.handles(es)
+			g.selects(es)
 		}
 	}
 	if g.failed() {
