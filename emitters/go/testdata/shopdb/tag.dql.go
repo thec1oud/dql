@@ -555,14 +555,14 @@ type TagsReadStore interface {
 // TagsStore reads and writes shop.app.tags (§26.3).
 type TagsStore interface {
 	TagsReadStore
-	Insert(ctx context.Context, d TagDraft) (TagFull, error)
-	InsertMany(ctx context.Context, ds []TagDraft) ([]TagFull, error)
-	InsertOrIgnoreByName(ctx context.Context, d TagDraft) (opt.Opt[TagFull], error)
-	InsertOrIgnore(ctx context.Context, d TagDraft) (opt.Opt[TagFull], error)
-	UpsertByName(ctx context.Context, d TagDraft) (TagFull, error)
-	Upsert(ctx context.Context, d TagDraft) (TagFull, error)
-	Patch(ctx context.Context, k TagKey, p TagPartial) (TagFull, error)
-	UpdateWhere(ctx context.Context, where dql.Pred[TagsTable], p TagPartial) (int64, error)
+	Insert(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (TagFull, error)
+	InsertMany(ctx context.Context, ds []TagDraft, as ...dql.Assignment[TagsTable]) ([]TagFull, error)
+	InsertOrIgnoreByName(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (opt.Opt[TagFull], error)
+	InsertOrIgnore(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (opt.Opt[TagFull], error)
+	UpsertByName(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (TagFull, error)
+	Upsert(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (TagFull, error)
+	Patch(ctx context.Context, k TagKey, p TagPartial, as ...dql.Update[TagsTable]) (TagFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[TagsTable], p TagPartial, as ...dql.Update[TagsTable]) (int64, error)
 	Delete(ctx context.Context, k TagKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[TagsTable]) (int64, error)
 }
@@ -633,11 +633,15 @@ func (s tagsReads) Exists(ctx context.Context) (bool, error) {
 }
 
 // Insert runs tag.insert (§20.1).
-func (s tagsWrites) Insert(ctx context.Context, d TagDraft) (TagFull, error) {
+func (s tagsWrites) Insert(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (TagFull, error) {
 	if err := d.Validate(); err != nil {
 		return TagFull{}, err
 	}
-	st, err := tagInsert.Statement(fragments, dql.Args{"name": d.Name})
+	args := dql.Args{"name": d.Name}
+	if err := dql.Assign(tagInsert, "tag.draft.flat", args, dql.Values(as)); err != nil {
+		return TagFull{}, err
+	}
+	st, err := tagInsert.Statement(fragments, args)
 	if err != nil {
 		return TagFull{}, err
 	}
@@ -645,7 +649,7 @@ func (s tagsWrites) Insert(ctx context.Context, d TagDraft) (TagFull, error) {
 }
 
 // InsertMany runs tag.insert for each draft, in one transaction (§20.1).
-func (s tagsWrites) InsertMany(ctx context.Context, ds []TagDraft) ([]TagFull, error) {
+func (s tagsWrites) InsertMany(ctx context.Context, ds []TagDraft, as ...dql.Assignment[TagsTable]) ([]TagFull, error) {
 	for _, d := range ds {
 		if err := d.Validate(); err != nil {
 			return nil, err
@@ -654,17 +658,24 @@ func (s tagsWrites) InsertMany(ctx context.Context, ds []TagDraft) ([]TagFull, e
 	rows := make([]dql.Args, 0, len(ds))
 	for _, d := range ds {
 		args := dql.Args{"name": d.Name}
+		if err := dql.Assign(tagInsert, "tag.draft.flat", args, dql.Values(as)); err != nil {
+			return nil, err
+		}
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, tagInsert, rows, DecodeTagFull)
 }
 
 // InsertOrIgnoreByName runs tag.insert_or_ignore.by_name (§20.1).
-func (s tagsWrites) InsertOrIgnoreByName(ctx context.Context, d TagDraft) (opt.Opt[TagFull], error) {
+func (s tagsWrites) InsertOrIgnoreByName(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (opt.Opt[TagFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[TagFull](), err
 	}
-	st, err := tagInsertOrIgnoreByName.Statement(fragments, dql.Args{"name": d.Name})
+	args := dql.Args{"name": d.Name}
+	if err := dql.Assign(tagInsertOrIgnoreByName, "tag.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[TagFull](), err
+	}
+	st, err := tagInsertOrIgnoreByName.Statement(fragments, args)
 	if err != nil {
 		return opt.None[TagFull](), err
 	}
@@ -672,11 +683,15 @@ func (s tagsWrites) InsertOrIgnoreByName(ctx context.Context, d TagDraft) (opt.O
 }
 
 // InsertOrIgnore runs tag.insert_or_ignore.by_primary (§20.1).
-func (s tagsWrites) InsertOrIgnore(ctx context.Context, d TagDraft) (opt.Opt[TagFull], error) {
+func (s tagsWrites) InsertOrIgnore(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (opt.Opt[TagFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[TagFull](), err
 	}
-	st, err := tagInsertOrIgnoreByPrimary.Statement(fragments, dql.Args{"name": d.Name})
+	args := dql.Args{"name": d.Name}
+	if err := dql.Assign(tagInsertOrIgnoreByPrimary, "tag.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[TagFull](), err
+	}
+	st, err := tagInsertOrIgnoreByPrimary.Statement(fragments, args)
 	if err != nil {
 		return opt.None[TagFull](), err
 	}
@@ -684,11 +699,15 @@ func (s tagsWrites) InsertOrIgnore(ctx context.Context, d TagDraft) (opt.Opt[Tag
 }
 
 // UpsertByName runs tag.upsert.by_name (§20.1).
-func (s tagsWrites) UpsertByName(ctx context.Context, d TagDraft) (TagFull, error) {
+func (s tagsWrites) UpsertByName(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (TagFull, error) {
 	if err := d.Validate(); err != nil {
 		return TagFull{}, err
 	}
-	st, err := tagUpsertByName.Statement(fragments, dql.Args{"name": d.Name})
+	args := dql.Args{"name": d.Name}
+	if err := dql.Assign(tagUpsertByName, "tag.draft.flat", args, dql.Values(as)); err != nil {
+		return TagFull{}, err
+	}
+	st, err := tagUpsertByName.Statement(fragments, args)
 	if err != nil {
 		return TagFull{}, err
 	}
@@ -696,11 +715,15 @@ func (s tagsWrites) UpsertByName(ctx context.Context, d TagDraft) (TagFull, erro
 }
 
 // Upsert runs tag.upsert.by_primary (§20.1).
-func (s tagsWrites) Upsert(ctx context.Context, d TagDraft) (TagFull, error) {
+func (s tagsWrites) Upsert(ctx context.Context, d TagDraft, as ...dql.Assignment[TagsTable]) (TagFull, error) {
 	if err := d.Validate(); err != nil {
 		return TagFull{}, err
 	}
-	st, err := tagUpsertByPrimary.Statement(fragments, dql.Args{"name": d.Name})
+	args := dql.Args{"name": d.Name}
+	if err := dql.Assign(tagUpsertByPrimary, "tag.draft.flat", args, dql.Values(as)); err != nil {
+		return TagFull{}, err
+	}
+	st, err := tagUpsertByPrimary.Statement(fragments, args)
 	if err != nil {
 		return TagFull{}, err
 	}
@@ -708,7 +731,7 @@ func (s tagsWrites) Upsert(ctx context.Context, d TagDraft) (TagFull, error) {
 }
 
 // Patch runs tag.patch (§20.1).
-func (s tagsWrites) Patch(ctx context.Context, k TagKey, p TagPartial) (TagFull, error) {
+func (s tagsWrites) Patch(ctx context.Context, k TagKey, p TagPartial, as ...dql.Update[TagsTable]) (TagFull, error) {
 	if err := p.Validate(); err != nil {
 		return TagFull{}, err
 	}
@@ -718,7 +741,10 @@ func (s tagsWrites) Patch(ctx context.Context, k TagKey, p TagPartial) (TagFull,
 		args["name"] = v
 		set = true
 	}
-	if !set {
+	if err := dql.Assign(tagPatch, "tag.partial.flat", args, as); err != nil {
+		return TagFull{}, err
+	}
+	if !set && len(as) == 0 {
 		// Nothing to change: the row as it is.
 		return s.Get(ctx, k)
 	}
@@ -730,7 +756,7 @@ func (s tagsWrites) Patch(ctx context.Context, k TagKey, p TagPartial) (TagFull,
 }
 
 // UpdateWhere runs tag.update_where (§20.1).
-func (s tagsWrites) UpdateWhere(ctx context.Context, where dql.Pred[TagsTable], p TagPartial) (int64, error) {
+func (s tagsWrites) UpdateWhere(ctx context.Context, where dql.Pred[TagsTable], p TagPartial, as ...dql.Update[TagsTable]) (int64, error) {
 	if err := p.Validate(); err != nil {
 		return 0, err
 	}
@@ -744,7 +770,10 @@ func (s tagsWrites) UpdateWhere(ctx context.Context, where dql.Pred[TagsTable], 
 		args["name"] = v
 		set = true
 	}
-	if !set {
+	if err := dql.Assign(q, "tag.partial.flat", args, as); err != nil {
+		return 0, err
+	}
+	if !set && len(as) == 0 {
 		// Nothing to change.
 		return 0, nil
 	}
@@ -933,6 +962,11 @@ func (tagsNameColumn) RegexMatch(v string) dql.Pred[TagsTable] {
 // StartsWith is operator starts_with on name (§9.4).
 func (tagsNameColumn) StartsWith(v string) dql.Pred[TagsTable] {
 	return dql.Compare[TagsTable]("op.starts_with", "col.tags.name", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Default() to name on a write, in place of a value (§20.2).
+func (tagsNameColumn) Set(e dql.DefaultExpr) dql.Assignment[TagsTable] {
+	return dql.Set[TagsTable]("name", e)
 }
 
 // Asc orders by name, ascending.

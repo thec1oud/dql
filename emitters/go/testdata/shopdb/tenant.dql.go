@@ -384,12 +384,12 @@ type TenantsReadStore interface {
 // TenantsStore reads and writes shop.app.tenants (§26.3).
 type TenantsStore interface {
 	TenantsReadStore
-	Insert(ctx context.Context, d TenantDraft) (TenantFull, error)
-	InsertMany(ctx context.Context, ds []TenantDraft) ([]TenantFull, error)
-	InsertOrIgnore(ctx context.Context, d TenantDraft) (opt.Opt[TenantFull], error)
-	Upsert(ctx context.Context, d TenantDraft) (TenantFull, error)
-	Patch(ctx context.Context, k TenantKey, p TenantPartial) (TenantFull, error)
-	UpdateWhere(ctx context.Context, where dql.Pred[TenantsTable], p TenantPartial) (int64, error)
+	Insert(ctx context.Context, d TenantDraft, as ...dql.Assignment[TenantsTable]) (TenantFull, error)
+	InsertMany(ctx context.Context, ds []TenantDraft, as ...dql.Assignment[TenantsTable]) ([]TenantFull, error)
+	InsertOrIgnore(ctx context.Context, d TenantDraft, as ...dql.Assignment[TenantsTable]) (opt.Opt[TenantFull], error)
+	Upsert(ctx context.Context, d TenantDraft, as ...dql.Assignment[TenantsTable]) (TenantFull, error)
+	Patch(ctx context.Context, k TenantKey, p TenantPartial, as ...dql.Update[TenantsTable]) (TenantFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[TenantsTable], p TenantPartial, as ...dql.Update[TenantsTable]) (int64, error)
 	Delete(ctx context.Context, k TenantKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[TenantsTable]) (int64, error)
 }
@@ -442,13 +442,16 @@ func (s tenantsReads) Exists(ctx context.Context) (bool, error) {
 }
 
 // Insert runs tenant.insert (§20.1).
-func (s tenantsWrites) Insert(ctx context.Context, d TenantDraft) (TenantFull, error) {
+func (s tenantsWrites) Insert(ctx context.Context, d TenantDraft, as ...dql.Assignment[TenantsTable]) (TenantFull, error) {
 	if err := d.Validate(); err != nil {
 		return TenantFull{}, err
 	}
 	args := dql.Args{"name": d.Name}
 	if v, ok := d.ID.Get(); ok {
 		args["id"] = v
+	}
+	if err := dql.Assign(tenantInsert, "tenant.draft.flat", args, dql.Values(as)); err != nil {
+		return TenantFull{}, err
 	}
 	st, err := tenantInsert.Statement(fragments, args)
 	if err != nil {
@@ -458,7 +461,7 @@ func (s tenantsWrites) Insert(ctx context.Context, d TenantDraft) (TenantFull, e
 }
 
 // InsertMany runs tenant.insert for each draft, in one transaction (§20.1).
-func (s tenantsWrites) InsertMany(ctx context.Context, ds []TenantDraft) ([]TenantFull, error) {
+func (s tenantsWrites) InsertMany(ctx context.Context, ds []TenantDraft, as ...dql.Assignment[TenantsTable]) ([]TenantFull, error) {
 	for _, d := range ds {
 		if err := d.Validate(); err != nil {
 			return nil, err
@@ -470,19 +473,25 @@ func (s tenantsWrites) InsertMany(ctx context.Context, ds []TenantDraft) ([]Tena
 		if v, ok := d.ID.Get(); ok {
 			args["id"] = v
 		}
+		if err := dql.Assign(tenantInsert, "tenant.draft.flat", args, dql.Values(as)); err != nil {
+			return nil, err
+		}
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, tenantInsert, rows, DecodeTenantFull)
 }
 
 // InsertOrIgnore runs tenant.insert_or_ignore.by_primary (§20.1).
-func (s tenantsWrites) InsertOrIgnore(ctx context.Context, d TenantDraft) (opt.Opt[TenantFull], error) {
+func (s tenantsWrites) InsertOrIgnore(ctx context.Context, d TenantDraft, as ...dql.Assignment[TenantsTable]) (opt.Opt[TenantFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[TenantFull](), err
 	}
 	args := dql.Args{"name": d.Name}
 	if v, ok := d.ID.Get(); ok {
 		args["id"] = v
+	}
+	if err := dql.Assign(tenantInsertOrIgnoreByPrimary, "tenant.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[TenantFull](), err
 	}
 	st, err := tenantInsertOrIgnoreByPrimary.Statement(fragments, args)
 	if err != nil {
@@ -492,13 +501,16 @@ func (s tenantsWrites) InsertOrIgnore(ctx context.Context, d TenantDraft) (opt.O
 }
 
 // Upsert runs tenant.upsert.by_primary (§20.1).
-func (s tenantsWrites) Upsert(ctx context.Context, d TenantDraft) (TenantFull, error) {
+func (s tenantsWrites) Upsert(ctx context.Context, d TenantDraft, as ...dql.Assignment[TenantsTable]) (TenantFull, error) {
 	if err := d.Validate(); err != nil {
 		return TenantFull{}, err
 	}
 	args := dql.Args{"name": d.Name}
 	if v, ok := d.ID.Get(); ok {
 		args["id"] = v
+	}
+	if err := dql.Assign(tenantUpsertByPrimary, "tenant.draft.flat", args, dql.Values(as)); err != nil {
+		return TenantFull{}, err
 	}
 	st, err := tenantUpsertByPrimary.Statement(fragments, args)
 	if err != nil {
@@ -508,7 +520,7 @@ func (s tenantsWrites) Upsert(ctx context.Context, d TenantDraft) (TenantFull, e
 }
 
 // Patch runs tenant.patch (§20.1).
-func (s tenantsWrites) Patch(ctx context.Context, k TenantKey, p TenantPartial) (TenantFull, error) {
+func (s tenantsWrites) Patch(ctx context.Context, k TenantKey, p TenantPartial, as ...dql.Update[TenantsTable]) (TenantFull, error) {
 	if err := p.Validate(); err != nil {
 		return TenantFull{}, err
 	}
@@ -518,7 +530,10 @@ func (s tenantsWrites) Patch(ctx context.Context, k TenantKey, p TenantPartial) 
 		args["name"] = v
 		set = true
 	}
-	if !set {
+	if err := dql.Assign(tenantPatch, "tenant.partial.flat", args, as); err != nil {
+		return TenantFull{}, err
+	}
+	if !set && len(as) == 0 {
 		// Nothing to change: the row as it is.
 		return s.Get(ctx, k)
 	}
@@ -530,7 +545,7 @@ func (s tenantsWrites) Patch(ctx context.Context, k TenantKey, p TenantPartial) 
 }
 
 // UpdateWhere runs tenant.update_where (§20.1).
-func (s tenantsWrites) UpdateWhere(ctx context.Context, where dql.Pred[TenantsTable], p TenantPartial) (int64, error) {
+func (s tenantsWrites) UpdateWhere(ctx context.Context, where dql.Pred[TenantsTable], p TenantPartial, as ...dql.Update[TenantsTable]) (int64, error) {
 	if err := p.Validate(); err != nil {
 		return 0, err
 	}
@@ -544,7 +559,10 @@ func (s tenantsWrites) UpdateWhere(ctx context.Context, where dql.Pred[TenantsTa
 		args["name"] = v
 		set = true
 	}
-	if !set {
+	if err := dql.Assign(q, "tenant.partial.flat", args, as); err != nil {
+		return 0, err
+	}
+	if !set && len(as) == 0 {
 		// Nothing to change.
 		return 0, nil
 	}
@@ -646,6 +664,11 @@ func (tenantsIDColumn) Ne(v uuid.UUID) dql.Pred[TenantsTable] {
 	return dql.Compare[TenantsTable]("op.ne", "col.tenants.id", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to id on a write, in place of a value (§20.2).
+func (tenantsIDColumn) Set(e dql.DefaultExpr) dql.Assignment[TenantsTable] {
+	return dql.Set[TenantsTable]("id", e)
+}
+
 // Asc orders by id, ascending.
 func (tenantsIDColumn) Asc() dql.Order[TenantsTable] {
 	return dql.Ordered[TenantsTable]("order.asc", "col.tenants.id")
@@ -732,6 +755,11 @@ func (tenantsNameColumn) RegexMatch(v string) dql.Pred[TenantsTable] {
 // StartsWith is operator starts_with on name (§9.4).
 func (tenantsNameColumn) StartsWith(v string) dql.Pred[TenantsTable] {
 	return dql.Compare[TenantsTable]("op.starts_with", "col.tenants.name", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Default() to name on a write, in place of a value (§20.2).
+func (tenantsNameColumn) Set(e dql.DefaultExpr) dql.Assignment[TenantsTable] {
+	return dql.Set[TenantsTable]("name", e)
 }
 
 // Asc orders by name, ascending.

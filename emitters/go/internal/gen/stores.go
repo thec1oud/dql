@@ -272,14 +272,17 @@ func (g *generator) signatures(e *entity) []signature {
 			}
 			s.params = strings.Join(ps, ", ")
 		}
-		pred := f.use(pkgDQL, "dql") + ".Pred[" + e.tableType() + "]"
+		dql := f.use(pkgDQL, "dql")
+		pred := dql + ".Pred[" + e.tableType() + "]"
+		values := ", as ..." + dql + ".Assignment[" + e.tableType() + "]"
+		updates := ", as ..." + dql + ".Update[" + e.tableType() + "]"
 		switch x.verb {
 		case "insert", "insert_or_ignore", "upsert":
-			s.params = "d " + Exported(e.draft.GetHostName().GetWords())
+			s.params = "d " + Exported(e.draft.GetHostName().GetWords()) + values
 		case "patch":
-			s.params += ", p " + Exported(e.part.GetHostName().GetWords())
+			s.params += ", p " + Exported(e.part.GetHostName().GetWords()) + updates
 		case "update_where":
-			s.params = "where " + pred + ", p " + Exported(e.part.GetHostName().GetWords())
+			s.params = "where " + pred + ", p " + Exported(e.part.GetHostName().GetWords()) + updates
 		case "delete_where", "hard_delete_where":
 			s.params = "where " + pred
 		}
@@ -297,7 +300,7 @@ func (g *generator) signatures(e *entity) []signature {
 		}
 		out = append(out, s)
 		if x.verb == "insert" {
-			out = append(out, signature{name: "InsertMany", params: "ds []" + Exported(e.draft.GetHostName().GetWords()), results: "([]" + full + ", error)", x: x, many: true})
+			out = append(out, signature{name: "InsertMany", params: "ds []" + Exported(e.draft.GetHostName().GetWords()) + values, results: "([]" + full + ", error)", x: x, many: true})
 		}
 	}
 	return out
@@ -415,7 +418,11 @@ func argNames(params string) string {
 	}
 	var names []string
 	for _, p := range strings.Split(params, ", ") {
-		names = append(names, strings.Fields(p)[0])
+		name := strings.Fields(p)[0]
+		if strings.HasPrefix(strings.Fields(p)[1], "...") {
+			name += "..."
+		}
+		names = append(names, name)
 	}
 	return strings.Join(names, ", ")
 }
@@ -465,7 +472,7 @@ func (g *generator) methodBody(e *entity, s signature) {
 		f.printf("\tq, err := %s.Filtered(%s, where)\n\tif err != nil {\n\t\treturn %serr\n\t}\n", dql, x.v, zero)
 		q = "q"
 	}
-	if len(conds) == 0 {
+	if len(conds) == 0 && payload == nil {
 		f.printf("\tst, err := %s.Statement(fragments, %s.Args{%s})\n", q, dql, lit)
 	} else {
 		f.printf("\targs := %s.Args{%s}\n", dql, lit)
@@ -475,11 +482,12 @@ func (g *generator) methodBody(e *entity, s signature) {
 		for _, c := range conds {
 			f.printf("%s", c)
 		}
+		f.printf("\tif err := %s.Assign(%s, %q, args, %s); err != nil {\n\t\treturn %serr\n\t}\n", dql, q, g.dotted(payload.GetId()), assignments(dql, x.verb), zero)
 		switch {
 		case fallback:
-			f.printf("\tif !set {\n\t\t// Nothing to change: the row as it is.\n\t\treturn s.%s(ctx, k)\n\t}\n", get.method())
+			f.printf("\tif !set && len(as) == 0 {\n\t\t// Nothing to change: the row as it is.\n\t\treturn s.%s(ctx, k)\n\t}\n", get.method())
 		case empty:
-			f.printf("\tif !set {\n\t\t// Nothing to change.\n\t\treturn 0, nil\n\t}\n")
+			f.printf("\tif !set && len(as) == 0 {\n\t\t// Nothing to change.\n\t\treturn 0, nil\n\t}\n")
 		}
 		f.printf("\tst, err := %s.Statement(fragments, args)\n", q)
 	}
@@ -533,8 +541,18 @@ func (g *generator) insertMany(e *entity, s signature) {
 	for _, c := range conds {
 		f.printf("%s", c)
 	}
+	f.printf("\t\tif err := %s.Assign(%s, %q, args, %s.Values(as)); err != nil {\n\t\t\treturn nil, err\n\t\t}\n", dql, s.x.v, g.dotted(e.draft.GetId()), dql)
 	f.printf("\t\trows = append(rows, args)\n\t}\n")
 	f.printf("\treturn %s.InsertMany(ctx, s.w, fragments, %s, rows, Decode%s)\n", dql, s.x.v, Exported(e.full.GetHostName().GetWords()))
+}
+
+// assignments is the argument passing a write's assignments to dql.Assign:
+// an insert's are values only.
+func assignments(dql, verb string) string {
+	if verb == "patch" || verb == "update_where" {
+		return "as"
+	}
+	return dql + ".Values(as)"
 }
 
 // entryName is the name of an entity's entry of verb by the key by names,

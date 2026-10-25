@@ -128,6 +128,9 @@ func (a *assembler) node(n Node) error {
 		if !ok {
 			return fmt.Errorf("parameter %s is left out: %w", n, errAbsent)
 		}
+		if e, ok := v.(expression); ok {
+			return a.node(e.node)
+		}
 		a.arg(v, a.sensitive[string(n)])
 	case Arg:
 		a.arg(n.Value, n.Sensitive)

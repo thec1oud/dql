@@ -200,6 +200,7 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 				opMethod(op.GetName()), op.GetName(), c.GetName().GetStored(), doc,
 				handle, opMethod(op.GetName()), params, pred, dql, typ, "op."+op.GetName(), frag, args)
 		}
+		g.assignments(&decls, e, c, handle, frag)
 		for _, dir := range []string{"asc", "desc"} {
 			if g.fragmentIDs["order."+dir] {
 				fmt.Fprintf(&decls, "// %s orders by %s, %sending.\nfunc (%s) %s() %s.Order[%s] { return %s.Ordered[%s](%q, %q) }\n\n",
@@ -239,6 +240,44 @@ func (%[1]s) All(p %[3]s) %[4]s { return %[5]s.Not(%[5]s.Related[%[6]s](%[7]q, %
 	f.printf("// %s is table %s in builder reads (§18.2): its columns and relations\n// make predicates and order keys on its rows.\ntype %s struct {\n%s}\n\n", typ, displayName(e.q), typ, strings.Join(fields, ""))
 	f.printf("// %s is table %s in builder reads (§18.2).\nvar %s %s\n\n", e.plural, displayName(e.q), e.plural, typ)
 	f.printf("// AllRows keeps every row: a filtered write must be given it to write them\n// all (§20.1).\nfunc (%s) AllRows() %s { return %s.AllRows[%s]() }\n\n%s", typ, pred, dql, typ, decls.String())
+}
+
+// assignments writes the methods of column c's handle that assign to it on
+// writes (§20.2): Set for a column a Draft or Partial carries, and Add and
+// Sub for one a Partial carries that the value operators take.
+func (g *generator) assignments(decls *strings.Builder, e *entity, c *irv1.Column, handle, frag string) {
+	col := c.GetName().GetStored()
+	carries := func(s *irv1.Shape) bool {
+		fld := shapeField(s, col)
+		return fld != nil && fld.GetValueKind() == irv1.ValueKind_VALUE_KIND_VALUE_OR_EXPRESSION
+	}
+	if !carries(e.draft) && !carries(e.part) || !e.writes() {
+		return
+	}
+	f := e.f
+	dql := f.use(pkgDQL, "dql")
+	typ := e.tableType()
+	expr, what := "DefaultExpr", "dql.Default()"
+	switch t := c.GetType(); {
+	case t.GetInstant() != nil, t.GetInstantWithOffset() != nil, t.GetLocalDatetime() != nil, t.GetDate() != nil:
+		expr, what = "TimeExpr", "dql.Now() or dql.Default()"
+	}
+	fmt.Fprintf(decls, "// Set assigns %s to %s on a write, in place of a value (§20.2).\nfunc (%s) Set(e %s.%s) %s.Assignment[%s] { return %s.Set[%s](%q, e) }\n\n",
+		what, col, handle, dql, expr, dql, typ, dql, typ, col)
+	sensitive := ""
+	if e.sensitive[col] {
+		sensitive = ", Sensitive: true"
+	}
+	for _, op := range c.GetOperators() {
+		name := op.GetName()
+		if (name != "add" && name != "sub") || !g.fragmentIDs["op."+name] || !carries(e.part) {
+			continue
+		}
+		v := g.goType(f, c.GetType(), e.q, "column "+col)
+		sign := map[string]string{"add": "+", "sub": "-"}[name]
+		fmt.Fprintf(decls, "// %s sets %s to %s %s v on an update (§20.2).\nfunc (%s) %s(v %s) %s.Update[%s] {\n\treturn %s.Arith[%s](%q, %q, %q, %s.Arg{Value: v%s})\n}\n\n",
+			capitalize(name), col, col, sign, handle, capitalize(name), v, dql, typ, dql, typ, "op."+name, col, frag, dql, sensitive)
+	}
 }
 
 // opMethod is the column handle method of an operator.

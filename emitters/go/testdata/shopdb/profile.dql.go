@@ -577,12 +577,12 @@ type ProfilesReadStore interface {
 // ProfilesStore reads and writes shop.app.profiles (§26.3).
 type ProfilesStore interface {
 	ProfilesReadStore
-	Insert(ctx context.Context, d ProfileDraft) (ProfileFull, error)
-	InsertMany(ctx context.Context, ds []ProfileDraft) ([]ProfileFull, error)
-	InsertOrIgnore(ctx context.Context, d ProfileDraft) (opt.Opt[ProfileFull], error)
-	Upsert(ctx context.Context, d ProfileDraft) (ProfileFull, error)
-	Patch(ctx context.Context, k ProfileKey, p ProfilePartial) (ProfileFull, error)
-	UpdateWhere(ctx context.Context, where dql.Pred[ProfilesTable], p ProfilePartial) (int64, error)
+	Insert(ctx context.Context, d ProfileDraft, as ...dql.Assignment[ProfilesTable]) (ProfileFull, error)
+	InsertMany(ctx context.Context, ds []ProfileDraft, as ...dql.Assignment[ProfilesTable]) ([]ProfileFull, error)
+	InsertOrIgnore(ctx context.Context, d ProfileDraft, as ...dql.Assignment[ProfilesTable]) (opt.Opt[ProfileFull], error)
+	Upsert(ctx context.Context, d ProfileDraft, as ...dql.Assignment[ProfilesTable]) (ProfileFull, error)
+	Patch(ctx context.Context, k ProfileKey, p ProfilePartial, as ...dql.Update[ProfilesTable]) (ProfileFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[ProfilesTable], p ProfilePartial, as ...dql.Update[ProfilesTable]) (int64, error)
 	Delete(ctx context.Context, k ProfileKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[ProfilesTable]) (int64, error)
 }
@@ -635,7 +635,7 @@ func (s profilesReads) Exists(ctx context.Context) (bool, error) {
 }
 
 // Insert runs profile.insert (§20.1).
-func (s profilesWrites) Insert(ctx context.Context, d ProfileDraft) (ProfileFull, error) {
+func (s profilesWrites) Insert(ctx context.Context, d ProfileDraft, as ...dql.Assignment[ProfilesTable]) (ProfileFull, error) {
 	if err := d.Validate(); err != nil {
 		return ProfileFull{}, err
 	}
@@ -646,6 +646,9 @@ func (s profilesWrites) Insert(ctx context.Context, d ProfileDraft) (ProfileFull
 	if v, ok := d.Birthday.Get(); ok {
 		args["birthday"] = v
 	}
+	if err := dql.Assign(profileInsert, "profile.draft.flat", args, dql.Values(as)); err != nil {
+		return ProfileFull{}, err
+	}
 	st, err := profileInsert.Statement(fragments, args)
 	if err != nil {
 		return ProfileFull{}, err
@@ -654,7 +657,7 @@ func (s profilesWrites) Insert(ctx context.Context, d ProfileDraft) (ProfileFull
 }
 
 // InsertMany runs profile.insert for each draft, in one transaction (§20.1).
-func (s profilesWrites) InsertMany(ctx context.Context, ds []ProfileDraft) ([]ProfileFull, error) {
+func (s profilesWrites) InsertMany(ctx context.Context, ds []ProfileDraft, as ...dql.Assignment[ProfilesTable]) ([]ProfileFull, error) {
 	for _, d := range ds {
 		if err := d.Validate(); err != nil {
 			return nil, err
@@ -669,13 +672,16 @@ func (s profilesWrites) InsertMany(ctx context.Context, ds []ProfileDraft) ([]Pr
 		if v, ok := d.Birthday.Get(); ok {
 			args["birthday"] = v
 		}
+		if err := dql.Assign(profileInsert, "profile.draft.flat", args, dql.Values(as)); err != nil {
+			return nil, err
+		}
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, profileInsert, rows, DecodeProfileFull)
 }
 
 // InsertOrIgnore runs profile.insert_or_ignore.by_primary (§20.1).
-func (s profilesWrites) InsertOrIgnore(ctx context.Context, d ProfileDraft) (opt.Opt[ProfileFull], error) {
+func (s profilesWrites) InsertOrIgnore(ctx context.Context, d ProfileDraft, as ...dql.Assignment[ProfilesTable]) (opt.Opt[ProfileFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[ProfileFull](), err
 	}
@@ -685,6 +691,9 @@ func (s profilesWrites) InsertOrIgnore(ctx context.Context, d ProfileDraft) (opt
 	}
 	if v, ok := d.Birthday.Get(); ok {
 		args["birthday"] = v
+	}
+	if err := dql.Assign(profileInsertOrIgnoreByPrimary, "profile.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[ProfileFull](), err
 	}
 	st, err := profileInsertOrIgnoreByPrimary.Statement(fragments, args)
 	if err != nil {
@@ -694,7 +703,7 @@ func (s profilesWrites) InsertOrIgnore(ctx context.Context, d ProfileDraft) (opt
 }
 
 // Upsert runs profile.upsert.by_primary (§20.1).
-func (s profilesWrites) Upsert(ctx context.Context, d ProfileDraft) (ProfileFull, error) {
+func (s profilesWrites) Upsert(ctx context.Context, d ProfileDraft, as ...dql.Assignment[ProfilesTable]) (ProfileFull, error) {
 	if err := d.Validate(); err != nil {
 		return ProfileFull{}, err
 	}
@@ -705,6 +714,9 @@ func (s profilesWrites) Upsert(ctx context.Context, d ProfileDraft) (ProfileFull
 	if v, ok := d.Birthday.Get(); ok {
 		args["birthday"] = v
 	}
+	if err := dql.Assign(profileUpsertByPrimary, "profile.draft.flat", args, dql.Values(as)); err != nil {
+		return ProfileFull{}, err
+	}
 	st, err := profileUpsertByPrimary.Statement(fragments, args)
 	if err != nil {
 		return ProfileFull{}, err
@@ -713,7 +725,7 @@ func (s profilesWrites) Upsert(ctx context.Context, d ProfileDraft) (ProfileFull
 }
 
 // Patch runs profile.patch (§20.1).
-func (s profilesWrites) Patch(ctx context.Context, k ProfileKey, p ProfilePartial) (ProfileFull, error) {
+func (s profilesWrites) Patch(ctx context.Context, k ProfileKey, p ProfilePartial, as ...dql.Update[ProfilesTable]) (ProfileFull, error) {
 	if err := p.Validate(); err != nil {
 		return ProfileFull{}, err
 	}
@@ -727,7 +739,10 @@ func (s profilesWrites) Patch(ctx context.Context, k ProfileKey, p ProfilePartia
 		args["birthday"] = v
 		set = true
 	}
-	if !set {
+	if err := dql.Assign(profilePatch, "profile.partial.flat", args, as); err != nil {
+		return ProfileFull{}, err
+	}
+	if !set && len(as) == 0 {
 		// Nothing to change: the row as it is.
 		return s.Get(ctx, k)
 	}
@@ -739,7 +754,7 @@ func (s profilesWrites) Patch(ctx context.Context, k ProfileKey, p ProfilePartia
 }
 
 // UpdateWhere runs profile.update_where (§20.1).
-func (s profilesWrites) UpdateWhere(ctx context.Context, where dql.Pred[ProfilesTable], p ProfilePartial) (int64, error) {
+func (s profilesWrites) UpdateWhere(ctx context.Context, where dql.Pred[ProfilesTable], p ProfilePartial, as ...dql.Update[ProfilesTable]) (int64, error) {
 	if err := p.Validate(); err != nil {
 		return 0, err
 	}
@@ -757,7 +772,10 @@ func (s profilesWrites) UpdateWhere(ctx context.Context, where dql.Pred[Profiles
 		args["birthday"] = v
 		set = true
 	}
-	if !set {
+	if err := dql.Assign(q, "profile.partial.flat", args, as); err != nil {
+		return 0, err
+	}
+	if !set && len(as) == 0 {
 		// Nothing to change.
 		return 0, nil
 	}
@@ -860,6 +878,11 @@ func (profilesUserIDColumn) Ne(v int64) dql.Pred[ProfilesTable] {
 	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.user_id", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to user_id on a write, in place of a value (§20.2).
+func (profilesUserIDColumn) Set(e dql.DefaultExpr) dql.Assignment[ProfilesTable] {
+	return dql.Set[ProfilesTable]("user_id", e)
+}
+
 // Asc orders by user_id, ascending.
 func (profilesUserIDColumn) Asc() dql.Order[ProfilesTable] {
 	return dql.Ordered[ProfilesTable]("order.asc", "col.profiles.user_id")
@@ -958,6 +981,11 @@ func (profilesBioColumn) StartsWith(v string) dql.Pred[ProfilesTable] {
 	return dql.Compare[ProfilesTable]("op.starts_with", "col.profiles.bio", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to bio on a write, in place of a value (§20.2).
+func (profilesBioColumn) Set(e dql.DefaultExpr) dql.Assignment[ProfilesTable] {
+	return dql.Set[ProfilesTable]("bio", e)
+}
+
 // Asc orders by bio, ascending.
 func (profilesBioColumn) Asc() dql.Order[ProfilesTable] {
 	return dql.Ordered[ProfilesTable]("order.asc", "col.profiles.bio")
@@ -1029,6 +1057,11 @@ func (profilesBirthdayColumn) Lt(v civil.Date) dql.Pred[ProfilesTable] {
 // Ne is operator ne on birthday (§9.4).
 func (profilesBirthdayColumn) Ne(v civil.Date) dql.Pred[ProfilesTable] {
 	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Now() or dql.Default() to birthday on a write, in place of a value (§20.2).
+func (profilesBirthdayColumn) Set(e dql.TimeExpr) dql.Assignment[ProfilesTable] {
+	return dql.Set[ProfilesTable]("birthday", e)
 }
 
 // Asc orders by birthday, ascending.

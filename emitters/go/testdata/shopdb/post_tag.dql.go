@@ -565,10 +565,10 @@ type PostTagsReadStore interface {
 // PostTagsStore reads and writes shop.app.post_tags (§26.3).
 type PostTagsStore interface {
 	PostTagsReadStore
-	Insert(ctx context.Context, d PostTagDraft) (PostTagFull, error)
-	InsertMany(ctx context.Context, ds []PostTagDraft) ([]PostTagFull, error)
-	InsertOrIgnore(ctx context.Context, d PostTagDraft) (opt.Opt[PostTagFull], error)
-	Upsert(ctx context.Context, d PostTagDraft) (PostTagFull, error)
+	Insert(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (PostTagFull, error)
+	InsertMany(ctx context.Context, ds []PostTagDraft, as ...dql.Assignment[PostTagsTable]) ([]PostTagFull, error)
+	InsertOrIgnore(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (opt.Opt[PostTagFull], error)
+	Upsert(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (PostTagFull, error)
 	Delete(ctx context.Context, k PostTagKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[PostTagsTable]) (int64, error)
 }
@@ -621,11 +621,15 @@ func (s postTagsReads) Exists(ctx context.Context) (bool, error) {
 }
 
 // Insert runs post_tag.insert (§20.1).
-func (s postTagsWrites) Insert(ctx context.Context, d PostTagDraft) (PostTagFull, error) {
+func (s postTagsWrites) Insert(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (PostTagFull, error) {
 	if err := d.Validate(); err != nil {
 		return PostTagFull{}, err
 	}
-	st, err := postTagInsert.Statement(fragments, dql.Args{"post_id": d.PostID, "tag_id": d.TagID})
+	args := dql.Args{"post_id": d.PostID, "tag_id": d.TagID}
+	if err := dql.Assign(postTagInsert, "post_tag.draft.flat", args, dql.Values(as)); err != nil {
+		return PostTagFull{}, err
+	}
+	st, err := postTagInsert.Statement(fragments, args)
 	if err != nil {
 		return PostTagFull{}, err
 	}
@@ -633,7 +637,7 @@ func (s postTagsWrites) Insert(ctx context.Context, d PostTagDraft) (PostTagFull
 }
 
 // InsertMany runs post_tag.insert for each draft, in one transaction (§20.1).
-func (s postTagsWrites) InsertMany(ctx context.Context, ds []PostTagDraft) ([]PostTagFull, error) {
+func (s postTagsWrites) InsertMany(ctx context.Context, ds []PostTagDraft, as ...dql.Assignment[PostTagsTable]) ([]PostTagFull, error) {
 	for _, d := range ds {
 		if err := d.Validate(); err != nil {
 			return nil, err
@@ -642,17 +646,24 @@ func (s postTagsWrites) InsertMany(ctx context.Context, ds []PostTagDraft) ([]Po
 	rows := make([]dql.Args, 0, len(ds))
 	for _, d := range ds {
 		args := dql.Args{"post_id": d.PostID, "tag_id": d.TagID}
+		if err := dql.Assign(postTagInsert, "post_tag.draft.flat", args, dql.Values(as)); err != nil {
+			return nil, err
+		}
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, postTagInsert, rows, DecodePostTagFull)
 }
 
 // InsertOrIgnore runs post_tag.insert_or_ignore.by_primary (§20.1).
-func (s postTagsWrites) InsertOrIgnore(ctx context.Context, d PostTagDraft) (opt.Opt[PostTagFull], error) {
+func (s postTagsWrites) InsertOrIgnore(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (opt.Opt[PostTagFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[PostTagFull](), err
 	}
-	st, err := postTagInsertOrIgnoreByPrimary.Statement(fragments, dql.Args{"post_id": d.PostID, "tag_id": d.TagID})
+	args := dql.Args{"post_id": d.PostID, "tag_id": d.TagID}
+	if err := dql.Assign(postTagInsertOrIgnoreByPrimary, "post_tag.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[PostTagFull](), err
+	}
+	st, err := postTagInsertOrIgnoreByPrimary.Statement(fragments, args)
 	if err != nil {
 		return opt.None[PostTagFull](), err
 	}
@@ -660,11 +671,15 @@ func (s postTagsWrites) InsertOrIgnore(ctx context.Context, d PostTagDraft) (opt
 }
 
 // Upsert runs post_tag.upsert.by_primary (§20.1).
-func (s postTagsWrites) Upsert(ctx context.Context, d PostTagDraft) (PostTagFull, error) {
+func (s postTagsWrites) Upsert(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (PostTagFull, error) {
 	if err := d.Validate(); err != nil {
 		return PostTagFull{}, err
 	}
-	st, err := postTagUpsertByPrimary.Statement(fragments, dql.Args{"post_id": d.PostID, "tag_id": d.TagID})
+	args := dql.Args{"post_id": d.PostID, "tag_id": d.TagID}
+	if err := dql.Assign(postTagUpsertByPrimary, "post_tag.draft.flat", args, dql.Values(as)); err != nil {
+		return PostTagFull{}, err
+	}
+	st, err := postTagUpsertByPrimary.Statement(fragments, args)
 	if err != nil {
 		return PostTagFull{}, err
 	}
@@ -763,6 +778,11 @@ func (postTagsPostIDColumn) Ne(v int64) dql.Pred[PostTagsTable] {
 	return dql.Compare[PostTagsTable]("op.ne", "col.post_tags.post_id", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to post_id on a write, in place of a value (§20.2).
+func (postTagsPostIDColumn) Set(e dql.DefaultExpr) dql.Assignment[PostTagsTable] {
+	return dql.Set[PostTagsTable]("post_id", e)
+}
+
 // Asc orders by post_id, ascending.
 func (postTagsPostIDColumn) Asc() dql.Order[PostTagsTable] {
 	return dql.Ordered[PostTagsTable]("order.asc", "col.post_tags.post_id")
@@ -824,6 +844,11 @@ func (postTagsTagIDColumn) Lt(v int64) dql.Pred[PostTagsTable] {
 // Ne is operator ne on tag_id (§9.4).
 func (postTagsTagIDColumn) Ne(v int64) dql.Pred[PostTagsTable] {
 	return dql.Compare[PostTagsTable]("op.ne", "col.post_tags.tag_id", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Default() to tag_id on a write, in place of a value (§20.2).
+func (postTagsTagIDColumn) Set(e dql.DefaultExpr) dql.Assignment[PostTagsTable] {
+	return dql.Set[PostTagsTable]("tag_id", e)
 }
 
 // Asc orders by tag_id, ascending.
