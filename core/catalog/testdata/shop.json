@@ -2085,7 +2085,27 @@
                 "published",
                 "archived"
               ],
-              "origin": "ENUM_ORIGIN_NATIVE"
+              "origin": "ENUM_ORIGIN_NATIVE",
+              "labelNames": [
+                {
+                  "stored": "draft",
+                  "words": [
+                    "draft"
+                  ]
+                },
+                {
+                  "stored": "published",
+                  "words": [
+                    "published"
+                  ]
+                },
+                {
+                  "stored": "archived",
+                  "words": [
+                    "archived"
+                  ]
+                }
+              ]
             }
           ],
           "domains": [

@@ -99,6 +99,11 @@ const (
 	// CodeDependencyCrossCatalog: a view depends on another catalog's object,
 	// and the dialect cannot reference across catalogs (§5.2).
 	CodeDependencyCrossCatalog = "dependency-cross-catalog"
+	// CodeEnumLabelUnnamed: an enum label with no words, from which no
+	// emitter can name a constant (§4.2, §8.4).
+	CodeEnumLabelUnnamed = "enum-label-unnamed"
+	// CodeEnumLabelCollision: labels of one enum have equal words (§4.3).
+	CodeEnumLabelCollision = "enum-label-collision"
 )
 
 // Assemble builds the bundle's catalog layer from the outputs of every

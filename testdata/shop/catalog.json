@@ -2483,6 +2483,26 @@
                   "@type": "type.dql.dev/dql.ext.postgres.v1.Owner",
                   "role": "dql_fixture_owner"
                 }
+              ],
+              "labelNames": [
+                {
+                  "stored": "draft",
+                  "words": [
+                    "draft"
+                  ]
+                },
+                {
+                  "stored": "published",
+                  "words": [
+                    "published"
+                  ]
+                },
+                {
+                  "stored": "archived",
+                  "words": [
+                    "archived"
+                  ]
+                }
               ]
             }
           ],
