@@ -2,6 +2,7 @@ package gen
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
@@ -118,7 +119,7 @@ func (g *generator) shapeHandles(f *file, byTable map[key]*entity) {
 		for _, fld := range s.GetFields() {
 			cols = append(cols, fmt.Sprintf("%q", e.colFragment(fld.GetColumn())))
 		}
-		table := e.t.GetName().GetStored()
+		table := e.id
 		entity := strings.Join(e.t.GetHostName().GetWords(), "_")
 		fields = append(fields, fmt.Sprintf("\t%s %s\n", typ, st))
 		values = append(values, fmt.Sprintf("\t%s: %s{\n\t\tName: %q,\n\t\tCatalog: %q,\n\t\tSelect: %q,\n\t\tFrom: %q,\n\t\tColumns: []string{%s},\n\t\tCount: %q,\n\t\tExists: %q,\n\t\tCountName: %q,\n\t\tExistsName: %q,\n\t\tDecode: Decode%s,\n\t},\n",
@@ -131,9 +132,25 @@ func (g *generator) shapeHandles(f *file, byTable map[key]*entity) {
 	f.printf("// Shapes are the read shapes Select reads (§18.2).\nvar Shapes = struct {\n%s}{\n%s}\n", strings.Join(fields, ""), strings.Join(values, ""))
 }
 
+// tableID is how fragment ids name table q: its stored name, behind its
+// namespace when that is not its catalog's default, and behind its catalog
+// when there are several (§18.4's col.users.email).
+func (g *generator) tableID(q *irv1.QualifiedName) string {
+	var id []string
+	cats := g.b.GetCatalogs()
+	if len(cats) > 1 {
+		id = append(id, q.GetCatalog())
+	}
+	i := slices.IndexFunc(cats, func(c *irv1.Catalog) bool { return c.GetName().GetStored() == q.GetCatalog() })
+	if i < 0 || q.GetNamespace() != cats[i].GetDefaultNamespace() {
+		id = append(id, q.GetNamespace())
+	}
+	return strings.Join(append(id, q.GetObject()), ".")
+}
+
 // colFragment is the fragment of e's column col.
 func (e *entity) colFragment(col string) string {
-	return "col." + e.t.GetName().GetStored() + "." + col
+	return "col." + e.id + "." + col
 }
 
 // tableHandle generates e's table type, a variable of it named after the
@@ -190,7 +207,7 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 		}
 	}
 	for _, r := range e.t.GetRelations() {
-		frag := "rel." + e.t.GetName().GetStored() + "." + r.GetName().GetStored()
+		frag := "rel." + e.id + "." + r.GetName().GetStored()
 		target := byTable[keyOf(r.GetTo().GetTable())]
 		// A relation to the table itself would need its own alias, which
 		// the fragment table does not give.
