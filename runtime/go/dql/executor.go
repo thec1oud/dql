@@ -44,13 +44,15 @@ type ConnConfig struct {
 }
 
 // Dialect is the generated description of the target dialect: its name,
-// the statements every new connection runs (§22.7), its error map (§23)
-// and how it reads replica positions (§22.5).
+// the statements every new connection runs (§22.7), its error map (§23),
+// how it reads replica positions (§22.5) and how many parameters one
+// statement may bind, or 0 for no limit (§25.2).
 type Dialect struct {
 	Name        string
 	Setup       []string
 	Errors      ErrorMap
 	Replication *Replication
+	MaxParams   int
 }
 
 // Option configures an Executor.
