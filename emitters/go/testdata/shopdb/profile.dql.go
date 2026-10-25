@@ -526,6 +526,15 @@ var (
 			dql.Use{Fragment: "upsert.profiles.profiles_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.profiles.bio"}}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.profiles.birthday"}}}}, Separator: ", "}}},
 		},
 	}
+	profileUpsertSetByPrimary = &dql.Query{
+		Name:    "profile.upsert_set.by_primary",
+		Catalog: "shop",
+		Kind:    "upsert_set",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.profiles.profiles_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Param("set.bio")}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Param("set.birthday")}}, dql.Use{Fragment: "set.profiles.user_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}}}}, Separator: ", "}}},
+		},
+	}
 	profilePatch = &dql.Query{
 		Name:      "profile.patch",
 		Catalog:   "shop",
@@ -581,6 +590,7 @@ type ProfilesStore interface {
 	InsertMany(ctx context.Context, ds []ProfileDraft, as ...dql.Assignment[ProfilesTable]) ([]ProfileFull, error)
 	InsertOrIgnore(ctx context.Context, d ProfileDraft, as ...dql.Assignment[ProfilesTable]) (opt.Opt[ProfileFull], error)
 	Upsert(ctx context.Context, d ProfileDraft, as ...dql.Assignment[ProfilesTable]) (ProfileFull, error)
+	UpsertSet(ctx context.Context, d ProfileDraft, p ProfilePartial, as ...dql.Update[ProfilesTable]) (ProfileFull, error)
 	Patch(ctx context.Context, k ProfileKey, p ProfilePartial, as ...dql.Update[ProfilesTable]) (ProfileFull, error)
 	UpdateWhere(ctx context.Context, where dql.Pred[ProfilesTable], p ProfilePartial, as ...dql.Update[ProfilesTable]) (int64, error)
 	Delete(ctx context.Context, k ProfileKey) error
@@ -718,6 +728,37 @@ func (s profilesWrites) Upsert(ctx context.Context, d ProfileDraft, as ...dql.As
 		return ProfileFull{}, err
 	}
 	st, err := profileUpsertByPrimary.Statement(fragments, args)
+	if err != nil {
+		return ProfileFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeProfileFull)
+}
+
+// UpsertSet runs profile.upsert_set.by_primary (§20.1).
+func (s profilesWrites) UpsertSet(ctx context.Context, d ProfileDraft, p ProfilePartial, as ...dql.Update[ProfilesTable]) (ProfileFull, error) {
+	if err := d.Validate(); err != nil {
+		return ProfileFull{}, err
+	}
+	if err := p.Validate(); err != nil {
+		return ProfileFull{}, err
+	}
+	args := dql.Args{"user_id": d.UserID}
+	if v, ok := d.Bio.Get(); ok {
+		args["bio"] = v
+	}
+	if v, ok := d.Birthday.Get(); ok {
+		args["birthday"] = v
+	}
+	if v, ok := p.Bio.Get(); ok {
+		args["set.bio"] = v
+	}
+	if v, ok := p.Birthday.Get(); ok {
+		args["set.birthday"] = v
+	}
+	if err := dql.AssignPrefixed(profileUpsertSetByPrimary, "profile.partial.flat", "set.", args, as); err != nil {
+		return ProfileFull{}, err
+	}
+	st, err := profileUpsertSetByPrimary.Statement(fragments, args)
 	if err != nil {
 		return ProfileFull{}, err
 	}
