@@ -36,12 +36,17 @@ type Statement struct {
 	// The core proved the statement returns at most one row, so One and
 	// Optional skip the extra-row check (§19).
 	AtMostOne bool
+	// How fresh a read outside a write transaction must be: the call's
+	// option, else the query's default; unset takes the executor's (§22.5).
+	Consistency Consistency
 }
 
 // connFor returns the connection a statement runs on: its transaction's,
-// the one ctx carries when h is the executor, or a pooled one that release
-// returns.
-func connFor(ctx context.Context, h Reader, s *Statement, writes bool) (e *Executor, c Conn, release func(), err error) {
+// the one ctx carries when h is the executor, or a pooled one, which a
+// write takes from the primary and a read as its consistency routes it
+// (§22.5). done ends the statement with its error: it releases a pooled
+// connection, after recording a write's position in the context's session.
+func connFor(ctx context.Context, h Reader, s *Statement, writes bool) (e *Executor, c Conn, done func(error), err error) {
 	e, f := h.bind()
 	if f == nil {
 		f = frameOf(ctx)
@@ -55,13 +60,25 @@ func connFor(ctx context.Context, h Reader, s *Statement, writes bool) (e *Execu
 			return e, nil, nil, ErrReadOnly
 		}
 		c, err = f.conn(ctx, src, s.Query)
-		return e, c, func() {}, err
+		return e, c, func(error) {}, err
+	}
+	if !writes {
+		c, err = e.route(ctx, src, s.Consistency, false, s.Query)
+		if err != nil {
+			return e, nil, nil, err
+		}
+		return e, c, func(error) { c.Release() }, nil
 	}
 	c, err = e.conn(ctx, src, false, s.Query)
 	if err != nil {
 		return e, nil, nil, err
 	}
-	return e, c, c.Release, nil
+	return e, c, func(err error) {
+		if err == nil {
+			e.recordWrite(ctx, SessionFrom(ctx), src, c)
+		}
+		c.Release()
+	}, nil
 }
 
 // Fetch runs s and returns its rows (§19's many).
@@ -70,12 +87,12 @@ func Fetch(ctx context.Context, h Reader, s Statement) ([]Row, error) {
 }
 
 // fetch reads at most limit rows, or every row for a negative limit.
-func fetch(ctx context.Context, h Reader, s *Statement, limit int) ([]Row, error) {
-	e, c, release, err := connFor(ctx, h, s, s.Writes)
+func fetch(ctx context.Context, h Reader, s *Statement, limit int) (_ []Row, err error) {
+	e, c, done, err := connFor(ctx, h, s, s.Writes)
 	if err != nil {
 		return nil, err
 	}
-	defer release()
+	defer func() { done(err) }()
 	src := e.catalogs[s.Catalog]
 	rows, err := c.Query(ctx, s.SQL, s.Args)
 	if err != nil {
@@ -128,12 +145,12 @@ func optional(ctx context.Context, h Reader, s *Statement) (Row, bool, error) {
 }
 
 // Exec runs s, which writes, and returns how many rows it affected.
-func Exec(ctx context.Context, h Writer, s Statement) (int64, error) {
-	e, c, release, err := connFor(ctx, h, &s, true)
+func Exec(ctx context.Context, h Writer, s Statement) (n int64, err error) {
+	e, c, done, err := connFor(ctx, h, &s, true)
 	if err != nil {
 		return 0, err
 	}
-	defer release()
-	n, err := c.Exec(ctx, s.SQL, s.Args)
+	defer func() { done(err) }()
+	n, err = c.Exec(ctx, s.SQL, s.Args)
 	return n, e.translate(err, s.Catalog, s.Query, e.catalogs[s.Catalog])
 }
