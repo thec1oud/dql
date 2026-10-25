@@ -32,6 +32,7 @@ type txConfig struct {
 	propagation Propagation
 	isolation   Isolation
 	retry       *RetryPolicy
+	consistency Consistency
 }
 
 // WithPropagation sets how the transaction relates to an enclosing one.
@@ -39,6 +40,10 @@ func WithPropagation(p Propagation) TxOption { return func(c *txConfig) { c.prop
 
 // WithIsolation sets the isolation level of a transaction it begins.
 func WithIsolation(i Isolation) TxOption { return func(c *txConfig) { c.isolation = i } }
+
+// WithConsistency sets how fresh a read transaction it begins must be,
+// which decides whether it may run on a replica (§22.5).
+func WithConsistency(c Consistency) TxOption { return func(t *txConfig) { t.consistency = c } }
 
 // WithRetry overrides the executor's retry policy for one closure (§22.4).
 func WithRetry(p RetryPolicy) TxOption { return func(c *txConfig) { c.retry = &p } }
@@ -49,6 +54,9 @@ func WithRetry(p RetryPolicy) TxOption { return func(c *txConfig) { c.retry = &p
 type root struct {
 	exec        *Executor
 	opts        TxOptions
+	consistency Consistency
+	// Records the positions of the root's commits.
+	session     *Session
 	conns       map[*sourcePool]Conn
 	order       []*sourcePool
 	independent int // how deep in independent transactions
@@ -85,7 +93,12 @@ func (f *frame) conn(ctx context.Context, s *sourcePool, q string) (Conn, error)
 	c := r.conns[s]
 	if c == nil {
 		var err error
-		if c, err = r.exec.conn(ctx, s, r.independent > 0, q); err != nil {
+		if r.opts.ReadOnly {
+			c, err = r.exec.route(ctx, s, r.consistency, r.independent > 0, q)
+		} else {
+			c, err = r.exec.conn(ctx, s, r.independent > 0, q)
+		}
+		if err != nil {
 			return nil, err
 		}
 		if err := c.Begin(ctx, r.opts); err != nil {
@@ -124,7 +137,9 @@ func (r *root) end(ctx context.Context, commit bool) error {
 		c := r.conns[s]
 		var err error
 		if commit && first == nil {
-			err = c.Commit(ctx)
+			if err = c.Commit(ctx); err == nil && !r.opts.ReadOnly {
+				r.exec.recordWrite(ctx, r.session, s, c)
+			}
 		} else {
 			err = c.Rollback(ctx)
 		}
@@ -256,10 +271,10 @@ func (e *Executor) begin(ctx context.Context, readOnly bool, opts []TxOption) (*
 		if depth > e.independentDepth {
 			return nil, false, ErrIndependentDepth
 		}
-		return e.newRoot(readOnly, c, depth), true, nil
+		return e.newRoot(ctx, readOnly, c, depth), true, nil
 	}
 	if enclosing == nil {
-		return e.newRoot(readOnly, c, 0), true, nil
+		return e.newRoot(ctx, readOnly, c, 0), true, nil
 	}
 	if !readOnly && enclosing.root.opts.ReadOnly {
 		return nil, false, ErrReadOnly
@@ -267,9 +282,9 @@ func (e *Executor) begin(ctx context.Context, readOnly bool, opts []TxOption) (*
 	return enclosing, false, nil
 }
 
-func (e *Executor) newRoot(readOnly bool, c txConfig, independent int) *frame {
+func (e *Executor) newRoot(ctx context.Context, readOnly bool, c txConfig, independent int) *frame {
 	return &frame{root: &root{exec: e, opts: TxOptions{ReadOnly: readOnly, Isolation: c.isolation},
-		conns: map[*sourcePool]Conn{}, independent: independent}}
+		consistency: c.consistency, session: SessionFrom(ctx), conns: map[*sourcePool]Conn{}, independent: independent}}
 }
 
 // savepoints numbers savepoint names; a name need only be unique within
@@ -318,7 +333,7 @@ func (e *Executor) run(ctx context.Context, readOnly bool, fn func(context.Conte
 			}
 			return err
 		}
-		f = e.newRoot(readOnly, c, f.root.independent)
+		f = e.newRoot(ctx, readOnly, c, f.root.independent)
 	}
 }
 
