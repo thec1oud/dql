@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"log/slog"
 	"slices"
 	"strconv"
 	"time"
@@ -707,3 +708,183 @@ func (n PostPartialNests) validate() dql.ValidationErrors {
 	}
 	return v
 }
+
+// DecodePostFull decodes r, a row of post.full.flat. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePostFull(r dql.Row) (PostFull, error) {
+	d := dql.NewDecoder("post.full.flat", r, 9)
+	var out PostFull
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	out.AuthorID = dql.Field(d, 1, "author_id", "", dql.Int[int64])
+	out.EditorID = dql.Nullable(d, 2, "editor_id", dql.Int[int64])
+	out.Title = dql.Field(d, 3, "title", "", dql.String)
+	out.Slug = dql.Nullable(d, 4, "slug", dql.String)
+	out.Status = dql.Field(d, 5, "status", "", dql.Enum(PostStatus.Valid))
+	out.Price = dql.Nullable(d, 6, "price", dqlDecodeMoneyAmount)
+	out.Labels = dql.Nullable(d, 7, "labels", dql.Array(dql.NullableElem(dql.String)))
+	out.PublishedAt = dql.Nullable(d, 8, "published_at", dql.As[time.Time])
+	return out, d.Err()
+}
+
+// DecodePostFullNested decodes r, a row of post.full.nested. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePostFullNested(r dql.Row) (PostFullNested, error) {
+	d := dql.NewDecoder("post.full.nested", r, 13)
+	var out PostFullNested
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	out.AuthorID = dql.Field(d, 1, "author_id", "", dql.Int[int64])
+	out.EditorID = dql.Nullable(d, 2, "editor_id", dql.Int[int64])
+	out.Title = dql.Field(d, 3, "title", "", dql.String)
+	out.Slug = dql.Nullable(d, 4, "slug", dql.String)
+	out.Status = dql.Field(d, 5, "status", "", dql.Enum(PostStatus.Valid))
+	out.Price = dql.Nullable(d, 6, "price", dqlDecodeMoneyAmount)
+	out.Labels = dql.Nullable(d, 7, "labels", dql.Array(dql.NullableElem(dql.String)))
+	out.PublishedAt = dql.Nullable(d, 8, "published_at", dql.As[time.Time])
+	out.Author = dql.Field(d, 9, "author", "", dql.Nest(DecodeUserFull))
+	out.Editor = dql.Nullable(d, 10, "editor", dql.Nest(DecodeUserFull))
+	out.PostTags = dql.Many(d, 11, "post_tags", DecodePostTagFull)
+	out.Tags = dql.Many(d, 12, "tags", DecodeTagFull)
+	return out, d.Err()
+}
+
+// DecodePostFullNests decodes r, a row of post.full.nests. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePostFullNests(r dql.Row) (PostFullNests, error) {
+	d := dql.NewDecoder("post.full.nests", r, 4)
+	var out PostFullNests
+	out.Author = dql.Field(d, 0, "author", "", dql.Nest(DecodeUserFull))
+	out.Editor = dql.Nullable(d, 1, "editor", dql.Nest(DecodeUserFull))
+	out.PostTags = dql.Many(d, 2, "post_tags", DecodePostTagFull)
+	out.Tags = dql.Many(d, 3, "tags", DecodeTagFull)
+	return out, d.Err()
+}
+
+// DecodePostKey decodes r, a row of post.key. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePostKey(r dql.Row) (PostKey, error) {
+	d := dql.NewDecoder("post.key", r, 1)
+	var out PostKey
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	return out, d.Err()
+}
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n PostDraftNested) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("ID", n.ID),
+		slog.Any("AuthorID", n.AuthorID),
+		slog.Any("EditorID", n.EditorID),
+		slog.Any("Title", n.Title),
+		slog.Any("Status", n.Status),
+		slog.Any("Price", n.Price),
+		slog.Any("Labels", n.Labels),
+		slog.Any("PublishedAt", n.PublishedAt),
+		slog.Any("Author", n.Author),
+		slog.Any("Editor", n.Editor),
+		slog.Any("PostTags", n.PostTags),
+		slog.Any("Tags", n.Tags),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n PostDraftNested) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n PostDraftNested) GoString() string { return n.String() }
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n PostDraftNests) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Author", n.Author),
+		slog.Any("Editor", n.Editor),
+		slog.Any("PostTags", n.PostTags),
+		slog.Any("Tags", n.Tags),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n PostDraftNests) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n PostDraftNests) GoString() string { return n.String() }
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n PostPartialNested) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("AuthorID", n.AuthorID),
+		slog.Any("EditorID", n.EditorID),
+		slog.Any("Title", n.Title),
+		slog.Any("Status", n.Status),
+		slog.Any("Price", n.Price),
+		slog.Any("Labels", n.Labels),
+		slog.Any("PublishedAt", n.PublishedAt),
+		slog.Any("Author", n.Author),
+		slog.Any("Editor", n.Editor),
+		slog.Any("PostTags", n.PostTags),
+		slog.Any("Tags", n.Tags),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n PostPartialNested) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n PostPartialNested) GoString() string { return n.String() }
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n PostPartialNests) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Author", n.Author),
+		slog.Any("Editor", n.Editor),
+		slog.Any("PostTags", n.PostTags),
+		slog.Any("Tags", n.Tags),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n PostPartialNests) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n PostPartialNests) GoString() string { return n.String() }
+
+// LogValue logs c with its sensitive fields as [REDACTED] (§7.5).
+func (c PostAuthorChange) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Change", c.change),
+		slog.Any("Key", c.key),
+		slog.Any("Draft", c.draft),
+		slog.Any("Partial", c.partial),
+	)
+}
+
+// String formats c as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (c PostAuthorChange) String() string { return c.LogValue().String() }
+
+// GoString formats c as String does, for %#v.
+func (c PostAuthorChange) GoString() string { return c.String() }
+
+// LogValue logs c with its sensitive fields as [REDACTED] (§7.5).
+func (c PostEditorChange) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Change", c.change),
+		slog.Any("Key", c.key),
+		slog.Any("Draft", c.draft),
+		slog.Any("Partial", c.partial),
+	)
+}
+
+// String formats c as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (c PostEditorChange) String() string { return c.LogValue().String() }
+
+// GoString formats c as String does, for %#v.
+func (c PostEditorChange) GoString() string { return c.String() }

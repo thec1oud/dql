@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"log/slog"
 	"slices"
 
 	"github.com/thec1oud/dql/runtime/go/civil"
@@ -337,3 +338,124 @@ func (n ProfilePartialNests) validate() dql.ValidationErrors {
 	}
 	return v
 }
+
+// DecodeProfileFull decodes r, a row of profile.full.flat. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeProfileFull(r dql.Row) (ProfileFull, error) {
+	d := dql.NewDecoder("profile.full.flat", r, 3)
+	var out ProfileFull
+	out.UserID = dql.Field(d, 0, "user_id", "", dql.Int[int64])
+	out.Bio = dql.Nullable(d, 1, "bio", dql.String)
+	out.Birthday = dql.Nullable(d, 2, "birthday", dql.As[civil.Date])
+	return out, d.Err()
+}
+
+// DecodeProfileFullNested decodes r, a row of profile.full.nested. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeProfileFullNested(r dql.Row) (ProfileFullNested, error) {
+	d := dql.NewDecoder("profile.full.nested", r, 4)
+	var out ProfileFullNested
+	out.UserID = dql.Field(d, 0, "user_id", "", dql.Int[int64])
+	out.Bio = dql.Nullable(d, 1, "bio", dql.String)
+	out.Birthday = dql.Nullable(d, 2, "birthday", dql.As[civil.Date])
+	out.User = dql.Field(d, 3, "user", "", dql.Nest(DecodeUserFull))
+	return out, d.Err()
+}
+
+// DecodeProfileFullNests decodes r, a row of profile.full.nests. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeProfileFullNests(r dql.Row) (ProfileFullNests, error) {
+	d := dql.NewDecoder("profile.full.nests", r, 1)
+	var out ProfileFullNests
+	out.User = dql.Field(d, 0, "user", "", dql.Nest(DecodeUserFull))
+	return out, d.Err()
+}
+
+// DecodeProfileKey decodes r, a row of profile.key. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeProfileKey(r dql.Row) (ProfileKey, error) {
+	d := dql.NewDecoder("profile.key", r, 1)
+	var out ProfileKey
+	out.UserID = dql.Field(d, 0, "user_id", "", dql.Int[int64])
+	return out, d.Err()
+}
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n ProfileDraftNested) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("UserID", n.UserID),
+		slog.Any("Bio", n.Bio),
+		slog.Any("Birthday", n.Birthday),
+		slog.Any("User", n.User),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n ProfileDraftNested) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n ProfileDraftNested) GoString() string { return n.String() }
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n ProfileDraftNests) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("User", n.User),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n ProfileDraftNests) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n ProfileDraftNests) GoString() string { return n.String() }
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n ProfilePartialNested) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Bio", n.Bio),
+		slog.Any("Birthday", n.Birthday),
+		slog.Any("User", n.User),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n ProfilePartialNested) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n ProfilePartialNested) GoString() string { return n.String() }
+
+// LogValue logs n with its sensitive fields as [REDACTED] (§7.5).
+func (n ProfilePartialNests) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("User", n.User),
+	)
+}
+
+// String formats n as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (n ProfilePartialNests) String() string { return n.LogValue().String() }
+
+// GoString formats n as String does, for %#v.
+func (n ProfilePartialNests) GoString() string { return n.String() }
+
+// LogValue logs c with its sensitive fields as [REDACTED] (§7.5).
+func (c ProfileUserChange) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Change", c.change),
+		slog.Any("Partial", c.partial),
+	)
+}
+
+// String formats c as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (c ProfileUserChange) String() string { return c.LogValue().String() }
+
+// GoString formats c as String does, for %#v.
+func (c ProfileUserChange) GoString() string { return c.String() }

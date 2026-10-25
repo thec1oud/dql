@@ -25,6 +25,7 @@ func displayName(q *irv1.QualifiedName) string {
 // with a hyphen, which no entity file has.
 func (g *generator) types() {
 	f := g.newFile("dql-types")
+	g.typesFile = f
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, e := range ns.GetEnums() {
 			g.enum(f, q(e.GetName().GetStored()), e)

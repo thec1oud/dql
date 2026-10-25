@@ -420,3 +420,49 @@ func (n PostTagPartialNests) validate() dql.ValidationErrors {
 	}
 	return v
 }
+
+// DecodePostTagFull decodes r, a row of post_tag.full.flat. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePostTagFull(r dql.Row) (PostTagFull, error) {
+	d := dql.NewDecoder("post_tag.full.flat", r, 2)
+	var out PostTagFull
+	out.PostID = dql.Field(d, 0, "post_id", "", dql.Int[int64])
+	out.TagID = dql.Field(d, 1, "tag_id", "", dql.Int[int64])
+	return out, d.Err()
+}
+
+// DecodePostTagFullNested decodes r, a row of post_tag.full.nested. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePostTagFullNested(r dql.Row) (PostTagFullNested, error) {
+	d := dql.NewDecoder("post_tag.full.nested", r, 4)
+	var out PostTagFullNested
+	out.PostID = dql.Field(d, 0, "post_id", "", dql.Int[int64])
+	out.TagID = dql.Field(d, 1, "tag_id", "", dql.Int[int64])
+	out.Post = dql.Field(d, 2, "post", "", dql.Nest(DecodePostFull))
+	out.Tag = dql.Field(d, 3, "tag", "", dql.Nest(DecodeTagFull))
+	return out, d.Err()
+}
+
+// DecodePostTagFullNests decodes r, a row of post_tag.full.nests. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePostTagFullNests(r dql.Row) (PostTagFullNests, error) {
+	d := dql.NewDecoder("post_tag.full.nests", r, 2)
+	var out PostTagFullNests
+	out.Post = dql.Field(d, 0, "post", "", dql.Nest(DecodePostFull))
+	out.Tag = dql.Field(d, 1, "tag", "", dql.Nest(DecodeTagFull))
+	return out, d.Err()
+}
+
+// DecodePostTagKey decodes r, a row of post_tag.key. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodePostTagKey(r dql.Row) (PostTagKey, error) {
+	d := dql.NewDecoder("post_tag.key", r, 2)
+	var out PostTagKey
+	out.PostID = dql.Field(d, 0, "post_id", "", dql.Int[int64])
+	out.TagID = dql.Field(d, 1, "tag_id", "", dql.Int[int64])
+	return out, d.Err()
+}

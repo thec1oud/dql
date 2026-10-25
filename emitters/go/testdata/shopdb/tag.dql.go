@@ -352,3 +352,48 @@ func (n TagPartialNests) validate() dql.ValidationErrors {
 	}
 	return v
 }
+
+// DecodeTagFull decodes r, a row of tag.full.flat. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeTagFull(r dql.Row) (TagFull, error) {
+	d := dql.NewDecoder("tag.full.flat", r, 2)
+	var out TagFull
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	out.Name = dql.Field(d, 1, "name", "", dqlDecodeSlugText)
+	return out, d.Err()
+}
+
+// DecodeTagFullNested decodes r, a row of tag.full.nested. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeTagFullNested(r dql.Row) (TagFullNested, error) {
+	d := dql.NewDecoder("tag.full.nested", r, 4)
+	var out TagFullNested
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	out.Name = dql.Field(d, 1, "name", "", dqlDecodeSlugText)
+	out.PostTags = dql.Many(d, 2, "post_tags", DecodePostTagFull)
+	out.Posts = dql.Many(d, 3, "posts", DecodePostFull)
+	return out, d.Err()
+}
+
+// DecodeTagFullNests decodes r, a row of tag.full.nests. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeTagFullNests(r dql.Row) (TagFullNests, error) {
+	d := dql.NewDecoder("tag.full.nests", r, 2)
+	var out TagFullNests
+	out.PostTags = dql.Many(d, 0, "post_tags", DecodePostTagFull)
+	out.Posts = dql.Many(d, 1, "posts", DecodePostFull)
+	return out, d.Err()
+}
+
+// DecodeTagKey decodes r, a row of tag.key. The row holds the shape's
+// fields in order, then its nests. A value that breaks what a field declares
+// or asserts is a *dql.DecodeError, never a zero value (§13).
+func DecodeTagKey(r dql.Row) (TagKey, error) {
+	d := dql.NewDecoder("tag.key", r, 1)
+	var out TagKey
+	out.ID = dql.Field(d, 0, "id", "", dql.Int[int64])
+	return out, d.Err()
+}

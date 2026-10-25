@@ -70,3 +70,25 @@ type MoneyAmount struct {
 	Amount   *dec.Decimal
 	Currency *string
 }
+
+// dqlDecodeMoneyAmount decodes a value of composite type shop.app.money_amount:
+// a dql.Row of its attributes in order (§13).
+func dqlDecodeMoneyAmount(v any) (MoneyAmount, error) {
+	d := dql.NewDecoder("", v, 2)
+	var out MoneyAmount
+	out.Amount = dql.Nullable(d, 0, "amount", dql.As[dec.Decimal])
+	out.Currency = dql.Nullable(d, 1, "currency", dql.String)
+	return out, d.Err()
+}
+
+// dqlDecodeSlugText decodes a value of domain shop.app.slug_text (§13).
+func dqlDecodeSlugText(v any) (SlugText, error) {
+	x, err := dql.String(v)
+	return SlugText(x), err
+}
+
+// dqlDecodeEmailAddress decodes a value of domain shop.app.email_address (§13).
+func dqlDecodeEmailAddress(v any) (EmailAddress, error) {
+	x, err := dql.String(v)
+	return EmailAddress(x), err
+}
