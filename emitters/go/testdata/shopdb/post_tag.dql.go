@@ -567,6 +567,7 @@ type PostTagsStore interface {
 	PostTagsReadStore
 	Insert(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (PostTagFull, error)
 	InsertMany(ctx context.Context, ds []PostTagDraft, as ...dql.Assignment[PostTagsTable]) ([]PostTagFull, error)
+	InsertNested(ctx context.Context, d PostTagDraftNested, as ...dql.Assignment[PostTagsTable]) (PostTagFullNested, error)
 	InsertOrIgnore(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (opt.Opt[PostTagFull], error)
 	Upsert(ctx context.Context, d PostTagDraft, as ...dql.Assignment[PostTagsTable]) (PostTagFull, error)
 	Delete(ctx context.Context, k PostTagKey) error
@@ -652,6 +653,81 @@ func (s postTagsWrites) InsertMany(ctx context.Context, ds []PostTagDraft, as ..
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, postTagInsert, rows, DecodePostTagFull)
+}
+
+// InsertNested runs post_tag.insert with the rows d nests, in one transaction: owning creates first,
+// then the row, then its dependents and links; it returns them read back (§20.5).
+func (s postTagsWrites) InsertNested(ctx context.Context, d PostTagDraftNested, as ...dql.Assignment[PostTagsTable]) (PostTagFullNested, error) {
+	if err := d.Validate(); err != nil {
+		return PostTagFullNested{}, err
+	}
+	var out PostTagFullNested
+	err := dql.Atomic(ctx, s.w, func(ctx context.Context, w dql.Writer) error {
+		out = PostTagFullNested{}
+		postTagsStore := postTagsWrites{postTagsReads{w}, w}
+		postsStore := postsWrites{postsReads{w}, w}
+		tagsStore := tagsWrites{tagsReads{w}, w}
+		draft := PostTagDraft{}
+		var createdPost opt.Opt[PostFull]
+		if v, ok := d.PostID.Get(); ok {
+			draft.PostID = v
+		}
+		if ref, ok := d.Post.Get(); ok {
+			switch ref.change {
+			case dql.ChangeCreate:
+				row, err := postsStore.Insert(ctx, ref.draft)
+				if err != nil {
+					return err
+				}
+				createdPost = opt.Some(row)
+				draft.PostID = row.ID
+			case dql.ChangeLink:
+				draft.PostID = ref.key.ID
+			}
+		}
+		var createdTag opt.Opt[TagFull]
+		if v, ok := d.TagID.Get(); ok {
+			draft.TagID = v
+		}
+		if ref, ok := d.Tag.Get(); ok {
+			switch ref.change {
+			case dql.ChangeCreate:
+				row, err := tagsStore.Insert(ctx, ref.draft)
+				if err != nil {
+					return err
+				}
+				createdTag = opt.Some(row)
+				draft.TagID = row.ID
+			case dql.ChangeLink:
+				draft.TagID = ref.key.ID
+			}
+		}
+		row, err := postTagsStore.Insert(ctx, draft, as...)
+		if err != nil {
+			return err
+		}
+		out.PostTagFull = row
+		{
+			related, ok := createdPost.Get()
+			if !ok {
+				if related, err = postsStore.Get(ctx, PostKey{ID: row.PostID}); err != nil {
+					return err
+				}
+			}
+			out.Post = related
+		}
+		{
+			related, ok := createdTag.Get()
+			if !ok {
+				if related, err = tagsStore.Get(ctx, TagKey{ID: row.TagID}); err != nil {
+					return err
+				}
+			}
+			out.Tag = related
+		}
+		return nil
+	})
+	return out, err
 }
 
 // InsertOrIgnore runs post_tag.insert_or_ignore.by_primary (§20.1).

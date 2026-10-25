@@ -221,6 +221,11 @@ func (%[1]s %[2]s) Context(ctx %[3]s.Context) %[3]s.Context { return %[1]s.tx.Co
 // storeIface is the interface type of e's store in a handle of v.
 func (g *generator) storeIface(e *entity, v *variant, write bool) string {
 	write = write && e.writes()
+	if write && v.scope != nil && e.scope == nil {
+		if iface, _, ok := g.scopedStore(e, v.scope); ok {
+			return iface
+		}
+	}
 	switch {
 	case v.unscoped && e.scope != nil && write:
 		return e.unscopedStore()
@@ -237,6 +242,11 @@ func (g *generator) storeIface(e *entity, v *variant, write bool) string {
 func (g *generator) storeValue(e *entity, v *variant, h string, write bool) string {
 	write = write && e.writes()
 	lower := e.lower()
+	if write && v.scope != nil && e.scope == nil {
+		if _, impl, ok := g.scopedStore(e, v.scope); ok {
+			return impl + "{" + lower + "Writes{" + lower + "Reads{" + h + "}, " + h + "}, s}"
+		}
+	}
 	if v.unscoped && e.scope != nil {
 		if write {
 			return lower + "Unscoped{" + lower + "UnscopedReads{" + h + "}, " + h + "}"
