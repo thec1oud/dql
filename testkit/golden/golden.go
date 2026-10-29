@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 )
 
 // UpdateEnv is the environment variable that rewrites golden files.
@@ -22,9 +23,10 @@ type TB interface {
 	Fatalf(format string, args ...any)
 }
 
-// Assert fails t unless got equals the contents of path. With UpdateEnv set to
-// 1 it writes got to path instead.
-func Assert(t TB, path string, got []byte) {
+// Assert fails t unless got equals the contents of path once every match of
+// masks is blanked in both. With UpdateEnv set to 1 it writes got, unmasked,
+// to path instead.
+func Assert(t TB, path string, got []byte, masks ...*regexp.Regexp) {
 	t.Helper()
 	if os.Getenv(UpdateEnv) == "1" {
 		if err := write(path, got); err != nil {
@@ -41,9 +43,21 @@ func Assert(t TB, path string, got []byte) {
 		t.Fatalf("golden: %v", err)
 		return
 	}
+	got, want = Mask(got, masks...), Mask(want, masks...)
 	if !bytes.Equal(got, want) {
 		t.Errorf("golden: %s differs at %s; run with %s=1 to update it", path, firstDifference(got, want), UpdateEnv)
 	}
+}
+
+// Masked replaces what a mask matches.
+const Masked = "<masked>"
+
+// Mask returns b with every match of masks replaced by Masked.
+func Mask(b []byte, masks ...*regexp.Regexp) []byte {
+	for _, m := range masks {
+		b = m.ReplaceAllLiteral(b, []byte(Masked))
+	}
+	return b
 }
 
 func write(path string, b []byte) error {

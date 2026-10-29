@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/thec1oud/dql/sources/pglive/internal/introspect"
@@ -16,6 +17,9 @@ import (
 // objects shop lacks, and examples shop plus the objects of other record
 // examples (testdata/examples.sql).
 var shop, fixture, examples *introspect.Snapshot
+
+// serverText is the text of the goldens the server writes differently.
+var serverText []*regexp.Regexp
 
 var shopSchema = filepath.Join("..", "..", "..", "..", "testdata", "shop", "schema.sql")
 
@@ -44,6 +48,7 @@ func run(m *testing.M) int {
 		}
 		if err == nil {
 			*d.snap, err = introspect.Read(ctx, db.Conn, d.namespaces)
+			serverText = db.ServerText
 			db.Drop(ctx)
 		}
 	}

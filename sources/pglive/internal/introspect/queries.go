@@ -36,14 +36,15 @@ func typeRef(oid, typmod, dims string) string {
 func collationFields(co, cn string) string {
 	return fmt.Sprintf(`'schema', %[2]s.nspname, 'name', %[1]s.collname, 'provider', %[1]s.collprovider,
     'deterministic', %[1]s.collisdeterministic, 'collate', %[1]s.collcollate, 'ctype', %[1]s.collctype,
-    'icuLocale', `+icuLocale(co, "coll", "collprovider")+`, 'icuRules', %[1]s.collicurules`, co, cn)
+    'icuLocale', `+icuLocale(co, "coll", "collprovider")+`, 'icuRules', to_jsonb(%[1]s) ->> 'collicurules'`, co, cn)
 }
 
 // icuLocale renders the ICU locale of pg_database or pg_collation row r, whose
 // columns start with prefix and whose provider is in column provider. Postgres
 // 17 renamed <prefix>iculocale to <prefix>locale and uses it for the builtin
 // provider too, so the column is read by name from the row as JSON, which
-// works on either side of the rename, and only for the ICU provider.
+// works on either side of the rename, and only for the ICU provider. The ICU
+// rules columns, new in Postgres 16, are read from the row the same way.
 func icuLocale(r, prefix, provider string) string {
 	return fmt.Sprintf(`CASE WHEN %[1]s.%[3]s = 'i' THEN COALESCE(
       to_jsonb(%[1]s) ->> '%[2]slocale', to_jsonb(%[1]s) ->> '%[2]siculocale') END`, r, prefix, provider)
@@ -94,7 +95,7 @@ func tablespace(oid string) string {
 
 var databaseSQL = `SELECT json_build_object(
   'encoding', pg_encoding_to_char(d.encoding), 'localeProvider', d.datlocprovider,
-  'collate', d.datcollate, 'ctype', d.datctype, 'icuLocale', ` + icuLocale("d", "dat", "datlocprovider") + `, 'icuRules', d.daticurules)
+  'collate', d.datcollate, 'ctype', d.datctype, 'icuLocale', ` + icuLocale("d", "dat", "datlocprovider") + `, 'icuRules', to_jsonb(d) ->> 'daticurules')
 FROM pg_database d WHERE d.datname = current_database()`
 
 const extensionsSQL = `SELECT json_build_object('name', x.extname, 'version', x.extversion, 'schema', n.nspname)
