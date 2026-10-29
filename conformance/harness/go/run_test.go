@@ -12,7 +12,7 @@ import (
 
 // Each way a step can go wrong is reported, and nothing else is.
 func TestRunProblems(t *testing.T) {
-	db, tables := open(t, "shop")
+	db, s := open(t, "shop")
 	ctx := context.Background()
 	setup := `
 - op: tenants.insert
@@ -54,12 +54,20 @@ func TestRunProblems(t *testing.T) {
 			[]string{"displayname is null", "email: want b, got a@acme.com", "no saved row nope", "no field nope"}},
 		{"- op: posts.insert_many\n" + scope + "  input: [{ author_id: $ann.id, title: x }, { author_id: $ann.id, title: y }]\n  expect: { rows: [{ title: x }, { title: z }] }\n", []string{"row 1 title: want z, got y"}},
 		{"- op: posts.insert_many\n" + scope + "  input: [{ author_id: $ann.id, title: x }]\n  expect: { rows: [] }\n", []string{"want 0 rows, got 1"}},
+		{"- op: posts.insert_nested\n" + scope + "  input: { title: x, author: x }\n", []string{"input: Author: a UserRef is an object of one of create, link"}},
+		{"- op: posts.insert_nested\n" + scope + "  input: { title: x, author: { unlink: {} } }\n", []string{"input: Author: a UserRef cannot unlink"}},
+		{"- op: posts.insert_nested\n" + scope + "  input: { title: x, author: { link: { id: x } } }\n", []string{"input: Author: link: "}},
+		{"- op: posts.insert_nested\n" + scope + "  input: { title: x, tags: x }\n", []string{"input: Tags: want a list"}},
+		{"- op: posts.insert_nested\n" + scope + "  input: { title: x, tags: [x] }\n", []string{"input: Tags: 0: a TagLink is an object"}},
+		{"- op: posts.insert_nested\n" + scope + "  input: x\n", []string{"input: want an object for PostDraftNested"}},
+		{"- op: users.insert_nested\n" + scope + "  input: { email: b@acme.com, password_hash: x }\n  expect: { row: { tenant: { name: x }, profile: { bio: x }, posts_to_author: [{ title: x }] } }\n",
+			[]string{"poststoauthor: want 1 rows, got 0", "profile.want row map[bio:x], got <nil>", "tenant.name: want x, got acme"}},
 	} {
 		var steps []Step
 		if err := yaml.Unmarshal([]byte(setup+c.step), &steps); err != nil {
 			t.Fatal(err)
 		}
-		got := Run(ctx, Scenario{Name: "s", Steps: steps}, db, tables)
+		got := Run(ctx, Scenario{Name: "s", Steps: steps}, db, s)
 		if len(got) != len(c.want) {
 			t.Errorf("%s: got %q, want %q", c.step, got, c.want)
 			continue
@@ -72,12 +80,12 @@ func TestRunProblems(t *testing.T) {
 	}
 
 	// Filtered writes need the store's table.
-	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "tenants.delete_where", Where: "all"}}}, db, nil); len(got) != 1 || !strings.Contains(got[0], "no table tenants") {
+	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "tenants.delete_where", Where: "all"}}}, db, Schema{}); len(got) != 1 || !strings.Contains(got[0], "no table tenants") {
 		t.Errorf("no table: %q", got)
 	}
 
 	// A handle without WithScope has no scoped stores.
-	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "users.count", Scope: map[string]any{}}}}, struct{}{}, nil); len(got) != 1 || !strings.Contains(got[0], "the handle has no WithScope") {
+	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "users.count", Scope: map[string]any{}}}}, struct{}{}, Schema{}); len(got) != 1 || !strings.Contains(got[0], "the handle has no WithScope") {
 		t.Errorf("no WithScope: %q", got)
 	}
 }
