@@ -1,0 +1,29 @@
+scenario: scopes
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: tenants.insert
+    input: { name: globex }
+    save: globex
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  # Another tenant's handle sees none of acme's rows.
+  - op: users.get
+    scope: { tenant_id: $globex.id }
+    key: { id: $ann.id, version: 1 }
+    expect:
+      error: { class: NotFound }
+  - op: users.count
+    scope: { tenant_id: $globex.id }
+    expect:
+      value: 0
+  # The same email is free in another tenant.
+  - op: users.insert
+    scope: { tenant_id: $globex.id }
+    input: { email: a@acme.com, password_hash: x }
+    expect:
+      row: { tenant_id: $globex.id }

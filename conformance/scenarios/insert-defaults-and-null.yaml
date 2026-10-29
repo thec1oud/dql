@@ -1,0 +1,16 @@
+scenario: insert-defaults-and-null
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x, display_name: null }
+    expect:
+      row: { display_name: null, version: 1, created_at: present, tenant_id: $acme.id }
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: y }
+    expect:
+      error: { class: UniqueViolation, constraint: users_tenant_email_key }
