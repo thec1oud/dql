@@ -38,7 +38,7 @@ func TestShopGolden(t *testing.T) {
 	if len(ds) != 0 {
 		t.Errorf("diagnostics: %v", ds)
 	}
-	golden.Assert(t, filepath.Join("testdata", "shop.json"), encode(t, c))
+	golden.Assert(t, filepath.Join("testdata", "shop.json"), encode(t, c), serverText...)
 }
 
 // TestFixtureGolden pins the catalog of the introspection fixture, which
@@ -48,5 +48,5 @@ func TestFixtureGolden(t *testing.T) {
 	if len(ds) != 0 {
 		t.Errorf("diagnostics: %v", ds)
 	}
-	golden.Assert(t, filepath.Join("testdata", "fixture.json"), encode(t, c))
+	golden.Assert(t, filepath.Join("testdata", "fixture.json"), encode(t, c), serverText...)
 }

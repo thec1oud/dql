@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -16,11 +17,15 @@ import (
 	"github.com/thec1oud/dql/sources/pglive/internal/introspect"
 	"github.com/thec1oud/dql/sources/pglive/internal/mapping"
 	"github.com/thec1oud/dql/sources/pgtest"
+	"github.com/thec1oud/dql/testkit/golden"
 )
 
 // shopURL connects to a fresh database holding the running example (§1.3),
 // and bin is the plugin built as an executable.
 var shopURL, bin string
+
+// serverText is the text of the golden the server writes differently.
+var serverText []*regexp.Regexp
 
 func TestMain(m *testing.M) {
 	os.Exit(run(m))
@@ -52,7 +57,7 @@ func run(m *testing.M) int {
 		return 1
 	}
 	defer db.Drop(ctx)
-	shopURL = db.URL
+	shopURL, serverText = db.URL, db.ServerText
 	return m.Run()
 }
 
@@ -80,7 +85,7 @@ func check(t *testing.T, c plugin.Client) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(got) != string(want) {
+	if string(golden.Mask(got, serverText...)) != string(golden.Mask(want, serverText...)) {
 		t.Error("the plugin's catalog differs from the mapping's shop golden")
 	}
 }

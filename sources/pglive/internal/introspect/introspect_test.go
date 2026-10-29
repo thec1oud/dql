@@ -38,7 +38,7 @@ func TestShopGolden(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	golden.Assert(t, filepath.Join("testdata", "shop.json"), got)
+	golden.Assert(t, filepath.Join("testdata", "shop.json"), got, serverText...)
 }
 
 func TestShopIsDeterministic(t *testing.T) {
