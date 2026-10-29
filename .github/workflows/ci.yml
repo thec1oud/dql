@@ -95,7 +95,8 @@ jobs:
         with:
           go-version: "1.25"
       - name: test against Postgres ${{ matrix.postgres }}
-        run: go test $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
+        run: |
+          go test $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
 
   rules:
     runs-on: ubuntu-latest
