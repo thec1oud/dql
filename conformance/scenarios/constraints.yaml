@@ -1,0 +1,31 @@
+scenario: constraints
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  # Portable constraints fail validation before any statement.
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: "" }
+    expect:
+      error: { class: ValidationErrors, kind: length, field: title }
+  - op: tags.insert
+    input: { name: Not A Slug }
+    expect:
+      error: { class: ValidationErrors, kind: pattern, field: name }
+  # The database reports what only it can check.
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: 999999, title: Hello }
+    expect:
+      error: { class: ForeignKeyViolation, constraint: posts_author_id_fkey }
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: Hello, published_at: "2026-01-01T00:00:00Z" }
+    expect:
+      error: { class: CheckViolation, constraint: posts_published_check }

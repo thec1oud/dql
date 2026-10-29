@@ -1,0 +1,40 @@
+scenario: upserts
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.upsert_by_tenant_id_and_email
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x, display_name: Ann }
+    save: ann
+  # The default update side leaves the conflict key, created_at and the
+  # version to the database, and bumps the version (§14.7).
+  - op: users.upsert_by_tenant_id_and_email
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: y, display_name: Anne, created_at: "2000-01-01T00:00:00Z" }
+    expect:
+      row: { id: $ann.id, display_name: Anne, created_at: $ann.created_at, version: 2 }
+  # An explicit Partial replaces the default update side.
+  - op: users.upsert_set_by_tenant_id_and_email
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: z, display_name: Draft }
+    set: { display_name: Set }
+    expect:
+      row: { id: $ann.id, display_name: Set, version: 3 }
+  - op: users.upsert_set_by_tenant_id_and_email
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: z, display_name: Draft }
+    set: {}
+    expect:
+      row: { id: $ann.id, display_name: Set, version: 4 }
+  - op: users.insert_or_ignore_by_tenant_id_and_email
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    expect:
+      none: true
+  - op: users.insert_or_ignore_by_tenant_id_and_email
+    scope: { tenant_id: $acme.id }
+    input: { email: b@acme.com, password_hash: x }
+    expect:
+      row: { email: b@acme.com }
