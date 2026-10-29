@@ -9,12 +9,14 @@ import (
 	"testing"
 
 	"github.com/thec1oud/dql/cmd/dql/internal/config"
+	"github.com/thec1oud/dql/testkit/golden"
 )
 
 // goldenShopdb is the go emitter's golden output for the running example.
 var goldenShopdb = filepath.Join("..", "..", "emitters", "go", "testdata", "shopdb")
 
-// sameFiles fails unless dir holds exactly the files of want, byte for byte.
+// sameFiles fails unless dir holds exactly the files of want, byte for byte
+// but for the text the server writes differently.
 func sameFiles(t *testing.T, dir, want string) {
 	t.Helper()
 	names := func(d string) []string {
@@ -38,7 +40,7 @@ func sameFiles(t *testing.T, dir, want string) {
 	for _, n := range got {
 		a, _ := os.ReadFile(filepath.Join(dir, n))
 		b, _ := os.ReadFile(filepath.Join(want, n))
-		if string(a) != string(b) {
+		if string(golden.Mask(a, serverText...)) != string(golden.Mask(b, serverText...)) {
 			t.Errorf("%s differs from %s", n, filepath.Join(want, n))
 		}
 	}

@@ -47,6 +47,20 @@ func TestCreate(t *testing.T) {
 	}
 }
 
+func TestServerText(t *testing.T) {
+	if serverText(160000) != nil || serverText(180001) != nil {
+		t.Error("masks from Postgres 16 on")
+	}
+	view := []byte(`"definition": " SELECT posts.id,\n    \"a\"\n   FROM app.posts;", "fingerprint": "sha256:` + strings.Repeat("0a", 32) + `"`)
+	got := view
+	for _, m := range serverText(150019) {
+		got = m.ReplaceAll(got, nil)
+	}
+	if string(got) != `, "fingerprint": ""` {
+		t.Errorf("masked %s", got)
+	}
+}
+
 func TestConnectFailures(t *testing.T) {
 	ctx := context.Background()
 	admin, err := Connect(ctx)

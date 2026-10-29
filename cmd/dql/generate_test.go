@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -25,6 +26,9 @@ var (
 	// shopURL connects to a fresh database holding testdata/shop/schema.sql,
 	// the running example (§1.3).
 	shopURL string
+	// serverText is the text of the shop goldens the server writes
+	// differently.
+	serverText []*regexp.Regexp
 	// extrasURL connects to one holding the running example with
 	// testdata/extras.sql applied.
 	extrasURL string
@@ -103,6 +107,7 @@ func setup(m *testing.M) int {
 		}
 		defer db.Drop(ctx)
 		*d.url = db.URL
+		serverText = db.ServerText
 	}
 	return m.Run()
 }

@@ -181,7 +181,7 @@ func TestGateGolden(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		golden.Assert(t, filepath.Join(shopDir, path), js)
+		golden.Assert(t, filepath.Join(shopDir, path), js, serverText...)
 	}
 	if len(b.GetDiagnostics()) != 0 || len(b.GetRequiredFeatures()) != 0 {
 		t.Errorf("diagnostics %v, required features %v", b.GetDiagnostics(), b.GetRequiredFeatures())
