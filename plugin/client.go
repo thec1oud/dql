@@ -73,10 +73,15 @@ type process struct {
 }
 
 func (c *process) handshake(hello *irv1.CoreHello, kind irv1.PluginKind) error {
+	var msg irv1.PluginMessage
 	if err := WriteMessage(c.w, &irv1.CoreMessage{Kind: &irv1.CoreMessage_Hello{Hello: hello}}); err != nil {
+		// A plugin that exits at once can close its stdin before the hello
+		// lands; its stdout has then ended too, which says so.
+		if rerr := ReadMessage(c.r, &msg); rerr != nil {
+			return rerr
+		}
 		return err
 	}
-	var msg irv1.PluginMessage
 	if err := ReadMessage(c.r, &msg); err != nil {
 		return err
 	}
