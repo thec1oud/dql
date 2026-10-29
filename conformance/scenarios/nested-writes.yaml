@@ -1,0 +1,83 @@
+scenario: nested-writes
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  # The parent first, then its dependents with its key (§14.5).
+  - op: users.insert_nested
+    scope: { tenant_id: $acme.id }
+    input:
+      email: ann@acme.com
+      password_hash: x
+      profile: { bio: Hi }
+      posts_to_author: [{ title: Hello }, { title: Again }]
+    save: ann
+    expect:
+      row:
+        tenant: { name: acme }
+        profile: { bio: Hi, user_id: present }
+        posts_to_author: [{ title: Hello, author_id: present }, { title: Again }]
+        posts_to_editor: []
+  # A failing child rolls the whole graph back.
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: First }
+    save: first
+  - op: users.insert_nested
+    scope: { tenant_id: $acme.id }
+    input:
+      email: cid@acme.com
+      password_hash: x
+      posts_to_author: [{ id: $first.id, title: Dup }]
+    expect:
+      error: { class: UniqueViolation }
+  - op: users.count
+    scope: { tenant_id: $acme.id }
+    expect: { value: 1 }
+  # Owning relations: a link sets the key, a create is inserted first.
+  - op: posts.insert_nested
+    scope: { tenant_id: $acme.id }
+    input:
+      title: Linked
+      author: { link: { id: $ann.id } }
+      editor: { create: { email: ed@acme.com, password_hash: x } }
+      tags: [{ create: { name: db } }]
+    save: linked
+    expect:
+      row:
+        author: { email: ann@acme.com }
+        editor: { email: ed@acme.com }
+        tags: [{ name: db }]
+  # Many-to-many changes write and delete junction rows (§14.6).
+  - op: tags.insert
+    input: { name: go }
+    save: go
+  - op: posts.patch_nested
+    scope: { tenant_id: $acme.id }
+    key: { id: $linked.id }
+    input:
+      title: Relinked
+      tags: [{ link: { id: $go.id } }, { create: { name: sql } }]
+    expect:
+      row:
+        title: Relinked
+        tags: [{ name: db }, { name: go }, { name: sql }]
+  - op: posts.patch_nested
+    scope: { tenant_id: $acme.id }
+    key: { id: $linked.id }
+    input:
+      tags: [{ unlink: { id: $go.id } }]
+    expect:
+      row:
+        tags: [{ name: db }, { name: sql }]
+  # A change of one parent's own rows updates and deletes by key.
+  - op: users.patch_nested
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: $ann.version }
+    input:
+      profile: { update: { key: { user_id: $ann.id }, input: { bio: Bye } } }
+    expect:
+      row:
+        version: 2
+        profile: { bio: Bye }
