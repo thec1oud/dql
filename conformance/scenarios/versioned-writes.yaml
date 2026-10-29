@@ -1,0 +1,37 @@
+scenario: versioned-writes
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: users.patch
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 1 }
+    input: { display_name: Ann }
+    expect:
+      row: { display_name: Ann, version: 2 }
+  # The Key's expected version is now stale.
+  - op: users.patch
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 1 }
+    input: { display_name: Anne }
+    expect:
+      error: { class: ConcurrentModification }
+  - op: users.delete
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 1 }
+    expect:
+      error: { class: ConcurrentModification }
+  - op: users.delete
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 2 }
+  - op: users.patch
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 2 }
+    input: { display_name: Anne }
+    expect:
+      error: { class: NotFound }

@@ -1,0 +1,43 @@
+scenario: expressions
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: Hello, status: published }
+    assign: [{ column: published_at, set: now }]
+    save: hello
+    expect:
+      row: { published_at: present }
+  - op: posts.patch
+    scope: { tenant_id: $acme.id }
+    key: { id: $hello.id }
+    input: {}
+    assign: [{ column: published_at, set: default }, { column: author_id, add: 0 }]
+    expect:
+      row: { published_at: null, author_id: $ann.id }
+  # A field the payload sets too is FieldSetTwice, before any statement.
+  - op: posts.patch
+    scope: { tenant_id: $acme.id }
+    key: { id: $hello.id }
+    input: { published_at: null }
+    assign: [{ column: published_at, set: now }]
+    expect:
+      error: { class: ValidationErrors, kind: field_set_twice, field: published_at }
+  - op: posts.update_where
+    scope: { tenant_id: $acme.id }
+    where: all
+    input: { title: Hi }
+    expect:
+      value: 1
+  - op: posts.delete_where
+    scope: { tenant_id: $acme.id }
+    where: all
+    expect:
+      value: 1
