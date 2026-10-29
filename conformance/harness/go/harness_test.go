@@ -11,7 +11,7 @@ import (
 var root = filepath.Join("..", "..", "..")
 
 // open creates a database of the schema and opens its handle.
-func open(t *testing.T, name string) (any, map[string]any) {
+func open(t *testing.T, name string) (any, Schema) {
 	t.Helper()
 	ctx := context.Background()
 	base := os.Getenv("DQL_TEST_POSTGRES_URL")
@@ -29,7 +29,7 @@ func open(t *testing.T, name string) (any, map[string]any) {
 		t.Fatal(err)
 	}
 	t.Cleanup(closeDB)
-	return db, s.Tables
+	return db, s
 }
 
 // Every scenario passes on Postgres for Go (guide M4).
@@ -46,8 +46,8 @@ func TestScenarios(t *testing.T) {
 			if _, ok := Schemas[sc.Schema]; !ok {
 				t.Fatalf("%s: no schema %s", sc.File, sc.Schema)
 			}
-			db, tables := open(t, sc.Schema)
-			for _, p := range Run(context.Background(), sc, db, tables) {
+			db, s := open(t, sc.Schema)
+			for _, p := range Run(context.Background(), sc, db, s) {
 				t.Error(p)
 			}
 		})

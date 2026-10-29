@@ -3,7 +3,11 @@
 // users.insert or users.upsert_set_by_tenant_id_and_email, and the harness
 // resolves it by reflection: words match Go names without their underscores
 // and case. Inputs decode as JSON into the method's shape types, results
-// encode back to JSON, and both are compared under the same spelling.
+// encode back to JSON, and both are compared under the same spelling. A
+// nested change is an object of one key, its kind, holding the change's key,
+// draft or partial, as author: { link: { id: 1 } }, or for an update by key
+// both, as posts: [{ update: { key: { id: 1 }, input: { title: x } } }]; the
+// schema lists the functions that build them.
 package harness
 
 import (
@@ -62,12 +66,15 @@ type Assign struct {
 }
 
 // Schema is a schema the scenarios run against: its DDL, relative to the
-// repository root, and how to open its generated handle and reach its
-// tables' column handles.
+// repository root, how to open its generated handle and reach its tables'
+// column handles, and the functions that build its nested changes: each
+// change type's constructors, as shopdb.PostAuthorLink, and opt.Some for each
+// optional nest's type, as opt.Some[shopdb.PostAuthorChange].
 type Schema struct {
-	DDL    string
-	Open   func(ctx context.Context, dsn string) (db any, close func(), err error)
-	Tables map[string]any
+	DDL     string
+	Open    func(ctx context.Context, dsn string) (db any, close func(), err error)
+	Tables  map[string]any
+	Changes []any
 }
 
 // Load reads every scenario file in dir, sorted by file name.
@@ -94,8 +101,13 @@ func Load(dir string) ([]Scenario, error) {
 
 // Run runs a scenario's steps on db, a generated handle, and returns each
 // way the outcomes differ from the expectations.
-func Run(ctx context.Context, sc Scenario, db any, tables map[string]any) []string {
-	r := &runner{ctx: ctx, db: reflect.ValueOf(db), tables: tables, saved: map[string]any{}}
+func Run(ctx context.Context, sc Scenario, db any, s Schema) []string {
+	r := &runner{ctx: ctx, db: reflect.ValueOf(db), tables: s.Tables, saved: map[string]any{},
+		changes: map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
+		nested: map[reflect.Type]bool{}}
+	for _, f := range s.Changes {
+		r.index(reflect.ValueOf(f))
+	}
 	var problems []string
 	for i, st := range sc.Steps {
 		for _, p := range r.step(st) {
@@ -110,6 +122,54 @@ type runner struct {
 	db     reflect.Value
 	tables map[string]any
 	saved  map[string]any
+	// changes holds each change type's constructors by kind, some the opt.Some
+	// of each optional type, and nested whether a type holds either.
+	changes map[reflect.Type]map[string]reflect.Value
+	some    map[reflect.Type]reflect.Value
+	nested  map[reflect.Type]bool
+}
+
+// changer is what every nested change type implements.
+type changer interface{ Change() dql.Change }
+
+// index files f, a change constructor or an opt.Some, under its result type,
+// learning a constructor's kind by calling it.
+func (r *runner) index(f reflect.Value) {
+	t := f.Type()
+	var zeros []reflect.Value
+	for i := range t.NumIn() {
+		zeros = append(zeros, reflect.Zero(t.In(i)))
+	}
+	out := t.Out(0)
+	res := f.Call(zeros)[0].Interface()
+	c, ok := res.(changer)
+	if !ok {
+		r.some[out] = f
+		return
+	}
+	if r.changes[out] == nil {
+		r.changes[out] = map[string]reflect.Value{}
+	}
+	r.changes[out][string(c.Change())] = f
+}
+
+// nests reports whether a value of type t holds a nested change.
+func (r *runner) nests(t reflect.Type) bool {
+	if n, ok := r.nested[t]; ok {
+		return n
+	}
+	r.nested[t] = false
+	n := r.changes[t] != nil || r.some[t].IsValid()
+	switch t.Kind() {
+	case reflect.Slice:
+		n = n || r.nests(t.Elem())
+	case reflect.Struct:
+		for i := range t.NumField() {
+			n = n || t.Field(i).IsExported() && r.nests(t.Field(i).Type)
+		}
+	}
+	r.nested[t] = n
+	return n
 }
 
 // norm spells a name for matching: lower case, without underscores.
@@ -265,12 +325,91 @@ func (r *runner) decode(v any, t reflect.Type) (reflect.Value, error) {
 	if err != nil {
 		return reflect.Value{}, err
 	}
-	raw, _ := json.Marshal(normalize(v))
-	out := reflect.New(t)
-	if err := json.Unmarshal(raw, out.Interface()); err != nil {
-		return reflect.Value{}, err
+	return r.build(normalize(v), t)
+}
+
+// build makes a value of type t from v: nested changes through the schema's
+// functions, the rest as JSON.
+func (r *runner) build(v any, t reflect.Type) (reflect.Value, error) {
+	if some, ok := r.some[t]; ok {
+		x, err := r.build(v, some.Type().In(0))
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return some.Call([]reflect.Value{x})[0], nil
 	}
-	return out.Elem(), nil
+	if kinds, ok := r.changes[t]; ok {
+		m, _ := v.(map[string]any)
+		if len(m) != 1 {
+			return reflect.Value{}, fmt.Errorf("a %s is an object of one of %s", t.Name(), strings.Join(slices.Sorted(maps.Keys(kinds)), ", "))
+		}
+		for kind, arg := range m {
+			f, ok := kinds[kind]
+			if !ok {
+				return reflect.Value{}, fmt.Errorf("a %s cannot %s", t.Name(), kind)
+			}
+			args := []any{arg}
+			if f.Type().NumIn() == 2 {
+				m, _ := arg.(map[string]any)
+				args = []any{m["key"], m["input"]}
+			}
+			var xs []reflect.Value
+			for i, a := range args {
+				x, err := r.build(a, f.Type().In(i))
+				if err != nil {
+					return reflect.Value{}, fmt.Errorf("%s: %w", kind, err)
+				}
+				xs = append(xs, x)
+			}
+			return f.Call(xs)[0], nil
+		}
+	}
+	if !r.nests(t) {
+		raw, _ := json.Marshal(v)
+		out := reflect.New(t)
+		if err := json.Unmarshal(raw, out.Interface()); err != nil {
+			return reflect.Value{}, err
+		}
+		return out.Elem(), nil
+	}
+	if t.Kind() == reflect.Slice {
+		xs, ok := v.([]any)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("want a list for %s, got %v", t, v)
+		}
+		out := reflect.MakeSlice(t, len(xs), len(xs))
+		for i, x := range xs {
+			e, err := r.build(x, t.Elem())
+			if err != nil {
+				return reflect.Value{}, fmt.Errorf("%d: %w", i, err)
+			}
+			out.Index(i).Set(e)
+		}
+		return out, nil
+	}
+	// The struct embeds its flat shape, which takes the whole object, and
+	// holds its nests as fields.
+	m, ok := v.(map[string]any)
+	if !ok {
+		return reflect.Value{}, fmt.Errorf("want an object for %s, got %v", t.Name(), v)
+	}
+	out := reflect.New(t).Elem()
+	for i := range t.NumField() {
+		f := t.Field(i)
+		x, present := m[norm(f.Name)]
+		if f.Anonymous {
+			x, present = m, true
+		}
+		if !present {
+			continue
+		}
+		e, err := r.build(x, f.Type)
+		if err != nil {
+			return reflect.Value{}, fmt.Errorf("%s: %w", f.Name, err)
+		}
+		out.Field(i).Set(e)
+	}
+	return out, nil
 }
 
 // resolve replaces each "$name.field" string with that saved field.
@@ -393,18 +532,45 @@ func (r *runner) compareRow(at string, want, got any) []string {
 			continue
 		}
 		gv, present := g[k]
-		switch {
-		case !present:
+		if !present {
 			problems = append(problems, fmt.Sprintf("%sno field %s", at, k))
-		case wv == "present":
-			if gv == nil {
-				problems = append(problems, fmt.Sprintf("%s%s is null", at, k))
-			}
-		case !reflect.DeepEqual(wv, gv):
-			problems = append(problems, fmt.Sprintf("%s%s: want %v, got %v", at, k, wv, gv))
+			continue
 		}
+		problems = append(problems, r.match(at+k, wv, gv)...)
 	}
 	return problems
+}
+
+// match compares one field: "present" means not null, an object a subset of
+// the fields of a nested row, and a list of objects as many nested rows.
+func (r *runner) match(path string, want, got any) []string {
+	w, isRow := want.(map[string]any)
+	ws, _ := want.([]any)
+	gs, _ := got.([]any)
+	var isRows bool
+	if len(ws) > 0 {
+		_, isRows = ws[0].(map[string]any)
+	}
+	switch {
+	case want == "present":
+		if got == nil {
+			return []string{path + " is null"}
+		}
+	case isRow:
+		return r.compareRow(path+".", w, got)
+	case isRows:
+		if len(ws) != len(gs) {
+			return []string{fmt.Sprintf("%s: want %d rows, got %d", path, len(ws), len(gs))}
+		}
+		var problems []string
+		for i := range ws {
+			problems = append(problems, r.compareRow(fmt.Sprintf("%s.%d.", path, i), ws[i], gs[i])...)
+		}
+		return problems
+	case !reflect.DeepEqual(want, got):
+		return []string{fmt.Sprintf("%s: want %v, got %v", path, want, got)}
+	}
+	return nil
 }
 
 func (r *runner) compareError(want any, err error) []string {
