@@ -1,0 +1,82 @@
+scenario: transactions
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  # A write closure commits when it returns, and rolls everything back
+  # when it fails (§22.3).
+  - op: write
+    steps:
+      - op: tenants.insert
+        input: { name: kept }
+  - op: write
+    rollback: true
+    steps:
+      - op: tenants.insert
+        input: { name: dropped }
+  - op: tenants.count
+    expect: { value: 2 }
+  # Join reuses the enclosing transaction, so its rollback drops both.
+  - op: write
+    rollback: true
+    steps:
+      - op: tenants.insert
+        input: { name: outer }
+      - op: write
+        propagation: join
+        steps:
+          - op: tenants.insert
+            input: { name: joined }
+  - op: tenants.count
+    expect: { value: 2 }
+  # Independent commits on its own connection, whatever the outer does.
+  - op: write
+    rollback: true
+    steps:
+      - op: write
+        propagation: independent
+        steps:
+          - op: tenants.insert
+            input: { name: independent }
+  - op: tenants.count
+    expect: { value: 3 }
+  # Nested is a savepoint: its rollback keeps what the outer wrote.
+  - op: write
+    steps:
+      - op: tenants.insert
+        input: { name: before }
+      - op: write
+        propagation: nested
+        rollback: true
+        steps:
+          - op: tenants.insert
+            input: { name: savepoint }
+  - op: tenants.count
+    expect: { value: 4 }
+  # Mandatory needs an enclosing transaction; Never refuses one.
+  - op: write
+    propagation: mandatory
+    expect:
+      error: { misuse: NoTransaction }
+  - op: write
+    steps:
+      - op: write
+        propagation: mandatory
+  - op: write
+    steps:
+      - op: write
+        propagation: never
+    expect:
+      error: { misuse: InTransaction }
+  - op: read
+    propagation: never
+    steps:
+      - op: tenants.count
+        expect: { value: 4 }
+  # A write transaction cannot join a read transaction.
+  - op: read
+    steps:
+      - op: write
+    expect:
+      error: { misuse: ReadOnly }

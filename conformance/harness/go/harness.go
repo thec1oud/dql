@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -54,6 +55,32 @@ type Step struct {
 	// Save keeps the step's result for later steps' $name.field.
 	Save   string         `yaml:"save"`
 	Expect map[string]any `yaml:"expect"`
+
+	// A transaction step, op write or read, runs Steps in a transaction, on
+	// its context (§22.3). Propagation (join, independent, nested,
+	// mandatory, never), Isolation and Retry configure it, Inject makes the
+	// server fail its next writes, and Rollback ends each run with an error,
+	// so that it rolls back. Its expect takes error, and attempts, how many
+	// times its closure ran. A step in it whose call fails where it expects
+	// no error ends the run with that error.
+	Steps       []Step  `yaml:"steps"`
+	Propagation string  `yaml:"propagation"`
+	Isolation   string  `yaml:"isolation"`
+	Retry       *Retry  `yaml:"retry"`
+	Inject      *Inject `yaml:"inject"`
+	Rollback    bool    `yaml:"rollback"`
+}
+
+// Retry is a transaction's retry policy: how many runs, without backoff.
+type Retry struct {
+	Attempts int `yaml:"attempts"`
+}
+
+// Inject is a failure of a retryable class that the server raises for the
+// transaction's next Times writes.
+type Inject struct {
+	Class string `yaml:"class"`
+	Times int    `yaml:"times"`
 }
 
 // Assign is one expression on a column: set to now or default, or add or
@@ -65,16 +92,26 @@ type Assign struct {
 	Sub    any    `yaml:"sub"`
 }
 
-// Schema is a schema the scenarios run against: its DDL, relative to the
-// repository root, how to open its generated handle and reach its tables'
-// column handles, and the functions that build its nested changes: each
-// change type's constructors, as shopdb.PostAuthorLink, and opt.Some for each
-// optional nest's type, as opt.Some[shopdb.PostAuthorChange].
+// Schema is a schema the scenarios run against: its DDL files, relative to
+// the repository root, how to open its generated handle and reach its
+// tables' column handles, the functions that build its nested changes (each
+// change type's constructors, as shopdb.PostAuthorLink, and opt.Some for
+// each optional nest's type, as opt.Some[shopdb.PostAuthorChange]), and how
+// to make the database at dsn fail its next times writes with class.
 type Schema struct {
-	DDL     string
+	DDL     []string
 	Open    func(ctx context.Context, dsn string) (db any, close func(), err error)
 	Tables  map[string]any
 	Changes []any
+	Inject  func(ctx context.Context, dsn, class string, times int) error
+}
+
+// Target is what a scenario runs on: a schema's handle, open on the
+// database at DSN.
+type Target struct {
+	Schema Schema
+	DB     any
+	DSN    string
 }
 
 // Load reads every scenario file in dir, sorted by file name.
@@ -99,10 +136,12 @@ func Load(dir string) ([]Scenario, error) {
 	return out, nil
 }
 
-// Run runs a scenario's steps on db, a generated handle, and returns each
-// way the outcomes differ from the expectations.
-func Run(ctx context.Context, sc Scenario, db any, s Schema) []string {
-	r := &runner{ctx: ctx, db: reflect.ValueOf(db), tables: s.Tables, saved: map[string]any{},
+// Run runs a scenario's steps on t and returns each way the outcomes differ
+// from the expectations.
+func Run(ctx context.Context, sc Scenario, t Target) []string {
+	s := t.Schema
+	r := &runner{ctx: ctx, db: reflect.ValueOf(t.DB), tables: s.Tables, saved: map[string]any{},
+		inject:  func(class string, times int) error { return s.Inject(ctx, t.DSN, class, times) },
 		changes: map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
 		nested: map[reflect.Type]bool{}}
 	for _, f := range s.Changes {
@@ -122,6 +161,7 @@ type runner struct {
 	db     reflect.Value
 	tables map[string]any
 	saved  map[string]any
+	inject func(class string, times int) error
 	// changes holds each change type's constructors by kind, some the opt.Some
 	// of each optional type, and nested whether a type holds either.
 	changes map[reflect.Type]map[string]reflect.Value
@@ -197,34 +237,60 @@ func member(v reflect.Value, name string) (reflect.Value, bool) {
 }
 
 func (r *runner) step(st Step) []string {
-	storeName, method, _ := strings.Cut(st.Op, ".")
+	ps, _ := r.run(st)
+	return ps
+}
+
+// run runs one step and returns its problems, and the error of a call that
+// failed where the step expects none.
+func (r *runner) run(st Step) ([]string, error) {
+	storeName, method, ok := strings.Cut(st.Op, ".")
+	if !ok {
+		return r.transact(st)
+	}
+	result, err, problems := r.call(st, storeName, method)
+	if problems != nil {
+		return problems, nil
+	}
+	if _, ok := st.Expect["error"]; err != nil && !ok {
+		return []string{"unexpected error: " + err.Error()}, err
+	}
+	if err == nil && st.Save != "" {
+		r.saved[st.Save] = result
+	}
+	return r.compare(st, result, err), nil
+}
+
+// call calls the step's method and returns its result, normalized, or its
+// error, or the problems that kept it from being called.
+func (r *runner) call(st Step, storeName, method string) (any, error, []string) {
 	h := r.db
 	if st.Scope != nil {
 		with, ok := member(h, "WithScope")
 		if !ok {
-			return []string{"the handle has no WithScope"}
+			return nil, nil, []string{"the handle has no WithScope"}
 		}
 		scope, err := r.decode(st.Scope, with.Type().In(0))
 		if err != nil {
-			return []string{"scope: " + err.Error()}
+			return nil, nil, []string{"scope: " + err.Error()}
 		}
 		h = with.Call([]reflect.Value{scope})[0]
 	}
 	store, ok := member(h, storeName)
 	if !ok {
-		return []string{"no store " + storeName}
+		return nil, nil, []string{"no store " + storeName}
 	}
 	m, ok := member(store, method)
 	if !ok {
-		return []string{"no method " + method + " on " + storeName}
+		return nil, nil, []string{"no method " + method + " on " + storeName}
 	}
 	args, err := r.args(st, storeName, m.Type())
 	if err != nil {
-		return []string{err.Error()}
+		return nil, nil, []string{err.Error()}
 	}
 	out := m.Call(args)
 	if e, _ := out[len(out)-1].Interface().(error); e != nil {
-		return r.compare(st, nil, e)
+		return nil, e, nil
 	}
 	var result any
 	if len(out) == 2 {
@@ -233,10 +299,95 @@ func (r *runner) step(st Step) []string {
 		json.Unmarshal(raw, &result)
 		result = normalize(result)
 	}
-	if st.Save != "" {
-		r.saved[st.Save] = result
+	return result, nil, nil
+}
+
+// errRollback ends a run of a transaction step's closure that rolls back.
+var errRollback = errors.New("conformance: rolled back")
+
+var propagations = map[string]dql.Propagation{
+	"join": dql.Join, "independent": dql.Independent, "nested": dql.Nested,
+	"mandatory": dql.Mandatory, "never": dql.Never,
+}
+
+// transact runs a transaction step: its steps in the handle's Write or Read
+// closure, on the closure's context. Like run, it returns its problems and
+// an error the step does not expect.
+func (r *runner) transact(st Step) ([]string, error) {
+	ps, err := r.transaction(st)
+	if _, ok := st.Expect["error"]; err != nil && !ok {
+		return []string{"unexpected error: " + err.Error()}, err
 	}
-	return r.compare(st, result, nil)
+	return ps, nil
+}
+
+func (r *runner) transaction(st Step) ([]string, error) {
+	m, ok := member(r.db, st.Op)
+	if !ok {
+		return []string{"no transaction " + st.Op}, nil
+	}
+	var opts []reflect.Value
+	if st.Propagation != "" {
+		p, ok := propagations[st.Propagation]
+		if !ok {
+			return []string{"no propagation " + st.Propagation}, nil
+		}
+		opts = append(opts, reflect.ValueOf(dql.WithPropagation(p)))
+	}
+	if st.Isolation != "" {
+		opts = append(opts, reflect.ValueOf(dql.WithIsolation(dql.Isolation(st.Isolation))))
+	}
+	if st.Retry != nil {
+		opts = append(opts, reflect.ValueOf(dql.WithRetry(dql.RetryPolicy{Attempts: st.Retry.Attempts, Initial: time.Microsecond, Max: time.Microsecond})))
+	}
+	if st.Inject != nil {
+		if err := r.inject(st.Inject.Class, st.Inject.Times); err != nil {
+			return []string{"inject: " + err.Error()}, nil
+		}
+		defer r.inject("", 0)
+	}
+	runs := 0
+	var inner []string
+	fn := reflect.MakeFunc(m.Type().In(1), func(in []reflect.Value) []reflect.Value {
+		runs++
+		inner = nil
+		outer := r.ctx
+		r.ctx = in[0].Interface().(context.Context)
+		defer func() { r.ctx = outer }()
+		var err error
+		for i, s := range st.Steps {
+			ps, e := r.run(s)
+			if e != nil {
+				err = e
+				break
+			}
+			for _, p := range ps {
+				inner = append(inner, fmt.Sprintf("step %d (%s): %s", i+1, s.Op, p))
+			}
+		}
+		if err == nil && st.Rollback {
+			err = errRollback
+		}
+		out := reflect.New(reflect.TypeFor[error]()).Elem()
+		if err != nil {
+			out.Set(reflect.ValueOf(err))
+		}
+		return []reflect.Value{out}
+	})
+	out := m.Call(append([]reflect.Value{reflect.ValueOf(r.ctx), fn}, opts...))
+	err, _ := out[0].Interface().(error)
+	if errors.Is(err, errRollback) {
+		err = nil
+	}
+	problems := inner
+	expect := maps.Clone(st.Expect)
+	if w, ok := expect["attempts"]; ok {
+		if normalize(w) != float64(runs) {
+			problems = append(problems, fmt.Sprintf("attempts: want %v, got %d", w, runs))
+		}
+		delete(expect, "attempts")
+	}
+	return append(problems, r.compare(Step{Expect: expect}, nil, err)...), err
 }
 
 // args builds the method's arguments after its context.
@@ -475,7 +626,8 @@ func normalize(v any) any {
 
 // compare checks an outcome against the step's expectations: row (a
 // subset of the result's fields, where "present" means not null), rows,
-// none (no row), value, and error (class, constraint, kind, field).
+// none (no row), value, and error (class, constraint, kind, field, and
+// misuse, for the runtime's errors of misuse).
 func (r *runner) compare(st Step, result any, err error) []string {
 	want, ok := st.Expect["error"]
 	if err != nil {
@@ -573,8 +725,20 @@ func (r *runner) match(path string, want, got any) []string {
 	return nil
 }
 
+// misuses are the runtime's errors of misuse, which have no class, by the
+// name an error expectation's misuse gives them.
+var misuses = map[string]error{
+	"NoTransaction": dql.ErrNoTransaction, "InTransaction": dql.ErrInTransaction,
+	"ReadOnly": dql.ErrReadOnly, "IndependentDepth": dql.ErrIndependentDepth,
+}
+
 func (r *runner) compareError(want any, err error) []string {
 	got := map[string]any{"class": string(dql.ClassOf(err))}
+	for name, m := range misuses {
+		if errors.Is(err, m) {
+			got["misuse"] = name
+		}
+	}
 	var v interface{ Violated() dql.Constraint }
 	if errors.As(err, &v) {
 		name := v.Violated().Name
