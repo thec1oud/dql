@@ -1,0 +1,42 @@
+scenario: retries
+schema: shop
+steps:
+  # A serialization failure or a deadlock reruns the closure, which then
+  # commits once (§22.4).
+  - op: write
+    inject: { class: SerializationFailure, times: 1 }
+    steps:
+      - op: tenants.insert
+        input: { name: acme }
+        save: acme
+    expect: { attempts: 2 }
+  - op: write
+    isolation: serializable
+    inject: { class: Deadlock, times: 2 }
+    steps:
+      - op: tenants.insert
+        input: { name: globex }
+    expect: { attempts: 3 }
+  - op: tenants.count
+    expect: { value: 2 }
+  # When every run fails, the last failure is reported, after the policy's
+  # attempts.
+  - op: write
+    retry: { attempts: 2 }
+    inject: { class: SerializationFailure, times: 5 }
+    steps:
+      - op: tenants.insert
+        input: { name: initech }
+    expect:
+      attempts: 2
+      error: { class: SerializationFailure }
+  - op: tenants.count
+    expect: { value: 2 }
+  # Other failures are not retried.
+  - op: write
+    steps:
+      - op: tenants.insert
+        input: { id: $acme.id, name: again }
+    expect:
+      attempts: 1
+      error: { class: UniqueViolation }
