@@ -20,7 +20,7 @@ import (
 // package.
 var Schemas = map[string]Schema{
 	"shop": {
-		DDL: "testdata/shop/schema.sql",
+		DDL: []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
 		Open: func(ctx context.Context, dsn string) (any, func(), error) {
 			e, err := shopdb.NewExecutor(ctx, dqlpgx.New(), dql.Config{
 				Sources:  map[string]dql.SourceConfig{"main": {Primary: dql.ConnConfig{DSN: dsn, MaxConns: 4}}},
@@ -57,15 +57,38 @@ var Schemas = map[string]Schema{
 			opt.Some[[]shopdb.PostTagChangeForPost], opt.Some[[]shopdb.PostTagChangeForTag],
 			opt.Some[[]shopdb.PostTagsChange], opt.Some[[]shopdb.TagPostsChange],
 		},
+		Inject: injectPostgres,
 	},
 }
 
-// Database creates a database from the DDL file on the server base names,
-// and returns its URL and how to drop it.
-func Database(ctx context.Context, base, ddl string) (string, func(), error) {
-	schema, err := os.ReadFile(ddl)
-	if err != nil {
-		return "", nil, err
+// sqlstates are the codes Postgres raises for the retryable classes.
+var sqlstates = map[string]string{
+	string(dql.ClassSerializationFailure): "40001",
+	string(dql.ClassDeadlock):             "40P01",
+}
+
+// injectPostgres sets the plan of conformance/schemas/postgres/inject.sql:
+// the next times writes fail with class's SQLSTATE. Times 0 clears it.
+func injectPostgres(ctx context.Context, dsn, class string, times int) error {
+	code, ok := sqlstates[class]
+	if !ok && times > 0 {
+		return fmt.Errorf("no injected failure of class %s", class)
+	}
+	return run(ctx, dsn, fmt.Sprintf(`TRUNCATE conformance.injection;
+INSERT INTO conformance.injection VALUES ('%s', %d);
+SELECT setval('conformance.injected', 1, false);`, code, times))
+}
+
+// Database creates a database from the DDL files, in order, on the server
+// base names, and returns its URL and how to drop it.
+func Database(ctx context.Context, base string, ddl ...string) (string, func(), error) {
+	var schema []byte
+	for _, f := range ddl {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			return "", nil, err
+		}
+		schema = append(append(schema, b...), '\n')
 	}
 	name := fmt.Sprintf("conformance_%d_%d", os.Getpid(), time.Now().UnixNano())
 	if err := run(ctx, base, "CREATE DATABASE "+name+" TEMPLATE template0 ENCODING 'UTF8' LOCALE 'C'"); err != nil {
