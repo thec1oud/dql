@@ -1,0 +1,69 @@
+scenario: hooks
+schema: shop
+steps:
+  # A query's end names the query and counts its rows (§24).
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+    expect:
+      events:
+        - { query: tenant.insert, kind: insert, rows: 1, redacted: 0 }
+  # A sensitive parameter reaches the hooks redacted, and an error does
+  # not show it (§7.5).
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: hunter2 }
+    expect:
+      events:
+        - { query: user.insert, redacted: 1 }
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: hunter2 }
+    expect:
+      error: { class: UniqueViolation, hides: hunter2 }
+      events:
+        - { query: user.insert, rows: 0, class: UniqueViolation, redacted: 1 }
+  # A transaction's begin and end bracket its queries; a savepoint is
+  # reported as one.
+  - op: write
+    isolation: serializable
+    steps:
+      - op: tenants.count
+      - op: write
+        propagation: nested
+        rollback: true
+        steps:
+          - op: tenants.insert
+            input: { name: dropped }
+    expect:
+      events:
+        - { tx: begin, propagation: join, isolation: serializable, read_only: false, savepoint: false, attempt: 1 }
+        - { query: tenant.count }
+        - { tx: begin, propagation: nested, savepoint: true }
+        - { query: tenant.insert }
+        - { tx: end, savepoint: true, outcome: rollback }
+        - { tx: end, savepoint: false, outcome: commit }
+  - op: read
+    steps:
+      - op: tenants.count
+    expect:
+      events:
+        - { tx: begin, read_only: true }
+        - { query: tenant.count, rows: 1 }
+        - { tx: end, outcome: commit }
+  # A retry is reported between the failed run's end and the next begin.
+  - op: write
+    inject: { class: SerializationFailure, times: 1 }
+    steps:
+      - op: tenants.insert
+        input: { name: globex }
+    expect:
+      attempts: 2
+      events:
+        - { tx: begin, attempt: 1 }
+        - { query: tenant.insert, attempt: 1, class: SerializationFailure }
+        - { tx: end, outcome: rollback, class: SerializationFailure }
+        - { tx: retry, attempt: 1, class: SerializationFailure }
+        - { tx: begin, attempt: 2 }
+        - { query: tenant.insert, attempt: 2, rows: 1 }
+        - { tx: end, attempt: 2, outcome: commit }

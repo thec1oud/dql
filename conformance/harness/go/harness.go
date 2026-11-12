@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -100,18 +101,19 @@ type Assign struct {
 // to make the database at dsn fail its next times writes with class.
 type Schema struct {
 	DDL     []string
-	Open    func(ctx context.Context, dsn string) (db any, close func(), err error)
+	Open    func(ctx context.Context, dsn string, opts ...dql.Option) (db any, close func(), err error)
 	Tables  map[string]any
 	Changes []any
 	Inject  func(ctx context.Context, dsn, class string, times int) error
 }
 
 // Target is what a scenario runs on: a schema's handle, open on the
-// database at DSN.
+// database at DSN, and the recorder of its executor's hook events.
 type Target struct {
 	Schema Schema
 	DB     any
 	DSN    string
+	Events *Recorder
 }
 
 // Load reads every scenario file in dir, sorted by file name.
@@ -140,7 +142,7 @@ func Load(dir string) ([]Scenario, error) {
 // from the expectations.
 func Run(ctx context.Context, sc Scenario, t Target) []string {
 	s := t.Schema
-	r := &runner{ctx: ctx, db: reflect.ValueOf(t.DB), tables: s.Tables, saved: map[string]any{},
+	r := &runner{ctx: ctx, db: reflect.ValueOf(t.DB), tables: s.Tables, saved: map[string]any{}, events: t.Events,
 		inject:  func(class string, times int) error { return s.Inject(ctx, t.DSN, class, times) },
 		changes: map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
 		nested: map[reflect.Type]bool{}}
@@ -162,6 +164,10 @@ type runner struct {
 	tables map[string]any
 	saved  map[string]any
 	inject func(class string, times int) error
+	// events records the hooks, and fired holds what the step being
+	// compared fired.
+	events *Recorder
+	fired  []any
 	// changes holds each change type's constructors by kind, some the opt.Some
 	// of each optional type, and nested whether a type holds either.
 	changes map[reflect.Type]map[string]reflect.Value
@@ -248,7 +254,9 @@ func (r *runner) run(st Step) ([]string, error) {
 	if !ok {
 		return r.transact(st)
 	}
+	mark := r.events.mark()
 	result, err, problems := r.call(st, storeName, method)
+	r.fired = r.events.since(mark)
 	if problems != nil {
 		return problems, nil
 	}
@@ -322,6 +330,7 @@ func (r *runner) transact(st Step) ([]string, error) {
 }
 
 func (r *runner) transaction(st Step) ([]string, error) {
+	mark := r.events.mark()
 	m, ok := member(r.db, st.Op)
 	if !ok {
 		return []string{"no transaction " + st.Op}, nil
@@ -387,13 +396,18 @@ func (r *runner) transaction(st Step) ([]string, error) {
 		}
 		delete(expect, "attempts")
 	}
+	r.fired = r.events.since(mark)
 	return append(problems, r.compare(Step{Expect: expect}, nil, err)...), err
 }
 
 // args builds the method's arguments after its context.
 func (r *runner) args(st Step, storeName string, t reflect.Type) ([]reflect.Value, error) {
 	args := []reflect.Value{reflect.ValueOf(r.ctx)}
-	payloads := []any{st.Input, st.Set}
+	input, err := generate(st.Input)
+	if err != nil {
+		return nil, err
+	}
+	payloads := []any{input, st.Set}
 	for i := 1; i < t.NumIn(); i++ {
 		p := t.In(i)
 		switch {
@@ -468,6 +482,41 @@ func (r *runner) assignments(as []Assign, storeName string, elem reflect.Type) (
 		out = append(out, m.Call([]reflect.Value{v})[0].Convert(elem))
 	}
 	return out, nil
+}
+
+// generate expands an input of the form { generate: { count: n, row: r } }
+// into n copies of r, with each "$i" in r's strings replaced by the copy's
+// number, from 1. Any other input is returned as it is.
+func generate(input any) (any, error) {
+	m, _ := input.(map[string]any)
+	g, ok := m["generate"].(map[string]any)
+	if !ok || len(m) != 1 {
+		return input, nil
+	}
+	n, ok := g["count"].(int)
+	if !ok {
+		return nil, fmt.Errorf("generate: count %v is not a number", g["count"])
+	}
+	rows := make([]any, n)
+	for i := range rows {
+		rows[i] = numbered(g["row"], strconv.Itoa(i+1))
+	}
+	return rows, nil
+}
+
+// numbered returns v with "$i" replaced by i in its strings.
+func numbered(v any, i string) any {
+	switch x := v.(type) {
+	case string:
+		return strings.ReplaceAll(x, "$i", i)
+	case map[string]any:
+		out := map[string]any{}
+		for k, e := range x {
+			out[k] = numbered(e, i)
+		}
+		return out
+	}
+	return v
 }
 
 // decode resolves v's references and decodes it into a value of type t.
@@ -626,8 +675,10 @@ func normalize(v any) any {
 
 // compare checks an outcome against the step's expectations: row (a
 // subset of the result's fields, where "present" means not null), rows,
-// none (no row), value, and error (class, constraint, kind, field, and
-// misuse, for the runtime's errors of misuse).
+// none (no row), value, count (how many rows), statements (how many queries
+// the step ran), events (the hook events it fired, in order), and error
+// (class, constraint, kind, field, misuse, for the runtime's errors of
+// misuse, and hides, a value the error's text must not show).
 func (r *runner) compare(st Step, result any, err error) []string {
 	want, ok := st.Expect["error"]
 	if err != nil {
@@ -663,6 +714,22 @@ func (r *runner) compare(st Step, result any, err error) []string {
 			if !reflect.DeepEqual(w, result) {
 				problems = append(problems, fmt.Sprintf("want value %v, got %v", w, result))
 			}
+		case "count":
+			if gs, _ := result.([]any); w != float64(len(gs)) {
+				problems = append(problems, fmt.Sprintf("want count %v, got %d", w, len(gs)))
+			}
+		case "statements":
+			n := 0
+			for _, ev := range r.fired {
+				if _, ok := ev.(map[string]any)["query"]; ok {
+					n++
+				}
+			}
+			if w != float64(n) {
+				problems = append(problems, fmt.Sprintf("want %v statements, got %d", w, n))
+			}
+		case "events":
+			problems = append(problems, r.compareEvents(w)...)
 		default:
 			problems = append(problems, "unknown expectation "+k)
 		}
@@ -725,6 +792,20 @@ func (r *runner) match(path string, want, got any) []string {
 	return nil
 }
 
+// compareEvents compares the events the step fired with want, in order, each on
+// the fields want names.
+func (r *runner) compareEvents(want any) []string {
+	ws, _ := want.([]any)
+	if len(ws) != len(r.fired) {
+		return []string{fmt.Sprintf("want %d events, got %d: %v", len(ws), len(r.fired), r.fired)}
+	}
+	var problems []string
+	for i := range ws {
+		problems = append(problems, r.compareRow(fmt.Sprintf("event %d ", i+1), ws[i], r.fired[i])...)
+	}
+	return problems
+}
+
 // misuses are the runtime's errors of misuse, which have no class, by the
 // name an error expectation's misuse gives them.
 var misuses = map[string]error{
@@ -754,6 +835,12 @@ func (r *runner) compareError(want any, err error) []string {
 	}
 	var problems []string
 	for _, k := range slices.Sorted(maps.Keys(w)) {
+		if k == "hides" {
+			if h := fmt.Sprint(w[k]); strings.Contains(err.Error(), h) {
+				problems = append(problems, fmt.Sprintf("error shows %s: %v", h, err))
+			}
+			continue
+		}
 		if g, ok := got[k]; !ok || g != w[k] {
 			problems = append(problems, fmt.Sprintf("error %s: want %v, got %v (%v)", k, w[k], g, err))
 		}
