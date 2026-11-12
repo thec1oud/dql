@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -55,6 +56,11 @@ func TestRunProblems(t *testing.T) {
 		{"- op: posts.insert_many\n" + scope + "  input: [{ author_id: $ann.id, title: x }, { author_id: $ann.id, title: y }]\n  expect: { rows: [{ title: x }, { title: z }] }\n", []string{"row 1 title: want z, got y"}},
 		{"- op: posts.insert_many\n" + scope + "  input: [{ author_id: $ann.id, title: x }]\n  expect: { rows: [] }\n", []string{"want 0 rows, got 1"}},
 		{"- op: nope\n", []string{"no transaction nope"}},
+		{"- op: tenants.insert_many\n  input: { generate: { count: x, row: { name: a } } }\n", []string{"generate: count x is not a number"}},
+		{"- op: tenants.insert_many\n  input: { generate: { count: 2, row: { name: \"g-$i\" } } }\n  expect: { count: 3, statements: 2, rows: [{ name: g-1 }, { name: g-2 }] }\n", []string{"want count 3, got 2", "want 2 statements, got 1"}},
+		{"- op: tenants.count\n  expect: { events: [] }\n", []string{"want 0 events, got 1: "}},
+		{"- op: tenants.count\n  expect: { events: [{ query: nope }] }\n", []string{"event 1 query: want nope, got tenant.count"}},
+		{"- op: users.get\n" + scope + "  key: { id: 999999 }\n  expect: { error: { class: NotFound, hides: user } }\n", []string{"error shows user: "}},
 		{"- op: write\n  expect: { attempts: 2 }\n", []string{"attempts: want 2, got 1"}},
 		{"- op: write\n  propagation: sideways\n", []string{"no propagation sideways"}},
 		{"- op: write\n  inject: { class: Timeout, times: 1 }\n", []string{"inject: no injected failure of class Timeout"}},
@@ -127,5 +133,21 @@ func TestDatabase(t *testing.T) {
 	}
 	if _, _, err := Schemas["shop"].Open(ctx, "postgres://%zz"); err == nil {
 		t.Error("bad DSN opened")
+	}
+}
+
+// A nil Recorder keeps nothing, and a step then fired no events.
+func TestNoRecorder(t *testing.T) {
+	var r *Recorder
+	if r.mark() != 0 || r.since(0) != nil {
+		t.Error("a nil recorder holds events")
+	}
+}
+
+func TestGenerate(t *testing.T) {
+	got, err := generate(map[string]any{"generate": map[string]any{"count": 2, "row": map[string]any{"name": "n-$i", "size": 3}}})
+	want := []any{map[string]any{"name": "n-1", "size": 3}, map[string]any{"name": "n-2", "size": 3}}
+	if err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("generated %v, %v", got, err)
 	}
 }

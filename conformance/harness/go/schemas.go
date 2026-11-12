@@ -21,11 +21,11 @@ import (
 var Schemas = map[string]Schema{
 	"shop": {
 		DDL: []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
-		Open: func(ctx context.Context, dsn string) (any, func(), error) {
+		Open: func(ctx context.Context, dsn string, opts ...dql.Option) (any, func(), error) {
 			e, err := shopdb.NewExecutor(ctx, dqlpgx.New(), dql.Config{
 				Sources:  map[string]dql.SourceConfig{"main": {Primary: dql.ConnConfig{DSN: dsn, MaxConns: 4}}},
 				Catalogs: map[string]string{"shop": "main"},
-			})
+			}, opts...)
 			if err != nil {
 				return nil, nil, err
 			}
