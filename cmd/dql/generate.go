@@ -209,8 +209,8 @@ func emitFlags(c *config.Config, e config.Emit) []string {
 }
 
 // operatorLayer adds the operator catalog to b, runs the shipped dialect
-// plugin of b's dialect in-process for its capability profile and the
-// operators it contributes, and resolves every column's operators (§9). It returns the diagnostics, sorted, and adds them to the
+// plugin of b's dialect in-process for its capability profile, the
+// operators it contributes and the fragment table (§16.2), and resolves every column's operators (§9). It returns the diagnostics, sorted, and adds them to the
 // bundle's.
 func operatorLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) (ds []*irv1.Diagnostic, err error) {
 	build, ok := dialects[b.GetDialect()]
@@ -225,6 +225,7 @@ func operatorLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) (ds []
 		var res *irv1.InvokeResult
 		if res, err = client.Invoke(ctx, &irv1.Invoke{Bundle: b}); err == nil {
 			b.Capabilities = res.GetBundle().GetCapabilities()
+			b.Queries = &irv1.QueryLayer{Fragments: res.GetBundle().GetQueries().GetFragments()}
 			var added []*irv1.Diagnostic
 			b.Operators, added = operators.Add(b.Operators, res.GetBundle().GetOperators(), irv1.OperatorOriginKind_OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN, name)
 			ds = append(res.GetDiagnostics(), added...)
@@ -246,8 +247,8 @@ func operatorLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) (ds []
 // queryLayer types the query files of c with the shipped query-source
 // plugin of b's dialect, adds their queries to b and checks them against the
 // catalogs and the shape layer (§16–21). It returns the diagnostics of both,
-// sorted, and adds them to the bundle's. Without
-// query files the bundle has no query layer.
+// sorted, and adds them to the bundle's. Without query files the query
+// layer holds only the fragment table.
 func queryLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) ([]*irv1.Diagnostic, error) {
 	files, err := c.QueryFiles()
 	if err != nil || len(files) == 0 {
@@ -264,7 +265,7 @@ func queryLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) ([]*irv1.
 	if err == nil {
 		var res *irv1.InvokeResult
 		if res, err = client.Invoke(ctx, &irv1.Invoke{Bundle: b, QueryFiles: files}); err == nil {
-			b.Queries = &irv1.QueryLayer{Queries: res.GetBundle().GetQueries().GetQueries()}
+			b.Queries.Queries = res.GetBundle().GetQueries().GetQueries()
 			ds = append(res.GetDiagnostics(), queries.Check(b)...)
 		}
 		if cerr := client.Close(); err == nil {

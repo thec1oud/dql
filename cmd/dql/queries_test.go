@@ -39,7 +39,8 @@ func TestGenerateQueryLayer(t *testing.T) {
 	if r := b.GetQueries().GetQueries()[1].GetResult(); r.GetShape().GetPreset() != irv1.Preset_PRESET_FULL || len(r.GetColumns()) != 7 {
 		t.Errorf("GetUserByEmail result %v", r)
 	}
-	if code, _, b := generateShapes(t, ""); code != 0 || b.GetQueries() != nil {
+	// Without query files the query layer holds only the fragment table.
+	if code, _, b := generateShapes(t, ""); code != 0 || len(b.GetQueries().GetQueries()) != 0 || len(b.GetQueries().GetFragments().GetFragments()) == 0 {
 		t.Errorf("without query files: %d %v", code, b.GetQueries())
 	}
 }

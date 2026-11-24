@@ -1100,10 +1100,6 @@
                   },
                   "operators": [
                     {
-                      "name": "any",
-                      "fidelity": "FIDELITY_EXACT"
-                    },
-                    {
                       "name": "array_contains",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -1113,10 +1109,6 @@
                     },
                     {
                       "name": "eq",
-                      "fidelity": "FIDELITY_EXACT"
-                    },
-                    {
-                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -4831,7 +4823,10 @@
       },
       {
         "name": "any",
-        "fidelity": "FIDELITY_EXACT"
+        "fidelity": "FIDELITY_EXACT",
+        "when": {
+          "scalar": true
+        }
       },
       {
         "name": "array_contains",
@@ -4881,7 +4876,10 @@
       },
       {
         "name": "in",
-        "fidelity": "FIDELITY_EXACT"
+        "fidelity": "FIDELITY_EXACT",
+        "when": {
+          "scalar": true
+        }
       },
       {
         "name": "is_distinct_from",
@@ -5443,6 +5441,1028 @@
         "redact": true
       }
     ]
+  },
+  "queries": {
+    "fragments": {
+      "dialect": "DIALECT_POSTGRES",
+      "placeholder": "PLACEHOLDER_DOLLAR_NUMBERED",
+      "fragments": [
+        {
+          "id": "bool.and",
+          "template": "{0} AND {1}"
+        },
+        {
+          "id": "bool.not",
+          "template": "NOT ({0})"
+        },
+        {
+          "id": "bool.or",
+          "template": "({0} OR {1})"
+        },
+        {
+          "id": "clause.and",
+          "template": " AND {0}"
+        },
+        {
+          "id": "clause.having",
+          "template": " HAVING {0}"
+        },
+        {
+          "id": "clause.limit",
+          "template": " LIMIT {0}"
+        },
+        {
+          "id": "clause.offset",
+          "template": " OFFSET {0}"
+        },
+        {
+          "id": "clause.order",
+          "template": " ORDER BY {0}"
+        },
+        {
+          "id": "clause.where",
+          "template": " WHERE {0}"
+        },
+        {
+          "id": "col.post_tags.post_id",
+          "template": "pt.\"post_id\""
+        },
+        {
+          "id": "col.post_tags.tag_id",
+          "template": "pt.\"tag_id\""
+        },
+        {
+          "id": "col.posts.author_id",
+          "template": "p.\"author_id\""
+        },
+        {
+          "id": "col.posts.editor_id",
+          "template": "p.\"editor_id\""
+        },
+        {
+          "id": "col.posts.id",
+          "template": "p.\"id\""
+        },
+        {
+          "id": "col.posts.labels",
+          "template": "p.\"labels\""
+        },
+        {
+          "id": "col.posts.price",
+          "template": "p.\"price\""
+        },
+        {
+          "id": "col.posts.published_at",
+          "template": "p.\"published_at\""
+        },
+        {
+          "id": "col.posts.slug",
+          "template": "p.\"slug\""
+        },
+        {
+          "id": "col.posts.status",
+          "template": "p.\"status\""
+        },
+        {
+          "id": "col.posts.title",
+          "template": "p.\"title\""
+        },
+        {
+          "id": "col.profiles.bio",
+          "template": "p2.\"bio\""
+        },
+        {
+          "id": "col.profiles.birthday",
+          "template": "p2.\"birthday\""
+        },
+        {
+          "id": "col.profiles.user_id",
+          "template": "p2.\"user_id\""
+        },
+        {
+          "id": "col.published_posts.author_id",
+          "template": "pp.\"author_id\""
+        },
+        {
+          "id": "col.published_posts.id",
+          "template": "pp.\"id\""
+        },
+        {
+          "id": "col.published_posts.published_at",
+          "template": "pp.\"published_at\""
+        },
+        {
+          "id": "col.published_posts.title",
+          "template": "pp.\"title\""
+        },
+        {
+          "id": "col.tags.id",
+          "template": "t.\"id\""
+        },
+        {
+          "id": "col.tags.name",
+          "template": "t.\"name\""
+        },
+        {
+          "id": "col.tenants.id",
+          "template": "t2.\"id\""
+        },
+        {
+          "id": "col.tenants.name",
+          "template": "t2.\"name\""
+        },
+        {
+          "id": "col.users.created_at",
+          "template": "u.\"created_at\""
+        },
+        {
+          "id": "col.users.display_name",
+          "template": "u.\"display_name\""
+        },
+        {
+          "id": "col.users.email",
+          "template": "u.\"email\""
+        },
+        {
+          "id": "col.users.id",
+          "template": "u.\"id\""
+        },
+        {
+          "id": "col.users.password_hash",
+          "template": "u.\"password_hash\""
+        },
+        {
+          "id": "col.users.tenant_id",
+          "template": "u.\"tenant_id\""
+        },
+        {
+          "id": "col.users.updated_at",
+          "template": "u.\"updated_at\""
+        },
+        {
+          "id": "col.users.version",
+          "template": "u.\"version\""
+        },
+        {
+          "id": "count.post_tags",
+          "template": "SELECT count(*) FROM \"app\".\"post_tags\" pt{where}"
+        },
+        {
+          "id": "count.posts",
+          "template": "SELECT count(*) FROM \"app\".\"posts\" p{where}"
+        },
+        {
+          "id": "count.profiles",
+          "template": "SELECT count(*) FROM \"app\".\"profiles\" p2{where}"
+        },
+        {
+          "id": "count.published_posts",
+          "template": "SELECT count(*) FROM \"app\".\"published_posts\" pp{where}"
+        },
+        {
+          "id": "count.tags",
+          "template": "SELECT count(*) FROM \"app\".\"tags\" t{where}"
+        },
+        {
+          "id": "count.tenants",
+          "template": "SELECT count(*) FROM \"app\".\"tenants\" t2{where}"
+        },
+        {
+          "id": "count.users",
+          "template": "SELECT count(*) FROM \"app\".\"users\" u{where}"
+        },
+        {
+          "id": "delete.post_tags",
+          "template": "DELETE FROM \"app\".\"post_tags\" AS pt{where}{returning}"
+        },
+        {
+          "id": "delete.posts",
+          "template": "DELETE FROM \"app\".\"posts\" AS p{where}{returning}"
+        },
+        {
+          "id": "delete.profiles",
+          "template": "DELETE FROM \"app\".\"profiles\" AS p2{where}{returning}"
+        },
+        {
+          "id": "delete.tags",
+          "template": "DELETE FROM \"app\".\"tags\" AS t{where}{returning}"
+        },
+        {
+          "id": "delete.tenants",
+          "template": "DELETE FROM \"app\".\"tenants\" AS t2{where}{returning}"
+        },
+        {
+          "id": "delete.users",
+          "template": "DELETE FROM \"app\".\"users\" AS u{where}{returning}"
+        },
+        {
+          "id": "excluded.post_tags.post_id",
+          "template": "EXCLUDED.\"post_id\""
+        },
+        {
+          "id": "excluded.post_tags.tag_id",
+          "template": "EXCLUDED.\"tag_id\""
+        },
+        {
+          "id": "excluded.posts.author_id",
+          "template": "EXCLUDED.\"author_id\""
+        },
+        {
+          "id": "excluded.posts.editor_id",
+          "template": "EXCLUDED.\"editor_id\""
+        },
+        {
+          "id": "excluded.posts.id",
+          "template": "EXCLUDED.\"id\""
+        },
+        {
+          "id": "excluded.posts.labels",
+          "template": "EXCLUDED.\"labels\""
+        },
+        {
+          "id": "excluded.posts.price",
+          "template": "EXCLUDED.\"price\""
+        },
+        {
+          "id": "excluded.posts.published_at",
+          "template": "EXCLUDED.\"published_at\""
+        },
+        {
+          "id": "excluded.posts.slug",
+          "template": "EXCLUDED.\"slug\""
+        },
+        {
+          "id": "excluded.posts.status",
+          "template": "EXCLUDED.\"status\""
+        },
+        {
+          "id": "excluded.posts.title",
+          "template": "EXCLUDED.\"title\""
+        },
+        {
+          "id": "excluded.profiles.bio",
+          "template": "EXCLUDED.\"bio\""
+        },
+        {
+          "id": "excluded.profiles.birthday",
+          "template": "EXCLUDED.\"birthday\""
+        },
+        {
+          "id": "excluded.profiles.user_id",
+          "template": "EXCLUDED.\"user_id\""
+        },
+        {
+          "id": "excluded.tags.id",
+          "template": "EXCLUDED.\"id\""
+        },
+        {
+          "id": "excluded.tags.name",
+          "template": "EXCLUDED.\"name\""
+        },
+        {
+          "id": "excluded.tenants.id",
+          "template": "EXCLUDED.\"id\""
+        },
+        {
+          "id": "excluded.tenants.name",
+          "template": "EXCLUDED.\"name\""
+        },
+        {
+          "id": "excluded.users.created_at",
+          "template": "EXCLUDED.\"created_at\""
+        },
+        {
+          "id": "excluded.users.display_name",
+          "template": "EXCLUDED.\"display_name\""
+        },
+        {
+          "id": "excluded.users.email",
+          "template": "EXCLUDED.\"email\""
+        },
+        {
+          "id": "excluded.users.id",
+          "template": "EXCLUDED.\"id\""
+        },
+        {
+          "id": "excluded.users.password_hash",
+          "template": "EXCLUDED.\"password_hash\""
+        },
+        {
+          "id": "excluded.users.tenant_id",
+          "template": "EXCLUDED.\"tenant_id\""
+        },
+        {
+          "id": "excluded.users.updated_at",
+          "template": "EXCLUDED.\"updated_at\""
+        },
+        {
+          "id": "excluded.users.version",
+          "template": "EXCLUDED.\"version\""
+        },
+        {
+          "id": "exists.post_tags",
+          "template": "SELECT EXISTS (SELECT 1 FROM \"app\".\"post_tags\" pt{where})"
+        },
+        {
+          "id": "exists.posts",
+          "template": "SELECT EXISTS (SELECT 1 FROM \"app\".\"posts\" p{where})"
+        },
+        {
+          "id": "exists.profiles",
+          "template": "SELECT EXISTS (SELECT 1 FROM \"app\".\"profiles\" p2{where})"
+        },
+        {
+          "id": "exists.published_posts",
+          "template": "SELECT EXISTS (SELECT 1 FROM \"app\".\"published_posts\" pp{where})"
+        },
+        {
+          "id": "exists.tags",
+          "template": "SELECT EXISTS (SELECT 1 FROM \"app\".\"tags\" t{where})"
+        },
+        {
+          "id": "exists.tenants",
+          "template": "SELECT EXISTS (SELECT 1 FROM \"app\".\"tenants\" t2{where})"
+        },
+        {
+          "id": "exists.users",
+          "template": "SELECT EXISTS (SELECT 1 FROM \"app\".\"users\" u{where})"
+        },
+        {
+          "id": "from.post_tags",
+          "template": "\"app\".\"post_tags\" pt"
+        },
+        {
+          "id": "from.posts",
+          "template": "\"app\".\"posts\" p"
+        },
+        {
+          "id": "from.profiles",
+          "template": "\"app\".\"profiles\" p2"
+        },
+        {
+          "id": "from.published_posts",
+          "template": "\"app\".\"published_posts\" pp"
+        },
+        {
+          "id": "from.tags",
+          "template": "\"app\".\"tags\" t"
+        },
+        {
+          "id": "from.tenants",
+          "template": "\"app\".\"tenants\" t2"
+        },
+        {
+          "id": "from.users",
+          "template": "\"app\".\"users\" u"
+        },
+        {
+          "id": "ignore.post_tags.post_tags_pkey",
+          "template": "INSERT INTO \"app\".\"post_tags\" AS pt ({cols}) VALUES {rows} ON CONFLICT (\"post_id\", \"tag_id\") DO NOTHING{returning}"
+        },
+        {
+          "id": "ignore.posts.posts_one_published_slug",
+          "template": "INSERT INTO \"app\".\"posts\" AS p ({cols}) VALUES {rows} ON CONFLICT (\"slug\") WHERE (status = 'published'::app.post_status) DO NOTHING{returning}"
+        },
+        {
+          "id": "ignore.posts.posts_pkey",
+          "template": "INSERT INTO \"app\".\"posts\" AS p ({cols}) VALUES {rows} ON CONFLICT (\"id\") DO NOTHING{returning}"
+        },
+        {
+          "id": "ignore.profiles.profiles_pkey",
+          "template": "INSERT INTO \"app\".\"profiles\" AS p2 ({cols}) VALUES {rows} ON CONFLICT (\"user_id\") DO NOTHING{returning}"
+        },
+        {
+          "id": "ignore.tags.tags_name_key",
+          "template": "INSERT INTO \"app\".\"tags\" AS t ({cols}) VALUES {rows} ON CONFLICT (\"name\") DO NOTHING{returning}"
+        },
+        {
+          "id": "ignore.tags.tags_pkey",
+          "template": "INSERT INTO \"app\".\"tags\" AS t ({cols}) VALUES {rows} ON CONFLICT (\"id\") DO NOTHING{returning}"
+        },
+        {
+          "id": "ignore.tenants.tenants_pkey",
+          "template": "INSERT INTO \"app\".\"tenants\" AS t2 ({cols}) VALUES {rows} ON CONFLICT (\"id\") DO NOTHING{returning}"
+        },
+        {
+          "id": "ignore.users.users_pkey",
+          "template": "INSERT INTO \"app\".\"users\" AS u ({cols}) VALUES {rows} ON CONFLICT (\"id\") DO NOTHING{returning}"
+        },
+        {
+          "id": "ignore.users.users_tenant_email_key",
+          "template": "INSERT INTO \"app\".\"users\" AS u ({cols}) VALUES {rows} ON CONFLICT (\"tenant_id\", \"email\") DO NOTHING{returning}"
+        },
+        {
+          "id": "insert.post_tags",
+          "template": "INSERT INTO \"app\".\"post_tags\" AS pt ({cols}) VALUES {rows}{returning}"
+        },
+        {
+          "id": "insert.posts",
+          "template": "INSERT INTO \"app\".\"posts\" AS p ({cols}) VALUES {rows}{returning}"
+        },
+        {
+          "id": "insert.profiles",
+          "template": "INSERT INTO \"app\".\"profiles\" AS p2 ({cols}) VALUES {rows}{returning}"
+        },
+        {
+          "id": "insert.tags",
+          "template": "INSERT INTO \"app\".\"tags\" AS t ({cols}) VALUES {rows}{returning}"
+        },
+        {
+          "id": "insert.tenants",
+          "template": "INSERT INTO \"app\".\"tenants\" AS t2 ({cols}) VALUES {rows}{returning}"
+        },
+        {
+          "id": "insert.users",
+          "template": "INSERT INTO \"app\".\"users\" AS u ({cols}) VALUES {rows}{returning}"
+        },
+        {
+          "id": "keyset.after",
+          "template": "({cols}) > ({vals})"
+        },
+        {
+          "id": "keyset.after_desc",
+          "template": "({cols}) < ({vals})"
+        },
+        {
+          "id": "lock.nowait",
+          "template": " NOWAIT"
+        },
+        {
+          "id": "lock.share",
+          "template": " FOR SHARE"
+        },
+        {
+          "id": "lock.skip_locked",
+          "template": " SKIP LOCKED"
+        },
+        {
+          "id": "lock.update",
+          "template": " FOR UPDATE"
+        },
+        {
+          "id": "name.post_tags.post_id",
+          "template": "\"post_id\""
+        },
+        {
+          "id": "name.post_tags.tag_id",
+          "template": "\"tag_id\""
+        },
+        {
+          "id": "name.posts.author_id",
+          "template": "\"author_id\""
+        },
+        {
+          "id": "name.posts.editor_id",
+          "template": "\"editor_id\""
+        },
+        {
+          "id": "name.posts.id",
+          "template": "\"id\""
+        },
+        {
+          "id": "name.posts.labels",
+          "template": "\"labels\""
+        },
+        {
+          "id": "name.posts.price",
+          "template": "\"price\""
+        },
+        {
+          "id": "name.posts.published_at",
+          "template": "\"published_at\""
+        },
+        {
+          "id": "name.posts.slug",
+          "template": "\"slug\""
+        },
+        {
+          "id": "name.posts.status",
+          "template": "\"status\""
+        },
+        {
+          "id": "name.posts.title",
+          "template": "\"title\""
+        },
+        {
+          "id": "name.profiles.bio",
+          "template": "\"bio\""
+        },
+        {
+          "id": "name.profiles.birthday",
+          "template": "\"birthday\""
+        },
+        {
+          "id": "name.profiles.user_id",
+          "template": "\"user_id\""
+        },
+        {
+          "id": "name.tags.id",
+          "template": "\"id\""
+        },
+        {
+          "id": "name.tags.name",
+          "template": "\"name\""
+        },
+        {
+          "id": "name.tenants.id",
+          "template": "\"id\""
+        },
+        {
+          "id": "name.tenants.name",
+          "template": "\"name\""
+        },
+        {
+          "id": "name.users.created_at",
+          "template": "\"created_at\""
+        },
+        {
+          "id": "name.users.display_name",
+          "template": "\"display_name\""
+        },
+        {
+          "id": "name.users.email",
+          "template": "\"email\""
+        },
+        {
+          "id": "name.users.id",
+          "template": "\"id\""
+        },
+        {
+          "id": "name.users.password_hash",
+          "template": "\"password_hash\""
+        },
+        {
+          "id": "name.users.tenant_id",
+          "template": "\"tenant_id\""
+        },
+        {
+          "id": "name.users.updated_at",
+          "template": "\"updated_at\""
+        },
+        {
+          "id": "name.users.version",
+          "template": "\"version\""
+        },
+        {
+          "id": "op.add",
+          "template": "({0} + {1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.any",
+          "template": "{0} = ANY({1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.array_contains",
+          "template": "{1} = ANY({0})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.array_overlaps",
+          "template": "{0} && {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.between",
+          "template": "{0} BETWEEN {1} AND {2}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.contains",
+          "template": "strpos({0}, {1}) > 0",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.div",
+          "template": "({0} / {1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.eq",
+          "template": "{0} = {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.ge",
+          "template": "{0} >= {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.gt",
+          "template": "{0} > {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.ilike",
+          "template": "{0} ILIKE {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.in",
+          "template": "{0} = ANY({1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.is_distinct_from",
+          "template": "{0} IS DISTINCT FROM {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.is_not_null",
+          "template": "{0} IS NOT NULL",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.is_null",
+          "template": "{0} IS NULL",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.json_contains",
+          "template": "{0}::jsonb @> {1}::jsonb",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.json_get",
+          "template": "({0} -> {1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.json_path",
+          "template": "jsonb_path_query_first({0}::jsonb, {1}::jsonpath)",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.le",
+          "template": "{0} <= {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.like",
+          "template": "{0} LIKE {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.lt",
+          "template": "{0} < {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.mod",
+          "template": "({0} % {1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.mul",
+          "template": "({0} * {1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.ne",
+          "template": "{0} <> {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.neg",
+          "template": "(-{0})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.range_contains",
+          "template": "{0} @> {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.range_overlaps",
+          "template": "{0} && {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.regex_match",
+          "template": "{0} ~ {1}",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.starts_with",
+          "template": "starts_with({0}, {1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "op.sub",
+          "template": "({0} - {1})",
+          "fidelity": "FIDELITY_EXACT"
+        },
+        {
+          "id": "order.asc",
+          "template": "{0} ASC"
+        },
+        {
+          "id": "order.desc",
+          "template": "{0} DESC"
+        },
+        {
+          "id": "rel.post_tags.post",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"posts\" p WHERE p.\"id\" = pt.\"post_id\"{and})"
+        },
+        {
+          "id": "rel.post_tags.tag",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"tags\" t WHERE t.\"id\" = pt.\"tag_id\"{and})"
+        },
+        {
+          "id": "rel.posts.author",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"users\" u WHERE u.\"id\" = p.\"author_id\"{and})"
+        },
+        {
+          "id": "rel.posts.editor",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"users\" u WHERE u.\"id\" = p.\"editor_id\"{and})"
+        },
+        {
+          "id": "rel.posts.post_tags",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"post_tags\" pt WHERE pt.\"post_id\" = p.\"id\"{and})"
+        },
+        {
+          "id": "rel.posts.tags",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"post_tags\" pt JOIN \"app\".\"tags\" t ON t.\"id\" = pt.\"tag_id\" WHERE pt.\"post_id\" = p.\"id\"{and})"
+        },
+        {
+          "id": "rel.profiles.user",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"users\" u WHERE u.\"id\" = p2.\"user_id\"{and})"
+        },
+        {
+          "id": "rel.tags.post_tags",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"post_tags\" pt WHERE pt.\"tag_id\" = t.\"id\"{and})"
+        },
+        {
+          "id": "rel.tags.posts",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"post_tags\" pt JOIN \"app\".\"posts\" p ON p.\"id\" = pt.\"post_id\" WHERE pt.\"tag_id\" = t.\"id\"{and})"
+        },
+        {
+          "id": "rel.tenants.users",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"users\" u WHERE u.\"tenant_id\" = t2.\"id\"{and})"
+        },
+        {
+          "id": "rel.users.posts_to_author",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"posts\" p WHERE p.\"author_id\" = u.\"id\"{and})"
+        },
+        {
+          "id": "rel.users.posts_to_editor",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"posts\" p WHERE p.\"editor_id\" = u.\"id\"{and})"
+        },
+        {
+          "id": "rel.users.profile",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"profiles\" p2 WHERE p2.\"user_id\" = u.\"id\"{and})"
+        },
+        {
+          "id": "rel.users.tenant",
+          "template": "EXISTS (SELECT 1 FROM \"app\".\"tenants\" t2 WHERE t2.\"id\" = u.\"tenant_id\"{and})"
+        },
+        {
+          "id": "returning.post.full.flat",
+          "template": " RETURNING p.\"id\", p.\"author_id\", p.\"editor_id\", p.\"title\", p.\"slug\", p.\"status\", p.\"price\", p.\"labels\", p.\"published_at\""
+        },
+        {
+          "id": "returning.post_tag.full.flat",
+          "template": " RETURNING pt.\"post_id\", pt.\"tag_id\""
+        },
+        {
+          "id": "returning.profile.full.flat",
+          "template": " RETURNING p2.\"user_id\", p2.\"bio\", p2.\"birthday\""
+        },
+        {
+          "id": "returning.published_post.full.flat",
+          "template": " RETURNING pp.\"id\", pp.\"title\", pp.\"author_id\", pp.\"published_at\""
+        },
+        {
+          "id": "returning.tag.full.flat",
+          "template": " RETURNING t.\"id\", t.\"name\""
+        },
+        {
+          "id": "returning.tenant.full.flat",
+          "template": " RETURNING t2.\"id\", t2.\"name\""
+        },
+        {
+          "id": "returning.user.full.flat",
+          "template": " RETURNING u.\"id\", u.\"tenant_id\", u.\"email\", u.\"display_name\", u.\"created_at\", u.\"updated_at\", u.\"version\""
+        },
+        {
+          "id": "select.distinct",
+          "template": "SELECT DISTINCT {cols} FROM {from}"
+        },
+        {
+          "id": "select.distinct_on",
+          "template": "SELECT DISTINCT ON ({keys}) {cols} FROM {from}"
+        },
+        {
+          "id": "select.post.full.flat",
+          "template": "SELECT p.\"id\", p.\"author_id\", p.\"editor_id\", p.\"title\", p.\"slug\", p.\"status\", p.\"price\", p.\"labels\", p.\"published_at\" FROM \"app\".\"posts\" p"
+        },
+        {
+          "id": "select.post_tag.full.flat",
+          "template": "SELECT pt.\"post_id\", pt.\"tag_id\" FROM \"app\".\"post_tags\" pt"
+        },
+        {
+          "id": "select.profile.full.flat",
+          "template": "SELECT p2.\"user_id\", p2.\"bio\", p2.\"birthday\" FROM \"app\".\"profiles\" p2"
+        },
+        {
+          "id": "select.published_post.full.flat",
+          "template": "SELECT pp.\"id\", pp.\"title\", pp.\"author_id\", pp.\"published_at\" FROM \"app\".\"published_posts\" pp"
+        },
+        {
+          "id": "select.tag.full.flat",
+          "template": "SELECT t.\"id\", t.\"name\" FROM \"app\".\"tags\" t"
+        },
+        {
+          "id": "select.tenant.full.flat",
+          "template": "SELECT t2.\"id\", t2.\"name\" FROM \"app\".\"tenants\" t2"
+        },
+        {
+          "id": "select.user.full.flat",
+          "template": "SELECT u.\"id\", u.\"tenant_id\", u.\"email\", u.\"display_name\", u.\"created_at\", u.\"updated_at\", u.\"version\" FROM \"app\".\"users\" u"
+        },
+        {
+          "id": "set.post_tags.post_id",
+          "template": "\"post_id\" = {0}"
+        },
+        {
+          "id": "set.post_tags.tag_id",
+          "template": "\"tag_id\" = {0}"
+        },
+        {
+          "id": "set.posts.author_id",
+          "template": "\"author_id\" = {0}"
+        },
+        {
+          "id": "set.posts.editor_id",
+          "template": "\"editor_id\" = {0}"
+        },
+        {
+          "id": "set.posts.id",
+          "template": "\"id\" = {0}"
+        },
+        {
+          "id": "set.posts.labels",
+          "template": "\"labels\" = {0}"
+        },
+        {
+          "id": "set.posts.price",
+          "template": "\"price\" = {0}"
+        },
+        {
+          "id": "set.posts.published_at",
+          "template": "\"published_at\" = {0}"
+        },
+        {
+          "id": "set.posts.slug",
+          "template": "\"slug\" = {0}"
+        },
+        {
+          "id": "set.posts.status",
+          "template": "\"status\" = {0}"
+        },
+        {
+          "id": "set.posts.title",
+          "template": "\"title\" = {0}"
+        },
+        {
+          "id": "set.profiles.bio",
+          "template": "\"bio\" = {0}"
+        },
+        {
+          "id": "set.profiles.birthday",
+          "template": "\"birthday\" = {0}"
+        },
+        {
+          "id": "set.profiles.user_id",
+          "template": "\"user_id\" = {0}"
+        },
+        {
+          "id": "set.tags.id",
+          "template": "\"id\" = {0}"
+        },
+        {
+          "id": "set.tags.name",
+          "template": "\"name\" = {0}"
+        },
+        {
+          "id": "set.tenants.id",
+          "template": "\"id\" = {0}"
+        },
+        {
+          "id": "set.tenants.name",
+          "template": "\"name\" = {0}"
+        },
+        {
+          "id": "set.users.created_at",
+          "template": "\"created_at\" = {0}"
+        },
+        {
+          "id": "set.users.display_name",
+          "template": "\"display_name\" = {0}"
+        },
+        {
+          "id": "set.users.email",
+          "template": "\"email\" = {0}"
+        },
+        {
+          "id": "set.users.id",
+          "template": "\"id\" = {0}"
+        },
+        {
+          "id": "set.users.password_hash",
+          "template": "\"password_hash\" = {0}"
+        },
+        {
+          "id": "set.users.tenant_id",
+          "template": "\"tenant_id\" = {0}"
+        },
+        {
+          "id": "set.users.updated_at",
+          "template": "\"updated_at\" = {0}"
+        },
+        {
+          "id": "set.users.version",
+          "template": "\"version\" = {0}"
+        },
+        {
+          "id": "update.post_tags",
+          "template": "UPDATE \"app\".\"post_tags\" AS pt SET {sets}{where}{returning}"
+        },
+        {
+          "id": "update.posts",
+          "template": "UPDATE \"app\".\"posts\" AS p SET {sets}{where}{returning}"
+        },
+        {
+          "id": "update.profiles",
+          "template": "UPDATE \"app\".\"profiles\" AS p2 SET {sets}{where}{returning}"
+        },
+        {
+          "id": "update.tags",
+          "template": "UPDATE \"app\".\"tags\" AS t SET {sets}{where}{returning}"
+        },
+        {
+          "id": "update.tenants",
+          "template": "UPDATE \"app\".\"tenants\" AS t2 SET {sets}{where}{returning}"
+        },
+        {
+          "id": "update.users",
+          "template": "UPDATE \"app\".\"users\" AS u SET {sets}{where}{returning}"
+        },
+        {
+          "id": "upsert.post_tags.post_tags_pkey",
+          "template": "INSERT INTO \"app\".\"post_tags\" AS pt ({cols}) VALUES {rows} ON CONFLICT (\"post_id\", \"tag_id\") DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "upsert.posts.posts_one_published_slug",
+          "template": "INSERT INTO \"app\".\"posts\" AS p ({cols}) VALUES {rows} ON CONFLICT (\"slug\") WHERE (status = 'published'::app.post_status) DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "upsert.posts.posts_pkey",
+          "template": "INSERT INTO \"app\".\"posts\" AS p ({cols}) VALUES {rows} ON CONFLICT (\"id\") DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "upsert.profiles.profiles_pkey",
+          "template": "INSERT INTO \"app\".\"profiles\" AS p2 ({cols}) VALUES {rows} ON CONFLICT (\"user_id\") DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "upsert.tags.tags_name_key",
+          "template": "INSERT INTO \"app\".\"tags\" AS t ({cols}) VALUES {rows} ON CONFLICT (\"name\") DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "upsert.tags.tags_pkey",
+          "template": "INSERT INTO \"app\".\"tags\" AS t ({cols}) VALUES {rows} ON CONFLICT (\"id\") DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "upsert.tenants.tenants_pkey",
+          "template": "INSERT INTO \"app\".\"tenants\" AS t2 ({cols}) VALUES {rows} ON CONFLICT (\"id\") DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "upsert.users.users_pkey",
+          "template": "INSERT INTO \"app\".\"users\" AS u ({cols}) VALUES {rows} ON CONFLICT (\"id\") DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "upsert.users.users_tenant_email_key",
+          "template": "INSERT INTO \"app\".\"users\" AS u ({cols}) VALUES {rows} ON CONFLICT (\"tenant_id\", \"email\") DO UPDATE SET {sets}{returning}"
+        },
+        {
+          "id": "value.default",
+          "template": "DEFAULT"
+        },
+        {
+          "id": "value.now",
+          "template": "now()"
+        },
+        {
+          "id": "value.true",
+          "template": "TRUE"
+        },
+        {
+          "id": "values.row",
+          "template": "({0})"
+        }
+      ]
+    }
   },
   "operators": [
     {
