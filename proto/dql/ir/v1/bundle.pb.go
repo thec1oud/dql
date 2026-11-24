@@ -77,6 +77,63 @@ func (Dialect) EnumDescriptor() ([]byte, []int) {
 	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{0}
 }
 
+// How a driver sends statements (§26.4).
+type StatementMode int32
+
+const (
+	StatementMode_STATEMENT_MODE_UNSPECIFIED StatementMode = 0
+	// Prepared and cached as named statements, for direct connections.
+	StatementMode_STATEMENT_MODE_PREPARE StatementMode = 1
+	// Unnamed statements, for transaction-level poolers such as PgBouncer in
+	// transaction mode.
+	StatementMode_STATEMENT_MODE_DESCRIBE StatementMode = 2
+	// No preparation, for proxies that support nothing else.
+	StatementMode_STATEMENT_MODE_SIMPLE StatementMode = 3
+)
+
+// Enum value maps for StatementMode.
+var (
+	StatementMode_name = map[int32]string{
+		0: "STATEMENT_MODE_UNSPECIFIED",
+		1: "STATEMENT_MODE_PREPARE",
+		2: "STATEMENT_MODE_DESCRIBE",
+		3: "STATEMENT_MODE_SIMPLE",
+	}
+	StatementMode_value = map[string]int32{
+		"STATEMENT_MODE_UNSPECIFIED": 0,
+		"STATEMENT_MODE_PREPARE":     1,
+		"STATEMENT_MODE_DESCRIBE":    2,
+		"STATEMENT_MODE_SIMPLE":      3,
+	}
+)
+
+func (x StatementMode) Enum() *StatementMode {
+	p := new(StatementMode)
+	*p = x
+	return p
+}
+
+func (x StatementMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (StatementMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_dql_ir_v1_bundle_proto_enumTypes[1].Descriptor()
+}
+
+func (StatementMode) Type() protoreflect.EnumType {
+	return &file_dql_ir_v1_bundle_proto_enumTypes[1]
+}
+
+func (x StatementMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use StatementMode.Descriptor instead.
+func (StatementMode) EnumDescriptor() ([]byte, []int) {
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{1}
+}
+
 // The errors of the taxonomy a native error code maps to (§23.1). The
 // runtime raises the others itself.
 type ErrorKind int32
@@ -136,11 +193,11 @@ func (x ErrorKind) String() string {
 }
 
 func (ErrorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_bundle_proto_enumTypes[1].Descriptor()
+	return file_dql_ir_v1_bundle_proto_enumTypes[2].Descriptor()
 }
 
 func (ErrorKind) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_bundle_proto_enumTypes[1]
+	return &file_dql_ir_v1_bundle_proto_enumTypes[2]
 }
 
 func (x ErrorKind) Number() protoreflect.EnumNumber {
@@ -149,7 +206,7 @@ func (x ErrorKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ErrorKind.Descriptor instead.
 func (ErrorKind) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{1}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{2}
 }
 
 // How a dialect writes the n-th placeholder.
@@ -192,11 +249,11 @@ func (x Placeholder) String() string {
 }
 
 func (Placeholder) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_bundle_proto_enumTypes[2].Descriptor()
+	return file_dql_ir_v1_bundle_proto_enumTypes[3].Descriptor()
 }
 
 func (Placeholder) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_bundle_proto_enumTypes[2]
+	return &file_dql_ir_v1_bundle_proto_enumTypes[3]
 }
 
 func (x Placeholder) Number() protoreflect.EnumNumber {
@@ -205,7 +262,7 @@ func (x Placeholder) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Placeholder.Descriptor instead.
 func (Placeholder) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{2}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{3}
 }
 
 // The three IR layers travelling together at every plugin boundary (§2.2, §3.1).
@@ -390,7 +447,8 @@ func (x *IrVersion) GetPatch() uint32 {
 }
 
 // The dialect's capability profile (§9.2), with its session setup and error
-// mapping (§22.7, §23). Its other fields arrive with the dialect plugins.
+// mapping (§22.7, §23), its limits and its replica support (§22.5, §25.2,
+// §26.4).
 type CapabilityProfile struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Dialect Dialect                `protobuf:"varint,1,opt,name=dialect,proto3,enum=dql.ir.v1.Dialect" json:"dialect,omitempty"`
@@ -406,9 +464,21 @@ type CapabilityProfile struct {
 	ErrorCodes []*ErrorCode `protobuf:"bytes,5,rep,name=error_codes,json=errorCodes,proto3" json:"error_codes,omitempty"`
 	// How the database reports a violation of each of the catalogs' rules,
 	// sorted by object, then kind, then what is reported (§23.2).
-	Violations    []*ViolationReport `protobuf:"bytes,6,rep,name=violations,proto3" json:"violations,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Violations []*ViolationReport `protobuf:"bytes,6,rep,name=violations,proto3" json:"violations,omitempty"`
+	// The most parameters one statement may bind, which bulk writes split to
+	// stay under (§25.2). Zero when the dialect's limit is not a count.
+	MaxParams uint32 `protobuf:"varint,7,opt,name=max_params,json=maxParams,proto3" json:"max_params,omitempty"`
+	// The read consistency levels the dialect supports, sorted (§22.5). A read
+	// at a level not listed runs on the primary.
+	ConsistencyLevels []ConsistencyLevel `protobuf:"varint,8,rep,packed,name=consistency_levels,json=consistencyLevels,proto3,enum=dql.ir.v1.ConsistencyLevel" json:"consistency_levels,omitempty"`
+	// How the runtime reads replica positions, set when consistency_levels
+	// has a level beyond primary (§22.5).
+	Replication *ReplicationQueries `protobuf:"bytes,9,opt,name=replication,proto3" json:"replication,omitempty"`
+	// The statement modes the dialect's drivers support, sorted; the first is
+	// the default (§26.4).
+	StatementModes []StatementMode `protobuf:"varint,10,rep,packed,name=statement_modes,json=statementModes,proto3,enum=dql.ir.v1.StatementMode" json:"statement_modes,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CapabilityProfile) Reset() {
@@ -483,6 +553,101 @@ func (x *CapabilityProfile) GetViolations() []*ViolationReport {
 	return nil
 }
 
+func (x *CapabilityProfile) GetMaxParams() uint32 {
+	if x != nil {
+		return x.MaxParams
+	}
+	return 0
+}
+
+func (x *CapabilityProfile) GetConsistencyLevels() []ConsistencyLevel {
+	if x != nil {
+		return x.ConsistencyLevels
+	}
+	return nil
+}
+
+func (x *CapabilityProfile) GetReplication() *ReplicationQueries {
+	if x != nil {
+		return x.Replication
+	}
+	return nil
+}
+
+func (x *CapabilityProfile) GetStatementModes() []StatementMode {
+	if x != nil {
+		return x.StatementModes
+	}
+	return nil
+}
+
+// The statements the runtime runs to route reads to replicas (§22.5).
+type ReplicationQueries struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Runs on a primary after a commit and returns, as text, a position at
+	// which a replica has replayed the commit.
+	Position string `protobuf:"bytes,1,opt,name=position,proto3" json:"position,omitempty"`
+	// Runs on a replica and returns how far behind it is in seconds, as a
+	// float, or NULL when the server is not a replica.
+	Lag string `protobuf:"bytes,2,opt,name=lag,proto3" json:"lag,omitempty"`
+	// Runs on a replica with one parameter, a list of positions as text, and
+	// returns whether it has replayed every one.
+	Replayed      string `protobuf:"bytes,3,opt,name=replayed,proto3" json:"replayed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReplicationQueries) Reset() {
+	*x = ReplicationQueries{}
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReplicationQueries) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplicationQueries) ProtoMessage() {}
+
+func (x *ReplicationQueries) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplicationQueries.ProtoReflect.Descriptor instead.
+func (*ReplicationQueries) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ReplicationQueries) GetPosition() string {
+	if x != nil {
+		return x.Position
+	}
+	return ""
+}
+
+func (x *ReplicationQueries) GetLag() string {
+	if x != nil {
+		return x.Lag
+	}
+	return ""
+}
+
+func (x *ReplicationQueries) GetReplayed() string {
+	if x != nil {
+		return x.Replayed
+	}
+	return ""
+}
+
 // A native error code and the taxonomy error it is (§23.1).
 type ErrorCode struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -495,7 +660,7 @@ type ErrorCode struct {
 
 func (x *ErrorCode) Reset() {
 	*x = ErrorCode{}
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -507,7 +672,7 @@ func (x *ErrorCode) String() string {
 func (*ErrorCode) ProtoMessage() {}
 
 func (x *ErrorCode) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -520,7 +685,7 @@ func (x *ErrorCode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ErrorCode.ProtoReflect.Descriptor instead.
 func (*ErrorCode) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{3}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ErrorCode) GetCode() string {
@@ -559,7 +724,7 @@ type ViolationReport struct {
 
 func (x *ViolationReport) Reset() {
 	*x = ViolationReport{}
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -571,7 +736,7 @@ func (x *ViolationReport) String() string {
 func (*ViolationReport) ProtoMessage() {}
 
 func (x *ViolationReport) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -584,7 +749,7 @@ func (x *ViolationReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ViolationReport.ProtoReflect.Descriptor instead.
 func (*ViolationReport) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{4}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ViolationReport) GetKind() ErrorKind {
@@ -645,7 +810,7 @@ type ShapeLayer struct {
 
 func (x *ShapeLayer) Reset() {
 	*x = ShapeLayer{}
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[5]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -657,7 +822,7 @@ func (x *ShapeLayer) String() string {
 func (*ShapeLayer) ProtoMessage() {}
 
 func (x *ShapeLayer) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[5]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -670,7 +835,7 @@ func (x *ShapeLayer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShapeLayer.ProtoReflect.Descriptor instead.
 func (*ShapeLayer) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{5}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ShapeLayer) GetShapes() []*Shape {
@@ -721,7 +886,7 @@ type QueryLayer struct {
 
 func (x *QueryLayer) Reset() {
 	*x = QueryLayer{}
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[6]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -733,7 +898,7 @@ func (x *QueryLayer) String() string {
 func (*QueryLayer) ProtoMessage() {}
 
 func (x *QueryLayer) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[6]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -746,7 +911,7 @@ func (x *QueryLayer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryLayer.ProtoReflect.Descriptor instead.
 func (*QueryLayer) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{6}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *QueryLayer) GetQueries() []*Query {
@@ -778,7 +943,7 @@ type FragmentTable struct {
 
 func (x *FragmentTable) Reset() {
 	*x = FragmentTable{}
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[7]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -790,7 +955,7 @@ func (x *FragmentTable) String() string {
 func (*FragmentTable) ProtoMessage() {}
 
 func (x *FragmentTable) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[7]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -803,7 +968,7 @@ func (x *FragmentTable) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FragmentTable.ProtoReflect.Descriptor instead.
 func (*FragmentTable) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{7}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *FragmentTable) GetDialect() Dialect {
@@ -842,7 +1007,7 @@ type Fragment struct {
 
 func (x *Fragment) Reset() {
 	*x = Fragment{}
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -854,7 +1019,7 @@ func (x *Fragment) String() string {
 func (*Fragment) ProtoMessage() {}
 
 func (x *Fragment) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_bundle_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_bundle_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -867,7 +1032,7 @@ func (x *Fragment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Fragment.ProtoReflect.Descriptor instead.
 func (*Fragment) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{8}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Fragment) GetId() string {
@@ -912,7 +1077,7 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\x05patch\x18\x03 \x01(\rH\x02R\x05patch\x88\x01\x01B\b\n" +
 	"\x06_majorB\b\n" +
 	"\x06_minorB\b\n" +
-	"\x06_patch\"\xcd\x02\n" +
+	"\x06_patch\"\xbc\x04\n" +
 	"\x11CapabilityProfile\x12,\n" +
 	"\adialect\x18\x01 \x01(\x0e2\x12.dql.ir.v1.DialectR\adialect\x128\n" +
 	"\toperators\x18\x02 \x03(\v2\x1a.dql.ir.v1.OperatorSupportR\toperators\x128\n" +
@@ -922,7 +1087,17 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"errorCodes\x12:\n" +
 	"\n" +
 	"violations\x18\x06 \x03(\v2\x1a.dql.ir.v1.ViolationReportR\n" +
-	"violations\"I\n" +
+	"violations\x12\x1d\n" +
+	"\n" +
+	"max_params\x18\a \x01(\rR\tmaxParams\x12J\n" +
+	"\x12consistency_levels\x18\b \x03(\x0e2\x1b.dql.ir.v1.ConsistencyLevelR\x11consistencyLevels\x12?\n" +
+	"\vreplication\x18\t \x01(\v2\x1d.dql.ir.v1.ReplicationQueriesR\vreplication\x12A\n" +
+	"\x0fstatement_modes\x18\n" +
+	" \x03(\x0e2\x18.dql.ir.v1.StatementModeR\x0estatementModes\"^\n" +
+	"\x12ReplicationQueries\x12\x1a\n" +
+	"\bposition\x18\x01 \x01(\tR\bposition\x12\x10\n" +
+	"\x03lag\x18\x02 \x01(\tR\x03lag\x12\x1a\n" +
+	"\breplayed\x18\x03 \x01(\tR\breplayed\"I\n" +
 	"\tErrorCode\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12(\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x14.dql.ir.v1.ErrorKindR\x04kind\"\xb5\x01\n" +
@@ -956,7 +1131,12 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\x10DIALECT_POSTGRES\x10\x01\x12\x11\n" +
 	"\rDIALECT_MYSQL\x10\x02\x12\x12\n" +
 	"\x0eDIALECT_SQLITE\x10\x03\x12\x15\n" +
-	"\x11DIALECT_SQLSERVER\x10\x04*\xe4\x02\n" +
+	"\x11DIALECT_SQLSERVER\x10\x04*\x83\x01\n" +
+	"\rStatementMode\x12\x1e\n" +
+	"\x1aSTATEMENT_MODE_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16STATEMENT_MODE_PREPARE\x10\x01\x12\x1b\n" +
+	"\x17STATEMENT_MODE_DESCRIBE\x10\x02\x12\x19\n" +
+	"\x15STATEMENT_MODE_SIMPLE\x10\x03*\xe4\x02\n" +
 	"\tErrorKind\x12\x1a\n" +
 	"\x16ERROR_KIND_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bERROR_KIND_UNIQUE_VIOLATION\x10\x01\x12$\n" +
@@ -988,66 +1168,72 @@ func file_dql_ir_v1_bundle_proto_rawDescGZIP() []byte {
 	return file_dql_ir_v1_bundle_proto_rawDescData
 }
 
-var file_dql_ir_v1_bundle_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_dql_ir_v1_bundle_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_dql_ir_v1_bundle_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_dql_ir_v1_bundle_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_dql_ir_v1_bundle_proto_goTypes = []any{
-	(Dialect)(0),              // 0: dql.ir.v1.Dialect
-	(ErrorKind)(0),            // 1: dql.ir.v1.ErrorKind
-	(Placeholder)(0),          // 2: dql.ir.v1.Placeholder
-	(*Bundle)(nil),            // 3: dql.ir.v1.Bundle
-	(*IrVersion)(nil),         // 4: dql.ir.v1.IrVersion
-	(*CapabilityProfile)(nil), // 5: dql.ir.v1.CapabilityProfile
-	(*ErrorCode)(nil),         // 6: dql.ir.v1.ErrorCode
-	(*ViolationReport)(nil),   // 7: dql.ir.v1.ViolationReport
-	(*ShapeLayer)(nil),        // 8: dql.ir.v1.ShapeLayer
-	(*QueryLayer)(nil),        // 9: dql.ir.v1.QueryLayer
-	(*FragmentTable)(nil),     // 10: dql.ir.v1.FragmentTable
-	(*Fragment)(nil),          // 11: dql.ir.v1.Fragment
-	(*Catalog)(nil),           // 12: dql.ir.v1.Catalog
-	(*Diagnostic)(nil),        // 13: dql.ir.v1.Diagnostic
-	(*Operator)(nil),          // 14: dql.ir.v1.Operator
-	(*OperatorSupport)(nil),   // 15: dql.ir.v1.OperatorSupport
-	(*QualifiedName)(nil),     // 16: dql.ir.v1.QualifiedName
-	(*Shape)(nil),             // 17: dql.ir.v1.Shape
-	(*RelationUnion)(nil),     // 18: dql.ir.v1.RelationUnion
-	(*Conversion)(nil),        // 19: dql.ir.v1.Conversion
-	(*Upsert)(nil),            // 20: dql.ir.v1.Upsert
-	(*KeyMerge)(nil),          // 21: dql.ir.v1.KeyMerge
-	(*Query)(nil),             // 22: dql.ir.v1.Query
-	(Fidelity)(0),             // 23: dql.ir.v1.Fidelity
+	(Dialect)(0),               // 0: dql.ir.v1.Dialect
+	(StatementMode)(0),         // 1: dql.ir.v1.StatementMode
+	(ErrorKind)(0),             // 2: dql.ir.v1.ErrorKind
+	(Placeholder)(0),           // 3: dql.ir.v1.Placeholder
+	(*Bundle)(nil),             // 4: dql.ir.v1.Bundle
+	(*IrVersion)(nil),          // 5: dql.ir.v1.IrVersion
+	(*CapabilityProfile)(nil),  // 6: dql.ir.v1.CapabilityProfile
+	(*ReplicationQueries)(nil), // 7: dql.ir.v1.ReplicationQueries
+	(*ErrorCode)(nil),          // 8: dql.ir.v1.ErrorCode
+	(*ViolationReport)(nil),    // 9: dql.ir.v1.ViolationReport
+	(*ShapeLayer)(nil),         // 10: dql.ir.v1.ShapeLayer
+	(*QueryLayer)(nil),         // 11: dql.ir.v1.QueryLayer
+	(*FragmentTable)(nil),      // 12: dql.ir.v1.FragmentTable
+	(*Fragment)(nil),           // 13: dql.ir.v1.Fragment
+	(*Catalog)(nil),            // 14: dql.ir.v1.Catalog
+	(*Diagnostic)(nil),         // 15: dql.ir.v1.Diagnostic
+	(*Operator)(nil),           // 16: dql.ir.v1.Operator
+	(*OperatorSupport)(nil),    // 17: dql.ir.v1.OperatorSupport
+	(ConsistencyLevel)(0),      // 18: dql.ir.v1.ConsistencyLevel
+	(*QualifiedName)(nil),      // 19: dql.ir.v1.QualifiedName
+	(*Shape)(nil),              // 20: dql.ir.v1.Shape
+	(*RelationUnion)(nil),      // 21: dql.ir.v1.RelationUnion
+	(*Conversion)(nil),         // 22: dql.ir.v1.Conversion
+	(*Upsert)(nil),             // 23: dql.ir.v1.Upsert
+	(*KeyMerge)(nil),           // 24: dql.ir.v1.KeyMerge
+	(*Query)(nil),              // 25: dql.ir.v1.Query
+	(Fidelity)(0),              // 26: dql.ir.v1.Fidelity
 }
 var file_dql_ir_v1_bundle_proto_depIdxs = []int32{
-	4,  // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
+	5,  // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
 	0,  // 1: dql.ir.v1.Bundle.dialect:type_name -> dql.ir.v1.Dialect
-	12, // 2: dql.ir.v1.Bundle.catalogs:type_name -> dql.ir.v1.Catalog
-	5,  // 3: dql.ir.v1.Bundle.capabilities:type_name -> dql.ir.v1.CapabilityProfile
-	8,  // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
-	9,  // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
-	13, // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
-	14, // 7: dql.ir.v1.Bundle.operators:type_name -> dql.ir.v1.Operator
+	14, // 2: dql.ir.v1.Bundle.catalogs:type_name -> dql.ir.v1.Catalog
+	6,  // 3: dql.ir.v1.Bundle.capabilities:type_name -> dql.ir.v1.CapabilityProfile
+	10, // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
+	11, // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
+	15, // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
+	16, // 7: dql.ir.v1.Bundle.operators:type_name -> dql.ir.v1.Operator
 	0,  // 8: dql.ir.v1.CapabilityProfile.dialect:type_name -> dql.ir.v1.Dialect
-	15, // 9: dql.ir.v1.CapabilityProfile.operators:type_name -> dql.ir.v1.OperatorSupport
-	6,  // 10: dql.ir.v1.CapabilityProfile.error_codes:type_name -> dql.ir.v1.ErrorCode
-	7,  // 11: dql.ir.v1.CapabilityProfile.violations:type_name -> dql.ir.v1.ViolationReport
-	1,  // 12: dql.ir.v1.ErrorCode.kind:type_name -> dql.ir.v1.ErrorKind
-	1,  // 13: dql.ir.v1.ViolationReport.kind:type_name -> dql.ir.v1.ErrorKind
-	16, // 14: dql.ir.v1.ViolationReport.object:type_name -> dql.ir.v1.QualifiedName
-	17, // 15: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
-	18, // 16: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
-	19, // 17: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
-	20, // 18: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
-	21, // 19: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
-	22, // 20: dql.ir.v1.QueryLayer.queries:type_name -> dql.ir.v1.Query
-	10, // 21: dql.ir.v1.QueryLayer.fragments:type_name -> dql.ir.v1.FragmentTable
-	0,  // 22: dql.ir.v1.FragmentTable.dialect:type_name -> dql.ir.v1.Dialect
-	2,  // 23: dql.ir.v1.FragmentTable.placeholder:type_name -> dql.ir.v1.Placeholder
-	11, // 24: dql.ir.v1.FragmentTable.fragments:type_name -> dql.ir.v1.Fragment
-	23, // 25: dql.ir.v1.Fragment.fidelity:type_name -> dql.ir.v1.Fidelity
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	17, // 9: dql.ir.v1.CapabilityProfile.operators:type_name -> dql.ir.v1.OperatorSupport
+	8,  // 10: dql.ir.v1.CapabilityProfile.error_codes:type_name -> dql.ir.v1.ErrorCode
+	9,  // 11: dql.ir.v1.CapabilityProfile.violations:type_name -> dql.ir.v1.ViolationReport
+	18, // 12: dql.ir.v1.CapabilityProfile.consistency_levels:type_name -> dql.ir.v1.ConsistencyLevel
+	7,  // 13: dql.ir.v1.CapabilityProfile.replication:type_name -> dql.ir.v1.ReplicationQueries
+	1,  // 14: dql.ir.v1.CapabilityProfile.statement_modes:type_name -> dql.ir.v1.StatementMode
+	2,  // 15: dql.ir.v1.ErrorCode.kind:type_name -> dql.ir.v1.ErrorKind
+	2,  // 16: dql.ir.v1.ViolationReport.kind:type_name -> dql.ir.v1.ErrorKind
+	19, // 17: dql.ir.v1.ViolationReport.object:type_name -> dql.ir.v1.QualifiedName
+	20, // 18: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
+	21, // 19: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
+	22, // 20: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
+	23, // 21: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
+	24, // 22: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
+	25, // 23: dql.ir.v1.QueryLayer.queries:type_name -> dql.ir.v1.Query
+	12, // 24: dql.ir.v1.QueryLayer.fragments:type_name -> dql.ir.v1.FragmentTable
+	0,  // 25: dql.ir.v1.FragmentTable.dialect:type_name -> dql.ir.v1.Dialect
+	3,  // 26: dql.ir.v1.FragmentTable.placeholder:type_name -> dql.ir.v1.Placeholder
+	13, // 27: dql.ir.v1.FragmentTable.fragments:type_name -> dql.ir.v1.Fragment
+	26, // 28: dql.ir.v1.Fragment.fidelity:type_name -> dql.ir.v1.Fidelity
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_bundle_proto_init() }
@@ -1068,8 +1254,8 @@ func file_dql_ir_v1_bundle_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_bundle_proto_rawDesc), len(file_dql_ir_v1_bundle_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   9,
+			NumEnums:      4,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
