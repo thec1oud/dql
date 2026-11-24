@@ -2,6 +2,7 @@ package harness
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,7 +14,7 @@ import (
 
 // Each way a step can go wrong is reported, and nothing else is.
 func TestRunProblems(t *testing.T) {
-	target := open(t, "shop")
+	target := open(t, "shop", false)
 	ctx := context.Background()
 	setup := `
 - op: tenants.insert
@@ -69,6 +70,10 @@ func TestRunProblems(t *testing.T) {
 		{"- op: select\n  from: tenants\n  shape: tenant_full\n  read: nope\n", []string{"no read nope"}},
 		{"- op: select\n  from: tenants\n  shape: tenant_full\n  filter: [{ column: name, op: regex_match, value: \"(\" }]\n  expect: { error: { class: DatabaseError } }\n", nil},
 		{"- op: select\n  from: tenants\n  shape: tenant_full\n  order: [{ column: name }]\n  limit: 1\n  expect: { rows: [{ name: nope }] }\n", []string{"row 0 name: want nope, got acme"}},
+		{"- op: sleep\n  duration: x\n", []string{`time: invalid duration "x"`}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  consistency: nope\n", []string{"no consistency nope"}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  consistency: bounded\n  bound: x\n", []string{"bound: time: invalid duration"}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  consistency: read_your_writes\n  wait: x\n", []string{"wait: time: invalid duration"}},
 		{"- op: tenants.count\n  expect: { events: [] }\n", []string{"want 0 events, got 1: "}},
 		{"- op: tenants.count\n  expect: { events: [{ query: nope }] }\n", []string{"event 1 query: want nope, got tenant.count"}},
 		{"- op: users.get\n" + scope + "  key: { id: 999999 }\n  expect: { error: { class: NotFound, hides: user } }\n", []string{"error shows user: "}},
@@ -112,6 +117,33 @@ func TestRunProblems(t *testing.T) {
 	}
 }
 
+// A replay that fails is reported, and a scenario that ends with replay
+// paused resumes it.
+func TestReplay(t *testing.T) {
+	ctx := context.Background()
+	var calls []bool
+	fail := map[bool]bool{}
+	target := Target{Schema: Schema{Replay: func(_ context.Context, dsn string, pause bool) error {
+		calls = append(calls, pause)
+		if fail[pause] {
+			return errors.New("down")
+		}
+		return nil
+	}}}
+	steps := []Step{{Op: "pause_replay"}}
+	if got := Run(ctx, Scenario{Name: "s", Steps: steps}, target); got != nil || !reflect.DeepEqual(calls, []bool{true, false}) {
+		t.Errorf("paused at the end: %q, %v", got, calls)
+	}
+	fail[false] = true
+	if got := Run(ctx, Scenario{Name: "s", Steps: steps}, target); len(got) != 1 || got[0] != "s: resume_replay: down" {
+		t.Errorf("resume failed: %q", got)
+	}
+	fail[true] = true
+	if got := Run(ctx, Scenario{Name: "s", Steps: steps}, target); len(got) != 1 || got[0] != "s step 1 (pause_replay): down" {
+		t.Errorf("pause failed: %q", got)
+	}
+}
+
 func TestLoad(t *testing.T) {
 	if _, err := Load("["); err == nil {
 		t.Error("bad pattern loaded")
@@ -142,7 +174,7 @@ func TestDatabase(t *testing.T) {
 	if _, _, err := Database(ctx, "postgres://nobody@127.0.0.1:1/x", ddl); err == nil {
 		t.Error("no server")
 	}
-	if _, _, err := Schemas["shop"].Open(ctx, "postgres://%zz"); err == nil {
+	if _, _, err := Schemas["shop"].Open(ctx, "postgres://%zz", []string{"postgres://%zz"}); err == nil {
 		t.Error("bad DSN opened")
 	}
 }

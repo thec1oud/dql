@@ -1,0 +1,121 @@
+scenario: routing
+schema: shop
+replica: true
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+  # Every consistency level routes a read as guide §5.6 says.
+  - op: select
+    from: tenants
+    shape: tenant_full
+    expect: { events: [{ replica: false }] }
+  - op: select
+    from: tenants
+    shape: tenant_full
+    consistency: primary
+    expect: { events: [{ replica: false }] }
+  - op: select
+    from: tenants
+    shape: tenant_full
+    consistency: any
+    expect: { events: [{ replica: true }] }
+  - op: select
+    from: tenants
+    shape: tenant_full
+    consistency: bounded
+    bound: 10s
+    expect: { events: [{ replica: true }] }
+  # Without a session, read-your-writes has no writes to wait for.
+  - op: select
+    from: tenants
+    shape: tenant_full
+    consistency: read_your_writes
+    expect: { events: [{ replica: true }] }
+  # A read inside a write transaction runs on the primary.
+  - op: write
+    steps:
+      - op: select
+        from: tenants
+        shape: tenant_full
+        consistency: any
+        expect: { events: [{ replica: false }] }
+
+  # A session's writes are read back from a replica once it has replayed them.
+  - op: session
+  - op: tenants.insert
+    input: { name: seen }
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: eq, value: seen }]
+    consistency: read_your_writes
+    wait: 5s
+    expect:
+      rows: [{ name: seen }]
+      events: [{ replica: true }]
+
+  # Lag is injected by pausing the replica's replay.
+  - op: pause_replay
+  - op: session
+  - op: tenants.insert
+    input: { name: late }
+  # A replica that has not replayed the session's writes is not used: the
+  # read falls back to the primary, after waiting with Wait, or fails with
+  # OrFail.
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: eq, value: late }]
+    consistency: read_your_writes
+    expect:
+      rows: [{ name: late }]
+      events: [{ replica: false }]
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: eq, value: late }]
+    consistency: read_your_writes
+    wait: 100ms
+    expect:
+      rows: [{ name: late }]
+      events: [{ replica: false }]
+  - op: select
+    from: tenants
+    shape: tenant_full
+    consistency: read_your_writes
+    wait: 100ms
+    or_fail: true
+    expect: { error: { class: ReplicaUnavailable } }
+  # Past the source's max lag, 1s here, the replica leaves rotation, and
+  # reads that would use it go to the primary.
+  - op: sleep
+    duration: 2500ms
+  - op: select
+    from: tenants
+    shape: tenant_full
+    consistency: any
+    expect: { events: [{ replica: false }] }
+  - op: select
+    from: tenants
+    shape: tenant_full
+    consistency: bounded
+    bound: 10s
+    expect: { events: [{ replica: false }] }
+
+  # Once replay resumes, the replica catches up and returns to rotation. The
+  # wait covers the catch-up, which takes longer while other tests write.
+  - op: resume_replay
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: eq, value: late }]
+    consistency: read_your_writes
+    wait: 15s
+    expect:
+      rows: [{ name: late }]
+      events: [{ replica: true }]
+  - op: select
+    from: tenants
+    shape: tenant_full
+    consistency: any
+    expect: { events: [{ replica: true }] }

@@ -6,6 +6,10 @@
 # DQL_TEST_POSTGRES_URL, a role that may create roles and databases (such as
 # postgres://postgres@localhost:5432/postgres). Each test package creates and
 # drops its own databases there.
+#
+# The routing tests also need a streaming replica of that server, named by
+# DQL_TEST_POSTGRES_REPLICA_URL; conformance/replica/compose.yaml starts
+# both. Without it they are skipped, and coverage falls short.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

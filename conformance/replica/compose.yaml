@@ -1,0 +1,43 @@
+# A Postgres primary on port 5432 and a streaming replica of it on 5433, for
+# the tests and the routing scenarios (guide M4). POSTGRES_VERSION picks the
+# release, 16 by default.
+#
+#   docker compose -f conformance/replica/compose.yaml up -d --wait
+#   DQL_TEST_POSTGRES_URL=postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+#   DQL_TEST_POSTGRES_REPLICA_URL=postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
+services:
+  primary:
+    image: postgres:${POSTGRES_VERSION:-16}
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - ./replication.sh:/docker-entrypoint-initdb.d/replication.sh:ro
+    healthcheck:
+      # Over TCP, which the server initdb starts does not listen on.
+      test: pg_isready -h 127.0.0.1 -U postgres
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  replica:
+    image: postgres:${POSTGRES_VERSION:-16}
+    user: postgres
+    environment:
+      PGPASSWORD: postgres
+    ports: ["5433:5432"]
+    depends_on:
+      primary:
+        condition: service_healthy
+    entrypoint:
+      - bash
+      - -c
+      - >-
+        pg_basebackup -h primary -U postgres -D /tmp/replica -R -X stream &&
+        chmod 700 /tmp/replica &&
+        exec postgres -D /tmp/replica
+    healthcheck:
+      test: pg_isready -h 127.0.0.1 -U postgres
+      interval: 2s
+      timeout: 5s
+      retries: 30
