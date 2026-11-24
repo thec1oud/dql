@@ -18,7 +18,9 @@
 // one operation, in which a pair-form transaction left open is rolled back
 // and reported (§22.3). A step of op sql runs its dialect's statements on
 // the database, as a scenario that puts a value the schema's assertions
-// rule out in place does (§13).
+// rule out in place does (§13). A step of op convert calls a generated
+// conversion, a method of a shape's value or a function, and checks its
+// result, or that it is not generated (§14.9).
 package harness
 
 import (
@@ -121,6 +123,13 @@ type Step struct {
 
 	// SQL holds a sql step's statements by dialect.
 	SQL map[string]string `yaml:"sql"`
+
+	// A convert step calls Call: with From, the method of that shape's
+	// value decoded from Input, and without it, the schema's function. Args
+	// fill the rest of its parameters in order. Its expect takes generated:
+	// false for a conversion that must not exist, and a fallible one's error.
+	Call string `yaml:"call"`
+	Args []any  `yaml:"args"`
 }
 
 // Filter is a predicate of a select step: the column's operator Op, as eq
@@ -166,7 +175,9 @@ type Assign struct {
 // change type's constructors, as shopdb.PostAuthorLink, and opt.Some for
 // each optional nest's type, as opt.Some[shopdb.PostAuthorChange]), and how
 // to make the database at dsn fail or stall its next writes, and to end
-// every other connection to it. Dialect names the dialect of its DDL and of
+// every other connection to it. Types holds a zero value of each of its
+// shape types, and Funcs its generated functions that convert, as
+// MergeUserByKey, by their names. Dialect names the dialect of its DDL and of
 // sql steps, and Exec runs statements on the database at dsn. Shapes
 // holds its read shapes, and Selects the Select that reads each, by the
 // shape's name, instantiated for it, as
@@ -186,6 +197,8 @@ type Schema struct {
 	Terminate func(ctx context.Context, dsn string) error
 	Shapes    any
 	Selects   map[string]any
+	Types     []any
+	Funcs     map[string]any
 }
 
 // Target is what a scenario runs on: a schema's handle and its executor,
@@ -231,6 +244,7 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 		terminate: func() error { return s.Terminate(ctx, t.DSN) },
 		exec:      func(sql string) error { return s.Exec(ctx, t.DSN, sql) },
 		dialect:   s.Dialect,
+		types:     map[string]reflect.Type{}, funcs: map[string]reflect.Value{},
 		operation: func(ctx context.Context) (context.Context, func()) { return t.Exec.Operation(ctx) },
 		replay:    func(pause bool) error { return s.Replay(ctx, t.ReplicaDSN, pause) },
 		base:      ctx,
@@ -238,6 +252,13 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 		nested: map[reflect.Type]bool{}, shapes: reflect.ValueOf(s.Shapes), selects: map[string]reflect.Value{}}
 	for name, f := range s.Selects {
 		r.selects[norm(name)] = reflect.ValueOf(f)
+	}
+	for _, v := range s.Types {
+		t := reflect.TypeOf(v)
+		r.types[norm(t.Name())] = t
+	}
+	for name, f := range s.Funcs {
+		r.funcs[norm(name)] = reflect.ValueOf(f)
 	}
 	for _, f := range s.Changes {
 		r.index(reflect.ValueOf(f))
@@ -266,6 +287,10 @@ type runner struct {
 	// exec runs a sql step's statements, those of dialect.
 	exec    func(sql string) error
 	dialect string
+	// types holds the shape types, and funcs the conversion functions, by
+	// their names under norm.
+	types map[string]reflect.Type
+	funcs map[string]reflect.Value
 	// operation begins an operation on ctx and returns the function that
 	// ends it.
 	operation func(ctx context.Context) (context.Context, func())
@@ -402,6 +427,9 @@ func (r *runner) run(st Step) ([]string, error) {
 		return r.operate(st), nil
 	case "begin_write", "begin_read":
 		return r.begin(st), nil
+	}
+	if st.Op == "convert" {
+		return r.convert(st), nil
 	}
 	storeName, method, ok := strings.Cut(st.Op, ".")
 	if !ok && st.Op != "select" {
@@ -561,6 +589,66 @@ func (r *runner) begin(st Step) []string {
 	}
 	r.fired = r.events.since(mark)
 	return append(problems, r.compare(Step{Expect: st.Expect}, nil, err)...)
+}
+
+// convert runs a convert step.
+func (r *runner) convert(st Step) []string {
+	var f reflect.Value
+	var args []reflect.Value
+	if st.From != "" {
+		t, ok := r.types[norm(st.From)]
+		if !ok {
+			return []string{"no shape type " + st.From}
+		}
+		v, err := r.decode(st.Input, t)
+		if err != nil {
+			return []string{"input: " + err.Error()}
+		}
+		f, _ = member(v, st.Call)
+	} else {
+		f = r.funcs[norm(st.Call)]
+	}
+	expect := maps.Clone(st.Expect)
+	generated, _ := expect["generated"].(bool)
+	if _, ok := expect["generated"]; ok && !generated {
+		if f.IsValid() {
+			return []string{st.Call + " is generated"}
+		}
+		return nil
+	}
+	delete(expect, "generated")
+	if !f.IsValid() {
+		return []string{"no conversion " + st.Call}
+	}
+	t := f.Type()
+	if len(st.Args) != t.NumIn() {
+		return []string{fmt.Sprintf("%s takes %d arguments, got %d", st.Call, t.NumIn(), len(st.Args))}
+	}
+	for i, a := range st.Args {
+		x, err := r.decode(a, t.In(i))
+		if err != nil {
+			return []string{fmt.Sprintf("argument %d: %s", i+1, err)}
+		}
+		args = append(args, x)
+	}
+	var results []any
+	var err error
+	for _, o := range f.Call(args) {
+		if e, ok := o.Interface().(error); ok || o.Type() == reflect.TypeFor[error]() {
+			err = e
+			continue
+		}
+		results = append(results, encode(o.Interface()))
+	}
+	var result any = results
+	if len(results) == 1 {
+		result = results[0]
+	}
+	if err == nil && st.Save != "" {
+		r.saved[st.Save] = result
+	}
+	r.fired = nil
+	return r.compare(Step{Expect: expect}, result, err)
 }
 
 // call calls the step's method and returns its result, normalized, or its
@@ -1034,7 +1122,8 @@ func (r *runner) build(v any, t reflect.Type) (reflect.Value, error) {
 	return out, nil
 }
 
-// resolve replaces each "$name.field" string with that saved field.
+// resolve replaces each "$name.field" string with that saved field, and
+// each "$name" with the whole saved result.
 func (r *runner) resolve(v any) (any, error) {
 	switch x := v.(type) {
 	case string:
@@ -1042,7 +1131,10 @@ func (r *runner) resolve(v any) (any, error) {
 		if !ok {
 			return x, nil
 		}
-		name, field, _ := strings.Cut(ref, ".")
+		name, field, dotted := strings.Cut(ref, ".")
+		if v, ok := r.saved[name]; ok && !dotted {
+			return v, nil
+		}
 		row, ok := r.saved[name].(map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("no saved row %s", name)
@@ -1097,7 +1189,8 @@ func normalize(v any) any {
 
 // compare checks an outcome against the step's expectations: row (a
 // subset of the result's fields, where "present" means not null), rows,
-// none (no row), value, count (how many rows), statements (how many queries
+// none (no row), value, results (a convert step's several results, each
+// matched as a field is), count (how many rows), statements (how many queries
 // the step ran), events (the hook events it fired, in order), and error
 // (class, constraint, kind, field, misuse, for the runtime's errors of
 // misuse, a decode error's shape, reason and assertion, and hides, a value
@@ -1128,6 +1221,16 @@ func (r *runner) compare(st Step, result any, err error) []string {
 			}
 			for i := range ws {
 				problems = append(problems, r.compareRow(fmt.Sprintf("row %d ", i), ws[i], gs[i])...)
+			}
+		case "results":
+			ws, _ := w.([]any)
+			gs, _ := result.([]any)
+			if len(ws) != len(gs) {
+				problems = append(problems, fmt.Sprintf("want %d results, got %d", len(ws), len(gs)))
+				continue
+			}
+			for i := range ws {
+				problems = append(problems, r.match(fmt.Sprintf("result %d", i+1), ws[i], gs[i])...)
 			}
 		case "none":
 			if (result == nil) != (w == true) {

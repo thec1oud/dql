@@ -1,0 +1,84 @@
+scenario: conversions
+schema: shop
+# Each conversion kind of design record §14.9 that shop's shapes have. The
+# Fallible and Impossible kinds are in the variant schema's scenarios.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  # Via database: a Draft becomes a Full only through a write.
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x, display_name: Ann }
+    save: ann
+    expect:
+      row: { email: a@acme.com, version: 1, created_at: present }
+  - op: convert
+    from: user_draft
+    input: { email: a@acme.com, password_hash: x }
+    call: to_full
+    expect: { generated: false }
+  # A Nested Draft reaches its Flat Draft only through a write too.
+  - op: convert
+    from: post_draft_nested
+    input: { title: x }
+    call: flat
+    expect: { generated: false }
+  # Total.
+  - op: convert
+    from: user_full
+    input: $ann
+    call: key
+    expect:
+      row: { id: $ann.id, version: 1 }
+  - op: convert
+    from: user_full
+    input: $ann
+    call: to_partial
+    save: partial
+    expect:
+      row: { email: a@acme.com, display_name: Ann }
+  - op: convert
+    from: user_draft
+    input: { email: b@acme.com, password_hash: y }
+    call: to_partial
+    expect:
+      row: { email: b@acme.com, password_hash: y }
+  - op: convert
+    from: tag_draft_nested
+    input: { name: go }
+    call: flat
+    expect:
+      row: { name: go }
+  # Needs inputs: the write-only password_hash is a parameter.
+  - op: convert
+    from: user_full
+    input: $ann
+    call: to_draft
+    args: [secret]
+    expect:
+      row: { email: a@acme.com, display_name: Ann, password_hash: secret }
+  # With base: a Partial applies onto a Full, ignoring what a Full cannot
+  # hold, or onto a Draft.
+  - op: convert
+    from: user_partial
+    input: { display_name: Bea, password_hash: z }
+    call: apply_to
+    args: [$ann]
+    expect:
+      row: { id: $ann.id, email: a@acme.com, display_name: Bea }
+  - op: convert
+    from: user_partial
+    input: { display_name: Bea }
+    call: apply_to_draft
+    args: [{ email: b@acme.com, password_hash: y }]
+    expect:
+      row: { email: b@acme.com, display_name: Bea, password_hash: y }
+  # Merging changes into rows by key, here Total over a bigint key.
+  - op: convert
+    call: merge_user_by_key
+    args:
+      - [$ann]
+      - [{ key: { id: $ann.id, version: 1 }, value: { display_name: Cy } }, { key: { id: 999999, version: 1 }, value: {} }]
+    expect:
+      results: [[{ id: $ann.id, display_name: Cy }], [{ id: 999999 }]]
