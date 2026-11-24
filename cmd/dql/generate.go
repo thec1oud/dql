@@ -16,6 +16,7 @@ import (
 	"github.com/thec1oud/dql/core/conversions"
 	"github.com/thec1oud/dql/core/diagnostics"
 	"github.com/thec1oud/dql/core/operators"
+	"github.com/thec1oud/dql/core/queries"
 	"github.com/thec1oud/dql/core/shapes"
 	"github.com/thec1oud/dql/dialects/postgres"
 	goemit "github.com/thec1oud/dql/emitters/go"
@@ -243,8 +244,9 @@ func operatorLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) (ds []
 }
 
 // queryLayer types the query files of c with the shipped query-source
-// plugin of b's dialect and adds their queries to b (§16, §17). It returns
-// the plugin's diagnostics, sorted, and adds them to the bundle's. Without
+// plugin of b's dialect, adds their queries to b and checks them against the
+// catalogs and the shape layer (§16–21). It returns the diagnostics of both,
+// sorted, and adds them to the bundle's. Without
 // query files the bundle has no query layer.
 func queryLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) ([]*irv1.Diagnostic, error) {
 	files, err := c.QueryFiles()
@@ -263,7 +265,7 @@ func queryLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) ([]*irv1.
 		var res *irv1.InvokeResult
 		if res, err = client.Invoke(ctx, &irv1.Invoke{Bundle: b, QueryFiles: files}); err == nil {
 			b.Queries = &irv1.QueryLayer{Queries: res.GetBundle().GetQueries().GetQueries()}
-			ds = res.GetDiagnostics()
+			ds = append(res.GetDiagnostics(), queries.Check(b)...)
 		}
 		if cerr := client.Close(); err == nil {
 			err = cerr
