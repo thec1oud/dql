@@ -20,7 +20,7 @@ const (
 
 // The operations of builder queries the stores generate (§26.2), in the
 // order their methods are written.
-var verbs = []string{"get", "find", "count", "exists", "insert", "insert_or_ignore", "upsert", "patch", "update_where", "delete", "delete_where", "hard_delete", "hard_delete_where"}
+var verbs = []string{"get", "find", "count", "exists", "insert", "insert_or_ignore", "upsert", "upsert_set", "patch", "update_where", "delete", "delete_where", "hard_delete", "hard_delete_where"}
 
 // reads are the operations a read handle has (§22.2).
 var reads = map[string]bool{"get": true, "find": true, "count": true, "exists": true}
@@ -300,6 +300,8 @@ func (g *generator) signatures(e *entity) []signature {
 		switch x.verb {
 		case "insert", "insert_or_ignore", "upsert":
 			s.params = "d " + Exported(e.draft.GetHostName().GetWords()) + values
+		case "upsert_set":
+			s.params = "d " + Exported(e.draft.GetHostName().GetWords()) + ", p " + Exported(e.part.GetHostName().GetWords()) + updates
 		case "patch":
 			s.params += ", p " + Exported(e.part.GetHostName().GetWords()) + updates
 		case "update_where":
@@ -308,7 +310,7 @@ func (g *generator) signatures(e *entity) []signature {
 			s.params = "where " + pred
 		}
 		switch x.verb {
-		case "get", "insert", "upsert", "patch":
+		case "get", "insert", "upsert", "upsert_set", "patch":
 			s.results = "(" + full + ", error)"
 		case "find", "insert_or_ignore":
 			s.results = "(" + f.use(pkgOpt, "opt") + ".Opt[" + full + "], error)"
@@ -469,7 +471,7 @@ func (g *generator) methodBody(e *entity, s signature) {
 	full := Exported(e.full.GetHostName().GetWords())
 	zero := ""
 	switch x.verb {
-	case "get", "insert", "upsert", "patch":
+	case "get", "insert", "upsert", "upsert_set", "patch":
 		zero = full + "{}, "
 	case "find", "insert_or_ignore":
 		zero = f.use(pkgOpt, "opt") + ".None[" + full + "](), "
@@ -491,7 +493,7 @@ func (g *generator) methodBody(e *entity, s signature) {
 	}
 	payload, pv := e.draft, "d"
 	switch x.verb {
-	case "insert", "insert_or_ignore", "upsert":
+	case "insert", "insert_or_ignore", "upsert", "upsert_set":
 	case "patch", "update_where":
 		payload, pv = e.part, "p"
 	default:
@@ -499,6 +501,9 @@ func (g *generator) methodBody(e *entity, s signature) {
 	}
 	if payload != nil {
 		f.printf("\tif err := %s.Validate(); err != nil {\n\t\treturn %serr\n\t}\n", pv, zero)
+	}
+	if x.verb == "upsert_set" {
+		f.printf("\tif err := p.Validate(); err != nil {\n\t\treturn %serr\n\t}\n", zero)
 	}
 	get, fallback := e.entries[e.entryName("get", "")]
 	fallback = fallback && x.verb == "patch" && !e.versioned
@@ -520,7 +525,13 @@ func (g *generator) methodBody(e *entity, s signature) {
 		for _, c := range conds {
 			f.printf("%s", c)
 		}
-		f.printf("\tif err := %s.Assign(%s, %q, args, %s); err != nil {\n\t\treturn %serr\n\t}\n", dql, q, g.dotted(payload.GetId()), assignments(dql, x.verb), zero)
+		if x.verb == "upsert_set" {
+			// The Draft's assignments are its fields; the call's go to the
+			// update side, whose parameters are named set.<column> (§14.7).
+			f.printf("\tif err := %s.AssignPrefixed(%s, %q, \"set.\", args, as); err != nil {\n\t\treturn %serr\n\t}\n", dql, q, g.dotted(e.part.GetId()), zero)
+		} else {
+			f.printf("\tif err := %s.Assign(%s, %q, args, %s); err != nil {\n\t\treturn %serr\n\t}\n", dql, q, g.dotted(payload.GetId()), assignments(dql, x.verb), zero)
+		}
 		switch {
 		case fallback:
 			f.printf("\tif !set && len(as) == 0 {\n\t\t// Nothing to change: the row as it is.\n\t\treturn s.%s(ctx, k)\n\t}\n", get.method())
@@ -547,7 +558,7 @@ func (g *generator) methodBody(e *entity, s signature) {
 		f.printf("\treturn %s.VersionedOne(ctx, s.w, st, exists, %s)\n", dql, decode)
 	case versioned:
 		f.printf("\treturn %s.VersionedExec(ctx, s.w, st, exists)\n", dql)
-	case x.verb == "get" || x.verb == "insert" || x.verb == "upsert" || x.verb == "patch":
+	case x.verb == "get" || x.verb == "insert" || x.verb == "upsert" || x.verb == "upsert_set" || x.verb == "patch":
 		h := "s.w"
 		if x.verb == "get" {
 			h = "s.h"
@@ -613,6 +624,8 @@ func (g *generator) args(e *entity, x entry, payload *irv1.Shape, pv string, tra
 			lit = append(lit, fmt.Sprintf("%q: k.%s", name, g.fieldName(e.key, paramColumn(name))))
 		case strings.HasPrefix(name, "key."):
 			lit = append(lit, fmt.Sprintf("%q: %s", name, Unexported(column(e.t, paramColumn(name)).GetHostName().GetWords())))
+		case x.verb == "upsert_set" && strings.HasPrefix(name, "set.") && shapeField(e.part, name[len("set."):]) != nil:
+			conds = append(conds, fmt.Sprintf("\tif v, ok := p.%s.Get(); ok {\n\t\targs[%q] = v\n\t}\n", g.fieldName(e.part, name[len("set."):]), name))
 		case payload != nil && shapeField(payload, name) != nil:
 			fld := shapeField(payload, name)
 			v := pv + "." + g.fieldName(payload, name)

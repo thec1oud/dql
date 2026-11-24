@@ -86,13 +86,13 @@ func table(b *irv1.Bundle, name string) *irv1.Table {
 
 func TestPlanShop(t *testing.T) {
 	qs := planned(shop(t))
-	want := "post.count post.delete post.delete_where post.exists post.find.by_primary post.get.by_primary post.insert post.insert_or_ignore.by_posts_one_published_slug post.insert_or_ignore.by_primary post.patch post.update_where post.upsert.by_posts_one_published_slug post.upsert.by_primary " +
-		"post_tag.count post_tag.delete post_tag.delete_where post_tag.exists post_tag.find.by_primary post_tag.get.by_primary post_tag.insert post_tag.insert_or_ignore.by_primary post_tag.upsert.by_primary " +
-		"profile.count profile.delete profile.delete_where profile.exists profile.find.by_primary profile.get.by_primary profile.insert profile.insert_or_ignore.by_primary profile.patch profile.update_where profile.upsert.by_primary " +
+	want := "post.count post.delete post.delete_where post.exists post.find.by_primary post.get.by_primary post.insert post.insert_or_ignore.by_posts_one_published_slug post.insert_or_ignore.by_primary post.patch post.update_where post.upsert.by_posts_one_published_slug post.upsert.by_primary post.upsert_set.by_posts_one_published_slug post.upsert_set.by_primary " +
+		"post_tag.count post_tag.delete post_tag.delete_where post_tag.exists post_tag.find.by_primary post_tag.get.by_primary post_tag.insert post_tag.insert_or_ignore.by_primary post_tag.upsert.by_primary post_tag.upsert_set.by_primary " +
+		"profile.count profile.delete profile.delete_where profile.exists profile.find.by_primary profile.get.by_primary profile.insert profile.insert_or_ignore.by_primary profile.patch profile.update_where profile.upsert.by_primary profile.upsert_set.by_primary " +
 		"published_post.count published_post.exists published_post.find.by_logical_key published_post.get.by_logical_key " +
 		"tag.count tag.delete tag.delete_where tag.exists tag.find.by_name tag.find.by_primary tag.get.by_name tag.get.by_primary tag.insert tag.insert_or_ignore.by_name tag.insert_or_ignore.by_primary tag.patch tag.update_where tag.upsert.by_name tag.upsert.by_primary " +
-		"tenant.count tenant.delete tenant.delete_where tenant.exists tenant.find.by_primary tenant.get.by_primary tenant.insert tenant.insert_or_ignore.by_primary tenant.patch tenant.update_where tenant.upsert.by_primary " +
-		"user.count user.delete user.delete_where user.exists user.find.by_primary user.find.by_tenant_id_and_email user.get.by_primary user.get.by_tenant_id_and_email user.insert user.insert_or_ignore.by_primary user.insert_or_ignore.by_tenant_id_and_email user.patch user.update_where user.upsert.by_primary user.upsert.by_tenant_id_and_email"
+		"tenant.count tenant.delete tenant.delete_where tenant.exists tenant.find.by_primary tenant.get.by_primary tenant.insert tenant.insert_or_ignore.by_primary tenant.patch tenant.update_where tenant.upsert.by_primary tenant.upsert_set.by_primary " +
+		"user.count user.delete user.delete_where user.exists user.find.by_primary user.find.by_tenant_id_and_email user.get.by_primary user.get.by_tenant_id_and_email user.insert user.insert_or_ignore.by_primary user.insert_or_ignore.by_tenant_id_and_email user.patch user.update_where user.upsert.by_primary user.upsert.by_tenant_id_and_email user.upsert_set.by_primary user.upsert_set.by_tenant_id_and_email"
 	if got := names(qs); got != want {
 		t.Errorf("queries\n got %s\nwant %s", got, want)
 	}
@@ -119,6 +119,16 @@ func TestPlanShop(t *testing.T) {
 		"user.delete":                                  "delete.users(where=clause.where(0=bool.and(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.id, 1=$key.id)), 1=op.eq(0=col.users.version, 1=$key.version))))",
 		"user.upsert.by_tenant_id_and_email": "upsert.users.users_tenant_email_key(cols=[" + draftCols + "], returning=" + full + ", rows=values.row(0=[" + draftVals + "]), " +
 			"sets=[set.users.display_name(0=excluded.users.display_name), set.users.password_hash(0=excluded.users.password_hash), set.users.version(0=op.add(0=col.users.version, 1=value.one))])",
+		// The Partial's fields replace the default update side; the bump
+		// keeps a call that sets nothing returning the row.
+		"user.upsert_set.by_tenant_id_and_email": "upsert.users.users_tenant_email_key(cols=[" + draftCols + "], returning=" + full + ", rows=values.row(0=[" + draftVals + "]), " +
+			"sets=[set.users.email(0=$set.email), set.users.display_name(0=$set.display_name), set.users.password_hash(0=$set.password_hash), " +
+			"set.users.version(0=op.add(0=col.users.version, 1=value.one))])",
+		// Unversioned, a Draft column the Partial leaves out is set to itself.
+		"post.upsert_set.by_primary": "upsert.posts.posts_pkey(cols=[name.posts.id, name.posts.author_id, name.posts.editor_id, name.posts.title, name.posts.status, name.posts.price, name.posts.labels, name.posts.published_at], " +
+			"returning=returning.post.full.flat, rows=values.row(0=[$id, $author_id, $editor_id, $title, $status, $price, $labels, $published_at]), " +
+			"sets=[set.posts.author_id(0=$set.author_id), set.posts.editor_id(0=$set.editor_id), set.posts.title(0=$set.title), set.posts.status(0=$set.status), " +
+			"set.posts.price(0=$set.price), set.posts.labels(0=$set.labels), set.posts.published_at(0=$set.published_at), set.posts.id(0=col.posts.id)])",
 		// Every field is the key: the upsert sets a key column to itself.
 		"post_tag.upsert.by_primary": "upsert.post_tags.post_tags_pkey(cols=[name.post_tags.post_id, name.post_tags.tag_id], returning=returning.post_tag.full.flat, " +
 			"rows=values.row(0=[$post_id, $tag_id]), sets=[set.post_tags.post_id(0=excluded.post_tags.post_id)])",
@@ -126,6 +136,10 @@ func TestPlanShop(t *testing.T) {
 		if got := describe(qs[name].GetPlan().GetParts()); got != plan {
 			t.Errorf("%s\n got %s\nwant %s", name, got, plan)
 		}
+	}
+
+	if ps := qs["user.upsert_set.by_tenant_id_and_email"].GetParams(); len(ps) != 9 || ps[7].GetName() != "set.display_name" || !ps[7].GetOptional() || !ps[7].GetNullable() {
+		t.Errorf("upsert_set params %v", ps)
 	}
 
 	get := qs["user.get.by_primary"]
@@ -311,8 +325,22 @@ func TestPlanNothingToSet(t *testing.T) {
 		DefaultUpdateExcludes: []*irv1.UpdateExclude{{Column: "name"}}})
 	addFragments(b, "upsert.tags.tags_lower_name")
 	qs := planned(b)
-	if qs["tag.upsert.by_tags_lower_name"] != nil || qs["post_tag.patch"] != nil {
+	// tags is unversioned and its Partial holds its Draft's one field: an
+	// upsert_set has no column to keep it returning.
+	if qs["tag.upsert.by_tags_lower_name"] != nil || qs["post_tag.patch"] != nil || qs["tag.upsert_set.by_tags_lower_name"] != nil || qs["tag.upsert_set.by_name"] != nil || qs["tag.upsert_set.by_primary"] != nil {
 		t.Error("planned a query with nothing to set")
+	}
+}
+
+// An entity without a Partial has the default upsert alone.
+func TestPlanUpsertWithoutPartial(t *testing.T) {
+	b := shop(t)
+	b.Shapes.Shapes = slices.DeleteFunc(b.GetShapes().GetShapes(), func(s *irv1.Shape) bool {
+		return s.GetEntity().GetObject() == "profiles" && s.GetId().GetPreset() == irv1.Preset_PRESET_PARTIAL
+	})
+	qs := planned(b)
+	if qs["profile.upsert.by_primary"] == nil || qs["profile.upsert_set.by_primary"] != nil {
+		t.Error("planned upsert_set without a Partial")
 	}
 }
 

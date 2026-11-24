@@ -333,6 +333,15 @@ var (
 			dql.Use{Fragment: "upsert.tenants.tenants_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.tenants.name"}}}}, Separator: ", "}}},
 		},
 	}
+	tenantUpsertSetByPrimary = &dql.Query{
+		Name:    "tenant.upsert_set.by_primary",
+		Catalog: "shop",
+		Kind:    "upsert_set",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.tenants.tenants_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Param("set.name")}}, dql.Use{Fragment: "set.tenants.id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}}}}, Separator: ", "}}},
+		},
+	}
 	tenantPatch = &dql.Query{
 		Name:      "tenant.patch",
 		Catalog:   "shop",
@@ -388,6 +397,7 @@ type TenantsStore interface {
 	InsertMany(ctx context.Context, ds []TenantDraft, as ...dql.Assignment[TenantsTable]) ([]TenantFull, error)
 	InsertOrIgnore(ctx context.Context, d TenantDraft, as ...dql.Assignment[TenantsTable]) (opt.Opt[TenantFull], error)
 	Upsert(ctx context.Context, d TenantDraft, as ...dql.Assignment[TenantsTable]) (TenantFull, error)
+	UpsertSet(ctx context.Context, d TenantDraft, p TenantPartial, as ...dql.Update[TenantsTable]) (TenantFull, error)
 	Patch(ctx context.Context, k TenantKey, p TenantPartial, as ...dql.Update[TenantsTable]) (TenantFull, error)
 	UpdateWhere(ctx context.Context, where dql.Pred[TenantsTable], p TenantPartial, as ...dql.Update[TenantsTable]) (int64, error)
 	Delete(ctx context.Context, k TenantKey) error
@@ -513,6 +523,31 @@ func (s tenantsWrites) Upsert(ctx context.Context, d TenantDraft, as ...dql.Assi
 		return TenantFull{}, err
 	}
 	st, err := tenantUpsertByPrimary.Statement(fragments, args)
+	if err != nil {
+		return TenantFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeTenantFull)
+}
+
+// UpsertSet runs tenant.upsert_set.by_primary (§20.1).
+func (s tenantsWrites) UpsertSet(ctx context.Context, d TenantDraft, p TenantPartial, as ...dql.Update[TenantsTable]) (TenantFull, error) {
+	if err := d.Validate(); err != nil {
+		return TenantFull{}, err
+	}
+	if err := p.Validate(); err != nil {
+		return TenantFull{}, err
+	}
+	args := dql.Args{"name": d.Name}
+	if v, ok := d.ID.Get(); ok {
+		args["id"] = v
+	}
+	if v, ok := p.Name.Get(); ok {
+		args["set.name"] = v
+	}
+	if err := dql.AssignPrefixed(tenantUpsertSetByPrimary, "tenant.partial.flat", "set.", args, as); err != nil {
+		return TenantFull{}, err
+	}
+	st, err := tenantUpsertSetByPrimary.Statement(fragments, args)
 	if err != nil {
 		return TenantFull{}, err
 	}
