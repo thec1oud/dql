@@ -7,7 +7,9 @@
 // nested change is an object of one key, its kind, holding the change's key,
 // draft or partial, as author: { link: { id: 1 } }, or for an update by key
 // both, as posts: [{ update: { key: { id: 1 }, input: { title: x } } }]; the
-// schema lists the functions that build them.
+// schema lists the functions that build them. A step of op select reads a
+// shape through the query builder (§18.2): all its rows, a stream of them, or
+// their count.
 package harness
 
 import (
@@ -70,6 +72,33 @@ type Step struct {
 	Retry       *Retry  `yaml:"retry"`
 	Inject      *Inject `yaml:"inject"`
 	Rollback    bool    `yaml:"rollback"`
+
+	// A select step, op select, reads Shape through the store From, keeping
+	// the rows every Filter holds for, in Order, at most Limit of them. Read
+	// is all (the default), iter, which streams the rows and, with Stop,
+	// ends iteration after that many, or count.
+	From   string     `yaml:"from"`
+	Shape  string     `yaml:"shape"`
+	Filter []Filter   `yaml:"filter"`
+	Order  []OrderKey `yaml:"order"`
+	Limit  int64      `yaml:"limit"`
+	Read   string     `yaml:"read"`
+	Stop   int        `yaml:"stop"`
+}
+
+// Filter is a predicate of a select step: the column's operator Op, as eq
+// or in, on Value.
+type Filter struct {
+	Column string `yaml:"column"`
+	Op     string `yaml:"op"`
+	Value  any    `yaml:"value"`
+}
+
+// OrderKey is a key of a select step's order: the column, ascending unless
+// Desc.
+type OrderKey struct {
+	Column string `yaml:"column"`
+	Desc   bool   `yaml:"desc"`
 }
 
 // Retry is a transaction's retry policy: how many runs, without backoff.
@@ -98,13 +127,18 @@ type Assign struct {
 // tables' column handles, the functions that build its nested changes (each
 // change type's constructors, as shopdb.PostAuthorLink, and opt.Some for
 // each optional nest's type, as opt.Some[shopdb.PostAuthorChange]), and how
-// to make the database at dsn fail its next times writes with class.
+// to make the database at dsn fail its next times writes with class. Shapes
+// holds its read shapes, and Selects the Select that reads each, by the
+// shape's name, instantiated for it, as
+// shopdb.Select[shopdb.TenantFull, shopdb.TenantsTable].
 type Schema struct {
 	DDL     []string
 	Open    func(ctx context.Context, dsn string, opts ...dql.Option) (db any, close func(), err error)
 	Tables  map[string]any
 	Changes []any
 	Inject  func(ctx context.Context, dsn, class string, times int) error
+	Shapes  any
+	Selects map[string]any
 }
 
 // Target is what a scenario runs on: a schema's handle, open on the
@@ -145,7 +179,10 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 	r := &runner{ctx: ctx, db: reflect.ValueOf(t.DB), tables: s.Tables, saved: map[string]any{}, events: t.Events,
 		inject:  func(class string, times int) error { return s.Inject(ctx, t.DSN, class, times) },
 		changes: map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
-		nested: map[reflect.Type]bool{}}
+		nested: map[reflect.Type]bool{}, shapes: reflect.ValueOf(s.Shapes), selects: map[string]reflect.Value{}}
+	for name, f := range s.Selects {
+		r.selects[norm(name)] = reflect.ValueOf(f)
+	}
 	for _, f := range s.Changes {
 		r.index(reflect.ValueOf(f))
 	}
@@ -173,6 +210,9 @@ type runner struct {
 	changes map[reflect.Type]map[string]reflect.Value
 	some    map[reflect.Type]reflect.Value
 	nested  map[reflect.Type]bool
+	// shapes holds the schema's read shapes, and selects their Selects.
+	shapes  reflect.Value
+	selects map[string]reflect.Value
 }
 
 // changer is what every nested change type implements.
@@ -251,11 +291,18 @@ func (r *runner) step(st Step) []string {
 // failed where the step expects none.
 func (r *runner) run(st Step) ([]string, error) {
 	storeName, method, ok := strings.Cut(st.Op, ".")
-	if !ok {
+	if !ok && st.Op != "select" {
 		return r.transact(st)
 	}
 	mark := r.events.mark()
-	result, err, problems := r.call(st, storeName, method)
+	var result any
+	var err error
+	var problems []string
+	if ok {
+		result, err, problems = r.call(st, storeName, method)
+	} else {
+		result, err, problems = r.read(st)
+	}
 	r.fired = r.events.since(mark)
 	if problems != nil {
 		return problems, nil
@@ -300,14 +347,98 @@ func (r *runner) call(st Step, storeName, method string) (any, error, []string) 
 	if e, _ := out[len(out)-1].Interface().(error); e != nil {
 		return nil, e, nil
 	}
-	var result any
 	if len(out) == 2 {
-		// The generated shapes always encode.
-		raw, _ := json.Marshal(out[0].Interface())
-		json.Unmarshal(raw, &result)
-		result = normalize(result)
+		return encode(out[0].Interface()), nil, nil
 	}
-	return result, nil, nil
+	return nil, nil, nil
+}
+
+// encode turns a result into its JSON form, normalized.
+func encode(v any) any {
+	var out any
+	// The generated shapes always encode.
+	raw, _ := json.Marshal(v)
+	json.Unmarshal(raw, &out)
+	return normalize(out)
+}
+
+// read runs a select step and returns its rows, or their count, or its
+// error, or the problems that kept it from running.
+func (r *runner) read(st Step) (any, error, []string) {
+	sel, ok := r.selects[norm(st.Shape)]
+	if !ok {
+		return nil, nil, []string{"no shape " + st.Shape}
+	}
+	store, ok := member(r.db, st.From)
+	if !ok {
+		return nil, nil, []string{"no store " + st.From}
+	}
+	if !store.Type().Implements(sel.Type().In(0)) {
+		return nil, nil, []string{fmt.Sprintf("shape %s is not read through %s", st.Shape, st.From)}
+	}
+	shape, _ := member(r.shapes, st.Shape)
+	b := sel.Call([]reflect.Value{store, shape})[0]
+	table := reflect.ValueOf(r.tables[st.From])
+	for _, f := range st.Filter {
+		col, ok := member(table, f.Column)
+		if !ok {
+			return nil, nil, []string{fmt.Sprintf("no column %s of %s", f.Column, st.From)}
+		}
+		op, ok := member(col, f.Op)
+		if !ok {
+			return nil, nil, []string{fmt.Sprintf("column %s has no %s", f.Column, f.Op)}
+		}
+		v, err := generate(f.Value)
+		if err == nil {
+			var x reflect.Value
+			if x, err = r.decode(v, op.Type().In(0)); err == nil {
+				b = b.MethodByName("Where").Call(op.Call([]reflect.Value{x}))[0]
+				continue
+			}
+		}
+		return nil, nil, []string{fmt.Sprintf("filter %s: %s", f.Column, err)}
+	}
+	for _, k := range st.Order {
+		col, ok := member(table, k.Column)
+		if !ok {
+			return nil, nil, []string{fmt.Sprintf("no column %s of %s", k.Column, st.From)}
+		}
+		dir := "Asc"
+		if k.Desc {
+			dir = "Desc"
+		}
+		b = b.MethodByName("OrderBy").Call(col.MethodByName(dir).Call(nil))[0]
+	}
+	if st.Limit > 0 {
+		b = b.MethodByName("Limit").Call([]reflect.Value{reflect.ValueOf(st.Limit)})[0]
+	}
+	ctx := reflect.ValueOf(r.ctx)
+	switch st.Read {
+	case "", "all", "count":
+		m := map[string]string{"": "All", "all": "All", "count": "Count"}[st.Read]
+		out := b.MethodByName(m).Call([]reflect.Value{ctx})
+		if e, _ := out[1].Interface().(error); e != nil {
+			return nil, e, nil
+		}
+		return encode(out[0].Interface()), nil, nil
+	case "iter":
+		seq := b.MethodByName("Iter").Call([]reflect.Value{ctx})[0]
+		rows := []any{}
+		var err error
+		yield := reflect.MakeFunc(seq.Type().In(0), func(in []reflect.Value) []reflect.Value {
+			err, _ = in[1].Interface().(error)
+			if err == nil {
+				rows = append(rows, in[0].Interface())
+			}
+			return []reflect.Value{reflect.ValueOf(err == nil && len(rows) != st.Stop)}
+		})
+		seq.Call([]reflect.Value{yield})
+		if err != nil {
+			return nil, err, nil
+		}
+		return encode(rows), nil, nil
+	}
+	return nil, nil, []string{"no read " + st.Read}
 }
 
 // errRollback ends a run of a transaction step's closure that rolls back.
@@ -486,7 +617,8 @@ func (r *runner) assignments(as []Assign, storeName string, elem reflect.Type) (
 
 // generate expands an input of the form { generate: { count: n, row: r } }
 // into n copies of r, with each "$i" in r's strings replaced by the copy's
-// number, from 1. Any other input is returned as it is.
+// number, from 1; value in place of row names a list's item. Any other input
+// is returned as it is.
 func generate(input any) (any, error) {
 	m, _ := input.(map[string]any)
 	g, ok := m["generate"].(map[string]any)
@@ -497,9 +629,13 @@ func generate(input any) (any, error) {
 	if !ok {
 		return nil, fmt.Errorf("generate: count %v is not a number", g["count"])
 	}
+	item, ok := g["value"]
+	if !ok {
+		item = g["row"]
+	}
 	rows := make([]any, n)
 	for i := range rows {
-		rows[i] = numbered(g["row"], strconv.Itoa(i+1))
+		rows[i] = numbered(item, strconv.Itoa(i+1))
 	}
 	return rows, nil
 }

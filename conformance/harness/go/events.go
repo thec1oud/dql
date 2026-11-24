@@ -9,7 +9,8 @@ import (
 
 // Recorder keeps the hook events an executor fires (§24), each as the
 // fields scenarios match: a query's end as query, kind, rows, attempt,
-// replica, redacted (how many of its parameters are redacted) and class, and
+// replica, params (how many parameters it bound), redacted (how many of them
+// are redacted) and class, and
 // a transaction's begin, end and retry as tx with propagation, read_only,
 // savepoint, attempt, isolation, outcome and class. A nil Recorder keeps
 // nothing.
@@ -41,7 +42,7 @@ func (r *Recorder) Hooks() dql.Hooks {
 			}
 			r.add(map[string]any{
 				"query": ev.Query, "kind": ev.Kind, "rows": float64(ev.Rows), "attempt": float64(ev.Attempt),
-				"replica": ev.Replica, "redacted": float64(redacted), "class": string(ev.Class),
+				"replica": ev.Replica, "params": float64(len(ev.Params)), "redacted": float64(redacted), "class": string(ev.Class),
 			})
 		},
 		TxBegin: func(ctx context.Context, ev dql.TxEvent) context.Context {
