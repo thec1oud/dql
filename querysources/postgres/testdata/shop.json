@@ -84,7 +84,19 @@
         },
         "catalog": "shop",
         "text": "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts\nFROM app.users u\nLEFT JOIN app.posts p ON p.author_id = u.id\nWHERE u.tenant_id = $1\nGROUP BY u.id, u.display_name",
-        "location": "q.sql:10"
+        "location": "q.sql:10",
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          },
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
       },
       {
         "name": {
@@ -292,7 +304,14 @@
         "catalog": "shop",
         "text": "SELECT id, tenant_id, email, display_name, created_at, updated_at, version\nFROM app.users\nWHERE tenant_id = $2 AND email = $1",
         "location": "q.sql:4",
-        "returns": "user.full"
+        "returns": "user.full",
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
       },
       {
         "name": {
@@ -362,7 +381,14 @@
         },
         "catalog": "shop",
         "text": "UPDATE app.users\nSET display_name = $1, version = version + 1\nWHERE tenant_id = $4 AND id = $2 AND version = $3",
-        "location": "q.sql:18"
+        "location": "q.sql:18",
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
       }
     ]
   }
