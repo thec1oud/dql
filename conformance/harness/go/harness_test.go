@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/thec1oud/dql/runtime/go/dql"
 )
 
 // root is the repository root, which schemas' DDL paths are relative to.
@@ -28,12 +30,13 @@ func open(t *testing.T, name string) Target {
 		t.Fatal(err)
 	}
 	t.Cleanup(drop)
-	db, closeDB, err := s.Open(ctx, dsn)
+	rec := &Recorder{}
+	db, closeDB, err := s.Open(ctx, dsn, dql.WithHooks(rec.Hooks()))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(closeDB)
-	return Target{Schema: s, DB: db, DSN: dsn}
+	return Target{Schema: s, DB: db, DSN: dsn, Events: rec}
 }
 
 // Every scenario passes on Postgres for Go (guide M4).

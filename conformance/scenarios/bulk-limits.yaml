@@ -1,0 +1,26 @@
+scenario: bulk-limits
+schema: shop
+steps:
+  # Postgres binds at most 65535 parameters in a statement, and a tenant
+  # row binds 2: 32767 rows are the most one statement writes (§25.2).
+  - op: tenants.insert_many
+    input: { generate: { count: 32766, row: { name: "below-$i" } } }
+    expect: { count: 32766, statements: 1 }
+  - op: tenants.insert_many
+    input: { generate: { count: 32767, row: { name: "at-$i" } } }
+    expect: { count: 32767, statements: 1 }
+  # One row more splits the write into two statements in one transaction.
+  - op: tenants.insert_many
+    input: { generate: { count: 32768, row: { name: "above-$i" } } }
+    expect:
+      count: 32768
+      events:
+        - { tx: begin, propagation: join }
+        - { query: tenant.insert, rows: 32767 }
+        - { query: tenant.insert, rows: 1 }
+        - { tx: end, outcome: commit }
+  - op: tenants.count
+    expect: { value: 98301 }
+  - op: tenants.insert_many
+    input: []
+    expect: { count: 0, statements: 0 }
