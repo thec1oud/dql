@@ -39,46 +39,59 @@ type Statement struct {
 	// How fresh a read outside a write transaction must be: the call's
 	// option, else the query's default; unset takes the executor's (§22.5).
 	Consistency Consistency
+	// For hooks (§24): the kind of query, such as select or insert; which
+	// arguments hold sensitive values, by position; and whether the call
+	// opts out of query events.
+	Kind      string
+	Sensitive []bool
+	NoLog     bool
 }
 
-// connFor returns the connection a statement runs on: its transaction's,
-// the one ctx carries when h is the executor, or a pooled one, which a
-// write takes from the primary and a read as its consistency routes it
-// (§22.5). done ends the statement with its error: it releases a pooled
-// connection, after recording a write's position in the context's session.
-func connFor(ctx context.Context, h Reader, s *Statement, writes bool) (e *Executor, c Conn, done func(error), err error) {
-	e, f := h.bind()
-	if f == nil {
-		f = frameOf(ctx)
-	}
+// connFor returns the connection a statement runs on, and whether it is a
+// replica's: its transaction's, the one ctx carries when h is the
+// executor, or a pooled one, which a write takes from the primary and a
+// read as its consistency routes it (§22.5). done ends the statement with
+// its error: it releases a pooled connection, after recording a write's
+// position in the context's session.
+func connFor(ctx context.Context, e *Executor, f *frame, s *Statement, writes bool) (c Conn, replica bool, done func(error), err error) {
 	src, err := e.source(s.Catalog)
 	if err != nil {
-		return e, nil, nil, err
+		return nil, false, nil, err
 	}
 	if f != nil {
 		if writes && f.root.opts.ReadOnly {
-			return e, nil, nil, ErrReadOnly
+			return nil, false, nil, ErrReadOnly
 		}
-		c, err = f.conn(ctx, src, s.Query)
-		return e, c, func(error) {}, err
+		c, replica, err = f.conn(ctx, src, s.Query)
+		return c, replica, func(error) {}, err
 	}
 	if !writes {
-		c, err = e.route(ctx, src, s.Consistency, false, s.Query)
+		c, replica, err = e.route(ctx, src, s.Consistency, false, s.Query)
 		if err != nil {
-			return e, nil, nil, err
+			return nil, false, nil, err
 		}
-		return e, c, func(error) { c.Release() }, nil
+		return c, replica, func(error) { c.Release() }, nil
 	}
 	c, err = e.conn(ctx, src, false, s.Query)
 	if err != nil {
-		return e, nil, nil, err
+		return nil, false, nil, err
 	}
-	return e, c, func(err error) {
+	return c, false, func(err error) {
 		if err == nil {
 			e.recordWrite(ctx, SessionFrom(ctx), src, c)
 		}
 		c.Release()
 	}, nil
+}
+
+// handle returns h's executor and the frame a statement on h runs in: h's
+// transaction's, else the one ctx carries.
+func handle(ctx context.Context, h Reader) (*Executor, *frame) {
+	e, f := h.bind()
+	if f == nil {
+		f = frameOf(ctx)
+	}
+	return e, f
 }
 
 // Fetch runs s and returns its rows (§19's many).
@@ -87,8 +100,12 @@ func Fetch(ctx context.Context, h Reader, s Statement) ([]Row, error) {
 }
 
 // fetch reads at most limit rows, or every row for a negative limit.
-func fetch(ctx context.Context, h Reader, s *Statement, limit int) (_ []Row, err error) {
-	e, c, done, err := connFor(ctx, h, s, s.Writes)
+func fetch(ctx context.Context, h Reader, s *Statement, limit int) (out []Row, err error) {
+	e, f := handle(ctx, h)
+	ctx, q := e.startQuery(ctx, f, s)
+	var replica bool
+	defer func() { q.end(replica, int64(len(out)), err) }()
+	c, replica, done, err := connFor(ctx, e, f, s, s.Writes)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +116,7 @@ func fetch(ctx context.Context, h Reader, s *Statement, limit int) (_ []Row, err
 		return nil, e.translate(err, s.Catalog, s.Query, src)
 	}
 	defer rows.Close()
-	out := []Row{}
+	out = []Row{}
 	for (limit < 0 || len(out) < limit) && rows.Next() {
 		out = append(out, rows.Row())
 	}
@@ -146,11 +163,17 @@ func optional(ctx context.Context, h Reader, s *Statement) (Row, bool, error) {
 
 // Exec runs s, which writes, and returns how many rows it affected.
 func Exec(ctx context.Context, h Writer, s Statement) (n int64, err error) {
-	e, c, done, err := connFor(ctx, h, &s, true)
+	e, f := handle(ctx, h)
+	ctx, q := e.startQuery(ctx, f, &s)
+	defer func() { q.end(false, n, err) }()
+	c, _, done, err := connFor(ctx, e, f, &s, true)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { done(err) }()
 	n, err = c.Exec(ctx, s.SQL, s.Args)
-	return n, e.translate(err, s.Catalog, s.Query, e.catalogs[s.Catalog])
+	if err != nil {
+		return 0, e.translate(err, s.Catalog, s.Query, e.catalogs[s.Catalog])
+	}
+	return n, nil
 }

@@ -87,6 +87,7 @@ type Executor struct {
 	rand               func() float64
 	consistency        Consistency
 	trackInterval      time.Duration
+	hooks              []Hooks
 	// Stops the replica tracker, and closes when it has stopped.
 	stopTracker func()
 	tracked     chan struct{}
@@ -260,7 +261,7 @@ func (e *Executor) conn(ctx context.Context, s *sourcePool, independent bool, q 
 	if independent {
 		actx, cancel := context.WithTimeout(ctx, e.independentTimeout)
 		defer cancel()
-		c, err := s.pool.Acquire(actx)
+		c, err := e.acquire(actx, s, s.pool, false)
 		if err != nil && ctx.Err() == nil && errors.Is(err, context.DeadlineExceeded) {
 			return nil, &PoolExhausted{Origin: Origin{Dialect: e.dialect.Name, Query: q}, Source: s.name}
 		}
@@ -273,7 +274,7 @@ func (e *Executor) conn(ctx context.Context, s *sourcePool, independent bool, q 
 			return nil, e.translate(ctx.Err(), "", q, s)
 		}
 	}
-	c, err := s.pool.Acquire(ctx)
+	c, err := e.acquire(ctx, s, s.pool, false)
 	if err != nil {
 		s.done()
 		return nil, e.translate(err, "", q, s)
