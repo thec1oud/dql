@@ -23,6 +23,7 @@ func shopShapes(t *testing.T) *irv1.Bundle {
 	b := &irv1.Bundle{}
 	layer := &irv1.ShapeLayer{}
 	custom := &irv1.ShapeLayer{}
+	files := &irv1.QueryLayer{}
 	for _, r := range []struct {
 		path string
 		into proto.Message
@@ -30,6 +31,7 @@ func shopShapes(t *testing.T) *irv1.Bundle {
 		{filepath.Join(root, "testdata", "shop", "catalog.json"), b},
 		{filepath.Join(root, "testdata", "shop", "shapes.json"), layer},
 		{filepath.Join(root, "core", "shapes", "testdata", "custom", "record.json"), custom},
+		{filepath.Join(root, "testdata", "shop", "queries.json"), files},
 	} {
 		raw, err := os.ReadFile(r.path)
 		if err != nil {
@@ -41,6 +43,7 @@ func shopShapes(t *testing.T) *irv1.Bundle {
 	}
 	layer.Shapes = append(layer.Shapes, custom.GetShapes()...)
 	b.Shapes = layer
+	b.Queries.Queries = append(b.Queries.Queries, files.GetQueries()...)
 	return b
 }
 
@@ -56,7 +59,7 @@ func TestShopShapes(t *testing.T) {
 		names = append(names, name)
 	}
 	slices.Sort(names)
-	want := []string{"dql-checks.dql.go", "dql-db.dql.go", "dql-dialect.dql.go", "dql-fragments.dql.go", "dql-select.dql.go", "dql-shapes.dql.go", "dql-types.dql.go", "dql-version.dql.go", "post.dql.go", "post_tag.dql.go",
+	want := []string{"dql-checks.dql.go", "dql-db.dql.go", "dql-dialect.dql.go", "dql-fragments.dql.go", "dql-queries.dql.go", "dql-select.dql.go", "dql-shapes.dql.go", "dql-types.dql.go", "dql-version.dql.go", "post.dql.go", "post_tag.dql.go",
 		"profile.dql.go", "published_post.dql.go", "tag.dql.go", "tenant.dql.go", "user.dql.go"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("files %q", names)

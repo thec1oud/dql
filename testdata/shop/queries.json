@@ -1,0 +1,248 @@
+{
+  "queries": [
+    {
+      "name": {
+        "stored": "AuthorPostCounts",
+        "words": [
+          "author",
+          "post",
+          "counts"
+        ]
+      },
+      "source": "QUERY_SOURCE_FILE",
+      "cardinality": "CARDINALITY_MANY",
+      "result": {
+        "anonymous": {
+          "fields": [
+            {
+              "name": "author_id",
+              "type": {
+                "int64": {},
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "int8"
+                  },
+                  "raw": "bigint"
+                }
+              },
+              "origin": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "users",
+                "member": "id"
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+            },
+            {
+              "name": "display_name",
+              "type": {
+                "varchar": {
+                  "length": 80,
+                  "unit": "LENGTH_UNIT_CHARACTERS"
+                },
+                "native": {
+                  "name": {
+                    "namespace": "pg_catalog",
+                    "object": "varchar"
+                  },
+                  "modifiers": [
+                    {
+                      "int": 80
+                    }
+                  ],
+                  "raw": "character varying(80)"
+                }
+              },
+              "nullable": true,
+              "origin": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "users",
+                "member": "display_name"
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": "posts",
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+            }
+          ]
+        }
+      },
+      "consistency": {
+        "level": "CONSISTENCY_ANY"
+      },
+      "scope": {
+        "columns": [
+          "tenant_id"
+        ]
+      },
+      "catalog": "shop",
+      "text": "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts\nFROM app.users u\nLEFT JOIN app.posts p ON p.author_id = u.id\nWHERE u.tenant_id = $1\nGROUP BY u.id, u.display_name",
+      "location": "queries.sql:10",
+      "tables": [
+        {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "posts"
+        },
+        {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        }
+      ]
+    },
+    {
+      "name": {
+        "stored": "GetUserByEmail",
+        "words": [
+          "get",
+          "user",
+          "by",
+          "email"
+        ]
+      },
+      "source": "QUERY_SOURCE_FILE",
+      "cardinality": "CARDINALITY_ONE",
+      "params": [
+        {
+          "name": "email",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "email_address"
+              }
+            },
+            "native": {
+              "name": {
+                "namespace": "app",
+                "object": "email_address"
+              },
+              "raw": "app.email_address"
+            }
+          }
+        }
+      ],
+      "result": {
+        "shape": {
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        },
+        "columns": [
+          "id",
+          "tenant_id",
+          "email",
+          "display_name",
+          "created_at",
+          "updated_at",
+          "version"
+        ]
+      },
+      "scope": {
+        "columns": [
+          "tenant_id"
+        ]
+      },
+      "catalog": "shop",
+      "text": "SELECT id, tenant_id, email, display_name, created_at, updated_at, version\nFROM app.users\nWHERE tenant_id = $2 AND email = $1",
+      "location": "queries.sql:4",
+      "returns": "user.full",
+      "tables": [
+        {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        }
+      ]
+    },
+    {
+      "name": {
+        "stored": "RenameUser",
+        "words": [
+          "rename",
+          "user"
+        ]
+      },
+      "source": "QUERY_SOURCE_FILE",
+      "cardinality": "CARDINALITY_EXEC_ROWS",
+      "params": [
+        {
+          "name": "display_name",
+          "type": {
+            "varchar": {
+              "length": 80,
+              "unit": "LENGTH_UNIT_CHARACTERS"
+            },
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "varchar"
+              },
+              "modifiers": [
+                {
+                  "int": 80
+                }
+              ],
+              "raw": "character varying(80)"
+            }
+          },
+          "nullable": true
+        },
+        {
+          "name": "id",
+          "type": {
+            "int64": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int8"
+              },
+              "raw": "bigint"
+            }
+          }
+        },
+        {
+          "name": "version",
+          "type": {
+            "int32": {},
+            "native": {
+              "name": {
+                "namespace": "pg_catalog",
+                "object": "int4"
+              },
+              "raw": "integer"
+            }
+          }
+        }
+      ],
+      "writes": true,
+      "scope": {
+        "columns": [
+          "tenant_id"
+        ]
+      },
+      "catalog": "shop",
+      "text": "UPDATE app.users\nSET display_name = $1, version = version + 1\nWHERE tenant_id = $4 AND id = $2 AND version = $3",
+      "location": "queries.sql:18",
+      "tables": [
+        {
+          "catalog": "shop",
+          "namespace": "app",
+          "object": "users"
+        }
+      ]
+    }
+  ]
+}

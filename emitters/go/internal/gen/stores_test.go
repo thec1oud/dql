@@ -363,3 +363,76 @@ func TestTableID(t *testing.T) {
 		t.Error(got)
 	}
 }
+
+// fileQ is a query-file query of the shop catalog for the querier tests.
+func fileQ(name string, words []string, card irv1.Cardinality, scope ...string) *irv1.Query {
+	return &irv1.Query{Name: &irv1.Identifier{Stored: name, Words: words}, Source: irv1.QuerySource_QUERY_SOURCE_FILE, Cardinality: card,
+		Catalog: "shop", Scope: &irv1.ScopeUse{Columns: scope}, Sql: &irv1.Query_Text{Text: "SELECT 1"}, Location: "q.sql:1"}
+}
+
+// §17, §21, §22.2, §26.3: query-file queries on the handles their scope and
+// capability allow.
+func TestQueriers(t *testing.T) {
+	b := shopShapes(t)
+	int64T := &irv1.Type{Kind: &irv1.Type_Int64{Int64: e()}}
+	ping := fileQ("Ping", []string{"ping"}, irv1.Cardinality_CARDINALITY_EXEC)
+	ping.Sql, ping.Writes = &irv1.Query_Text{Text: ""}, true
+	count := fileQ("CountTags", []string{"count", "tags"}, irv1.Cardinality_CARDINALITY_COUNT)
+	count.Params = []*irv1.Param{
+		{Name: "ids", Type: int64T, List: true},
+		{Name: "name", Type: &irv1.Type{Kind: &irv1.Type_Text{Text: &irv1.Text{}}}, Nullable: true},
+		{Name: "ctx", Type: int64T},
+	}
+	tag := fileQ("FindTag", []string{"find", "tag"}, irv1.Cardinality_CARDINALITY_OPTIONAL, "id")
+	tag.AtMostOne = true
+	tag.Result = &irv1.ResultShape{Kind: &irv1.ResultShape_Shape{Shape: &irv1.ShapeId{Base: &irv1.ShapeId_Entity{Entity: qnShop("tags")}, Preset: irv1.Preset_PRESET_FULL, Form: irv1.Form_FORM_FLAT}},
+		Columns: []string{"name", "id"}}
+	rows := fileQ("Pairs", []string{"pairs"}, irv1.Cardinality_CARDINALITY_MANY)
+	rows.Result = &irv1.ResultShape{Kind: &irv1.ResultShape_Anonymous{Anonymous: &irv1.AnonymousShape{Fields: []*irv1.ResultField{
+		{Name: "n", Type: int64T, NullabilitySource: irv1.NullabilitySource_NULLABILITY_SOURCE_ANNOTATION},
+	}}}}
+	b.Queries.Queries = append(b.Queries.Queries, ping, count, tag, rows)
+	// Posts are bound by id; users by id and tenant_id, so a query on @scope.id
+	// runs on both scoped handles.
+	idField := &irv1.Field{Column: "id", Type: int64T}
+	posts := &irv1.Shape{Id: &irv1.ShapeId{Base: &irv1.ShapeId_Entity{Entity: qnShop("posts")}, Preset: irv1.Preset_PRESET_SCOPE},
+		HostName: &irv1.Identifier{Words: []string{"post", "scope"}}, Entity: qnShop("posts"), Fields: []*irv1.Field{idField}}
+	b.GetShapes().Shapes = append(b.GetShapes().GetShapes(), posts)
+	for _, s := range b.GetShapes().GetShapes() {
+		if s.GetId().GetPreset() == irv1.Preset_PRESET_SCOPE && s.GetEntity().GetObject() == "users" {
+			s.Fields = append([]*irv1.Field{idField}, s.GetFields()...)
+		}
+	}
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatal(codes)
+	}
+	contains(t, files, "dql-queries.dql.go",
+		"type ReadQuerier interface {\n\tCountTags(ctx context.Context, ids []int64, name *string, ctx2 int64) (int64, error)\n\tPairs(ctx context.Context) ([]PairsRow, error)\n}",
+		"type Querier interface {\n\tReadQuerier\n\tPing(ctx context.Context) error\n}",
+		"Kind:    \"\",",
+		"_, err := dql.Exec(ctx, q.w, st)\n\treturn err",
+		"return dql.Count(ctx, q.h, st)",
+		"func (q userScopedQueries) FindTag(ctx context.Context) (opt.Opt[TagFull], error) {\n\tscope := PostScope{ID: q.scope.ID}",
+		"Args:      []any{scope.ID},\n\t\tAtMostOne: true,",
+		"func(r dql.Row) (TagFull, error) { return DecodeTagFull(dql.Row{r[1], r[0]}) }",
+		"func (q postScopedQueries) FindTag(ctx context.Context) (opt.Opt[TagFull], error) {\n\tst",
+		"Args:      []any{q.scope.ID},",
+		`out.N = dql.Field(d, 0, "n", "the nonnull header of query Pairs", dql.Int[int64])`,
+	)
+	contains(t, files, "dql-db.dql.go", "Queries: queries{tx, nil},")
+
+	// Unknown scope columns, columns whose names meet and a store named
+	// Queries fail.
+	lost := fileQ("Lost", []string{"lost"}, irv1.Cardinality_CARDINALITY_EXEC, "region")
+	rows.Result.GetAnonymous().Fields = append(rows.Result.GetAnonymous().Fields, &irv1.ResultField{Name: "N", Type: int64T})
+	b.Queries.Queries = append(b.Queries.Queries, lost)
+	shopTable(b, "tags").Name.Words = []string{"queries"}
+	if _, codes := generate(t, b, Options{}); !slices.Equal(codes, []string{
+		"SEVERITY_ERROR go-name-collision ",
+		"SEVERITY_ERROR go-reference-unknown Lost",
+		"SEVERITY_ERROR go-name-collision Pairs",
+	}) {
+		t.Error(codes)
+	}
+}

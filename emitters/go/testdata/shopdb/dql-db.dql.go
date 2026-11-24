@@ -149,6 +149,8 @@ type UserScoped struct {
 	Tags           TagsStore
 	Tenants        TenantsStore
 	Users          UsersStore
+	// Queries runs the query files' queries (§17).
+	Queries UserScopedQuerier
 }
 
 func newUserScoped(exec *dql.Executor, s UserScope) UserScoped {
@@ -161,6 +163,7 @@ func newUserScoped(exec *dql.Executor, s UserScope) UserScoped {
 		Tags:           tagsWrites{tagsReads{exec}, exec},
 		Tenants:        tenantsWrites{tenantsReads{exec}, exec},
 		Users:          usersWrites{usersReads{exec, UserScope{TenantID: s.TenantID}}, exec},
+		Queries:        userScopedQueries{exec, exec, s},
 	}
 }
 
@@ -208,6 +211,8 @@ type UserScopedWriteTx struct {
 	Tags           TagsStore
 	Tenants        TenantsStore
 	Users          UsersStore
+	// Queries runs the query files' queries (§17).
+	Queries UserScopedQuerier
 }
 
 func newUserScopedWriteTx(tx *dql.WriteTx, s UserScope) UserScopedWriteTx {
@@ -220,6 +225,7 @@ func newUserScopedWriteTx(tx *dql.WriteTx, s UserScope) UserScopedWriteTx {
 		Tags:           tagsWrites{tagsReads{tx}, tx},
 		Tenants:        tenantsWrites{tenantsReads{tx}, tx},
 		Users:          usersWrites{usersReads{tx, UserScope{TenantID: s.TenantID}}, tx},
+		Queries:        userScopedQueries{tx, tx, s},
 	}
 }
 
@@ -244,6 +250,8 @@ type UserScopedReadTx struct {
 	Tags           TagsReadStore
 	Tenants        TenantsReadStore
 	Users          UsersReadStore
+	// Queries runs the query files' queries (§17).
+	Queries UserScopedReadQuerier
 }
 
 func newUserScopedReadTx(tx *dql.ReadTx, s UserScope) UserScopedReadTx {
@@ -256,6 +264,7 @@ func newUserScopedReadTx(tx *dql.ReadTx, s UserScope) UserScopedReadTx {
 		Tags:           tagsReads{tx},
 		Tenants:        tenantsReads{tx},
 		Users:          usersReads{tx, UserScope{TenantID: s.TenantID}},
+		Queries:        userScopedQueries{tx, nil, s},
 	}
 }
 
@@ -279,6 +288,8 @@ type UnscopedDB struct {
 	Tags           TagsStore
 	Tenants        TenantsStore
 	Users          UsersUnscopedStore
+	// Queries runs the query files' queries (§17).
+	Queries UnscopedQuerier
 }
 
 func newUnscopedDB(exec *dql.Executor) UnscopedDB {
@@ -291,6 +302,7 @@ func newUnscopedDB(exec *dql.Executor) UnscopedDB {
 		Tags:           tagsWrites{tagsReads{exec}, exec},
 		Tenants:        tenantsWrites{tenantsReads{exec}, exec},
 		Users:          usersUnscoped{usersUnscopedReads{exec}, exec},
+		Queries:        unscopedQueries{exec, exec},
 	}
 }
 
@@ -337,6 +349,8 @@ type UnscopedWriteTx struct {
 	Tags           TagsStore
 	Tenants        TenantsStore
 	Users          UsersUnscopedStore
+	// Queries runs the query files' queries (§17).
+	Queries UnscopedQuerier
 }
 
 func newUnscopedWriteTx(tx *dql.WriteTx) UnscopedWriteTx {
@@ -349,6 +363,7 @@ func newUnscopedWriteTx(tx *dql.WriteTx) UnscopedWriteTx {
 		Tags:           tagsWrites{tagsReads{tx}, tx},
 		Tenants:        tenantsWrites{tenantsReads{tx}, tx},
 		Users:          usersUnscoped{usersUnscopedReads{tx}, tx},
+		Queries:        unscopedQueries{tx, tx},
 	}
 }
 
@@ -372,6 +387,8 @@ type UnscopedReadTx struct {
 	Tags           TagsReadStore
 	Tenants        TenantsReadStore
 	Users          UsersUnscopedReadStore
+	// Queries runs the query files' queries (§17).
+	Queries UnscopedReadQuerier
 }
 
 func newUnscopedReadTx(tx *dql.ReadTx) UnscopedReadTx {
@@ -384,6 +401,7 @@ func newUnscopedReadTx(tx *dql.ReadTx) UnscopedReadTx {
 		Tags:           tagsReads{tx},
 		Tenants:        tenantsReads{tx},
 		Users:          usersUnscopedReads{tx},
+		Queries:        unscopedQueries{tx, nil},
 	}
 }
 
