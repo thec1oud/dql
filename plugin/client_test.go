@@ -119,8 +119,12 @@ func started(t *testing.T, w io.WriteCloser, r io.Reader) *process {
 func TestProcessHandshakeErrors(t *testing.T) {
 	result := &irv1.PluginMessage{Kind: &irv1.PluginMessage_Result{Result: &irv1.InvokeResult{}}}
 	hs := &irv1.PluginMessage{Kind: &irv1.PluginMessage_Handshake{Handshake: handshake(emitter, "1.0.0", 1)}}
-	if err := started(t, &failAfter{}, nil).handshake(hello(), emitter); !errors.Is(err, errWrite) {
+	if err := started(t, &failAfter{}, bytes.NewReader(frames(t, hs))).handshake(hello(), emitter); !errors.Is(err, errWrite) {
 		t.Errorf("hello write: %v", err)
+	}
+	// A plugin gone before the hello reports its ended stdout, not the pipe.
+	if err := started(t, &failAfter{}, bytes.NewReader(nil)).handshake(hello(), emitter); !errors.Is(err, io.EOF) {
+		t.Errorf("hello write to an ended plugin: %v", err)
 	}
 	if err := started(t, &failAfter{n: 1}, bytes.NewReader(frames(t, result))).handshake(hello(), emitter); err == nil ||
 		!strings.Contains(err.Error(), "expected a handshake") {

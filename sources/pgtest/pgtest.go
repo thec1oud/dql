@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"regexp"
 	"sync/atomic"
 	"time"
 
@@ -60,9 +61,12 @@ type Database struct {
 	// Conn is connected to the database as the server's role.
 	Conn *pgx.Conn
 	// URL connects to the database.
-	URL   string
-	admin *pgx.Conn
-	ident string
+	URL string
+	// ServerText is the text the goldens hold that this server writes
+	// differently, for golden.Assert to mask; see serverText.
+	ServerText []*regexp.Regexp
+	admin      *pgx.Conn
+	ident      string
 }
 
 var serial atomic.Int64
@@ -82,6 +86,11 @@ func Create(ctx context.Context, admin *pgx.Conn, files ...string) (*Database, e
 	}
 	if err == nil {
 		d.Conn, err = pgx.Connect(ctx, d.URL)
+	}
+	if err == nil {
+		var version int
+		err = d.Conn.QueryRow(ctx, `SELECT current_setting('server_version_num')::int`).Scan(&version)
+		d.ServerText = serverText(version)
 	}
 	if err == nil {
 		_, err = d.Conn.Exec(ctx, `SET ROLE `+Owner)
@@ -105,6 +114,24 @@ func Create(ctx context.Context, admin *pgx.Conn, files ...string) (*Database, e
 		return nil, fmt.Errorf("pgtest: %w", err)
 	}
 	return d, nil
+}
+
+// olderText is what a server older than Postgres 16, on which the goldens are
+// made, writes differently. Postgres 15 qualifies the columns of a view over
+// one table, so a view's definition differs, and with it the catalog's input
+// fingerprint, which hashes the definition and which generated code repeats.
+var olderText = []*regexp.Regexp{
+	regexp.MustCompile(`"definition": " SELECT(?:[^"\\]|\\.)*"`),
+	regexp.MustCompile(`sha256:[0-9a-f]{64}`),
+}
+
+// serverText returns the masks for the server whose server_version_num is
+// version: none from Postgres 16 on, olderText before it.
+func serverText(version int) []*regexp.Regexp {
+	if version >= 160000 {
+		return nil
+	}
+	return olderText
 }
 
 // Drop closes the connection and drops the database.

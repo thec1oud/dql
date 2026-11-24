@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -23,6 +24,9 @@ const (
 // each in a fresh database, so the shop golden holds exactly §1.3 and
 // database-wide objects such as the fixture's extension stay out of it.
 var shopDB, fixtureDB *pgx.Conn
+
+// serverText is the text of the shop golden the server writes differently.
+var serverText []*regexp.Regexp
 
 func TestMain(m *testing.M) {
 	os.Exit(run(m))
@@ -48,6 +52,7 @@ func run(m *testing.M) int {
 		if db, err = pgtest.Create(ctx, admin, d.file); err == nil {
 			defer db.Drop(ctx)
 			*d.conn = db.Conn
+			serverText = db.ServerText
 		}
 	}
 	if err != nil {
