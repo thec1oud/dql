@@ -84,6 +84,20 @@ func connFor(ctx context.Context, e *Executor, f *frame, s *Statement, writes bo
 	}, nil
 }
 
+type queryKey struct{}
+
+func withQuery(ctx context.Context, q string) context.Context {
+	return context.WithValue(ctx, queryKey{}, q)
+}
+
+// QueryName returns the name of the query whose statement a driver's Query
+// or Exec runs with ctx, for a driver, such as a fake, that matches
+// statements by query (§26.3).
+func QueryName(ctx context.Context) string {
+	q, _ := ctx.Value(queryKey{}).(string)
+	return q
+}
+
 // handle returns h's executor and the frame a statement on h runs in: h's
 // transaction's, else the one ctx carries.
 func handle(ctx context.Context, h Reader) (*Executor, *frame) {
@@ -111,7 +125,7 @@ func fetch(ctx context.Context, h Reader, s *Statement, limit int) (out []Row, e
 	}
 	defer func() { done(err) }()
 	src := e.catalogs[s.Catalog]
-	rows, err := c.Query(ctx, s.SQL, s.Args)
+	rows, err := c.Query(withQuery(ctx, s.Query), s.SQL, s.Args)
 	if err != nil {
 		return nil, e.translate(err, s.Catalog, s.Query, src)
 	}
@@ -171,7 +185,7 @@ func Exec(ctx context.Context, h Writer, s Statement) (n int64, err error) {
 		return 0, err
 	}
 	defer func() { done(err) }()
-	n, err = c.Exec(ctx, s.SQL, s.Args)
+	n, err = c.Exec(withQuery(ctx, s.Query), s.SQL, s.Args)
 	if err != nil {
 		return 0, e.translate(err, s.Catalog, s.Query, e.catalogs[s.Catalog])
 	}
