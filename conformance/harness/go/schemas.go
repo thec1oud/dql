@@ -76,10 +76,12 @@ var Schemas = map[string]Schema{
 	},
 }
 
-// A replica leaves rotation 200ms behind, which the tracker sees within
-// 20ms, so that the routing scenario need not wait out the 2s default.
+// A replica leaves rotation 1s behind, which the tracker sees within 20ms,
+// so that the routing scenario need not wait out the 2s default. Less than
+// 1s, and replay of other tests' writes, which run at the same time, can
+// keep it out of rotation.
 const (
-	maxLag        = 200 * time.Millisecond
+	maxLag        = time.Second
 	trackInterval = 20 * time.Millisecond
 )
 

@@ -86,10 +86,10 @@ steps:
     wait: 100ms
     or_fail: true
     expect: { error: { class: ReplicaUnavailable } }
-  # Past the source's max lag, 200ms here, the replica leaves rotation, and
+  # Past the source's max lag, 1s here, the replica leaves rotation, and
   # reads that would use it go to the primary.
   - op: sleep
-    duration: 1s
+    duration: 2500ms
   - op: select
     from: tenants
     shape: tenant_full
@@ -102,19 +102,18 @@ steps:
     bound: 10s
     expect: { events: [{ replica: false }] }
 
-  # Once replay resumes, the replica catches up and returns to rotation.
+  # Once replay resumes, the replica catches up and returns to rotation. The
+  # wait covers the catch-up, which takes longer while other tests write.
   - op: resume_replay
   - op: select
     from: tenants
     shape: tenant_full
     filter: [{ column: name, op: eq, value: late }]
     consistency: read_your_writes
-    wait: 5s
+    wait: 15s
     expect:
       rows: [{ name: late }]
       events: [{ replica: true }]
-  - op: sleep
-    duration: 500ms
   - op: select
     from: tenants
     shape: tenant_full
