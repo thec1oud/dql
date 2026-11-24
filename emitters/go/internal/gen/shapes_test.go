@@ -56,7 +56,7 @@ func TestShopShapes(t *testing.T) {
 		names = append(names, name)
 	}
 	slices.Sort(names)
-	want := []string{"dql-checks.dql.go", "dql-db.dql.go", "dql-dialect.dql.go", "dql-fragments.dql.go", "dql-shapes.dql.go", "dql-types.dql.go", "dql-version.dql.go", "post.dql.go", "post_tag.dql.go",
+	want := []string{"dql-checks.dql.go", "dql-db.dql.go", "dql-dialect.dql.go", "dql-fragments.dql.go", "dql-select.dql.go", "dql-shapes.dql.go", "dql-types.dql.go", "dql-version.dql.go", "post.dql.go", "post_tag.dql.go",
 		"profile.dql.go", "published_post.dql.go", "tag.dql.go", "tenant.dql.go", "user.dql.go"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("files %q", names)

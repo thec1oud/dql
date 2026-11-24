@@ -540,6 +540,7 @@ var (
 
 // ProfilesReadStore reads shop.app.profiles (§26.3).
 type ProfilesReadStore interface {
+	from(ProfilesTable) dql.From
 	Get(ctx context.Context, k ProfileKey) (ProfileFull, error)
 	Find(ctx context.Context, k ProfileKey) (opt.Opt[ProfileFull], error)
 	Count(ctx context.Context) (int64, error)
@@ -675,3 +676,270 @@ func (s profilesWrites) Delete(ctx context.Context, k ProfileKey) error {
 	_, err = dql.Exec(ctx, s.w, st)
 	return err
 }
+
+// ProfilesTable is table shop.app.profiles in builder reads (§18.2): its columns and relations
+// make predicates and order keys on its rows.
+type ProfilesTable struct {
+	UserID   profilesUserIDColumn
+	Bio      profilesBioColumn
+	Birthday profilesBirthdayColumn
+	User     profilesUserRelation
+}
+
+// Profiles is table shop.app.profiles in builder reads (§18.2).
+var Profiles ProfilesTable
+
+// profilesUserIDColumn is column user_id in builder reads (§9.4).
+type profilesUserIDColumn struct{}
+
+// Any is operator any on user_id (§9.4).
+func (profilesUserIDColumn) Any(v []int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.any", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// Between is operator between on user_id (§9.4).
+func (profilesUserIDColumn) Between(v0 int64, v1 int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.between", "col.profiles.user_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on user_id (§9.4).
+func (profilesUserIDColumn) Eq(v int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on user_id (§9.4).
+func (profilesUserIDColumn) Ge(v int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on user_id (§9.4).
+func (profilesUserIDColumn) Gt(v int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// In is operator in on user_id (§9.4).
+func (profilesUserIDColumn) In(v []int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.in", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on user_id (§9.4).
+func (profilesUserIDColumn) IsDistinctFrom(v int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// Le is operator le on user_id (§9.4).
+func (profilesUserIDColumn) Le(v int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.le", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on user_id (§9.4).
+func (profilesUserIDColumn) Lt(v int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on user_id (§9.4).
+func (profilesUserIDColumn) Ne(v int64) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.user_id", dql.Arg{Value: v})
+}
+
+// Asc orders by user_id, ascending.
+func (profilesUserIDColumn) Asc() dql.Order[ProfilesTable] {
+	return dql.Ordered[ProfilesTable]("order.asc", "col.profiles.user_id")
+}
+
+// Desc orders by user_id, descending.
+func (profilesUserIDColumn) Desc() dql.Order[ProfilesTable] {
+	return dql.Ordered[ProfilesTable]("order.desc", "col.profiles.user_id")
+}
+
+// profilesBioColumn is column bio in builder reads (§9.4).
+type profilesBioColumn struct{}
+
+// Any is operator any on bio (§9.4).
+func (profilesBioColumn) Any(v []string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.any", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// Between is operator between on bio (§9.4).
+func (profilesBioColumn) Between(v0 string, v1 string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.between", "col.profiles.bio", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Contains is operator contains on bio (§9.4).
+func (profilesBioColumn) Contains(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.contains", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// Eq is operator eq on bio (§9.4).
+func (profilesBioColumn) Eq(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on bio (§9.4).
+func (profilesBioColumn) Ge(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on bio (§9.4).
+func (profilesBioColumn) Gt(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// ILike is operator ilike on bio (§9.4).
+func (profilesBioColumn) ILike(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.ilike", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// In is operator in on bio (§9.4).
+func (profilesBioColumn) In(v []string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.in", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on bio (§9.4).
+func (profilesBioColumn) IsDistinctFrom(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// IsNotNull is operator is_not_null on bio (§9.4).
+func (profilesBioColumn) IsNotNull() dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.is_not_null", "col.profiles.bio")
+}
+
+// IsNull is operator is_null on bio (§9.4).
+func (profilesBioColumn) IsNull() dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.is_null", "col.profiles.bio")
+}
+
+// Le is operator le on bio (§9.4).
+func (profilesBioColumn) Le(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.le", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// Like is operator like on bio (§9.4).
+func (profilesBioColumn) Like(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.like", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on bio (§9.4).
+func (profilesBioColumn) Lt(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on bio (§9.4).
+func (profilesBioColumn) Ne(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// RegexMatch is operator regex_match on bio (§9.4).
+func (profilesBioColumn) RegexMatch(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.regex_match", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// StartsWith is operator starts_with on bio (§9.4).
+func (profilesBioColumn) StartsWith(v string) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.starts_with", "col.profiles.bio", dql.Arg{Value: v})
+}
+
+// Asc orders by bio, ascending.
+func (profilesBioColumn) Asc() dql.Order[ProfilesTable] {
+	return dql.Ordered[ProfilesTable]("order.asc", "col.profiles.bio")
+}
+
+// Desc orders by bio, descending.
+func (profilesBioColumn) Desc() dql.Order[ProfilesTable] {
+	return dql.Ordered[ProfilesTable]("order.desc", "col.profiles.bio")
+}
+
+// profilesBirthdayColumn is column birthday in builder reads (§9.4).
+type profilesBirthdayColumn struct{}
+
+// Any is operator any on birthday (§9.4).
+func (profilesBirthdayColumn) Any(v []civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.any", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// Between is operator between on birthday (§9.4).
+func (profilesBirthdayColumn) Between(v0 civil.Date, v1 civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.between", "col.profiles.birthday", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+}
+
+// Eq is operator eq on birthday (§9.4).
+func (profilesBirthdayColumn) Eq(v civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// Ge is operator ge on birthday (§9.4).
+func (profilesBirthdayColumn) Ge(v civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// Gt is operator gt on birthday (§9.4).
+func (profilesBirthdayColumn) Gt(v civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// In is operator in on birthday (§9.4).
+func (profilesBirthdayColumn) In(v []civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.in", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// IsDistinctFrom is operator is_distinct_from on birthday (§9.4).
+func (profilesBirthdayColumn) IsDistinctFrom(v civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// IsNotNull is operator is_not_null on birthday (§9.4).
+func (profilesBirthdayColumn) IsNotNull() dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.is_not_null", "col.profiles.birthday")
+}
+
+// IsNull is operator is_null on birthday (§9.4).
+func (profilesBirthdayColumn) IsNull() dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.is_null", "col.profiles.birthday")
+}
+
+// Le is operator le on birthday (§9.4).
+func (profilesBirthdayColumn) Le(v civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.le", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// Lt is operator lt on birthday (§9.4).
+func (profilesBirthdayColumn) Lt(v civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// Ne is operator ne on birthday (§9.4).
+func (profilesBirthdayColumn) Ne(v civil.Date) dql.Pred[ProfilesTable] {
+	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.birthday", dql.Arg{Value: v})
+}
+
+// Asc orders by birthday, ascending.
+func (profilesBirthdayColumn) Asc() dql.Order[ProfilesTable] {
+	return dql.Ordered[ProfilesTable]("order.asc", "col.profiles.birthday")
+}
+
+// Desc orders by birthday, descending.
+func (profilesBirthdayColumn) Desc() dql.Order[ProfilesTable] {
+	return dql.Ordered[ProfilesTable]("order.desc", "col.profiles.birthday")
+}
+
+// profilesUserRelation is relation user in builder reads (§18.2).
+type profilesUserRelation struct{}
+
+// Any holds where a related row exists that every predicate holds for.
+func (profilesUserRelation) Any(ps ...dql.Pred[UsersTable]) dql.Pred[ProfilesTable] {
+	return dql.Related[ProfilesTable]("rel.profiles.user", ps...)
+}
+
+// None holds where no related row exists that every predicate holds for.
+func (profilesUserRelation) None(ps ...dql.Pred[UsersTable]) dql.Pred[ProfilesTable] {
+	return dql.Not(dql.Related[ProfilesTable]("rel.profiles.user", ps...))
+}
+
+// All holds where p does not fail for any related row; it holds where
+// there are none.
+func (profilesUserRelation) All(p dql.Pred[UsersTable]) dql.Pred[ProfilesTable] {
+	return dql.Not(dql.Related[ProfilesTable]("rel.profiles.user", dql.Not(p)))
+}
+
+func (s profilesReads) from(ProfilesTable) dql.From { return dql.From{H: s.h} }
