@@ -676,14 +676,14 @@ type UsersReadStore interface {
 // UsersStore reads and writes shop.app.users (§26.3).
 type UsersStore interface {
 	UsersReadStore
-	Insert(ctx context.Context, d UserDraft) (UserFull, error)
-	InsertMany(ctx context.Context, ds []UserDraft) ([]UserFull, error)
-	InsertOrIgnore(ctx context.Context, d UserDraft) (opt.Opt[UserFull], error)
-	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft) (opt.Opt[UserFull], error)
-	Upsert(ctx context.Context, d UserDraft) (UserFull, error)
-	UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft) (UserFull, error)
-	Patch(ctx context.Context, k UserKey, p UserPartial) (UserFull, error)
-	UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial) (int64, error)
+	Insert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	InsertMany(ctx context.Context, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error)
+	InsertOrIgnore(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
+	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
+	Upsert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	Patch(ctx context.Context, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
+	UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error)
 	Delete(ctx context.Context, k UserKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[UsersTable]) (int64, error)
 }
@@ -702,14 +702,14 @@ type UsersUnscopedReadStore interface {
 // UsersUnscopedStore reads and writes, across scopes, shop.app.users (§26.3).
 type UsersUnscopedStore interface {
 	UsersUnscopedReadStore
-	Insert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
-	InsertMany(ctx context.Context, scope UserScope, ds []UserDraft) ([]UserFull, error)
-	InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft) (opt.Opt[UserFull], error)
-	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (opt.Opt[UserFull], error)
-	Upsert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
-	UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error)
-	Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial) (UserFull, error)
-	UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial) (int64, error)
+	Insert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	InsertMany(ctx context.Context, scope UserScope, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error)
+	InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
+	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
+	Upsert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
+	UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error)
 	Delete(ctx context.Context, scope UserScope, k UserKey) error
 	DeleteWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable]) (int64, error)
 }
@@ -781,7 +781,7 @@ func (s usersReads) Exists(ctx context.Context) (bool, error) {
 }
 
 // Insert runs user.insert (§20.1).
-func (s usersWrites) Insert(ctx context.Context, d UserDraft) (UserFull, error) {
+func (s usersWrites) Insert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error) {
 	if err := d.Validate(); err != nil {
 		return UserFull{}, err
 	}
@@ -798,6 +798,9 @@ func (s usersWrites) Insert(ctx context.Context, d UserDraft) (UserFull, error) 
 	if v, ok := d.Version.Get(); ok {
 		args["version"] = v
 	}
+	if err := dql.Assign(userInsert, "user.draft.flat", args, dql.Values(as)); err != nil {
+		return UserFull{}, err
+	}
 	st, err := userInsert.Statement(fragments, args)
 	if err != nil {
 		return UserFull{}, err
@@ -806,7 +809,7 @@ func (s usersWrites) Insert(ctx context.Context, d UserDraft) (UserFull, error) 
 }
 
 // InsertMany runs user.insert for each draft, in one transaction (§20.1).
-func (s usersWrites) InsertMany(ctx context.Context, ds []UserDraft) ([]UserFull, error) {
+func (s usersWrites) InsertMany(ctx context.Context, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error) {
 	for _, d := range ds {
 		if err := d.Validate(); err != nil {
 			return nil, err
@@ -827,13 +830,16 @@ func (s usersWrites) InsertMany(ctx context.Context, ds []UserDraft) ([]UserFull
 		if v, ok := d.Version.Get(); ok {
 			args["version"] = v
 		}
+		if err := dql.Assign(userInsert, "user.draft.flat", args, dql.Values(as)); err != nil {
+			return nil, err
+		}
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, userInsert, rows, DecodeUserFull)
 }
 
 // InsertOrIgnore runs user.insert_or_ignore.by_primary (§20.1).
-func (s usersWrites) InsertOrIgnore(ctx context.Context, d UserDraft) (opt.Opt[UserFull], error) {
+func (s usersWrites) InsertOrIgnore(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[UserFull](), err
 	}
@@ -849,6 +855,9 @@ func (s usersWrites) InsertOrIgnore(ctx context.Context, d UserDraft) (opt.Opt[U
 	}
 	if v, ok := d.Version.Get(); ok {
 		args["version"] = v
+	}
+	if err := dql.Assign(userInsertOrIgnoreByPrimary, "user.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[UserFull](), err
 	}
 	st, err := userInsertOrIgnoreByPrimary.Statement(fragments, args)
 	if err != nil {
@@ -858,7 +867,7 @@ func (s usersWrites) InsertOrIgnore(ctx context.Context, d UserDraft) (opt.Opt[U
 }
 
 // InsertOrIgnoreByTenantIDAndEmail runs user.insert_or_ignore.by_tenant_id_and_email (§20.1).
-func (s usersWrites) InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft) (opt.Opt[UserFull], error) {
+func (s usersWrites) InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error) {
 	if err := d.Validate(); err != nil {
 		return opt.None[UserFull](), err
 	}
@@ -874,6 +883,9 @@ func (s usersWrites) InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d Use
 	}
 	if v, ok := d.Version.Get(); ok {
 		args["version"] = v
+	}
+	if err := dql.Assign(userInsertOrIgnoreByTenantIDAndEmail, "user.draft.flat", args, dql.Values(as)); err != nil {
+		return opt.None[UserFull](), err
 	}
 	st, err := userInsertOrIgnoreByTenantIDAndEmail.Statement(fragments, args)
 	if err != nil {
@@ -883,7 +895,7 @@ func (s usersWrites) InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d Use
 }
 
 // Upsert runs user.upsert.by_primary (§20.1).
-func (s usersWrites) Upsert(ctx context.Context, d UserDraft) (UserFull, error) {
+func (s usersWrites) Upsert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error) {
 	if err := d.Validate(); err != nil {
 		return UserFull{}, err
 	}
@@ -899,6 +911,9 @@ func (s usersWrites) Upsert(ctx context.Context, d UserDraft) (UserFull, error) 
 	}
 	if v, ok := d.Version.Get(); ok {
 		args["version"] = v
+	}
+	if err := dql.Assign(userUpsertByPrimary, "user.draft.flat", args, dql.Values(as)); err != nil {
+		return UserFull{}, err
 	}
 	st, err := userUpsertByPrimary.Statement(fragments, args)
 	if err != nil {
@@ -908,7 +923,7 @@ func (s usersWrites) Upsert(ctx context.Context, d UserDraft) (UserFull, error) 
 }
 
 // UpsertByTenantIDAndEmail runs user.upsert.by_tenant_id_and_email (§20.1).
-func (s usersWrites) UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft) (UserFull, error) {
+func (s usersWrites) UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error) {
 	if err := d.Validate(); err != nil {
 		return UserFull{}, err
 	}
@@ -925,6 +940,9 @@ func (s usersWrites) UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft) 
 	if v, ok := d.Version.Get(); ok {
 		args["version"] = v
 	}
+	if err := dql.Assign(userUpsertByTenantIDAndEmail, "user.draft.flat", args, dql.Values(as)); err != nil {
+		return UserFull{}, err
+	}
 	st, err := userUpsertByTenantIDAndEmail.Statement(fragments, args)
 	if err != nil {
 		return UserFull{}, err
@@ -933,7 +951,7 @@ func (s usersWrites) UpsertByTenantIDAndEmail(ctx context.Context, d UserDraft) 
 }
 
 // Patch runs user.patch (§20.1).
-func (s usersWrites) Patch(ctx context.Context, k UserKey, p UserPartial) (UserFull, error) {
+func (s usersWrites) Patch(ctx context.Context, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error) {
 	if err := p.Validate(); err != nil {
 		return UserFull{}, err
 	}
@@ -947,6 +965,9 @@ func (s usersWrites) Patch(ctx context.Context, k UserKey, p UserPartial) (UserF
 	if v, ok := p.PasswordHash.Get(); ok {
 		args["password_hash"] = v
 	}
+	if err := dql.Assign(userPatch, "user.partial.flat", args, as); err != nil {
+		return UserFull{}, err
+	}
 	st, err := userPatch.Statement(fragments, args)
 	if err != nil {
 		return UserFull{}, err
@@ -959,7 +980,7 @@ func (s usersWrites) Patch(ctx context.Context, k UserKey, p UserPartial) (UserF
 }
 
 // UpdateWhere runs user.update_where (§20.1).
-func (s usersWrites) UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial) (int64, error) {
+func (s usersWrites) UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error) {
 	if err := p.Validate(); err != nil {
 		return 0, err
 	}
@@ -976,6 +997,9 @@ func (s usersWrites) UpdateWhere(ctx context.Context, where dql.Pred[UsersTable]
 	}
 	if v, ok := p.PasswordHash.Get(); ok {
 		args["password_hash"] = v
+	}
+	if err := dql.Assign(q, "user.partial.flat", args, as); err != nil {
+		return 0, err
 	}
 	st, err := q.Statement(fragments, args)
 	if err != nil {
@@ -1050,43 +1074,43 @@ func (u usersUnscopedReads) Exists(ctx context.Context, scope UserScope) (bool, 
 }
 
 // Insert runs user.insert in scope (§21.2).
-func (u usersUnscoped) Insert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error) {
-	return usersWrites{usersReads{u.w, scope}, u.w}.Insert(ctx, d)
+func (u usersUnscoped) Insert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.Insert(ctx, d, as...)
 }
 
 // InsertMany runs user.insert in scope (§21.2).
-func (u usersUnscoped) InsertMany(ctx context.Context, scope UserScope, ds []UserDraft) ([]UserFull, error) {
-	return usersWrites{usersReads{u.w, scope}, u.w}.InsertMany(ctx, ds)
+func (u usersUnscoped) InsertMany(ctx context.Context, scope UserScope, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertMany(ctx, ds, as...)
 }
 
 // InsertOrIgnore runs user.insert_or_ignore.by_primary in scope (§21.2).
-func (u usersUnscoped) InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft) (opt.Opt[UserFull], error) {
-	return usersWrites{usersReads{u.w, scope}, u.w}.InsertOrIgnore(ctx, d)
+func (u usersUnscoped) InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertOrIgnore(ctx, d, as...)
 }
 
 // InsertOrIgnoreByTenantIDAndEmail runs user.insert_or_ignore.by_tenant_id_and_email in scope (§21.2).
-func (u usersUnscoped) InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (opt.Opt[UserFull], error) {
-	return usersWrites{usersReads{u.w, scope}, u.w}.InsertOrIgnoreByTenantIDAndEmail(ctx, d)
+func (u usersUnscoped) InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertOrIgnoreByTenantIDAndEmail(ctx, d, as...)
 }
 
 // Upsert runs user.upsert.by_primary in scope (§21.2).
-func (u usersUnscoped) Upsert(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error) {
-	return usersWrites{usersReads{u.w, scope}, u.w}.Upsert(ctx, d)
+func (u usersUnscoped) Upsert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.Upsert(ctx, d, as...)
 }
 
 // UpsertByTenantIDAndEmail runs user.upsert.by_tenant_id_and_email in scope (§21.2).
-func (u usersUnscoped) UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft) (UserFull, error) {
-	return usersWrites{usersReads{u.w, scope}, u.w}.UpsertByTenantIDAndEmail(ctx, d)
+func (u usersUnscoped) UpsertByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.UpsertByTenantIDAndEmail(ctx, d, as...)
 }
 
 // Patch runs user.patch in scope (§21.2).
-func (u usersUnscoped) Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial) (UserFull, error) {
-	return usersWrites{usersReads{u.w, scope}, u.w}.Patch(ctx, k, p)
+func (u usersUnscoped) Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.Patch(ctx, k, p, as...)
 }
 
 // UpdateWhere runs user.update_where in scope (§21.2).
-func (u usersUnscoped) UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial) (int64, error) {
-	return usersWrites{usersReads{u.w, scope}, u.w}.UpdateWhere(ctx, where, p)
+func (u usersUnscoped) UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.UpdateWhere(ctx, where, p, as...)
 }
 
 // Delete runs user.delete in scope (§21.2).
@@ -1327,6 +1351,11 @@ func (usersEmailColumn) StartsWith(v string) dql.Pred[UsersTable] {
 	return dql.Compare[UsersTable]("op.starts_with", "col.users.email", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to email on a write, in place of a value (§20.2).
+func (usersEmailColumn) Set(e dql.DefaultExpr) dql.Assignment[UsersTable] {
+	return dql.Set[UsersTable]("email", e)
+}
+
 // Asc orders by email, ascending.
 func (usersEmailColumn) Asc() dql.Order[UsersTable] {
 	return dql.Ordered[UsersTable]("order.asc", "col.users.email")
@@ -1425,6 +1454,11 @@ func (usersDisplayNameColumn) StartsWith(v string) dql.Pred[UsersTable] {
 	return dql.Compare[UsersTable]("op.starts_with", "col.users.display_name", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Default() to display_name on a write, in place of a value (§20.2).
+func (usersDisplayNameColumn) Set(e dql.DefaultExpr) dql.Assignment[UsersTable] {
+	return dql.Set[UsersTable]("display_name", e)
+}
+
 // Asc orders by display_name, ascending.
 func (usersDisplayNameColumn) Asc() dql.Order[UsersTable] {
 	return dql.Ordered[UsersTable]("order.asc", "col.users.display_name")
@@ -1513,6 +1547,11 @@ func (usersPasswordHashColumn) StartsWith(v string) dql.Pred[UsersTable] {
 	return dql.Compare[UsersTable]("op.starts_with", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
 }
 
+// Set assigns dql.Default() to password_hash on a write, in place of a value (§20.2).
+func (usersPasswordHashColumn) Set(e dql.DefaultExpr) dql.Assignment[UsersTable] {
+	return dql.Set[UsersTable]("password_hash", e)
+}
+
 // Asc orders by password_hash, ascending.
 func (usersPasswordHashColumn) Asc() dql.Order[UsersTable] {
 	return dql.Ordered[UsersTable]("order.asc", "col.users.password_hash")
@@ -1574,6 +1613,11 @@ func (usersCreatedAtColumn) Lt(v time.Time) dql.Pred[UsersTable] {
 // Ne is operator ne on created_at (§9.4).
 func (usersCreatedAtColumn) Ne(v time.Time) dql.Pred[UsersTable] {
 	return dql.Compare[UsersTable]("op.ne", "col.users.created_at", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Now() or dql.Default() to created_at on a write, in place of a value (§20.2).
+func (usersCreatedAtColumn) Set(e dql.TimeExpr) dql.Assignment[UsersTable] {
+	return dql.Set[UsersTable]("created_at", e)
 }
 
 // Asc orders by created_at, ascending.
@@ -1639,6 +1683,11 @@ func (usersUpdatedAtColumn) Ne(v time.Time) dql.Pred[UsersTable] {
 	return dql.Compare[UsersTable]("op.ne", "col.users.updated_at", dql.Arg{Value: v})
 }
 
+// Set assigns dql.Now() or dql.Default() to updated_at on a write, in place of a value (§20.2).
+func (usersUpdatedAtColumn) Set(e dql.TimeExpr) dql.Assignment[UsersTable] {
+	return dql.Set[UsersTable]("updated_at", e)
+}
+
 // Asc orders by updated_at, ascending.
 func (usersUpdatedAtColumn) Asc() dql.Order[UsersTable] {
 	return dql.Ordered[UsersTable]("order.asc", "col.users.updated_at")
@@ -1700,6 +1749,11 @@ func (usersVersionColumn) Lt(v int32) dql.Pred[UsersTable] {
 // Ne is operator ne on version (§9.4).
 func (usersVersionColumn) Ne(v int32) dql.Pred[UsersTable] {
 	return dql.Compare[UsersTable]("op.ne", "col.users.version", dql.Arg{Value: v})
+}
+
+// Set assigns dql.Default() to version on a write, in place of a value (§20.2).
+func (usersVersionColumn) Set(e dql.DefaultExpr) dql.Assignment[UsersTable] {
+	return dql.Set[UsersTable]("version", e)
 }
 
 // Asc orders by version, ascending.

@@ -456,3 +456,56 @@ func TestFilteredWrites(t *testing.T) {
 		t.Errorf("other tenant %d", n)
 	}
 }
+
+func TestExpressions(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+	a := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "x"}))
+	b := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "bob@acme.com", PasswordHash: "x"}))
+
+	// An expression travels on the operation, in place of a value.
+	p := must(h.Posts.Insert(ctx, shopdb.PostDraft{AuthorID: a.ID, Title: "Hello", Status: opt.Some(shopdb.PostStatusPublished)}, shopdb.Posts.PublishedAt.Set(dql.Now())))
+	if p.PublishedAt == nil {
+		t.Error("published_at not set")
+	}
+	ps := must(h.Posts.InsertMany(ctx, []shopdb.PostDraft{{AuthorID: a.ID, Title: "One", Status: opt.Some(shopdb.PostStatusPublished)}, {AuthorID: a.ID, Title: "Two", Status: opt.Some(shopdb.PostStatusPublished)}}, shopdb.Posts.PublishedAt.Set(dql.Now())))
+	if ps[0].PublishedAt == nil || ps[1].PublishedAt == nil {
+		t.Errorf("many %+v", ps)
+	}
+	p = must(h.Posts.Patch(ctx, p.Key(), shopdb.PostPartial{}, shopdb.Posts.PublishedAt.Set(dql.Default()), shopdb.Posts.AuthorID.Add(b.ID-a.ID)))
+	if p.PublishedAt != nil || p.AuthorID != b.ID {
+		t.Errorf("patched %+v", p)
+	}
+	if n := must(h.Posts.UpdateWhere(ctx, shopdb.Posts.AuthorID.Eq(b.ID), shopdb.PostPartial{}, shopdb.Posts.AuthorID.Sub(b.ID-a.ID))); n != 1 {
+		t.Errorf("update %d", n)
+	}
+	must(h.Profiles.Insert(ctx, shopdb.ProfileDraft{UserID: a.ID, Bio: opt.Some(ptr("hi"))}))
+	if n := must(h.Profiles.UpdateWhere(ctx, shopdb.Profiles.AllRows(), shopdb.ProfilePartial{}, shopdb.Profiles.Bio.Set(dql.Default()))); n != 1 {
+		t.Errorf("profile update %d", n)
+	}
+	if got := must(h.Profiles.Get(ctx, shopdb.ProfileKey{UserID: a.ID})); got.Bio != nil {
+		t.Errorf("bio %v", *got.Bio)
+	}
+	u := must(shopdb.Unscoped(h).Users.Patch(ctx, shopdb.UserScope{TenantID: acme.ID}, a.Key(), shopdb.UserPartial{}, shopdb.Users.DisplayName.Set(dql.Default())))
+	if u.Version != a.Version+1 {
+		t.Errorf("unscoped %+v", u)
+	}
+
+	// A field the payload sets too is FieldSetTwice; a column the write does
+	// not take is an error.
+	var v dql.ValidationErrors
+	_, err := h.Posts.Patch(ctx, p.Key(), shopdb.PostPartial{Title: opt.Some("Hi")}, shopdb.Posts.Title.Set(dql.Default()))
+	if !errors.As(err, &v) || v[0].Kind != dql.KindFieldSetTwice || v[0].Field != "title" {
+		t.Errorf("twice: %v", err)
+	}
+	if _, err := h.Users.Patch(ctx, u.Key(), shopdb.UserPartial{}, shopdb.Users.CreatedAt.Set(dql.Now())); err == nil {
+		t.Error("created_at patched")
+	}
+	if _, err := h.Posts.InsertMany(ctx, []shopdb.PostDraft{{AuthorID: a.ID, Title: "Three"}}, shopdb.Posts.Title.Set(dql.Default())); !errors.As(err, &v) {
+		t.Errorf("many twice: %v", err)
+	}
+}
+
+func ptr[T any](v T) *T { return &v }
