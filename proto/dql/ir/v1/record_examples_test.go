@@ -355,6 +355,32 @@ func TestDesignRecordExamples(t *testing.T) {
 		    "member": "posts_one_published_slug" },
 		  "message": "unique index on a soft-delete table does not exclude deleted rows"
 		}`},
+		// §9.1 writes a type variable as a bare string ("T") in a list of types; the
+		// IR spells it {"var": "T"} and a type {"type": {...}}, so both are typed.
+		{"§9.1 operators", &irv1.Bundle{}, `{ "operators": [
+		  { "name": "eq",
+		    "signature": { "args": [{ "var": "T" }, { "var": "T" }], "returns": { "type": { "bool": {} } } },
+		    "requires": ["comparable"], "nullBehavior": "NULL_BEHAVIOR_STRICT" },
+		  { "name": "ilike",
+		    "signature": { "args": [{ "type": { "text": {} } }, { "type": { "text": {} } }], "returns": { "type": { "bool": {} } } },
+		    "nullBehavior": "NULL_BEHAVIOR_STRICT" },
+		  { "name": "is_null",
+		    "signature": { "args": [{ "var": "T" }], "returns": { "type": { "bool": {} } } },
+		    "requires": ["nullable"], "nullBehavior": "NULL_BEHAVIOR_NEVER_NULL" },
+		  { "name": "range_contains",
+		    "signature": { "args": [{ "range": { "var": "T" } }, { "var": "T" }], "returns": { "type": { "bool": {} } } },
+		    "requires": ["orderable"], "nullBehavior": "NULL_BEHAVIOR_STRICT" }
+		] }`},
+		{"§9.2 dialect support", &irv1.CapabilityProfile{}, `{
+		  "dialect": "DIALECT_MYSQL",
+		  "operators": [
+		    { "name": "like", "fidelity": "FIDELITY_EXACT" },
+		    { "name": "ilike", "fidelity": "FIDELITY_EXACT",
+		      "when": { "collation": { "caseSensitive": "TRISTATE_FALSE" } },
+		      "otherwise": "FIDELITY_APPROXIMATE" },
+		    { "name": "regex_match", "fidelity": "FIDELITY_APPROXIMATE" }
+		  ]
+		}`},
 	}
 	for _, c := range cases {
 		t.Run(c.section, func(t *testing.T) {

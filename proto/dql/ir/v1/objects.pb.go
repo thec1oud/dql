@@ -74,6 +74,62 @@ func (TableKind) EnumDescriptor() ([]byte, []int) {
 	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{0}
 }
 
+// How faithfully a dialect performs an operator (§9.2).
+type Fidelity int32
+
+const (
+	Fidelity_FIDELITY_UNSPECIFIED Fidelity = 0
+	// The dialect has the operator with identical semantics.
+	Fidelity_FIDELITY_EXACT Fidelity = 1
+	// A rewrite with identical semantics.
+	Fidelity_FIDELITY_EMULATED Fidelity = 2
+	// A rewrite whose results can differ.
+	Fidelity_FIDELITY_APPROXIMATE Fidelity = 3
+)
+
+// Enum value maps for Fidelity.
+var (
+	Fidelity_name = map[int32]string{
+		0: "FIDELITY_UNSPECIFIED",
+		1: "FIDELITY_EXACT",
+		2: "FIDELITY_EMULATED",
+		3: "FIDELITY_APPROXIMATE",
+	}
+	Fidelity_value = map[string]int32{
+		"FIDELITY_UNSPECIFIED": 0,
+		"FIDELITY_EXACT":       1,
+		"FIDELITY_EMULATED":    2,
+		"FIDELITY_APPROXIMATE": 3,
+	}
+)
+
+func (x Fidelity) Enum() *Fidelity {
+	p := new(Fidelity)
+	*p = x
+	return p
+}
+
+func (x Fidelity) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Fidelity) Descriptor() protoreflect.EnumDescriptor {
+	return file_dql_ir_v1_objects_proto_enumTypes[1].Descriptor()
+}
+
+func (Fidelity) Type() protoreflect.EnumType {
+	return &file_dql_ir_v1_objects_proto_enumTypes[1]
+}
+
+func (x Fidelity) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Fidelity.Descriptor instead.
+func (Fidelity) EnumDescriptor() ([]byte, []int) {
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{1}
+}
+
 // Why a column is or is not nullable (§6.4, §13).
 type NullabilitySource int32
 
@@ -123,11 +179,11 @@ func (x NullabilitySource) String() string {
 }
 
 func (NullabilitySource) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[1].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[2].Descriptor()
 }
 
 func (NullabilitySource) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[1]
+	return &file_dql_ir_v1_objects_proto_enumTypes[2]
 }
 
 func (x NullabilitySource) Number() protoreflect.EnumNumber {
@@ -136,7 +192,7 @@ func (x NullabilitySource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NullabilitySource.Descriptor instead.
 func (NullabilitySource) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{1}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{2}
 }
 
 type DefaultClass int32
@@ -178,11 +234,11 @@ func (x DefaultClass) String() string {
 }
 
 func (DefaultClass) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[2].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[3].Descriptor()
 }
 
 func (DefaultClass) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[2]
+	return &file_dql_ir_v1_objects_proto_enumTypes[3]
 }
 
 func (x DefaultClass) Number() protoreflect.EnumNumber {
@@ -191,7 +247,7 @@ func (x DefaultClass) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DefaultClass.Descriptor instead.
 func (DefaultClass) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{2}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{3}
 }
 
 type GenerationKind int32
@@ -227,11 +283,11 @@ func (x GenerationKind) String() string {
 }
 
 func (GenerationKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[3].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[4].Descriptor()
 }
 
 func (GenerationKind) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[3]
+	return &file_dql_ir_v1_objects_proto_enumTypes[4]
 }
 
 func (x GenerationKind) Number() protoreflect.EnumNumber {
@@ -240,7 +296,7 @@ func (x GenerationKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GenerationKind.Descriptor instead.
 func (GenerationKind) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{3}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{4}
 }
 
 type Tristate int32
@@ -277,11 +333,11 @@ func (x Tristate) String() string {
 }
 
 func (Tristate) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[4].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[5].Descriptor()
 }
 
 func (Tristate) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[4]
+	return &file_dql_ir_v1_objects_proto_enumTypes[5]
 }
 
 func (x Tristate) Number() protoreflect.EnumNumber {
@@ -290,7 +346,7 @@ func (x Tristate) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Tristate.Descriptor instead.
 func (Tristate) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{4}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{5}
 }
 
 // A client-side folding function the dialect plugin certifies as equivalent
@@ -330,11 +386,11 @@ func (x ClientFold) String() string {
 }
 
 func (ClientFold) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[5].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[6].Descriptor()
 }
 
 func (ClientFold) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[5]
+	return &file_dql_ir_v1_objects_proto_enumTypes[6]
 }
 
 func (x ClientFold) Number() protoreflect.EnumNumber {
@@ -343,7 +399,7 @@ func (x ClientFold) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ClientFold.Descriptor instead.
 func (ClientFold) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{5}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{6}
 }
 
 type ConstraintKind int32
@@ -379,11 +435,11 @@ func (x ConstraintKind) String() string {
 }
 
 func (ConstraintKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[6].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[7].Descriptor()
 }
 
 func (ConstraintKind) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[6]
+	return &file_dql_ir_v1_objects_proto_enumTypes[7]
 }
 
 func (x ConstraintKind) Number() protoreflect.EnumNumber {
@@ -392,7 +448,7 @@ func (x ConstraintKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConstraintKind.Descriptor instead.
 func (ConstraintKind) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{6}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{7}
 }
 
 type UniquenessKind int32
@@ -431,11 +487,11 @@ func (x UniquenessKind) String() string {
 }
 
 func (UniquenessKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[7].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[8].Descriptor()
 }
 
 func (UniquenessKind) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[7]
+	return &file_dql_ir_v1_objects_proto_enumTypes[8]
 }
 
 func (x UniquenessKind) Number() protoreflect.EnumNumber {
@@ -444,7 +500,7 @@ func (x UniquenessKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UniquenessKind.Descriptor instead.
 func (UniquenessKind) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{7}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{8}
 }
 
 type ForeignKeyMatch int32
@@ -484,11 +540,11 @@ func (x ForeignKeyMatch) String() string {
 }
 
 func (ForeignKeyMatch) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[8].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[9].Descriptor()
 }
 
 func (ForeignKeyMatch) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[8]
+	return &file_dql_ir_v1_objects_proto_enumTypes[9]
 }
 
 func (x ForeignKeyMatch) Number() protoreflect.EnumNumber {
@@ -497,7 +553,7 @@ func (x ForeignKeyMatch) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ForeignKeyMatch.Descriptor instead.
 func (ForeignKeyMatch) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{8}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{9}
 }
 
 type ForeignKeyAction int32
@@ -542,11 +598,11 @@ func (x ForeignKeyAction) String() string {
 }
 
 func (ForeignKeyAction) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[9].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[10].Descriptor()
 }
 
 func (ForeignKeyAction) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[9]
+	return &file_dql_ir_v1_objects_proto_enumTypes[10]
 }
 
 func (x ForeignKeyAction) Number() protoreflect.EnumNumber {
@@ -555,7 +611,7 @@ func (x ForeignKeyAction) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ForeignKeyAction.Descriptor instead.
 func (ForeignKeyAction) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{9}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{10}
 }
 
 type RelationKind int32
@@ -600,11 +656,11 @@ func (x RelationKind) String() string {
 }
 
 func (RelationKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[10].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[11].Descriptor()
 }
 
 func (RelationKind) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[10]
+	return &file_dql_ir_v1_objects_proto_enumTypes[11]
 }
 
 func (x RelationKind) Number() protoreflect.EnumNumber {
@@ -613,7 +669,7 @@ func (x RelationKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RelationKind.Descriptor instead.
 func (RelationKind) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{10}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{11}
 }
 
 type RelationOrigin int32
@@ -652,11 +708,11 @@ func (x RelationOrigin) String() string {
 }
 
 func (RelationOrigin) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[11].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[12].Descriptor()
 }
 
 func (RelationOrigin) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[11]
+	return &file_dql_ir_v1_objects_proto_enumTypes[12]
 }
 
 func (x RelationOrigin) Number() protoreflect.EnumNumber {
@@ -665,7 +721,7 @@ func (x RelationOrigin) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RelationOrigin.Descriptor instead.
 func (RelationOrigin) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{11}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{12}
 }
 
 type CollectionPolicy int32
@@ -704,11 +760,11 @@ func (x CollectionPolicy) String() string {
 }
 
 func (CollectionPolicy) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[12].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[13].Descriptor()
 }
 
 func (CollectionPolicy) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[12]
+	return &file_dql_ir_v1_objects_proto_enumTypes[13]
 }
 
 func (x CollectionPolicy) Number() protoreflect.EnumNumber {
@@ -717,7 +773,7 @@ func (x CollectionPolicy) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CollectionPolicy.Descriptor instead.
 func (CollectionPolicy) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{12}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{13}
 }
 
 type Removal int32
@@ -753,11 +809,11 @@ func (x Removal) String() string {
 }
 
 func (Removal) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[13].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[14].Descriptor()
 }
 
 func (Removal) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[13]
+	return &file_dql_ir_v1_objects_proto_enumTypes[14]
 }
 
 func (x Removal) Number() protoreflect.EnumNumber {
@@ -766,7 +822,7 @@ func (x Removal) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Removal.Descriptor instead.
 func (Removal) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{13}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{14}
 }
 
 type EnumOrigin int32
@@ -805,11 +861,11 @@ func (x EnumOrigin) String() string {
 }
 
 func (EnumOrigin) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_objects_proto_enumTypes[14].Descriptor()
+	return file_dql_ir_v1_objects_proto_enumTypes[15].Descriptor()
 }
 
 func (EnumOrigin) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_objects_proto_enumTypes[14]
+	return &file_dql_ir_v1_objects_proto_enumTypes[15]
 }
 
 func (x EnumOrigin) Number() protoreflect.EnumNumber {
@@ -818,7 +874,7 @@ func (x EnumOrigin) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use EnumOrigin.Descriptor instead.
 func (EnumOrigin) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{14}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{15}
 }
 
 // A table, view or materialized view (§6.1, §6.4).
@@ -978,9 +1034,12 @@ type Column struct {
 	Default           *Default          `protobuf:"bytes,7,opt,name=default,proto3" json:"default,omitempty"`
 	Generation        *Generation       `protobuf:"bytes,8,opt,name=generation,proto3" json:"generation,omitempty"`
 	// Set for text columns (§8.9).
-	Collation     *Collation    `protobuf:"bytes,9,opt,name=collation,proto3" json:"collation,omitempty"`
-	Annotations   []*Annotation `protobuf:"bytes,10,rep,name=annotations,proto3" json:"annotations,omitempty"`
-	Extensions    []*anypb.Any  `protobuf:"bytes,11,rep,name=extensions,proto3" json:"extensions,omitempty"`
+	Collation   *Collation    `protobuf:"bytes,9,opt,name=collation,proto3" json:"collation,omitempty"`
+	Annotations []*Annotation `protobuf:"bytes,10,rep,name=annotations,proto3" json:"annotations,omitempty"`
+	Extensions  []*anypb.Any  `protobuf:"bytes,11,rep,name=extensions,proto3" json:"extensions,omitempty"`
+	// The operators the column supports on the target dialect, sorted by name.
+	// Resolved by the core (§9.3).
+	Operators     []*ColumnOperator `protobuf:"bytes,12,rep,name=operators,proto3" json:"operators,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1092,6 +1151,69 @@ func (x *Column) GetExtensions() []*anypb.Any {
 	return nil
 }
 
+func (x *Column) GetOperators() []*ColumnOperator {
+	if x != nil {
+		return x.Operators
+	}
+	return nil
+}
+
+// An operator a column supports, resolved by the core from the operator's
+// requirements, the column's type and the dialect's support (§9.3). Only
+// what the emitter generates is listed: exact and emulated operators, and
+// approximate ones the project opted into.
+type ColumnOperator struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Fidelity      Fidelity               `protobuf:"varint,2,opt,name=fidelity,proto3,enum=dql.ir.v1.Fidelity" json:"fidelity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ColumnOperator) Reset() {
+	*x = ColumnOperator{}
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ColumnOperator) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ColumnOperator) ProtoMessage() {}
+
+func (x *ColumnOperator) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ColumnOperator.ProtoReflect.Descriptor instead.
+func (*ColumnOperator) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ColumnOperator) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ColumnOperator) GetFidelity() Fidelity {
+	if x != nil {
+		return x.Fidelity
+	}
+	return Fidelity_FIDELITY_UNSPECIFIED
+}
+
 // A column's default (§11.3).
 type Default struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1111,7 +1233,7 @@ type Default struct {
 
 func (x *Default) Reset() {
 	*x = Default{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[2]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1123,7 +1245,7 @@ func (x *Default) String() string {
 func (*Default) ProtoMessage() {}
 
 func (x *Default) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[2]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1136,7 +1258,7 @@ func (x *Default) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Default.ProtoReflect.Descriptor instead.
 func (*Default) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{2}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Default) GetClass() DefaultClass {
@@ -1185,7 +1307,7 @@ type Generation struct {
 
 func (x *Generation) Reset() {
 	*x = Generation{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1197,7 +1319,7 @@ func (x *Generation) String() string {
 func (*Generation) ProtoMessage() {}
 
 func (x *Generation) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1210,7 +1332,7 @@ func (x *Generation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Generation.ProtoReflect.Descriptor instead.
 func (*Generation) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{3}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Generation) GetKind() GenerationKind {
@@ -1243,7 +1365,7 @@ type Collation struct {
 
 func (x *Collation) Reset() {
 	*x = Collation{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1255,7 +1377,7 @@ func (x *Collation) String() string {
 func (*Collation) ProtoMessage() {}
 
 func (x *Collation) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1268,7 +1390,7 @@ func (x *Collation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Collation.ProtoReflect.Descriptor instead.
 func (*Collation) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{4}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Collation) GetName() string {
@@ -1334,7 +1456,7 @@ type Constraint struct {
 
 func (x *Constraint) Reset() {
 	*x = Constraint{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[5]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1346,7 +1468,7 @@ func (x *Constraint) String() string {
 func (*Constraint) ProtoMessage() {}
 
 func (x *Constraint) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[5]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1359,7 +1481,7 @@ func (x *Constraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Constraint.ProtoReflect.Descriptor instead.
 func (*Constraint) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{5}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Constraint) GetName() string {
@@ -1457,7 +1579,7 @@ type NativeText struct {
 
 func (x *NativeText) Reset() {
 	*x = NativeText{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[6]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1469,7 +1591,7 @@ func (x *NativeText) String() string {
 func (*NativeText) ProtoMessage() {}
 
 func (x *NativeText) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[6]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1482,7 +1604,7 @@ func (x *NativeText) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NativeText.ProtoReflect.Descriptor instead.
 func (*NativeText) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{6}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *NativeText) GetNative() string {
@@ -1510,7 +1632,7 @@ type PortableConstraint struct {
 
 func (x *PortableConstraint) Reset() {
 	*x = PortableConstraint{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[7]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1522,7 +1644,7 @@ func (x *PortableConstraint) String() string {
 func (*PortableConstraint) ProtoMessage() {}
 
 func (x *PortableConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[7]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1535,7 +1657,7 @@ func (x *PortableConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortableConstraint.ProtoReflect.Descriptor instead.
 func (*PortableConstraint) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{7}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PortableConstraint) GetKind() isPortableConstraint_Kind {
@@ -1651,7 +1773,7 @@ type LengthConstraint struct {
 
 func (x *LengthConstraint) Reset() {
 	*x = LengthConstraint{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1663,7 +1785,7 @@ func (x *LengthConstraint) String() string {
 func (*LengthConstraint) ProtoMessage() {}
 
 func (x *LengthConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1676,7 +1798,7 @@ func (x *LengthConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LengthConstraint.ProtoReflect.Descriptor instead.
 func (*LengthConstraint) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{8}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *LengthConstraint) GetMin() uint32 {
@@ -1713,7 +1835,7 @@ type RangeConstraint struct {
 
 func (x *RangeConstraint) Reset() {
 	*x = RangeConstraint{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[9]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1725,7 +1847,7 @@ func (x *RangeConstraint) String() string {
 func (*RangeConstraint) ProtoMessage() {}
 
 func (x *RangeConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[9]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1738,7 +1860,7 @@ func (x *RangeConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RangeConstraint.ProtoReflect.Descriptor instead.
 func (*RangeConstraint) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{9}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RangeConstraint) GetMin() *Value {
@@ -1780,7 +1902,7 @@ type DigitsConstraint struct {
 
 func (x *DigitsConstraint) Reset() {
 	*x = DigitsConstraint{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[10]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1792,7 +1914,7 @@ func (x *DigitsConstraint) String() string {
 func (*DigitsConstraint) ProtoMessage() {}
 
 func (x *DigitsConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[10]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1805,7 +1927,7 @@ func (x *DigitsConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DigitsConstraint.ProtoReflect.Descriptor instead.
 func (*DigitsConstraint) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{10}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DigitsConstraint) GetPrecision() uint32 {
@@ -1832,7 +1954,7 @@ type MembershipConstraint struct {
 
 func (x *MembershipConstraint) Reset() {
 	*x = MembershipConstraint{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[11]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1844,7 +1966,7 @@ func (x *MembershipConstraint) String() string {
 func (*MembershipConstraint) ProtoMessage() {}
 
 func (x *MembershipConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[11]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1857,7 +1979,7 @@ func (x *MembershipConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MembershipConstraint.ProtoReflect.Descriptor instead.
 func (*MembershipConstraint) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{11}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MembershipConstraint) GetValues() []*Value {
@@ -1876,7 +1998,7 @@ type NotEmptyConstraint struct {
 
 func (x *NotEmptyConstraint) Reset() {
 	*x = NotEmptyConstraint{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[12]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1888,7 +2010,7 @@ func (x *NotEmptyConstraint) String() string {
 func (*NotEmptyConstraint) ProtoMessage() {}
 
 func (x *NotEmptyConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[12]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1901,7 +2023,7 @@ func (x *NotEmptyConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotEmptyConstraint.ProtoReflect.Descriptor instead.
 func (*NotEmptyConstraint) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{12}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{13}
 }
 
 // An unanchored search with a regex in the portable subset of §10.2.
@@ -1914,7 +2036,7 @@ type PatternConstraint struct {
 
 func (x *PatternConstraint) Reset() {
 	*x = PatternConstraint{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[13]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1926,7 +2048,7 @@ func (x *PatternConstraint) String() string {
 func (*PatternConstraint) ProtoMessage() {}
 
 func (x *PatternConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[13]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1939,7 +2061,7 @@ func (x *PatternConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PatternConstraint.ProtoReflect.Descriptor instead.
 func (*PatternConstraint) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{13}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PatternConstraint) GetRegex() string {
@@ -1971,7 +2093,7 @@ type Uniqueness struct {
 
 func (x *Uniqueness) Reset() {
 	*x = Uniqueness{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[14]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1983,7 +2105,7 @@ func (x *Uniqueness) String() string {
 func (*Uniqueness) ProtoMessage() {}
 
 func (x *Uniqueness) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[14]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1996,7 +2118,7 @@ func (x *Uniqueness) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Uniqueness.ProtoReflect.Descriptor instead.
 func (*Uniqueness) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{14}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Uniqueness) GetName() string {
@@ -2066,7 +2188,7 @@ type IndexExpression struct {
 
 func (x *IndexExpression) Reset() {
 	*x = IndexExpression{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[15]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2078,7 +2200,7 @@ func (x *IndexExpression) String() string {
 func (*IndexExpression) ProtoMessage() {}
 
 func (x *IndexExpression) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[15]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2091,7 +2213,7 @@ func (x *IndexExpression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IndexExpression.ProtoReflect.Descriptor instead.
 func (*IndexExpression) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{15}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *IndexExpression) GetPosition() uint32 {
@@ -2127,7 +2249,7 @@ type ForeignKey struct {
 
 func (x *ForeignKey) Reset() {
 	*x = ForeignKey{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[16]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2139,7 +2261,7 @@ func (x *ForeignKey) String() string {
 func (*ForeignKey) ProtoMessage() {}
 
 func (x *ForeignKey) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[16]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2152,7 +2274,7 @@ func (x *ForeignKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForeignKey.ProtoReflect.Descriptor instead.
 func (*ForeignKey) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{16}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ForeignKey) GetName() *Identifier {
@@ -2229,7 +2351,7 @@ type ColumnSet struct {
 
 func (x *ColumnSet) Reset() {
 	*x = ColumnSet{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[17]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2241,7 +2363,7 @@ func (x *ColumnSet) String() string {
 func (*ColumnSet) ProtoMessage() {}
 
 func (x *ColumnSet) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[17]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2254,7 +2376,7 @@ func (x *ColumnSet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ColumnSet.ProtoReflect.Descriptor instead.
 func (*ColumnSet) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{17}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ColumnSet) GetTable() *QualifiedName {
@@ -2282,7 +2404,7 @@ type LogicalKey struct {
 
 func (x *LogicalKey) Reset() {
 	*x = LogicalKey{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[18]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2294,7 +2416,7 @@ func (x *LogicalKey) String() string {
 func (*LogicalKey) ProtoMessage() {}
 
 func (x *LogicalKey) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[18]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2307,7 +2429,7 @@ func (x *LogicalKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogicalKey.ProtoReflect.Descriptor instead.
 func (*LogicalKey) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{18}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *LogicalKey) GetColumns() []string {
@@ -2351,7 +2473,7 @@ type Relation struct {
 
 func (x *Relation) Reset() {
 	*x = Relation{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[19]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2363,7 +2485,7 @@ func (x *Relation) String() string {
 func (*Relation) ProtoMessage() {}
 
 func (x *Relation) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[19]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2376,7 +2498,7 @@ func (x *Relation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Relation.ProtoReflect.Descriptor instead.
 func (*Relation) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{19}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *Relation) GetName() *Identifier {
@@ -2481,7 +2603,7 @@ type RelationPolicy struct {
 
 func (x *RelationPolicy) Reset() {
 	*x = RelationPolicy{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[20]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2493,7 +2615,7 @@ func (x *RelationPolicy) String() string {
 func (*RelationPolicy) ProtoMessage() {}
 
 func (x *RelationPolicy) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[20]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2506,7 +2628,7 @@ func (x *RelationPolicy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelationPolicy.ProtoReflect.Descriptor instead.
 func (*RelationPolicy) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{20}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *RelationPolicy) GetCollection() CollectionPolicy {
@@ -2544,7 +2666,7 @@ type Enum struct {
 
 func (x *Enum) Reset() {
 	*x = Enum{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[21]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2556,7 +2678,7 @@ func (x *Enum) String() string {
 func (*Enum) ProtoMessage() {}
 
 func (x *Enum) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[21]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2569,7 +2691,7 @@ func (x *Enum) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Enum.ProtoReflect.Descriptor instead.
 func (*Enum) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{21}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *Enum) GetName() *Identifier {
@@ -2647,7 +2769,7 @@ type Domain struct {
 
 func (x *Domain) Reset() {
 	*x = Domain{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[22]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2659,7 +2781,7 @@ func (x *Domain) String() string {
 func (*Domain) ProtoMessage() {}
 
 func (x *Domain) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[22]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2672,7 +2794,7 @@ func (x *Domain) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Domain.ProtoReflect.Descriptor instead.
 func (*Domain) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{22}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *Domain) GetName() *Identifier {
@@ -2753,7 +2875,7 @@ type Composite struct {
 
 func (x *Composite) Reset() {
 	*x = Composite{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[23]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2765,7 +2887,7 @@ func (x *Composite) String() string {
 func (*Composite) ProtoMessage() {}
 
 func (x *Composite) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[23]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2778,7 +2900,7 @@ func (x *Composite) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Composite.ProtoReflect.Descriptor instead.
 func (*Composite) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{23}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *Composite) GetName() *Identifier {
@@ -2837,7 +2959,7 @@ type Sequence struct {
 
 func (x *Sequence) Reset() {
 	*x = Sequence{}
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[24]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2849,7 +2971,7 @@ func (x *Sequence) String() string {
 func (*Sequence) ProtoMessage() {}
 
 func (x *Sequence) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_objects_proto_msgTypes[24]
+	mi := &file_dql_ir_v1_objects_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2862,7 +2984,7 @@ func (x *Sequence) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Sequence.ProtoReflect.Descriptor instead.
 func (*Sequence) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{24}
+	return file_dql_ir_v1_objects_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *Sequence) GetName() *Identifier {
@@ -2966,7 +3088,7 @@ const file_dql_ir_v1_objects_proto_rawDesc = "" +
 	"\vannotations\x18\v \x03(\v2\x15.dql.ir.v1.AnnotationR\vannotations\x124\n" +
 	"\n" +
 	"extensions\x18\f \x03(\v2\x14.google.protobuf.AnyR\n" +
-	"extensions\"\x97\x04\n" +
+	"extensions\"\xd0\x04\n" +
 	"\x06Column\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x122\n" +
 	"\thost_name\x18\x02 \x01(\v2\x15.dql.ir.v1.IdentifierR\bhostName\x12\x18\n" +
@@ -2983,7 +3105,11 @@ const file_dql_ir_v1_objects_proto_rawDesc = "" +
 	" \x03(\v2\x15.dql.ir.v1.AnnotationR\vannotations\x124\n" +
 	"\n" +
 	"extensions\x18\v \x03(\v2\x14.google.protobuf.AnyR\n" +
-	"extensions\"\xcb\x01\n" +
+	"extensions\x127\n" +
+	"\toperators\x18\f \x03(\v2\x19.dql.ir.v1.ColumnOperatorR\toperators\"U\n" +
+	"\x0eColumnOperator\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12/\n" +
+	"\bfidelity\x18\x02 \x01(\x0e2\x13.dql.ir.v1.FidelityR\bfidelity\"\xcb\x01\n" +
 	"\aDefault\x12-\n" +
 	"\x05class\x18\x01 \x01(\x0e2\x17.dql.ir.v1.DefaultClassR\x05class\x124\n" +
 	"\bsequence\x18\x02 \x01(\v2\x18.dql.ir.v1.QualifiedNameR\bsequence\x12\x16\n" +
@@ -3162,7 +3288,12 @@ const file_dql_ir_v1_objects_proto_rawDesc = "" +
 	"\x16TABLE_KIND_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13RELATION_KIND_TABLE\x10\x01\x12\x16\n" +
 	"\x12RELATION_KIND_VIEW\x10\x02\x12#\n" +
-	"\x1fRELATION_KIND_MATERIALIZED_VIEW\x10\x03*\xe2\x01\n" +
+	"\x1fRELATION_KIND_MATERIALIZED_VIEW\x10\x03*i\n" +
+	"\bFidelity\x12\x18\n" +
+	"\x14FIDELITY_UNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eFIDELITY_EXACT\x10\x01\x12\x15\n" +
+	"\x11FIDELITY_EMULATED\x10\x02\x12\x18\n" +
+	"\x14FIDELITY_APPROXIMATE\x10\x03*\xe2\x01\n" +
 	"\x11NullabilitySource\x12\"\n" +
 	"\x1eNULLABILITY_SOURCE_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bNULLABILITY_SOURCE_DATABASE\x10\x01\x12\x1d\n" +
@@ -3250,160 +3381,164 @@ func file_dql_ir_v1_objects_proto_rawDescGZIP() []byte {
 	return file_dql_ir_v1_objects_proto_rawDescData
 }
 
-var file_dql_ir_v1_objects_proto_enumTypes = make([]protoimpl.EnumInfo, 15)
-var file_dql_ir_v1_objects_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_dql_ir_v1_objects_proto_enumTypes = make([]protoimpl.EnumInfo, 16)
+var file_dql_ir_v1_objects_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_dql_ir_v1_objects_proto_goTypes = []any{
 	(TableKind)(0),               // 0: dql.ir.v1.TableKind
-	(NullabilitySource)(0),       // 1: dql.ir.v1.NullabilitySource
-	(DefaultClass)(0),            // 2: dql.ir.v1.DefaultClass
-	(GenerationKind)(0),          // 3: dql.ir.v1.GenerationKind
-	(Tristate)(0),                // 4: dql.ir.v1.Tristate
-	(ClientFold)(0),              // 5: dql.ir.v1.ClientFold
-	(ConstraintKind)(0),          // 6: dql.ir.v1.ConstraintKind
-	(UniquenessKind)(0),          // 7: dql.ir.v1.UniquenessKind
-	(ForeignKeyMatch)(0),         // 8: dql.ir.v1.ForeignKeyMatch
-	(ForeignKeyAction)(0),        // 9: dql.ir.v1.ForeignKeyAction
-	(RelationKind)(0),            // 10: dql.ir.v1.RelationKind
-	(RelationOrigin)(0),          // 11: dql.ir.v1.RelationOrigin
-	(CollectionPolicy)(0),        // 12: dql.ir.v1.CollectionPolicy
-	(Removal)(0),                 // 13: dql.ir.v1.Removal
-	(EnumOrigin)(0),              // 14: dql.ir.v1.EnumOrigin
-	(*Table)(nil),                // 15: dql.ir.v1.Table
-	(*Column)(nil),               // 16: dql.ir.v1.Column
-	(*Default)(nil),              // 17: dql.ir.v1.Default
-	(*Generation)(nil),           // 18: dql.ir.v1.Generation
-	(*Collation)(nil),            // 19: dql.ir.v1.Collation
-	(*Constraint)(nil),           // 20: dql.ir.v1.Constraint
-	(*NativeText)(nil),           // 21: dql.ir.v1.NativeText
-	(*PortableConstraint)(nil),   // 22: dql.ir.v1.PortableConstraint
-	(*LengthConstraint)(nil),     // 23: dql.ir.v1.LengthConstraint
-	(*RangeConstraint)(nil),      // 24: dql.ir.v1.RangeConstraint
-	(*DigitsConstraint)(nil),     // 25: dql.ir.v1.DigitsConstraint
-	(*MembershipConstraint)(nil), // 26: dql.ir.v1.MembershipConstraint
-	(*NotEmptyConstraint)(nil),   // 27: dql.ir.v1.NotEmptyConstraint
-	(*PatternConstraint)(nil),    // 28: dql.ir.v1.PatternConstraint
-	(*Uniqueness)(nil),           // 29: dql.ir.v1.Uniqueness
-	(*IndexExpression)(nil),      // 30: dql.ir.v1.IndexExpression
-	(*ForeignKey)(nil),           // 31: dql.ir.v1.ForeignKey
-	(*ColumnSet)(nil),            // 32: dql.ir.v1.ColumnSet
-	(*LogicalKey)(nil),           // 33: dql.ir.v1.LogicalKey
-	(*Relation)(nil),             // 34: dql.ir.v1.Relation
-	(*RelationPolicy)(nil),       // 35: dql.ir.v1.RelationPolicy
-	(*Enum)(nil),                 // 36: dql.ir.v1.Enum
-	(*Domain)(nil),               // 37: dql.ir.v1.Domain
-	(*Composite)(nil),            // 38: dql.ir.v1.Composite
-	(*Sequence)(nil),             // 39: dql.ir.v1.Sequence
-	(*Identifier)(nil),           // 40: dql.ir.v1.Identifier
-	(*QualifiedName)(nil),        // 41: dql.ir.v1.QualifiedName
-	(*Annotation)(nil),           // 42: dql.ir.v1.Annotation
-	(*anypb.Any)(nil),            // 43: google.protobuf.Any
-	(*Type)(nil),                 // 44: dql.ir.v1.Type
-	(*Value)(nil),                // 45: dql.ir.v1.Value
-	(LengthUnit)(0),              // 46: dql.ir.v1.LengthUnit
-	(OriginKind)(0),              // 47: dql.ir.v1.OriginKind
+	(Fidelity)(0),                // 1: dql.ir.v1.Fidelity
+	(NullabilitySource)(0),       // 2: dql.ir.v1.NullabilitySource
+	(DefaultClass)(0),            // 3: dql.ir.v1.DefaultClass
+	(GenerationKind)(0),          // 4: dql.ir.v1.GenerationKind
+	(Tristate)(0),                // 5: dql.ir.v1.Tristate
+	(ClientFold)(0),              // 6: dql.ir.v1.ClientFold
+	(ConstraintKind)(0),          // 7: dql.ir.v1.ConstraintKind
+	(UniquenessKind)(0),          // 8: dql.ir.v1.UniquenessKind
+	(ForeignKeyMatch)(0),         // 9: dql.ir.v1.ForeignKeyMatch
+	(ForeignKeyAction)(0),        // 10: dql.ir.v1.ForeignKeyAction
+	(RelationKind)(0),            // 11: dql.ir.v1.RelationKind
+	(RelationOrigin)(0),          // 12: dql.ir.v1.RelationOrigin
+	(CollectionPolicy)(0),        // 13: dql.ir.v1.CollectionPolicy
+	(Removal)(0),                 // 14: dql.ir.v1.Removal
+	(EnumOrigin)(0),              // 15: dql.ir.v1.EnumOrigin
+	(*Table)(nil),                // 16: dql.ir.v1.Table
+	(*Column)(nil),               // 17: dql.ir.v1.Column
+	(*ColumnOperator)(nil),       // 18: dql.ir.v1.ColumnOperator
+	(*Default)(nil),              // 19: dql.ir.v1.Default
+	(*Generation)(nil),           // 20: dql.ir.v1.Generation
+	(*Collation)(nil),            // 21: dql.ir.v1.Collation
+	(*Constraint)(nil),           // 22: dql.ir.v1.Constraint
+	(*NativeText)(nil),           // 23: dql.ir.v1.NativeText
+	(*PortableConstraint)(nil),   // 24: dql.ir.v1.PortableConstraint
+	(*LengthConstraint)(nil),     // 25: dql.ir.v1.LengthConstraint
+	(*RangeConstraint)(nil),      // 26: dql.ir.v1.RangeConstraint
+	(*DigitsConstraint)(nil),     // 27: dql.ir.v1.DigitsConstraint
+	(*MembershipConstraint)(nil), // 28: dql.ir.v1.MembershipConstraint
+	(*NotEmptyConstraint)(nil),   // 29: dql.ir.v1.NotEmptyConstraint
+	(*PatternConstraint)(nil),    // 30: dql.ir.v1.PatternConstraint
+	(*Uniqueness)(nil),           // 31: dql.ir.v1.Uniqueness
+	(*IndexExpression)(nil),      // 32: dql.ir.v1.IndexExpression
+	(*ForeignKey)(nil),           // 33: dql.ir.v1.ForeignKey
+	(*ColumnSet)(nil),            // 34: dql.ir.v1.ColumnSet
+	(*LogicalKey)(nil),           // 35: dql.ir.v1.LogicalKey
+	(*Relation)(nil),             // 36: dql.ir.v1.Relation
+	(*RelationPolicy)(nil),       // 37: dql.ir.v1.RelationPolicy
+	(*Enum)(nil),                 // 38: dql.ir.v1.Enum
+	(*Domain)(nil),               // 39: dql.ir.v1.Domain
+	(*Composite)(nil),            // 40: dql.ir.v1.Composite
+	(*Sequence)(nil),             // 41: dql.ir.v1.Sequence
+	(*Identifier)(nil),           // 42: dql.ir.v1.Identifier
+	(*QualifiedName)(nil),        // 43: dql.ir.v1.QualifiedName
+	(*Annotation)(nil),           // 44: dql.ir.v1.Annotation
+	(*anypb.Any)(nil),            // 45: google.protobuf.Any
+	(*Type)(nil),                 // 46: dql.ir.v1.Type
+	(*Value)(nil),                // 47: dql.ir.v1.Value
+	(LengthUnit)(0),              // 48: dql.ir.v1.LengthUnit
+	(OriginKind)(0),              // 49: dql.ir.v1.OriginKind
 }
 var file_dql_ir_v1_objects_proto_depIdxs = []int32{
-	40, // 0: dql.ir.v1.Table.name:type_name -> dql.ir.v1.Identifier
-	40, // 1: dql.ir.v1.Table.host_name:type_name -> dql.ir.v1.Identifier
+	42, // 0: dql.ir.v1.Table.name:type_name -> dql.ir.v1.Identifier
+	42, // 1: dql.ir.v1.Table.host_name:type_name -> dql.ir.v1.Identifier
 	0,  // 2: dql.ir.v1.Table.kind:type_name -> dql.ir.v1.TableKind
-	16, // 3: dql.ir.v1.Table.columns:type_name -> dql.ir.v1.Column
-	20, // 4: dql.ir.v1.Table.constraints:type_name -> dql.ir.v1.Constraint
-	29, // 5: dql.ir.v1.Table.uniqueness:type_name -> dql.ir.v1.Uniqueness
-	31, // 6: dql.ir.v1.Table.foreign_keys:type_name -> dql.ir.v1.ForeignKey
-	34, // 7: dql.ir.v1.Table.relations:type_name -> dql.ir.v1.Relation
-	33, // 8: dql.ir.v1.Table.logical_key:type_name -> dql.ir.v1.LogicalKey
-	41, // 9: dql.ir.v1.Table.depends_on:type_name -> dql.ir.v1.QualifiedName
-	42, // 10: dql.ir.v1.Table.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 11: dql.ir.v1.Table.extensions:type_name -> google.protobuf.Any
-	40, // 12: dql.ir.v1.Column.name:type_name -> dql.ir.v1.Identifier
-	40, // 13: dql.ir.v1.Column.host_name:type_name -> dql.ir.v1.Identifier
-	44, // 14: dql.ir.v1.Column.type:type_name -> dql.ir.v1.Type
-	1,  // 15: dql.ir.v1.Column.nullability_source:type_name -> dql.ir.v1.NullabilitySource
-	17, // 16: dql.ir.v1.Column.default:type_name -> dql.ir.v1.Default
-	18, // 17: dql.ir.v1.Column.generation:type_name -> dql.ir.v1.Generation
-	19, // 18: dql.ir.v1.Column.collation:type_name -> dql.ir.v1.Collation
-	42, // 19: dql.ir.v1.Column.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 20: dql.ir.v1.Column.extensions:type_name -> google.protobuf.Any
-	2,  // 21: dql.ir.v1.Default.class:type_name -> dql.ir.v1.DefaultClass
-	41, // 22: dql.ir.v1.Default.sequence:type_name -> dql.ir.v1.QualifiedName
-	45, // 23: dql.ir.v1.Default.value:type_name -> dql.ir.v1.Value
-	3,  // 24: dql.ir.v1.Generation.kind:type_name -> dql.ir.v1.GenerationKind
-	4,  // 25: dql.ir.v1.Collation.case_sensitive:type_name -> dql.ir.v1.Tristate
-	4,  // 26: dql.ir.v1.Collation.accent_sensitive:type_name -> dql.ir.v1.Tristate
-	4,  // 27: dql.ir.v1.Collation.pad_space:type_name -> dql.ir.v1.Tristate
-	4,  // 28: dql.ir.v1.Collation.deterministic:type_name -> dql.ir.v1.Tristate
-	5,  // 29: dql.ir.v1.Collation.client_fold:type_name -> dql.ir.v1.ClientFold
-	6,  // 30: dql.ir.v1.Constraint.kind:type_name -> dql.ir.v1.ConstraintKind
-	22, // 31: dql.ir.v1.Constraint.portable:type_name -> dql.ir.v1.PortableConstraint
-	21, // 32: dql.ir.v1.Constraint.opaque:type_name -> dql.ir.v1.NativeText
-	42, // 33: dql.ir.v1.Constraint.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 34: dql.ir.v1.Constraint.extensions:type_name -> google.protobuf.Any
-	23, // 35: dql.ir.v1.PortableConstraint.length:type_name -> dql.ir.v1.LengthConstraint
-	24, // 36: dql.ir.v1.PortableConstraint.range:type_name -> dql.ir.v1.RangeConstraint
-	25, // 37: dql.ir.v1.PortableConstraint.digits:type_name -> dql.ir.v1.DigitsConstraint
-	26, // 38: dql.ir.v1.PortableConstraint.membership:type_name -> dql.ir.v1.MembershipConstraint
-	27, // 39: dql.ir.v1.PortableConstraint.not_empty:type_name -> dql.ir.v1.NotEmptyConstraint
-	28, // 40: dql.ir.v1.PortableConstraint.pattern:type_name -> dql.ir.v1.PatternConstraint
-	46, // 41: dql.ir.v1.LengthConstraint.unit:type_name -> dql.ir.v1.LengthUnit
-	45, // 42: dql.ir.v1.RangeConstraint.min:type_name -> dql.ir.v1.Value
-	45, // 43: dql.ir.v1.RangeConstraint.max:type_name -> dql.ir.v1.Value
-	45, // 44: dql.ir.v1.MembershipConstraint.values:type_name -> dql.ir.v1.Value
-	7,  // 45: dql.ir.v1.Uniqueness.kind:type_name -> dql.ir.v1.UniquenessKind
-	30, // 46: dql.ir.v1.Uniqueness.expressions:type_name -> dql.ir.v1.IndexExpression
-	21, // 47: dql.ir.v1.Uniqueness.predicate:type_name -> dql.ir.v1.NativeText
-	43, // 48: dql.ir.v1.Uniqueness.extensions:type_name -> google.protobuf.Any
-	40, // 49: dql.ir.v1.ForeignKey.name:type_name -> dql.ir.v1.Identifier
-	32, // 50: dql.ir.v1.ForeignKey.references:type_name -> dql.ir.v1.ColumnSet
-	8,  // 51: dql.ir.v1.ForeignKey.match:type_name -> dql.ir.v1.ForeignKeyMatch
-	9,  // 52: dql.ir.v1.ForeignKey.on_update:type_name -> dql.ir.v1.ForeignKeyAction
-	9,  // 53: dql.ir.v1.ForeignKey.on_delete:type_name -> dql.ir.v1.ForeignKeyAction
-	42, // 54: dql.ir.v1.ForeignKey.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 55: dql.ir.v1.ForeignKey.extensions:type_name -> google.protobuf.Any
-	41, // 56: dql.ir.v1.ColumnSet.table:type_name -> dql.ir.v1.QualifiedName
-	47, // 57: dql.ir.v1.LogicalKey.origin:type_name -> dql.ir.v1.OriginKind
-	40, // 58: dql.ir.v1.Relation.name:type_name -> dql.ir.v1.Identifier
-	41, // 59: dql.ir.v1.Relation.owner:type_name -> dql.ir.v1.QualifiedName
-	10, // 60: dql.ir.v1.Relation.kind:type_name -> dql.ir.v1.RelationKind
-	11, // 61: dql.ir.v1.Relation.origin:type_name -> dql.ir.v1.RelationOrigin
-	41, // 62: dql.ir.v1.Relation.via:type_name -> dql.ir.v1.QualifiedName
-	32, // 63: dql.ir.v1.Relation.from:type_name -> dql.ir.v1.ColumnSet
-	32, // 64: dql.ir.v1.Relation.to:type_name -> dql.ir.v1.ColumnSet
-	35, // 65: dql.ir.v1.Relation.policy:type_name -> dql.ir.v1.RelationPolicy
-	41, // 66: dql.ir.v1.Relation.through:type_name -> dql.ir.v1.QualifiedName
-	42, // 67: dql.ir.v1.Relation.annotations:type_name -> dql.ir.v1.Annotation
-	12, // 68: dql.ir.v1.RelationPolicy.collection:type_name -> dql.ir.v1.CollectionPolicy
-	13, // 69: dql.ir.v1.RelationPolicy.removal:type_name -> dql.ir.v1.Removal
-	40, // 70: dql.ir.v1.Enum.name:type_name -> dql.ir.v1.Identifier
-	40, // 71: dql.ir.v1.Enum.host_name:type_name -> dql.ir.v1.Identifier
-	14, // 72: dql.ir.v1.Enum.origin:type_name -> dql.ir.v1.EnumOrigin
-	41, // 73: dql.ir.v1.Enum.derived_from:type_name -> dql.ir.v1.QualifiedName
-	42, // 74: dql.ir.v1.Enum.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 75: dql.ir.v1.Enum.extensions:type_name -> google.protobuf.Any
-	40, // 76: dql.ir.v1.Enum.label_names:type_name -> dql.ir.v1.Identifier
-	40, // 77: dql.ir.v1.Domain.name:type_name -> dql.ir.v1.Identifier
-	40, // 78: dql.ir.v1.Domain.host_name:type_name -> dql.ir.v1.Identifier
-	44, // 79: dql.ir.v1.Domain.base:type_name -> dql.ir.v1.Type
-	17, // 80: dql.ir.v1.Domain.default:type_name -> dql.ir.v1.Default
-	19, // 81: dql.ir.v1.Domain.collation:type_name -> dql.ir.v1.Collation
-	20, // 82: dql.ir.v1.Domain.constraints:type_name -> dql.ir.v1.Constraint
-	42, // 83: dql.ir.v1.Domain.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 84: dql.ir.v1.Domain.extensions:type_name -> google.protobuf.Any
-	40, // 85: dql.ir.v1.Composite.name:type_name -> dql.ir.v1.Identifier
-	40, // 86: dql.ir.v1.Composite.host_name:type_name -> dql.ir.v1.Identifier
-	16, // 87: dql.ir.v1.Composite.attributes:type_name -> dql.ir.v1.Column
-	42, // 88: dql.ir.v1.Composite.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 89: dql.ir.v1.Composite.extensions:type_name -> google.protobuf.Any
-	40, // 90: dql.ir.v1.Sequence.name:type_name -> dql.ir.v1.Identifier
-	40, // 91: dql.ir.v1.Sequence.host_name:type_name -> dql.ir.v1.Identifier
-	44, // 92: dql.ir.v1.Sequence.type:type_name -> dql.ir.v1.Type
-	41, // 93: dql.ir.v1.Sequence.owned_by:type_name -> dql.ir.v1.QualifiedName
-	42, // 94: dql.ir.v1.Sequence.annotations:type_name -> dql.ir.v1.Annotation
-	43, // 95: dql.ir.v1.Sequence.extensions:type_name -> google.protobuf.Any
-	96, // [96:96] is the sub-list for method output_type
-	96, // [96:96] is the sub-list for method input_type
-	96, // [96:96] is the sub-list for extension type_name
-	96, // [96:96] is the sub-list for extension extendee
-	0,  // [0:96] is the sub-list for field type_name
+	17, // 3: dql.ir.v1.Table.columns:type_name -> dql.ir.v1.Column
+	22, // 4: dql.ir.v1.Table.constraints:type_name -> dql.ir.v1.Constraint
+	31, // 5: dql.ir.v1.Table.uniqueness:type_name -> dql.ir.v1.Uniqueness
+	33, // 6: dql.ir.v1.Table.foreign_keys:type_name -> dql.ir.v1.ForeignKey
+	36, // 7: dql.ir.v1.Table.relations:type_name -> dql.ir.v1.Relation
+	35, // 8: dql.ir.v1.Table.logical_key:type_name -> dql.ir.v1.LogicalKey
+	43, // 9: dql.ir.v1.Table.depends_on:type_name -> dql.ir.v1.QualifiedName
+	44, // 10: dql.ir.v1.Table.annotations:type_name -> dql.ir.v1.Annotation
+	45, // 11: dql.ir.v1.Table.extensions:type_name -> google.protobuf.Any
+	42, // 12: dql.ir.v1.Column.name:type_name -> dql.ir.v1.Identifier
+	42, // 13: dql.ir.v1.Column.host_name:type_name -> dql.ir.v1.Identifier
+	46, // 14: dql.ir.v1.Column.type:type_name -> dql.ir.v1.Type
+	2,  // 15: dql.ir.v1.Column.nullability_source:type_name -> dql.ir.v1.NullabilitySource
+	19, // 16: dql.ir.v1.Column.default:type_name -> dql.ir.v1.Default
+	20, // 17: dql.ir.v1.Column.generation:type_name -> dql.ir.v1.Generation
+	21, // 18: dql.ir.v1.Column.collation:type_name -> dql.ir.v1.Collation
+	44, // 19: dql.ir.v1.Column.annotations:type_name -> dql.ir.v1.Annotation
+	45, // 20: dql.ir.v1.Column.extensions:type_name -> google.protobuf.Any
+	18, // 21: dql.ir.v1.Column.operators:type_name -> dql.ir.v1.ColumnOperator
+	1,  // 22: dql.ir.v1.ColumnOperator.fidelity:type_name -> dql.ir.v1.Fidelity
+	3,  // 23: dql.ir.v1.Default.class:type_name -> dql.ir.v1.DefaultClass
+	43, // 24: dql.ir.v1.Default.sequence:type_name -> dql.ir.v1.QualifiedName
+	47, // 25: dql.ir.v1.Default.value:type_name -> dql.ir.v1.Value
+	4,  // 26: dql.ir.v1.Generation.kind:type_name -> dql.ir.v1.GenerationKind
+	5,  // 27: dql.ir.v1.Collation.case_sensitive:type_name -> dql.ir.v1.Tristate
+	5,  // 28: dql.ir.v1.Collation.accent_sensitive:type_name -> dql.ir.v1.Tristate
+	5,  // 29: dql.ir.v1.Collation.pad_space:type_name -> dql.ir.v1.Tristate
+	5,  // 30: dql.ir.v1.Collation.deterministic:type_name -> dql.ir.v1.Tristate
+	6,  // 31: dql.ir.v1.Collation.client_fold:type_name -> dql.ir.v1.ClientFold
+	7,  // 32: dql.ir.v1.Constraint.kind:type_name -> dql.ir.v1.ConstraintKind
+	24, // 33: dql.ir.v1.Constraint.portable:type_name -> dql.ir.v1.PortableConstraint
+	23, // 34: dql.ir.v1.Constraint.opaque:type_name -> dql.ir.v1.NativeText
+	44, // 35: dql.ir.v1.Constraint.annotations:type_name -> dql.ir.v1.Annotation
+	45, // 36: dql.ir.v1.Constraint.extensions:type_name -> google.protobuf.Any
+	25, // 37: dql.ir.v1.PortableConstraint.length:type_name -> dql.ir.v1.LengthConstraint
+	26, // 38: dql.ir.v1.PortableConstraint.range:type_name -> dql.ir.v1.RangeConstraint
+	27, // 39: dql.ir.v1.PortableConstraint.digits:type_name -> dql.ir.v1.DigitsConstraint
+	28, // 40: dql.ir.v1.PortableConstraint.membership:type_name -> dql.ir.v1.MembershipConstraint
+	29, // 41: dql.ir.v1.PortableConstraint.not_empty:type_name -> dql.ir.v1.NotEmptyConstraint
+	30, // 42: dql.ir.v1.PortableConstraint.pattern:type_name -> dql.ir.v1.PatternConstraint
+	48, // 43: dql.ir.v1.LengthConstraint.unit:type_name -> dql.ir.v1.LengthUnit
+	47, // 44: dql.ir.v1.RangeConstraint.min:type_name -> dql.ir.v1.Value
+	47, // 45: dql.ir.v1.RangeConstraint.max:type_name -> dql.ir.v1.Value
+	47, // 46: dql.ir.v1.MembershipConstraint.values:type_name -> dql.ir.v1.Value
+	8,  // 47: dql.ir.v1.Uniqueness.kind:type_name -> dql.ir.v1.UniquenessKind
+	32, // 48: dql.ir.v1.Uniqueness.expressions:type_name -> dql.ir.v1.IndexExpression
+	23, // 49: dql.ir.v1.Uniqueness.predicate:type_name -> dql.ir.v1.NativeText
+	45, // 50: dql.ir.v1.Uniqueness.extensions:type_name -> google.protobuf.Any
+	42, // 51: dql.ir.v1.ForeignKey.name:type_name -> dql.ir.v1.Identifier
+	34, // 52: dql.ir.v1.ForeignKey.references:type_name -> dql.ir.v1.ColumnSet
+	9,  // 53: dql.ir.v1.ForeignKey.match:type_name -> dql.ir.v1.ForeignKeyMatch
+	10, // 54: dql.ir.v1.ForeignKey.on_update:type_name -> dql.ir.v1.ForeignKeyAction
+	10, // 55: dql.ir.v1.ForeignKey.on_delete:type_name -> dql.ir.v1.ForeignKeyAction
+	44, // 56: dql.ir.v1.ForeignKey.annotations:type_name -> dql.ir.v1.Annotation
+	45, // 57: dql.ir.v1.ForeignKey.extensions:type_name -> google.protobuf.Any
+	43, // 58: dql.ir.v1.ColumnSet.table:type_name -> dql.ir.v1.QualifiedName
+	49, // 59: dql.ir.v1.LogicalKey.origin:type_name -> dql.ir.v1.OriginKind
+	42, // 60: dql.ir.v1.Relation.name:type_name -> dql.ir.v1.Identifier
+	43, // 61: dql.ir.v1.Relation.owner:type_name -> dql.ir.v1.QualifiedName
+	11, // 62: dql.ir.v1.Relation.kind:type_name -> dql.ir.v1.RelationKind
+	12, // 63: dql.ir.v1.Relation.origin:type_name -> dql.ir.v1.RelationOrigin
+	43, // 64: dql.ir.v1.Relation.via:type_name -> dql.ir.v1.QualifiedName
+	34, // 65: dql.ir.v1.Relation.from:type_name -> dql.ir.v1.ColumnSet
+	34, // 66: dql.ir.v1.Relation.to:type_name -> dql.ir.v1.ColumnSet
+	37, // 67: dql.ir.v1.Relation.policy:type_name -> dql.ir.v1.RelationPolicy
+	43, // 68: dql.ir.v1.Relation.through:type_name -> dql.ir.v1.QualifiedName
+	44, // 69: dql.ir.v1.Relation.annotations:type_name -> dql.ir.v1.Annotation
+	13, // 70: dql.ir.v1.RelationPolicy.collection:type_name -> dql.ir.v1.CollectionPolicy
+	14, // 71: dql.ir.v1.RelationPolicy.removal:type_name -> dql.ir.v1.Removal
+	42, // 72: dql.ir.v1.Enum.name:type_name -> dql.ir.v1.Identifier
+	42, // 73: dql.ir.v1.Enum.host_name:type_name -> dql.ir.v1.Identifier
+	15, // 74: dql.ir.v1.Enum.origin:type_name -> dql.ir.v1.EnumOrigin
+	43, // 75: dql.ir.v1.Enum.derived_from:type_name -> dql.ir.v1.QualifiedName
+	44, // 76: dql.ir.v1.Enum.annotations:type_name -> dql.ir.v1.Annotation
+	45, // 77: dql.ir.v1.Enum.extensions:type_name -> google.protobuf.Any
+	42, // 78: dql.ir.v1.Enum.label_names:type_name -> dql.ir.v1.Identifier
+	42, // 79: dql.ir.v1.Domain.name:type_name -> dql.ir.v1.Identifier
+	42, // 80: dql.ir.v1.Domain.host_name:type_name -> dql.ir.v1.Identifier
+	46, // 81: dql.ir.v1.Domain.base:type_name -> dql.ir.v1.Type
+	19, // 82: dql.ir.v1.Domain.default:type_name -> dql.ir.v1.Default
+	21, // 83: dql.ir.v1.Domain.collation:type_name -> dql.ir.v1.Collation
+	22, // 84: dql.ir.v1.Domain.constraints:type_name -> dql.ir.v1.Constraint
+	44, // 85: dql.ir.v1.Domain.annotations:type_name -> dql.ir.v1.Annotation
+	45, // 86: dql.ir.v1.Domain.extensions:type_name -> google.protobuf.Any
+	42, // 87: dql.ir.v1.Composite.name:type_name -> dql.ir.v1.Identifier
+	42, // 88: dql.ir.v1.Composite.host_name:type_name -> dql.ir.v1.Identifier
+	17, // 89: dql.ir.v1.Composite.attributes:type_name -> dql.ir.v1.Column
+	44, // 90: dql.ir.v1.Composite.annotations:type_name -> dql.ir.v1.Annotation
+	45, // 91: dql.ir.v1.Composite.extensions:type_name -> google.protobuf.Any
+	42, // 92: dql.ir.v1.Sequence.name:type_name -> dql.ir.v1.Identifier
+	42, // 93: dql.ir.v1.Sequence.host_name:type_name -> dql.ir.v1.Identifier
+	46, // 94: dql.ir.v1.Sequence.type:type_name -> dql.ir.v1.Type
+	43, // 95: dql.ir.v1.Sequence.owned_by:type_name -> dql.ir.v1.QualifiedName
+	44, // 96: dql.ir.v1.Sequence.annotations:type_name -> dql.ir.v1.Annotation
+	45, // 97: dql.ir.v1.Sequence.extensions:type_name -> google.protobuf.Any
+	98, // [98:98] is the sub-list for method output_type
+	98, // [98:98] is the sub-list for method input_type
+	98, // [98:98] is the sub-list for extension type_name
+	98, // [98:98] is the sub-list for extension extendee
+	0,  // [0:98] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_objects_proto_init() }
@@ -3415,11 +3550,11 @@ func file_dql_ir_v1_objects_proto_init() {
 	file_dql_ir_v1_names_proto_init()
 	file_dql_ir_v1_types_proto_init()
 	file_dql_ir_v1_values_proto_init()
-	file_dql_ir_v1_objects_proto_msgTypes[5].OneofWrappers = []any{
+	file_dql_ir_v1_objects_proto_msgTypes[6].OneofWrappers = []any{
 		(*Constraint_Portable)(nil),
 		(*Constraint_Opaque)(nil),
 	}
-	file_dql_ir_v1_objects_proto_msgTypes[7].OneofWrappers = []any{
+	file_dql_ir_v1_objects_proto_msgTypes[8].OneofWrappers = []any{
 		(*PortableConstraint_Length)(nil),
 		(*PortableConstraint_Range)(nil),
 		(*PortableConstraint_Digits)(nil),
@@ -3427,14 +3562,14 @@ func file_dql_ir_v1_objects_proto_init() {
 		(*PortableConstraint_NotEmpty)(nil),
 		(*PortableConstraint_Pattern)(nil),
 	}
-	file_dql_ir_v1_objects_proto_msgTypes[8].OneofWrappers = []any{}
+	file_dql_ir_v1_objects_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_objects_proto_rawDesc), len(file_dql_ir_v1_objects_proto_rawDesc)),
-			NumEnums:      15,
-			NumMessages:   25,
+			NumEnums:      16,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
