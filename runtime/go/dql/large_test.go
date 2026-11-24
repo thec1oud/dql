@@ -85,12 +85,12 @@ func bulkExec(t *testing.T, d *fakeDriver, maxParams int) *Executor {
 }
 
 func insert(rows int, fail string) Bulk {
-	return Bulk{Rows: rows, ParamsPerRow: 2, Statement: func(from, to int) Statement {
+	return Bulk{Rows: rows, ParamsPerRow: 2, Statement: func(from, to int) (Statement, error) {
 		s := stmt(fmt.Sprintf("INSERT %d-%d", from, to))
 		if fmt.Sprintf("%d-%d", from, to) == fail {
 			s.SQL += " FAIL 23505"
 		}
-		return s
+		return s, nil
 	}}
 }
 

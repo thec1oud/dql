@@ -163,7 +163,8 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 	g.declare(e.plural, "the table handle of "+displayName(e.q), e.q)
 	var fields []string
 	var decls strings.Builder
-	used := map[string]string{}
+	// AllRows is a method of the table type.
+	used := map[string]string{"AllRows": "the filter AllRows"}
 	field := func(name, handle, what string) bool {
 		if prev, ok := used[name]; ok {
 			g.errorf(CodeNameCollision, e.q, "%s gets the Go name %s in %s, as %s does (§4.3, §15.2); give one of them a name annotation", what, name, typ, prev)
@@ -236,7 +237,8 @@ func (%[1]s) All(p %[3]s) %[4]s { return %[5]s.Not(%[5]s.Related[%[6]s](%[7]q, %
 `, handle, r.GetName().GetStored(), other, pred, dql, typ, frag)
 	}
 	f.printf("// %s is table %s in builder reads (§18.2): its columns and relations\n// make predicates and order keys on its rows.\ntype %s struct {\n%s}\n\n", typ, displayName(e.q), typ, strings.Join(fields, ""))
-	f.printf("// %s is table %s in builder reads (§18.2).\nvar %s %s\n\n%s", e.plural, displayName(e.q), e.plural, typ, decls.String())
+	f.printf("// %s is table %s in builder reads (§18.2).\nvar %s %s\n\n", e.plural, displayName(e.q), e.plural, typ)
+	f.printf("// AllRows keeps every row: a filtered write must be given it to write them\n// all (§20.1).\nfunc (%s) AllRows() %s { return %s.AllRows[%s]() }\n\n%s", typ, pred, dql, typ, decls.String())
 }
 
 // opMethod is the column handle method of an operator.
