@@ -1,0 +1,20 @@
+scenario: pool-exhausted
+schema: shop
+max_conns: 1
+steps:
+  # The only connection holds the outer transaction, so the independent one
+  # waits out its acquire timeout and fails, naming no value (§22.6).
+  - op: write
+    steps:
+      - op: tenants.insert
+        input: { name: outer }
+      - op: write
+        propagation: independent
+        steps:
+          - op: tenants.insert
+            input: { name: inner }
+        expect:
+          error: { class: PoolExhausted }
+  # The outer transaction committed; the independent one never began.
+  - op: tenants.count
+    expect: { value: 1 }

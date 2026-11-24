@@ -17,8 +17,9 @@ var root = filepath.Join("..", "..", "..")
 // open creates a database of the schema and opens its handle, with the
 // database's copy on the server of DQL_TEST_POSTGRES_REPLICA_URL, a
 // streaming replica of DQL_TEST_POSTGRES_URL's, as its replica when replica
-// is set. Without that server, a test that needs it is skipped.
-func open(t *testing.T, name string, replica bool) Target {
+// is set, and at most maxConns connections to the primary, 0 meaning the
+// schema's default. Without that server, a test that needs it is skipped.
+func open(t *testing.T, name string, replica bool, maxConns int) Target {
 	t.Helper()
 	ctx := context.Background()
 	base := os.Getenv("DQL_TEST_POSTGRES_URL")
@@ -44,12 +45,12 @@ func open(t *testing.T, name string, replica bool) Target {
 		replicas = append(replicas, replicaOf(t, dsn, replicaBase))
 	}
 	rec := &Recorder{}
-	db, closeDB, err := s.Open(ctx, dsn, replicas, dql.WithHooks(rec.Hooks()))
+	db, exec, err := s.Open(ctx, dsn, replicas, maxConns, dql.WithHooks(rec.Hooks()))
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(closeDB)
-	target := Target{Schema: s, DB: db, DSN: dsn, Events: rec}
+	t.Cleanup(exec.Close)
+	target := Target{Schema: s, DB: db, Exec: exec, DSN: dsn, Events: rec}
 	if replica {
 		target.ReplicaDSN = replicas[0]
 	}
@@ -93,7 +94,7 @@ func TestScenarios(t *testing.T) {
 			if _, ok := Schemas[sc.Schema]; !ok {
 				t.Fatalf("%s: no schema %s", sc.File, sc.Schema)
 			}
-			for _, p := range Run(context.Background(), sc, open(t, sc.Schema, sc.Replica)) {
+			for _, p := range Run(context.Background(), sc, open(t, sc.Schema, sc.Replica, sc.MaxConns)) {
 				t.Error(p)
 			}
 		})

@@ -14,7 +14,7 @@ import (
 
 // Each way a step can go wrong is reported, and nothing else is.
 func TestRunProblems(t *testing.T) {
-	target := open(t, "shop", false)
+	target := open(t, "shop", false, 0)
 	ctx := context.Background()
 	setup := `
 - op: tenants.insert
@@ -87,6 +87,15 @@ func TestRunProblems(t *testing.T) {
 		{"- op: posts.insert_nested\n" + scope + "  input: { title: x, tags: x }\n", []string{"input: Tags: want a list"}},
 		{"- op: posts.insert_nested\n" + scope + "  input: { title: x, tags: [x] }\n", []string{"input: Tags: 0: a TagLink is an object"}},
 		{"- op: posts.insert_nested\n" + scope + "  input: x\n", []string{"input: want an object for PostDraftNested"}},
+		{"- op: tenants.count\n  inject: { class: Timeout, times: 1 }\n", []string{"inject: no injected failure of class Timeout"}},
+		{"- op: tenants.count\n  inject: { delay: x, times: 1 }\n", []string{"inject: delay: time: invalid duration"}},
+		{"- op: tenants.count\n  deadline: x\n", []string{`deadline: time: invalid duration "x"`}},
+		{"- op: tenants.count\n  cancel: x\n", []string{`cancel: time: invalid duration "x"`}},
+		{"- op: tenants.count\n  terminate: x\n", []string{`terminate: time: invalid duration "x"`}},
+		{"- op: begin_write\n  end: sideways\n", []string{"no end sideways"}},
+		{"- op: read\n  steps: [{ op: begin_write, expect: { error: { misuse: ReadOnly } } }, { op: begin_write }]\n", []string{"step 2 (begin_write): unexpected error: "}},
+		{"- op: begin_read\n  end: commit\n  steps: [{ op: tenants.count, expect: { value: 0 } }]\n", []string{"step 1 (tenants.count): want value 0, got "}},
+		{"- op: operation\n  steps: [{ op: tenants.count, expect: { value: 0 } }]\n  expect: { events: [] }\n", []string{"step 1 (tenants.count): want value 0, got ", "want 0 events, got 1"}},
 		{"- op: users.insert_nested\n" + scope + "  input: { email: b@acme.com, password_hash: x }\n  expect: { row: { tenant: { name: x }, profile: { bio: x }, posts_to_author: [{ title: x }] } }\n",
 			[]string{"poststoauthor: want 1 rows, got 0", "profile.want row map[bio:x], got <nil>", "tenant.name: want x, got acme"}},
 	} {
@@ -109,6 +118,17 @@ func TestRunProblems(t *testing.T) {
 	// Filtered writes need the store's table.
 	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "tenants.delete_where", Where: "all"}}}, Target{DB: target.DB}); len(got) != 1 || !strings.Contains(got[0], "no table tenants") {
 		t.Errorf("no table: %q", got)
+	}
+
+	// A handle without pair-form transactions has no begin steps.
+	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "begin_read"}}}, Target{DB: struct{}{}}); len(got) != 1 || !strings.Contains(got[0], "no transaction begin_read") {
+		t.Errorf("no BeginRead: %q", got)
+	}
+
+	// A termination that fails is reported.
+	down := Target{DB: target.DB, Schema: Schema{Terminate: func(context.Context, string) error { return errors.New("down") }}}
+	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "nope.count", Terminate: "1ms"}}}, down); len(got) != 2 || got[1] != "s step 1 (nope.count): terminate: down" {
+		t.Errorf("terminate failed: %q", got)
 	}
 
 	// A handle without WithScope has no scoped stores.
@@ -174,7 +194,7 @@ func TestDatabase(t *testing.T) {
 	if _, _, err := Database(ctx, "postgres://nobody@127.0.0.1:1/x", ddl); err == nil {
 		t.Error("no server")
 	}
-	if _, _, err := Schemas["shop"].Open(ctx, "postgres://%zz", []string{"postgres://%zz"}); err == nil {
+	if _, _, err := Schemas["shop"].Open(ctx, "postgres://%zz", []string{"postgres://%zz"}, 0); err == nil {
 		t.Error("bad DSN opened")
 	}
 }

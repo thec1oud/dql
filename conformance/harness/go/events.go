@@ -11,7 +11,7 @@ import (
 // fields scenarios match: a query's end as query, kind, rows, attempt,
 // replica, params (how many parameters it bound), redacted (how many of them
 // are redacted) and class, and
-// a transaction's begin, end and retry as tx with propagation, read_only,
+// a transaction's begin, end, retry and leak as tx with propagation, read_only,
 // savepoint, attempt, isolation, outcome and class. A nil Recorder keeps
 // nothing.
 type Recorder struct {
@@ -49,8 +49,9 @@ func (r *Recorder) Hooks() dql.Hooks {
 			begin(ctx, ev)
 			return ctx
 		},
-		TxEnd:   tx("end"),
-		TxRetry: tx("retry"),
+		TxEnd:    tx("end"),
+		TxRetry:  tx("retry"),
+		TxLeaked: tx("leaked"),
 	}
 }
 
