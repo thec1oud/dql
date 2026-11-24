@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/thec1oud/dql/runtime/go/dql"
 )
 
@@ -58,26 +60,44 @@ func open(t *testing.T, name string, replica bool, maxConns int) Target {
 }
 
 // replicaOf returns the URL of the database at dsn on the replica server at
-// base, once the replica has replayed its creation.
+// base, once the replica has replayed everything the primary had written
+// when it was called: the database's creation and its DDL.
 func replicaOf(t *testing.T, dsn, base string) string {
 	t.Helper()
+	ctx := context.Background()
 	d, _ := url.Parse(dsn)
 	u, err := url.Parse(base)
 	if err != nil {
 		t.Fatal(err)
 	}
 	u.Path = d.Path
+	var lsn string
+	if err := query(ctx, dsn, "SELECT pg_current_wal_lsn()::text", &lsn); err != nil {
+		t.Fatal(err)
+	}
 	deadline := time.Now().Add(10 * time.Second)
 	for {
-		err := run(context.Background(), u.String(), "SELECT 1")
-		if err == nil {
+		var replayed bool
+		err := query(ctx, u.String(), "SELECT pg_last_wal_replay_lsn() >= '"+lsn+"'::pg_lsn", &replayed)
+		if err == nil && replayed {
 			return u.String()
 		}
 		if time.Now().After(deadline) {
-			t.Fatal(err)
+			t.Fatalf("the replica has not replayed %s: %v", lsn, err)
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
+}
+
+// query runs sql, which returns one value, on a connection of its own to
+// dsn, and scans the value into dest.
+func query(ctx context.Context, dsn, sql string, dest any) error {
+	c, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return err
+	}
+	defer c.Close(ctx)
+	return c.QueryRow(ctx, sql).Scan(dest)
 }
 
 // Every scenario passes on Postgres for Go (guide M4).
