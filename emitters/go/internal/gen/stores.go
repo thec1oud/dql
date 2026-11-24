@@ -255,8 +255,23 @@ type signature struct {
 	x                     entry
 	// many: InsertMany, which runs the insert entry for each Draft.
 	many bool
-	// nested: InsertNested, which writes a Nested Draft (§20.5).
+	// nested: InsertNested, which writes a Nested Draft, and patch:
+	// PatchNested, which writes a Nested Partial (§20.5).
 	nested *nestedInsert
+	patch  *nestedPatch
+}
+
+// doc is what a method's comment adds to the query it runs.
+func (s signature) doc() string {
+	switch {
+	case s.many:
+		return " for each draft, in one transaction"
+	case s.nested != nil:
+		return " with the rows d nests, in one transaction: owning creates first,\n// then the row, then its dependents and links; it returns them read back"
+	case s.patch != nil:
+		return " with the changes p nests, in one transaction: owning changes first,\n// then the row, then its dependents and links under their collection policies;\n// it returns the row and its relations as they now are"
+	}
+	return ""
 }
 
 // signatures returns the entity's store methods, reads first.
@@ -305,6 +320,11 @@ func (g *generator) signatures(e *entity) []signature {
 			s.results = "error"
 		}
 		out = append(out, s)
+		if x.verb == "patch" && x.by == nil {
+			if p, ok := g.nestedPatch(e, e.scope); ok {
+				out = append(out, g.nestedPatchSignature(e, p))
+			}
+		}
 		if x.verb == "insert" {
 			out = append(out, signature{name: "InsertMany", params: "ds []" + Exported(e.draft.GetHostName().GetWords()) + values, results: "([]" + full + ", error)", x: x, many: true})
 			if p, ok := g.nestedInsert(e, e.scope); ok {
@@ -378,14 +398,9 @@ func (g *generator) storeTypes(e *entity) {
 			typ = rtype
 		}
 		what := s.x.q.GetName().GetStored()
-		switch {
-		case s.many:
-			what += " for each draft, in one transaction"
-		case s.nested != nil:
-			what += " with the rows d nests, in one transaction: owning creates first,\n// then the row, then its dependents and links; it returns them read back"
-		}
+		what += s.doc()
 		sec := section(s.x.verb)
-		if s.nested != nil {
+		if s.nested != nil || s.patch != nil {
 			sec = "20.5"
 		}
 		f.printf("// %s runs %s (§%s).\nfunc (%s %s) %s(ctx %s.Context%s) %s {\n", s.name, what, sec, recv, typ, s.name, ctx, prefixComma(s.params), s.results)
@@ -469,6 +484,9 @@ func (g *generator) methodBody(e *entity, s signature) {
 		return
 	case s.nested != nil:
 		g.insertNested(e, s)
+		return
+	case s.patch != nil:
+		g.patchNested(e, s)
 		return
 	}
 	payload, pv := e.draft, "d"

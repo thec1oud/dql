@@ -632,3 +632,201 @@ func TestInsertNestedScoped(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestPatchNested(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+	u := must(h.Users.InsertNested(ctx, shopdb.UserDraftNested{
+		UserDraft: shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "x"},
+		UserDraftNests: shopdb.UserDraftNests{
+			Profile:       opt.Some(shopdb.ProfileDraftForUser{Bio: opt.Some(ptr("Hi"))}),
+			PostsToAuthor: []shopdb.PostDraftForAuthor{{Title: "One"}, {Title: "Two"}, {Title: "Three"}},
+		},
+	}))
+	ed := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "ed@acme.com", PasswordHash: "x"}))
+	edited := must(h.Posts.Insert(ctx, shopdb.PostDraft{AuthorID: u.ID, EditorID: opt.Some(ptr(ed.ID)), Title: "Edited"}))
+	one, two := u.PostsToAuthor[0], u.PostsToAuthor[1]
+
+	// posts_to_author is replace + delete: the post the changes leave out is
+	// deleted. posts_to_editor is merge + unlink: Delete clears editor_id.
+	got := must(h.Users.PatchNested(ctx, u.Key(), shopdb.UserPartialNested{
+		UserPartial: shopdb.UserPartial{DisplayName: opt.Some(ptr("Ann"))},
+		UserPartialNests: shopdb.UserPartialNests{
+			PostsToAuthor: opt.Some([]shopdb.PostChangeForAuthor{
+				shopdb.PostUpdateForAuthor(one.Key(), shopdb.PostPartialForAuthor{Title: opt.Some("First")}),
+				shopdb.PostDeleteForAuthor(two.Key()),
+				shopdb.PostCreateForAuthor(shopdb.PostDraftForAuthor{Title: "Four"}),
+			}),
+			Profile: opt.Some(shopdb.ProfileUpdateForUser(shopdb.ProfileKey{UserID: u.ID}, shopdb.ProfilePartialForUser{Bio: opt.Some[*string](nil)})),
+		},
+	}))
+	// The edited post is u's too, and replace keeps only the changed ones.
+	if *got.DisplayName != "Ann" || got.Version != u.Version+1 || len(got.PostsToAuthor) != 2 || got.PostsToAuthor[0].Title != "First" ||
+		got.PostsToAuthor[1].Title != "Four" || got.Profile == nil || got.Profile.Bio != nil || got.Tenant != acme {
+		t.Errorf("patched %+v", got)
+	}
+	if _, err := h.Posts.Get(ctx, edited.Key()); dql.ClassOf(err) != dql.ClassNotFound {
+		t.Errorf("replaced post: %v", err)
+	}
+	e := must(h.Users.PatchNested(ctx, ed.Key(), shopdb.UserPartialNested{UserPartialNests: shopdb.UserPartialNests{
+		PostsToEditor: opt.Some([]shopdb.PostChangeForEditor{shopdb.PostCreateForEditor(shopdb.PostDraftForEditor{AuthorID: u.ID, Title: "Draft"})}),
+		Profile:       opt.Some(shopdb.ProfileCreateForUser(shopdb.ProfileDraftForUser{})),
+	}}))
+	if len(e.PostsToEditor) != 1 || e.Profile == nil {
+		t.Errorf("editor %+v", e)
+	}
+	e = must(shopdb.Unscoped(h).Users.PatchNested(ctx, shopdb.UserScope{TenantID: acme.ID}, e.Key(), shopdb.UserPartialNested{UserPartialNests: shopdb.UserPartialNests{
+		PostsToEditor: opt.Some([]shopdb.PostChangeForEditor{
+			shopdb.PostUpdateForEditor(e.PostsToEditor[0].Key(), shopdb.PostPartialForEditor{Title: opt.Some("Edit")}),
+			shopdb.PostDeleteForEditor(e.PostsToEditor[0].Key()),
+		}),
+		Profile: opt.Some(shopdb.ProfileDeleteForUser(shopdb.ProfileKey{UserID: ed.ID})),
+	}}))
+	if len(e.PostsToEditor) != 0 || e.Profile != nil {
+		t.Errorf("unlinked %+v", e)
+	}
+
+	// A change naming another parent's child is NotFound, and nothing of
+	// the patch stays.
+	_, err := h.Users.PatchNested(ctx, e.Key(), shopdb.UserPartialNested{
+		UserPartial:      shopdb.UserPartial{DisplayName: opt.Some(ptr("Ed"))},
+		UserPartialNests: shopdb.UserPartialNests{PostsToAuthor: opt.Some([]shopdb.PostChangeForAuthor{shopdb.PostUpdateForAuthor(one.Key(), shopdb.PostPartialForAuthor{})})},
+	})
+	if dql.ClassOf(err) != dql.ClassNotFound {
+		t.Errorf("another's child: %v", err)
+	}
+	if v := must(h.Users.Get(ctx, e.Key())); v.DisplayName != nil {
+		t.Errorf("rolled back %+v", v)
+	}
+	for _, p := range []shopdb.UserPartialNested{
+		{UserPartialNests: shopdb.UserPartialNests{PostsToEditor: opt.Some([]shopdb.PostChangeForEditor{shopdb.PostDeleteForEditor(one.Key())})}},
+		{UserPartialNests: shopdb.UserPartialNests{PostsToEditor: opt.Some([]shopdb.PostChangeForEditor{shopdb.PostUpdateForEditor(one.Key(), shopdb.PostPartialForEditor{})})}},
+		{UserPartialNests: shopdb.UserPartialNests{Profile: opt.Some(shopdb.ProfileUpdateForUser(shopdb.ProfileKey{UserID: u.ID}, shopdb.ProfilePartialForUser{}))}},
+		{UserPartialNests: shopdb.UserPartialNests{Profile: opt.Some(shopdb.ProfileDeleteForUser(shopdb.ProfileKey{UserID: u.ID}))}},
+		{UserPartialNests: shopdb.UserPartialNests{PostsToAuthor: opt.Some([]shopdb.PostChangeForAuthor{shopdb.PostDeleteForAuthor(one.Key())})}},
+	} {
+		if _, err := h.Users.PatchNested(ctx, e.Key(), p); dql.ClassOf(err) != dql.ClassNotFound {
+			t.Errorf("another's child %+v: %v", p, err)
+		}
+	}
+	if _, err := h.Users.PatchNested(ctx, e.Key(), shopdb.UserPartialNested{UserPartial: shopdb.UserPartial{Email: opt.Some(shopdb.EmailAddress(strings.Repeat("a", 321)))}}); err == nil {
+		t.Error("invalid partial written")
+	}
+}
+
+func TestPatchNestedLinks(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+	u := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "x"}))
+	one := must(h.Posts.Insert(ctx, shopdb.PostDraft{AuthorID: u.ID, Title: "One"}))
+	two := must(h.Posts.Insert(ctx, shopdb.PostDraft{AuthorID: u.ID, Title: "Two"}))
+	other := must(db.Tags.Insert(ctx, shopdb.TagDraft{Name: "other"}))
+	must(db.PostTags.Insert(ctx, shopdb.PostTagDraft{PostID: one.ID, TagID: other.ID}))
+
+	// Tags: posts links through post_tags; post_tags changes its rows.
+	tag := must(db.Tags.Insert(ctx, shopdb.TagDraft{Name: "go"}))
+	got := must(db.Tags.PatchNested(ctx, tag.Key(), shopdb.TagPartialNested{
+		TagPartial: shopdb.TagPartial{Name: opt.Some(shopdb.SlugText("golang"))},
+		TagPartialNests: shopdb.TagPartialNests{Posts: opt.Some([]shopdb.TagPostsChange{
+			shopdb.TagPostsLink(one.Key()),
+			shopdb.TagPostsLink(one.Key()),
+			shopdb.TagPostsCreate(shopdb.PostDraft{AuthorID: u.ID, Title: "Three"}),
+		})},
+	}))
+	if got.Name != "golang" || len(got.Posts) != 2 || got.Posts[0].ID != one.ID || got.Posts[1].Title != "Three" || len(got.PostTags) != 2 {
+		t.Errorf("linked %+v", got)
+	}
+	got = must(db.Tags.PatchNested(ctx, tag.Key(), shopdb.TagPartialNested{TagPartialNests: shopdb.TagPartialNests{
+		Posts: opt.Some([]shopdb.TagPostsChange{shopdb.TagPostsUnlink(one.Key())}),
+		PostTags: opt.Some([]shopdb.PostTagChangeForTag{
+			shopdb.PostTagCreateForTag(shopdb.PostTagDraftForTag{PostID: two.ID}),
+			shopdb.PostTagUpdateForTag(shopdb.PostTagKey{PostID: two.ID, TagID: tag.ID}, shopdb.PostTagPartialForTag{}),
+		}),
+	}}))
+	if len(got.Posts) != 2 || got.Posts[0].ID != two.ID || got.Posts[1].Title != "Three" {
+		t.Errorf("unlinked %+v", got)
+	}
+	got = must(db.Tags.PatchNested(ctx, tag.Key(), shopdb.TagPartialNested{TagPartialNests: shopdb.TagPartialNests{
+		PostTags: opt.Some([]shopdb.PostTagChangeForTag{shopdb.PostTagDeleteForTag(shopdb.PostTagKey{PostID: two.ID, TagID: tag.ID})}),
+	}}))
+	if len(got.Posts) != 1 || got.Posts[0].Title != "Three" {
+		t.Errorf("deleted %+v", got)
+	}
+	for _, ch := range []shopdb.PostTagChangeForTag{
+		shopdb.PostTagUpdateForTag(shopdb.PostTagKey{PostID: one.ID, TagID: other.ID}, shopdb.PostTagPartialForTag{}),
+		shopdb.PostTagDeleteForTag(shopdb.PostTagKey{PostID: one.ID, TagID: other.ID}),
+		shopdb.PostTagDeleteForTag(shopdb.PostTagKey{PostID: two.ID, TagID: tag.ID}),
+	} {
+		_, err := db.Tags.PatchNested(ctx, tag.Key(), shopdb.TagPartialNested{TagPartialNests: shopdb.TagPartialNests{PostTags: opt.Some([]shopdb.PostTagChangeForTag{ch})}})
+		if dql.ClassOf(err) != dql.ClassNotFound {
+			t.Errorf("another's post_tag %+v: %v", ch, err)
+		}
+	}
+
+	// Scoped posts: owning changes go first, through users in scope.
+	ed := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "ed@acme.com", PasswordHash: "x"}))
+	p := must(h.Posts.PatchNested(ctx, one.Key(), shopdb.PostPartialNested{
+		PostPartial: shopdb.PostPartial{Title: opt.Some("First")},
+		PostPartialNests: shopdb.PostPartialNests{
+			Author: opt.Some(shopdb.PostAuthorUpdate(shopdb.UserPartial{DisplayName: opt.Some(ptr("Ann"))})),
+			Editor: opt.Some(shopdb.PostEditorCreate(shopdb.UserDraft{Email: "eve@acme.com", PasswordHash: "x"})),
+			Tags:   opt.Some([]shopdb.PostTagsChange{shopdb.PostTagsLink(tag.Key()), shopdb.PostTagsCreate(shopdb.TagDraft{Name: "sql"}), shopdb.PostTagsUnlink(other.Key())}),
+		},
+	}))
+	if p.Title != "First" || p.Author.DisplayName == nil || *p.Author.DisplayName != "Ann" || p.Editor == nil || p.Editor.Email != "eve@acme.com" ||
+		len(p.Tags) != 2 || p.Tags[0].ID != tag.ID || p.Tags[1].Name != "sql" {
+		t.Errorf("patched post %+v", p)
+	}
+	p = must(h.Posts.PatchNested(ctx, one.Key(), shopdb.PostPartialNested{PostPartialNests: shopdb.PostPartialNests{
+		Author: opt.Some(shopdb.PostAuthorLink(ed.Key())),
+		Editor: opt.Some(shopdb.PostEditorUpdate(shopdb.UserPartial{DisplayName: opt.Some(ptr("Eve"))})),
+		PostTags: opt.Some([]shopdb.PostTagChangeForPost{
+			shopdb.PostTagDeleteForPost(shopdb.PostTagKey{PostID: one.ID, TagID: tag.ID}),
+			shopdb.PostTagCreateForPost(shopdb.PostTagDraftForPost{TagID: other.ID}),
+			shopdb.PostTagUpdateForPost(shopdb.PostTagKey{PostID: one.ID, TagID: other.ID}, shopdb.PostTagPartialForPost{}),
+		}),
+	}}))
+	if p.Author.ID != ed.ID || p.Editor == nil || *p.Editor.DisplayName != "Eve" || len(p.Tags) != 2 || p.Tags[0].ID != other.ID {
+		t.Errorf("relinked post %+v", p)
+	}
+	p = must(h.Posts.PatchNested(ctx, one.Key(), shopdb.PostPartialNested{PostPartialNests: shopdb.PostPartialNests{
+		Author: opt.Some(shopdb.PostAuthorCreate(shopdb.UserDraft{Email: "new@acme.com", PasswordHash: "x"})),
+		Editor: opt.Some(shopdb.PostEditorUnlink()),
+	}}))
+	if p.Author.Email != "new@acme.com" || p.Editor != nil {
+		t.Errorf("unlinked editor %+v", p)
+	}
+	p = must(h.Posts.PatchNested(ctx, one.Key(), shopdb.PostPartialNested{PostPartialNests: shopdb.PostPartialNests{
+		Editor: opt.Some(shopdb.PostEditorLink(u.Key())),
+	}}))
+	if p.Editor == nil || p.Editor.ID != u.ID {
+		t.Errorf("linked editor %+v", p)
+	}
+	for _, c := range []shopdb.PostPartialNested{
+		{PostPartialNests: shopdb.PostPartialNests{PostTags: opt.Some([]shopdb.PostTagChangeForPost{shopdb.PostTagDeleteForPost(shopdb.PostTagKey{PostID: two.ID, TagID: tag.ID})})}},
+		{PostPartialNests: shopdb.PostPartialNests{PostTags: opt.Some([]shopdb.PostTagChangeForPost{shopdb.PostTagUpdateForPost(shopdb.PostTagKey{PostID: two.ID, TagID: tag.ID}, shopdb.PostTagPartialForPost{})})}},
+	} {
+		if _, err := h.Posts.PatchNested(ctx, two.Key(), c); dql.ClassOf(err) != dql.ClassNotFound {
+			t.Errorf("missing %+v: %v", c, err)
+		}
+	}
+	if _, err := h.Posts.PatchNested(ctx, two.Key(), shopdb.PostPartialNested{PostPartialNests: shopdb.PostPartialNests{
+		Editor: opt.Some(shopdb.PostEditorUpdate(shopdb.UserPartial{})),
+	}}); dql.ClassOf(err) != dql.ClassNotFound {
+		t.Errorf("no editor to update: %v", err)
+	}
+
+	// Scoped profiles: the owning user's update.
+	must(h.Profiles.Insert(ctx, shopdb.ProfileDraft{UserID: u.ID}))
+	pr := must(h.Profiles.PatchNested(ctx, shopdb.ProfileKey{UserID: u.ID}, shopdb.ProfilePartialNested{
+		ProfilePartial:      shopdb.ProfilePartial{Bio: opt.Some(ptr("Hi"))},
+		ProfilePartialNests: shopdb.ProfilePartialNests{User: opt.Some(shopdb.ProfileUserUpdate(shopdb.UserPartial{DisplayName: opt.Some(ptr("Annie"))}))},
+	}))
+	if *pr.Bio != "Hi" || *pr.User.DisplayName != "Annie" {
+		t.Errorf("patched profile %+v", pr)
+	}
+}
