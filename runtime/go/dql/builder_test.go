@@ -19,6 +19,9 @@ var builderTable = &Fragments{Placeholder: DollarNumbered, Templates: map[string
 	"bool.and":         `({0} AND {1})`,
 	"bool.or":          `({0} OR {1})`,
 	"bool.not":         `NOT ({0})`,
+	"op.is_null":       `{0} IS NULL`,
+	"value.true":       `TRUE`,
+	"col.users.gone":   `u."gone"`,
 	"clause.where":     ` WHERE {0}`,
 	"clause.order":     ` ORDER BY {0}`,
 	"clause.limit":     ` LIMIT {0}`,
@@ -45,6 +48,8 @@ func colEq(col string, v any) Pred[userE] {
 
 func TestBuilderStatements(t *testing.T) {
 	scope := From{Scope: []Node{colEq("col.users.id", int64(9)).Node()}}
+	live := Use{Fragment: "op.is_null", Holes: map[string]Node{"0": Use{Fragment: "col.users.gone"}}}
+	soft := From{Scope: scope.Scope, Visible: live}
 	b := NewBuilder(builderTable, From{}, userShape)
 	asc := NewOrder[userE](Use{Fragment: "order.asc", Holes: map[string]Node{"0": Use{Fragment: "col.users.id"}}})
 	desc := NewOrder[userE](Use{Fragment: "order.desc", Holes: map[string]Node{"0": Use{Fragment: "col.users.email"}}})
@@ -62,6 +67,15 @@ func TestBuilderStatements(t *testing.T) {
 			want: `SELECT u."id" FROM "app"."users" u WHERE ((u."email" = $1 OR u."email" = $2) OR NOT (u."id" > $3))`, args: "[a b 1]"},
 		{name: "scope and calls", b: NewBuilder(builderTable, scope, userShape).Where(And(gt, gt)).Where(gt),
 			want: `SELECT u."id" FROM "app"."users" u WHERE ((u."id" = $1 AND (u."id" > $2 AND u."id" > $3)) AND u."id" > $4)`, args: "[9 1 1 1]"},
+		{name: "soft delete", b: NewBuilder(builderTable, soft, userShape).Where(gt),
+			want: `SELECT u."id" FROM "app"."users" u WHERE ((u."id" = $1 AND u."gone" IS NULL) AND u."id" > $2)`, args: "[9 1]"},
+		{name: "with deleted", b: NewBuilder(builderTable, soft, userShape).OnlyDeleted().WithDeleted(),
+			want: `SELECT u."id" FROM "app"."users" u WHERE u."id" = $1`, args: "[9]"},
+		{name: "only deleted", b: NewBuilder(builderTable, soft, userShape).OnlyDeleted(), agg: "count",
+			want: `SELECT count(*) FROM "app"."users" u WHERE (u."id" = $1 AND NOT (u."gone" IS NULL))`, args: "[9]"},
+		{name: "only deleted without soft delete", b: b.OnlyDeleted(),
+			want: `SELECT u."id" FROM "app"."users" u WHERE NOT (TRUE)`, args: "[]"},
+		{name: "with deleted without soft delete", b: b.WithDeleted(), want: `SELECT u."id" FROM "app"."users" u`, args: "[]"},
 		{name: "page", b: b.OrderBy(asc).OrderBy(desc).Limit(10).Offset(20),
 			want: `SELECT u."id" FROM "app"."users" u ORDER BY u."id" ASC, u."email" DESC LIMIT $1 OFFSET $2`, args: "[10 20]"},
 		{name: "distinct", b: b.Distinct(), want: `SELECT DISTINCT u."id" FROM "app"."users" u`, args: "[]"},

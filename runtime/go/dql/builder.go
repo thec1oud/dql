@@ -96,12 +96,24 @@ type Shape[T, E any] struct {
 	Decode                func(Row) (T, error)
 }
 
-// From is where a builder read runs: a handle that reads, and the scope
-// filter every read through it gets (§21.1).
+// From is where a builder read runs: a handle that reads, the scope filter
+// every read through it gets (§21.1), and, for a soft-delete entity, the
+// predicate its rows hold while not deleted, which reads get unless they
+// ask for deleted rows (§21.3).
 type From struct {
-	H     Reader
-	Scope []Node
+	H       Reader
+	Scope   []Node
+	Visible Node
 }
+
+// deleted is which rows a read of a soft-delete entity keeps.
+type deleted int
+
+const (
+	liveRows deleted = iota
+	withDeleted
+	onlyDeleted
+)
 
 // Builder composes a read of a shape from the fragment table (§16.2, §18).
 // Each method returns a new builder, so a builder can be reused.
@@ -117,6 +129,7 @@ type Builder[T, E any] struct {
 	locks       []string
 	noLog       bool
 	consistency Consistency
+	deleted     deleted
 }
 
 // NewBuilder starts a read of shape on from; generated code calls it.
@@ -174,6 +187,19 @@ func (b Builder[T, E]) lock(f string) Builder[T, E] {
 	return b
 }
 
+// WithDeleted keeps soft-deleted rows too (§21.3).
+func (b Builder[T, E]) WithDeleted() Builder[T, E] {
+	b.deleted = withDeleted
+	return b
+}
+
+// OnlyDeleted keeps only soft-deleted rows; an entity without soft delete
+// has none (§21.3).
+func (b Builder[T, E]) OnlyDeleted() Builder[T, E] {
+	b.deleted = onlyDeleted
+	return b
+}
+
 // NoLog turns query events off for this read (§24).
 func (b Builder[T, E]) NoLog() Builder[T, E] {
 	b.noLog = true
@@ -187,9 +213,21 @@ func (b Builder[T, E]) Consistency(c Consistency) Builder[T, E] {
 	return b
 }
 
-// filter is the WHERE clause: the scope's predicates, then the call's.
+// filter is the WHERE clause: the scope's predicates, the soft delete's,
+// then the call's.
 func (b Builder[T, E]) filter() Node {
-	ps := slices.Concat(b.from.Scope, b.where)
+	ps := slices.Clone(b.from.Scope)
+	visible := b.from.Visible
+	switch {
+	case b.deleted == withDeleted:
+	case b.deleted == onlyDeleted && visible == nil:
+		ps = append(ps, Use{Fragment: "bool.not", Holes: map[string]Node{"0": Use{Fragment: "value.true"}}})
+	case b.deleted == onlyDeleted:
+		ps = append(ps, Use{Fragment: "bool.not", Holes: map[string]Node{"0": visible}})
+	case visible != nil:
+		ps = append(ps, visible)
+	}
+	ps = append(ps, b.where...)
 	if len(ps) == 0 {
 		return nil
 	}
