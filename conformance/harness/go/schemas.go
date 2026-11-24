@@ -58,6 +58,16 @@ var Schemas = map[string]Schema{
 			opt.Some[[]shopdb.PostTagsChange], opt.Some[[]shopdb.TagPostsChange],
 		},
 		Inject: injectPostgres,
+		Shapes: shopdb.Shapes,
+		Selects: map[string]any{
+			"post_full":           shopdb.Select[shopdb.PostFull, shopdb.PostsTable],
+			"post_tag_full":       shopdb.Select[shopdb.PostTagFull, shopdb.PostTagsTable],
+			"profile_full":        shopdb.Select[shopdb.ProfileFull, shopdb.ProfilesTable],
+			"published_post_full": shopdb.Select[shopdb.PublishedPostFull, shopdb.PublishedPostsTable],
+			"tag_full":            shopdb.Select[shopdb.TagFull, shopdb.TagsTable],
+			"tenant_full":         shopdb.Select[shopdb.TenantFull, shopdb.TenantsTable],
+			"user_full":           shopdb.Select[shopdb.UserFull, shopdb.UsersTable],
+		},
 	},
 }
 

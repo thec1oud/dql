@@ -1,0 +1,39 @@
+scenario: large-in-lists
+schema: shop
+steps:
+  - op: tenants.insert_many
+    input: { generate: { count: 40000, row: { name: "t-$i" } } }
+    expect: { count: 40000 }
+  # A list is one parameter however long it is, past Postgres's 65535
+  # parameters per statement, and a read is never split (§25.3).
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: in, value: { generate: { count: 100000, value: "t-$i" } } }]
+    read: count
+    expect:
+      value: 40000
+      events: [{ params: 1 }]
+  # Order and limit apply to the whole list, as they would if it were short.
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: in, value: { generate: { count: 100000, value: "t-$i" } } }]
+    order: [{ column: name, desc: true }]
+    limit: 3
+    expect:
+      rows: [{ name: t-9999 }, { name: t-9998 }, { name: t-9997 }]
+      events: [{ params: 2 }]
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: in, value: [t-1, t-2, nobody] }]
+    order: [{ column: name }]
+    expect: { rows: [{ name: t-1 }, { name: t-2 }] }
+  # An empty list keeps no row.
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: in, value: [] }]
+    read: count
+    expect: { value: 0, statements: 1 }
