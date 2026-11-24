@@ -678,6 +678,7 @@ type UsersStore interface {
 	UsersReadStore
 	Insert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertMany(ctx context.Context, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error)
+	InsertNested(ctx context.Context, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error)
 	InsertOrIgnore(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	Upsert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
@@ -704,6 +705,7 @@ type UsersUnscopedStore interface {
 	UsersUnscopedReadStore
 	Insert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertMany(ctx context.Context, scope UserScope, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error)
+	InsertNested(ctx context.Context, scope UserScope, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error)
 	InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	Upsert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
@@ -836,6 +838,60 @@ func (s usersWrites) InsertMany(ctx context.Context, ds []UserDraft, as ...dql.A
 		rows = append(rows, args)
 	}
 	return dql.InsertMany(ctx, s.w, fragments, userInsert, rows, DecodeUserFull)
+}
+
+// InsertNested runs user.insert with the rows d nests, in one transaction: owning creates first,
+// then the row, then its dependents and links; it returns them read back (§20.5).
+func (s usersWrites) InsertNested(ctx context.Context, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error) {
+	if err := d.Validate(); err != nil {
+		return UserFullNested{}, err
+	}
+	var out UserFullNested
+	err := dql.Atomic(ctx, s.w, func(ctx context.Context, w dql.Writer) error {
+		out = UserFullNested{}
+		usersStore := usersWrites{usersReads{w, UserScope{TenantID: s.scope.TenantID}}, w}
+		postsStore := postsWrites{postsReads{w}, w}
+		profilesStore := profilesWrites{profilesReads{w}, w}
+		tenantsStore := tenantsWrites{tenantsReads{w}, w}
+		draft := UserDraft{Email: d.Email, DisplayName: d.DisplayName, PasswordHash: d.PasswordHash, CreatedAt: d.CreatedAt, UpdatedAt: d.UpdatedAt, Version: d.Version}
+		row, err := usersStore.Insert(ctx, draft, as...)
+		if err != nil {
+			return err
+		}
+		out.UserFull = row
+		out.PostsToAuthor = []PostFull{}
+		out.PostsToEditor = []PostFull{}
+		for _, c := range d.PostsToAuthor {
+			child, err := postsStore.Insert(ctx, PostDraft{ID: c.ID, EditorID: c.EditorID, Title: c.Title, Status: c.Status, Price: c.Price, Labels: c.Labels, PublishedAt: c.PublishedAt, AuthorID: row.ID})
+			if err != nil {
+				return err
+			}
+			out.PostsToAuthor = append(out.PostsToAuthor, child)
+		}
+		for _, c := range d.PostsToEditor {
+			child, err := postsStore.Insert(ctx, PostDraft{ID: c.ID, AuthorID: c.AuthorID, Title: c.Title, Status: c.Status, Price: c.Price, Labels: c.Labels, PublishedAt: c.PublishedAt, EditorID: opt.Some(dql.Ptr(row.ID))})
+			if err != nil {
+				return err
+			}
+			out.PostsToEditor = append(out.PostsToEditor, child)
+		}
+		if c, ok := d.Profile.Get(); ok {
+			child, err := profilesStore.Insert(ctx, ProfileDraft{Bio: c.Bio, Birthday: c.Birthday, UserID: row.ID})
+			if err != nil {
+				return err
+			}
+			out.Profile = &child
+		}
+		{
+			related, err := tenantsStore.Get(ctx, TenantKey{ID: row.TenantID})
+			if err != nil {
+				return err
+			}
+			out.Tenant = related
+		}
+		return nil
+	})
+	return out, err
 }
 
 // InsertOrIgnore runs user.insert_or_ignore.by_primary (§20.1).
@@ -1081,6 +1137,11 @@ func (u usersUnscoped) Insert(ctx context.Context, scope UserScope, d UserDraft,
 // InsertMany runs user.insert in scope (§21.2).
 func (u usersUnscoped) InsertMany(ctx context.Context, scope UserScope, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error) {
 	return usersWrites{usersReads{u.w, scope}, u.w}.InsertMany(ctx, ds, as...)
+}
+
+// InsertNested runs user.insert in scope (§21.2).
+func (u usersUnscoped) InsertNested(ctx context.Context, scope UserScope, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertNested(ctx, d, as...)
 }
 
 // InsertOrIgnore runs user.insert_or_ignore.by_primary in scope (§21.2).

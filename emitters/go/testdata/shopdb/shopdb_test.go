@@ -509,3 +509,126 @@ func TestExpressions(t *testing.T) {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+func TestInsertNested(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+
+	// The user first, then its dependents with its key; the bound tenant
+	// is read back.
+	u := must(h.Users.InsertNested(ctx, shopdb.UserDraftNested{
+		UserDraft: shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "x"},
+		UserDraftNests: shopdb.UserDraftNests{
+			Profile:       opt.Some(shopdb.ProfileDraftForUser{Bio: opt.Some(ptr("Hi"))}),
+			PostsToAuthor: []shopdb.PostDraftForAuthor{{Title: "Hello"}, {Title: "Again"}},
+		},
+	}))
+	if u.Tenant != acme || u.Profile == nil || *u.Profile.Bio != "Hi" || u.Profile.UserID != u.ID ||
+		len(u.PostsToAuthor) != 2 || u.PostsToAuthor[1].AuthorID != u.ID || len(u.PostsToEditor) != 0 {
+		t.Errorf("user %+v", u)
+	}
+	b := must(shopdb.Unscoped(h).Users.InsertNested(ctx, shopdb.UserScope{TenantID: acme.ID}, shopdb.UserDraftNested{
+		UserDraft: shopdb.UserDraft{Email: "bob@acme.com", PasswordHash: "x"},
+		UserDraftNests: shopdb.UserDraftNests{
+			PostsToEditor: []shopdb.PostDraftForEditor{{AuthorID: u.ID, Title: "Edited"}},
+		},
+	}, shopdb.Users.CreatedAt.Set(dql.Now())))
+	if b.Profile != nil || len(b.PostsToEditor) != 1 || *b.PostsToEditor[0].EditorID != b.ID {
+		t.Errorf("editor %+v", b)
+	}
+
+	// A failing child rolls the whole graph back.
+	if _, err := h.Users.InsertNested(ctx, shopdb.UserDraftNested{
+		UserDraft:      shopdb.UserDraft{Email: "cid@acme.com", PasswordHash: "x"},
+		UserDraftNests: shopdb.UserDraftNests{PostsToAuthor: []shopdb.PostDraftForAuthor{{ID: opt.Some(u.PostsToAuthor[0].ID), Title: "Dup"}}},
+	}); dql.ClassOf(err) != dql.ClassUniqueViolation {
+		t.Errorf("duplicate: %v", err)
+	}
+	if ok := must(shopdb.Select(h.Users, shopdb.Shapes.UserFull).Where(shopdb.Users.Email.Eq("cid@acme.com")).Exists(ctx)); ok {
+		t.Error("rolled back user exists")
+	}
+	if _, err := h.Users.InsertNested(ctx, shopdb.UserDraftNested{UserDraft: shopdb.UserDraft{Email: shopdb.EmailAddress(strings.Repeat("a", 321))}}); err == nil {
+		t.Error("invalid graph written")
+	}
+
+	// Many-to-many: links and creates write junction rows; junction
+	// children read their far rows back.
+	p := u.PostsToAuthor[0]
+	tag := must(db.Tags.InsertNested(ctx, shopdb.TagDraftNested{
+		TagDraft: shopdb.TagDraft{Name: "go"},
+		TagDraftNests: shopdb.TagDraftNests{
+			PostTags: []shopdb.PostTagDraftForTag{{PostID: p.ID}},
+			Posts:    []shopdb.PostLink{shopdb.PostLinkKey(shopdb.PostKey{ID: u.PostsToAuthor[1].ID}), shopdb.PostLinkCreate(shopdb.PostDraft{AuthorID: u.ID, Title: "New"})},
+		},
+	}))
+	if len(tag.PostTags) != 3 || len(tag.Posts) != 3 || tag.Posts[0].ID != p.ID || tag.Posts[2].Title != "New" || tag.PostTags[2].PostID != tag.Posts[2].ID {
+		t.Errorf("tag %+v", tag)
+	}
+
+	// Owning relations: a Create is inserted first, a Link sets the key.
+	pt := must(db.PostTags.InsertNested(ctx, shopdb.PostTagDraftNested{
+		Post: opt.Some(shopdb.PostRefLink(shopdb.PostKey{ID: b.PostsToEditor[0].ID})),
+		Tag:  opt.Some(shopdb.TagRefCreate(shopdb.TagDraft{Name: "db"})),
+	}))
+	if pt.Post.ID != b.PostsToEditor[0].ID || pt.Tag.Name != "db" || pt.TagID != pt.Tag.ID {
+		t.Errorf("post tag %+v", pt)
+	}
+	pt = must(db.PostTags.InsertNested(ctx, shopdb.PostTagDraftNested{PostID: opt.Some(p.ID), Tag: opt.Some(shopdb.TagRefLink(shopdb.TagKey{ID: pt.TagID}))}))
+	if pt.Post.ID != p.ID || pt.Tag.Name != "db" {
+		t.Errorf("by key %+v", pt)
+	}
+	if _, err := db.PostTags.InsertNested(ctx, shopdb.PostTagDraftNested{PostID: opt.Some(p.ID), Post: opt.Some(shopdb.PostRefLink(shopdb.PostKey{ID: b.PostsToEditor[0].ID})), TagID: opt.Some(pt.TagID)}); err == nil {
+		t.Error("conflicting key and relation")
+	}
+}
+
+// §21.1: a nested write reaching a scoped entity runs on a scoped handle.
+func TestInsertNestedScoped(t *testing.T) {
+	ctx := context.Background()
+	db := shopdb.New(executor(t))
+	acme := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "acme"}))
+	other := must(db.Tenants.Insert(ctx, shopdb.TenantDraft{Name: "other"}))
+	h := db.WithScope(shopdb.UserScope{TenantID: acme.ID})
+	ann := must(h.Users.Insert(ctx, shopdb.UserDraft{Email: "ann@acme.com", PasswordHash: "x"}))
+	go_ := must(db.Tags.Insert(ctx, shopdb.TagDraft{Name: "go"}))
+
+	p := must(h.Posts.InsertNested(ctx, shopdb.PostDraftNested{
+		Title:    "Hello",
+		Author:   opt.Some(shopdb.UserRefLink(ann.Key())),
+		Editor:   opt.Some(shopdb.UserRefCreate(shopdb.UserDraft{Email: "ed@acme.com", PasswordHash: "x"})),
+		PostTags: []shopdb.PostTagDraftForPost{{TagID: go_.ID}},
+		Tags:     []shopdb.TagLink{shopdb.TagLinkCreate(shopdb.TagDraft{Name: "db"})},
+	}))
+	if p.Author.ID != ann.ID || p.Editor == nil || p.Editor.TenantID != acme.ID || *p.EditorID != p.Editor.ID ||
+		len(p.Tags) != 2 || p.Tags[0].ID != go_.ID || p.Tags[1].Name != "db" || len(p.PostTags) != 2 {
+		t.Errorf("post %+v", p)
+	}
+	q := must(h.Posts.InsertNested(ctx, shopdb.PostDraftNested{Title: "Plain", AuthorID: opt.Some(ann.ID)}))
+	if q.Author.ID != ann.ID || q.Editor != nil || len(q.Tags) != 0 {
+		t.Errorf("plain %+v", q)
+	}
+
+	// The scope reads the author back: one in another tenant is not found,
+	// and the post is rolled back.
+	bob := must(db.WithScope(shopdb.UserScope{TenantID: other.ID}).Users.Insert(ctx, shopdb.UserDraft{Email: "bob@other.com", PasswordHash: "x"}))
+	if _, err := h.Posts.InsertNested(ctx, shopdb.PostDraftNested{Title: "Cross", AuthorID: opt.Some(bob.ID)}); dql.ClassOf(err) != dql.ClassNotFound {
+		t.Errorf("cross tenant: %v", err)
+	}
+	if ok := must(shopdb.Select(h.Posts, shopdb.Shapes.PostFull).Where(shopdb.Posts.Title.Eq("Cross")).Exists(ctx)); ok {
+		t.Error("cross-tenant post written")
+	}
+
+	pr := must(h.Profiles.InsertNested(ctx, shopdb.ProfileDraftNested{User: opt.Some(shopdb.UserRefCreate(shopdb.UserDraft{Email: "cid@acme.com", PasswordHash: "x"}))}))
+	if pr.User.Email != "cid@acme.com" || pr.UserID != pr.User.ID {
+		t.Errorf("profile %+v", pr)
+	}
+	err := h.Write(ctx, func(ctx context.Context, tx shopdb.UserScopedWriteTx) error {
+		_, err := tx.Profiles.InsertNested(ctx, shopdb.ProfileDraftNested{UserID: opt.Some(ann.ID)})
+		return err
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}
