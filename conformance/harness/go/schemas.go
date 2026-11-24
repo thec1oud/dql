@@ -20,7 +20,9 @@ import (
 // package.
 var Schemas = map[string]Schema{
 	"shop": {
-		DDL: []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
+		DDL:     []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
+		Dialect: "postgres",
+		Exec:    run,
 		Open: func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (any, *dql.Executor, error) {
 			if maxConns == 0 {
 				maxConns = 4

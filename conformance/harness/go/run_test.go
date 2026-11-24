@@ -92,6 +92,8 @@ func TestRunProblems(t *testing.T) {
 		{"- op: tenants.count\n  deadline: x\n", []string{`deadline: time: invalid duration "x"`}},
 		{"- op: tenants.count\n  cancel: x\n", []string{`cancel: time: invalid duration "x"`}},
 		{"- op: tenants.count\n  terminate: x\n", []string{`terminate: time: invalid duration "x"`}},
+		{"- op: sql\n  sql: { sqlite: x }\n", []string{"no sql for postgres"}},
+		{"- op: sql\n  sql: { postgres: NOT SQL }\n", []string{"syntax error"}},
 		{"- op: begin_write\n  end: sideways\n", []string{"no end sideways"}},
 		{"- op: read\n  steps: [{ op: begin_write, expect: { error: { misuse: ReadOnly } } }, { op: begin_write }]\n", []string{"step 2 (begin_write): unexpected error: "}},
 		{"- op: begin_read\n  end: commit\n  steps: [{ op: tenants.count, expect: { value: 0 } }]\n", []string{"step 1 (tenants.count): want value 0, got "}},

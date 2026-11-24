@@ -1,0 +1,90 @@
+scenario: decoding
+schema: shop
+# Each case of design record §13 that Postgres can hold puts a value the
+# generated code rules out in place, and reading it is a DecodeError naming
+# the shape, the field and the reason. The rest need other schemas or
+# dialects: array-elements-nonnull and custom-shape NonNull are in the
+# variant schema's scenarios, TINYINT(1) and weak columns in MySQL's and
+# SQLite's.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: untitled, status: published, published_at: "2026-01-01T00:00:00Z" }
+    save: post
+  - op: select
+    from: published_posts
+    shape: published_post_full
+    expect:
+      rows: [{ title: untitled }]
+  # NULL in a view column asserted nonnull names the annotation.
+  - op: sql
+    sql:
+      postgres: |
+        CREATE OR REPLACE VIEW app.published_posts AS
+          SELECT id, NULLIF(title, 'untitled') AS title, author_id, published_at
+          FROM app.posts WHERE status = 'published';
+  - op: select
+    from: published_posts
+    shape: published_post_full
+    expect:
+      error:
+        class: DecodeError
+        shape: published_post.full.flat
+        field: title
+        reason: null_into_non_null
+        assertion: core.nonnull from COMMENT ON COLUMN app.published_posts.title
+  # An enum label added after generation.
+  - op: sql
+    sql:
+      postgres: ALTER TYPE app.post_status ADD VALUE 'hidden'
+  - op: sql
+    sql:
+      postgres: UPDATE app.posts SET status = 'hidden', published_at = NULL
+  - op: posts.get
+    scope: { tenant_id: $acme.id }
+    key: { id: $post.id }
+    expect:
+      error: { class: DecodeError, shape: post.full.flat, field: status, reason: unknown_enum_label, assertion: "" }
+  # An array whose dimensions differ from the declaration.
+  - op: sql
+    sql:
+      postgres: UPDATE app.posts SET status = 'draft', labels = '{{a,b},{c,d}}'
+  - op: posts.get
+    scope: { tenant_id: $acme.id }
+    key: { id: $post.id }
+    expect:
+      error: { class: DecodeError, shape: post.full.flat, field: "labels[0]", reason: dimension_mismatch }
+  # Off-type values in strict columns: the special values no host type
+  # holds, a numeric NaN and an infinite timestamp.
+  - op: sql
+    sql:
+      postgres: UPDATE app.posts SET labels = NULL, price = ROW('NaN', 'USD')
+  - op: posts.get
+    scope: { tenant_id: $acme.id }
+    key: { id: $post.id }
+    expect:
+      error: { class: DecodeError, shape: post.full.flat, field: price, reason: off_type }
+  - op: sql
+    sql:
+      postgres: UPDATE app.posts SET price = NULL, status = 'published', published_at = 'infinity'
+  - op: posts.get
+    scope: { tenant_id: $acme.id }
+    key: { id: $post.id }
+    expect:
+      error: { class: DecodeError, shape: post.full.flat, field: published_at, reason: off_type }
+  # Once the values are back in range, the row reads again.
+  - op: sql
+    sql:
+      postgres: UPDATE app.posts SET published_at = '2026-01-01T00:00:00Z'
+  - op: posts.get
+    scope: { tenant_id: $acme.id }
+    key: { id: $post.id }
+    expect:
+      row: { title: untitled, status: published }
