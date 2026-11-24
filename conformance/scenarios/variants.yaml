@@ -1,0 +1,83 @@
+scenario: variants
+schema: shop_variants
+# The cases of design record §13 and §14.9 that need the variants: an array
+# whose elements are asserted non-null (§8.6), a custom shape's NonNull
+# (§14.8), and the Fallible and Impossible conversion kinds.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: x, labels: [a, b] }
+    save: post
+    expect:
+      row: { labels: [a, b] }
+  # A NULL element in an array asserted array-elements-nonnull.
+  - op: sql
+    sql:
+      postgres: UPDATE app.posts SET labels = ARRAY['a', NULL]
+  - op: posts.get
+    key: { id: $post.id }
+    expect:
+      error: { class: DecodeError, shape: post.full.flat, field: "labels[1]", reason: null_element_into_non_null }
+  # NULL in a field a custom shape narrows with nonnull.
+  - op: select
+    from: users
+    scope: { tenant_id: $acme.id }
+    shape: user_summary
+    expect:
+      rows: [{ email: a@acme.com, display_name: null }]
+  - op: select
+    from: users
+    scope: { tenant_id: $acme.id }
+    shape: user_summary_named
+    expect:
+      error: { class: DecodeError, shape: user_summary_named, field: display_name, reason: null_into_non_null, assertion: nonnull of shape user_summary_named }
+  # Total along a custom shape's lineage.
+  - op: users.get
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 1 }
+    save: full
+  - op: convert
+    from: user_full
+    input: $full
+    call: to_user_summary
+    save: summary
+    expect:
+      row: { id: $ann.id, email: a@acme.com, display_name: null }
+  # Fallible: narrowing display_name to non-null fails while it is NULL,
+  # as decoding it would.
+  - op: convert
+    from: user_summary
+    input: $summary
+    call: to_user_summary_named
+    expect:
+      error: { class: DecodeError, shape: user_summary_named, field: display_name, reason: null_into_non_null }
+  - op: convert
+    from: user_summary
+    input: { id: 1, email: a@acme.com, display_name: Ann }
+    call: to_user_summary_named
+    expect:
+      row: { display_name: Ann }
+  - op: convert
+    from: user_full
+    input: $full
+    call: to_user_summary_named
+    expect:
+      error: { class: DecodeError, shape: user_summary_named, field: display_name, reason: null_into_non_null }
+  # Impossible: a summary lacks what a Full holds.
+  - op: convert
+    from: user_summary
+    input: $summary
+    call: to_full
+    expect: { generated: false }
+  - op: convert
+    from: user_summary
+    input: $summary
+    call: to_user_full
+    expect: { generated: false }
