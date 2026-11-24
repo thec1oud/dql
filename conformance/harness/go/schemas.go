@@ -21,11 +21,15 @@ import (
 var Schemas = map[string]Schema{
 	"shop": {
 		DDL: []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
-		Open: func(ctx context.Context, dsn string, opts ...dql.Option) (any, func(), error) {
+		Open: func(ctx context.Context, dsn string, replicas []string, opts ...dql.Option) (any, func(), error) {
+			src := dql.SourceConfig{Primary: dql.ConnConfig{DSN: dsn, MaxConns: 4}, MaxLag: maxLag}
+			for _, r := range replicas {
+				src.Replicas = append(src.Replicas, dql.ConnConfig{DSN: r, MaxConns: 4})
+			}
 			e, err := shopdb.NewExecutor(ctx, dqlpgx.New(), dql.Config{
-				Sources:  map[string]dql.SourceConfig{"main": {Primary: dql.ConnConfig{DSN: dsn, MaxConns: 4}}},
+				Sources:  map[string]dql.SourceConfig{"main": src},
 				Catalogs: map[string]string{"shop": "main"},
-			}, opts...)
+			}, append([]dql.Option{dql.WithTrackInterval(trackInterval)}, opts...)...)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -58,6 +62,7 @@ var Schemas = map[string]Schema{
 			opt.Some[[]shopdb.PostTagsChange], opt.Some[[]shopdb.TagPostsChange],
 		},
 		Inject: injectPostgres,
+		Replay: replayPostgres,
 		Shapes: shopdb.Shapes,
 		Selects: map[string]any{
 			"post_full":           shopdb.Select[shopdb.PostFull, shopdb.PostsTable],
@@ -69,6 +74,21 @@ var Schemas = map[string]Schema{
 			"user_full":           shopdb.Select[shopdb.UserFull, shopdb.UsersTable],
 		},
 	},
+}
+
+// A replica leaves rotation 200ms behind, which the tracker sees within
+// 20ms, so that the routing scenario need not wait out the 2s default.
+const (
+	maxLag        = 200 * time.Millisecond
+	trackInterval = 20 * time.Millisecond
+)
+
+// replayPostgres pauses or resumes WAL replay on the replica at dsn.
+func replayPostgres(ctx context.Context, dsn string, pause bool) error {
+	if pause {
+		return run(ctx, dsn, "SELECT pg_wal_replay_pause()")
+	}
+	return run(ctx, dsn, "SELECT pg_wal_replay_resume()")
 }
 
 // sqlstates are the codes Postgres raises for the retryable classes.

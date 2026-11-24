@@ -9,7 +9,9 @@
 // both, as posts: [{ update: { key: { id: 1 }, input: { title: x } } }]; the
 // schema lists the functions that build them. A step of op select reads a
 // shape through the query builder (§18.2): all its rows, a stream of them, or
-// their count.
+// their count. A scenario of replica runs on a source with a streaming
+// replica, and its control steps start a session, pause or resume the
+// replica's replay, or sleep (§22.5).
 package harness
 
 import (
@@ -32,11 +34,12 @@ import (
 )
 
 // Scenario is one scenario file: steps run in order against a fresh database
-// of the named schema.
+// of the named schema, on a source with a replica when Replica is set.
 type Scenario struct {
-	Name   string `yaml:"scenario"`
-	Schema string `yaml:"schema"`
-	Steps  []Step `yaml:"steps"`
+	Name    string `yaml:"scenario"`
+	Schema  string `yaml:"schema"`
+	Replica bool   `yaml:"replica"`
+	Steps   []Step `yaml:"steps"`
 	// File is where the scenario was read from.
 	File string `yaml:"-"`
 }
@@ -84,6 +87,16 @@ type Step struct {
 	Limit  int64      `yaml:"limit"`
 	Read   string     `yaml:"read"`
 	Stop   int        `yaml:"stop"`
+	// Consistency is the read's level: primary, any, bounded, with Bound,
+	// or read_your_writes, with Wait and OrFail. Bound and Wait are Go
+	// durations, as 500ms.
+	Consistency string `yaml:"consistency"`
+	Bound       string `yaml:"bound"`
+	Wait        string `yaml:"wait"`
+	OrFail      bool   `yaml:"or_fail"`
+
+	// Duration is how long a sleep step sleeps.
+	Duration string `yaml:"duration"`
 }
 
 // Filter is a predicate of a select step: the column's operator Op, as eq
@@ -130,10 +143,13 @@ type Assign struct {
 // to make the database at dsn fail its next times writes with class. Shapes
 // holds its read shapes, and Selects the Select that reads each, by the
 // shape's name, instantiated for it, as
-// shopdb.Select[shopdb.TenantFull, shopdb.TenantsTable].
+// shopdb.Select[shopdb.TenantFull, shopdb.TenantsTable]. Open opens the
+// handle on the database at dsn, with replicas of it at the replicas' DSNs,
+// and Replay pauses or resumes the replay of the replica at dsn.
 type Schema struct {
 	DDL     []string
-	Open    func(ctx context.Context, dsn string, opts ...dql.Option) (db any, close func(), err error)
+	Open    func(ctx context.Context, dsn string, replicas []string, opts ...dql.Option) (db any, close func(), err error)
+	Replay  func(ctx context.Context, dsn string, pause bool) error
 	Tables  map[string]any
 	Changes []any
 	Inject  func(ctx context.Context, dsn, class string, times int) error
@@ -142,12 +158,14 @@ type Schema struct {
 }
 
 // Target is what a scenario runs on: a schema's handle, open on the
-// database at DSN, and the recorder of its executor's hook events.
+// database at DSN and its replica at ReplicaDSN, if any, and the recorder
+// of its executor's hook events.
 type Target struct {
-	Schema Schema
-	DB     any
-	DSN    string
-	Events *Recorder
+	Schema     Schema
+	DB         any
+	DSN        string
+	ReplicaDSN string
+	Events     *Recorder
 }
 
 // Load reads every scenario file in dir, sorted by file name.
@@ -178,6 +196,8 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 	s := t.Schema
 	r := &runner{ctx: ctx, db: reflect.ValueOf(t.DB), tables: s.Tables, saved: map[string]any{}, events: t.Events,
 		inject:  func(class string, times int) error { return s.Inject(ctx, t.DSN, class, times) },
+		replay:  func(pause bool) error { return s.Replay(ctx, t.ReplicaDSN, pause) },
+		base:    ctx,
 		changes: map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
 		nested: map[reflect.Type]bool{}, shapes: reflect.ValueOf(s.Shapes), selects: map[string]reflect.Value{}}
 	for name, f := range s.Selects {
@@ -192,6 +212,11 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 			problems = append(problems, fmt.Sprintf("%s step %d (%s): %s", sc.Name, i+1, st.Op, p))
 		}
 	}
+	if r.paused {
+		if err := r.replay(false); err != nil {
+			problems = append(problems, fmt.Sprintf("%s: resume_replay: %s", sc.Name, err))
+		}
+	}
 	return problems
 }
 
@@ -201,6 +226,11 @@ type runner struct {
 	tables map[string]any
 	saved  map[string]any
 	inject func(class string, times int) error
+	// replay pauses or resumes the replica's replay, paused says whether it
+	// is paused, and base is the context a session step starts from.
+	replay func(pause bool) error
+	paused bool
+	base   context.Context
 	// events records the hooks, and fired holds what the step being
 	// compared fired.
 	events *Recorder
@@ -287,9 +317,35 @@ func (r *runner) step(st Step) []string {
 	return ps
 }
 
+// control runs a control step, reporting false for any other op.
+func (r *runner) control(st Step) ([]string, bool) {
+	switch st.Op {
+	case "session":
+		r.ctx = dql.WithSession(r.base)
+	case "pause_replay", "resume_replay":
+		pause := st.Op == "pause_replay"
+		if err := r.replay(pause); err != nil {
+			return []string{err.Error()}, true
+		}
+		r.paused = pause
+	case "sleep":
+		d, err := time.ParseDuration(st.Duration)
+		if err != nil {
+			return []string{err.Error()}, true
+		}
+		time.Sleep(d)
+	default:
+		return nil, false
+	}
+	return nil, true
+}
+
 // run runs one step and returns its problems, and the error of a call that
 // failed where the step expects none.
 func (r *runner) run(st Step) ([]string, error) {
+	if ps, ok := r.control(st); ok {
+		return ps, nil
+	}
 	storeName, method, ok := strings.Cut(st.Op, ".")
 	if !ok && st.Op != "select" {
 		return r.transact(st)
@@ -411,6 +467,13 @@ func (r *runner) read(st Step) (any, error, []string) {
 	}
 	if st.Limit > 0 {
 		b = b.MethodByName("Limit").Call([]reflect.Value{reflect.ValueOf(st.Limit)})[0]
+	}
+	if st.Consistency != "" {
+		c, err := consistency(st)
+		if err != nil {
+			return nil, nil, []string{err.Error()}
+		}
+		b = b.MethodByName("Consistency").Call([]reflect.Value{reflect.ValueOf(c)})[0]
 	}
 	ctx := reflect.ValueOf(r.ctx)
 	switch st.Read {
@@ -613,6 +676,38 @@ func (r *runner) assignments(as []Assign, storeName string, elem reflect.Type) (
 		out = append(out, m.Call([]reflect.Value{v})[0].Convert(elem))
 	}
 	return out, nil
+}
+
+// consistency builds a select step's consistency level.
+func consistency(st Step) (dql.Consistency, error) {
+	var bound, wait time.Duration
+	var err error
+	for _, d := range []struct {
+		name string
+		text string
+		to   *time.Duration
+	}{{"bound", st.Bound, &bound}, {"wait", st.Wait, &wait}} {
+		if d.text != "" {
+			if *d.to, err = time.ParseDuration(d.text); err != nil {
+				return dql.Consistency{}, fmt.Errorf("%s: %w", d.name, err)
+			}
+		}
+	}
+	switch st.Consistency {
+	case "primary":
+		return dql.Primary, nil
+	case "any":
+		return dql.Any, nil
+	case "bounded":
+		return dql.Bounded(bound), nil
+	case "read_your_writes":
+		c := dql.ReadYourWrites.Wait(wait)
+		if st.OrFail {
+			c = c.OrFail()
+		}
+		return c, nil
+	}
+	return dql.Consistency{}, fmt.Errorf("no consistency %s", st.Consistency)
 }
 
 // generate expands an input of the form { generate: { count: n, row: r } }
