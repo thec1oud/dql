@@ -43,6 +43,9 @@ message Query {
   // The tables and views the query reads or writes, sorted, for the scope
   // checks (§21.2).
   repeated QualifiedName tables = 14;
+  // Proven to return at most one row, through an equality filter on every
+  // column of an identifying key, so the extra-row check is skipped (§19).
+  bool at_most_one = 15;
 }
 
 enum QuerySource {
@@ -79,6 +82,10 @@ message Param {
   bool nullable = 3;
   // Written sqlc.slice: one placeholder holding a list (§25).
   bool list = 4;
+  // An optional field of a builder write, which a call may leave out (§14.2).
+  // Left out, it renders DEFAULT where it fills a VALUES row, and the set
+  // fragment it fills is dropped from its list.
+  bool optional = 5;
 }
 
 // The rows a query returns: a shape of the shape layer, or the query's own.
@@ -144,10 +151,12 @@ message ScopeUse {
 // A builder query as fragments of the fragment table, with their holes
 // filled (§16.2).
 message FragmentPlan {
-  FragmentUse root = 1;
+  // Joined in order, with nothing between them.
+  repeated FragmentUse parts = 1;
 }
 
-// One fragment of the table and what fills its holes.
+// One fragment of the table and what fills its holes. A hole nothing fills
+// renders as nothing.
 message FragmentUse {
   // The fragment's id, such as op.ilike.
   string fragment = 1;
@@ -161,7 +170,9 @@ message HoleFill {
   string hole = 1;
   oneof value {
     FragmentUse fragment = 2;
-    // A parameter by name; the runtime numbers its placeholder.
+    // A parameter by name; the runtime numbers its placeholder. A builder
+    // query names a key column key.<column> and a scope column
+    // scope.<column>, whose value comes from the handle's scope (§21.1).
     string param = 3;
     // Fragments joined by a separator, such as a column list.
     FragmentList list = 4;
@@ -169,6 +180,15 @@ message HoleFill {
 }
 
 message FragmentList {
-  repeated FragmentUse items = 1;
+  repeated ListItem items = 1;
   string separator = 2;
+}
+
+// One item of a list: a fragment, or a parameter, such as in a VALUES row.
+message ListItem {
+  oneof value {
+    FragmentUse fragment = 1;
+    // A parameter by name, as in HoleFill.
+    string param = 2;
+  }
 }
