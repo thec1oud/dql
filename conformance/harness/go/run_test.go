@@ -58,6 +58,17 @@ func TestRunProblems(t *testing.T) {
 		{"- op: nope\n", []string{"no transaction nope"}},
 		{"- op: tenants.insert_many\n  input: { generate: { count: x, row: { name: a } } }\n", []string{"generate: count x is not a number"}},
 		{"- op: tenants.insert_many\n  input: { generate: { count: 2, row: { name: \"g-$i\" } } }\n  expect: { count: 3, statements: 2, rows: [{ name: g-1 }, { name: g-2 }] }\n", []string{"want count 3, got 2", "want 2 statements, got 1"}},
+		{"- op: select\n  from: tenants\n  shape: nope\n", []string{"no shape nope"}},
+		{"- op: select\n  from: nope\n  shape: tenant_full\n", []string{"no store nope"}},
+		{"- op: select\n  from: tags\n  shape: tenant_full\n", []string{"shape tenant_full is not read through tags"}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  filter: [{ column: nope, op: eq }]\n", []string{"no column nope of tenants"}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  filter: [{ column: name, op: nope }]\n", []string{"column name has no nope"}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  filter: [{ column: name, op: eq, value: [1] }]\n", []string{"filter name: "}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  filter: [{ column: name, op: in, value: { generate: { count: x } } }]\n", []string{"filter name: generate: count x is not a number"}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  order: [{ column: nope }]\n", []string{"no column nope of tenants"}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  read: nope\n", []string{"no read nope"}},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  filter: [{ column: name, op: regex_match, value: \"(\" }]\n  expect: { error: { class: DatabaseError } }\n", nil},
+		{"- op: select\n  from: tenants\n  shape: tenant_full\n  order: [{ column: name }]\n  limit: 1\n  expect: { rows: [{ name: nope }] }\n", []string{"row 0 name: want nope, got acme"}},
 		{"- op: tenants.count\n  expect: { events: [] }\n", []string{"want 0 events, got 1: "}},
 		{"- op: tenants.count\n  expect: { events: [{ query: nope }] }\n", []string{"event 1 query: want nope, got tenant.count"}},
 		{"- op: users.get\n" + scope + "  key: { id: 999999 }\n  expect: { error: { class: NotFound, hides: user } }\n", []string{"error shows user: "}},
@@ -148,6 +159,10 @@ func TestGenerate(t *testing.T) {
 	got, err := generate(map[string]any{"generate": map[string]any{"count": 2, "row": map[string]any{"name": "n-$i", "size": 3}}})
 	want := []any{map[string]any{"name": "n-1", "size": 3}, map[string]any{"name": "n-2", "size": 3}}
 	if err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("generated %v, %v", got, err)
+	}
+	got, err = generate(map[string]any{"generate": map[string]any{"count": 2, "value": "v-$i"}})
+	if err != nil || !reflect.DeepEqual(got, []any{"v-1", "v-2"}) {
 		t.Errorf("generated %v, %v", got, err)
 	}
 }

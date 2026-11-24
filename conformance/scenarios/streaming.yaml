@@ -1,0 +1,48 @@
+scenario: streaming
+schema: shop
+steps:
+  - op: tenants.insert_many
+    input: { generate: { count: 5000, row: { name: "s-$i" } } }
+    expect: { count: 5000 }
+  # A stream reads every row in one query, as All does (§25.1).
+  - op: select
+    from: tenants
+    shape: tenant_full
+    read: iter
+    expect: { count: 5000, statements: 1 }
+  - op: select
+    from: tenants
+    shape: tenant_full
+    order: [{ column: name, desc: true }]
+    limit: 2
+    read: iter
+    expect: { rows: [{ name: s-999 }, { name: s-998 }] }
+  # Ending iteration early gives its connection back: the executor holds 4,
+  # and five early stops in a row still leave one for the next read.
+  - { op: select, from: tenants, shape: tenant_full, read: iter, stop: 1, expect: { count: 1 } }
+  - { op: select, from: tenants, shape: tenant_full, read: iter, stop: 1, expect: { count: 1 } }
+  - { op: select, from: tenants, shape: tenant_full, read: iter, stop: 1, expect: { count: 1 } }
+  - { op: select, from: tenants, shape: tenant_full, read: iter, stop: 1, expect: { count: 1 } }
+  - { op: select, from: tenants, shape: tenant_full, read: iter, stop: 3, expect: { count: 3 } }
+  - op: tenants.count
+    expect: { value: 5000 }
+  # A stream that matches nothing ends without a row.
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: eq, value: nobody }]
+    read: iter
+    expect: { rows: [] }
+  # A server error ends the stream with that error.
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: regex_match, value: "(" }]
+    read: iter
+    expect: { error: { class: DatabaseError } }
+  # A stream in a read transaction reads on the transaction's connection.
+  - op: read
+    steps:
+      - { op: select, from: tenants, shape: tenant_full, read: iter, stop: 10, expect: { count: 10 } }
+      - op: tenants.count
+        expect: { value: 5000 }
