@@ -52,6 +52,8 @@ enum PluginKind {
   PLUGIN_KIND_DIALECT = 2;
   PLUGIN_KIND_TYPE = 3;
   PLUGIN_KIND_EMITTER = 4;
+  // Parses and types query files (§16.1, §17).
+  PLUGIN_KIND_QUERY_SOURCE = 5;
 }
 
 // The IR versions a plugin reads: at least min, and no major above max_major.
@@ -76,6 +78,16 @@ message Invoke {
   // included. The plugin validates it; the core checks only the keys it
   // reads itself.
   google.protobuf.Struct settings = 2;
+  // For a query-source plugin: the query files dql.yaml lists, sorted by
+  // path (§17).
+  repeated QueryFile query_files = 3;
+}
+
+// A query file as the core read it.
+message QueryFile {
+  // Relative to the directory of dql.yaml, with forward slashes.
+  string path = 1;
+  string text = 2;
 }
 
 message InvokeResult {

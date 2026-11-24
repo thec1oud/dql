@@ -34,6 +34,9 @@ type Config struct {
 	Conversions []Conversion `yaml:"conversions"`
 	// Operator settings (§9.3).
 	Operators Operators `yaml:"operators"`
+	// Query files, as patterns relative to the directory of dql.yaml in
+	// the syntax of filepath.Match, such as queries/*.sql (§17).
+	Queries []string `yaml:"queries"`
 	// Project-wide settings (§7.2).
 	DefaultCatalog string `yaml:"default-catalog"`
 	OpaqueFallback string `yaml:"opaque-fallback"`
@@ -72,6 +75,35 @@ type Operators struct {
 	// AllowApproximate names the operators generated where the dialect
 	// performs them only approximately, such as [ilike, regex_match].
 	AllowApproximate []string `yaml:"allow-approximate"`
+}
+
+// QueryFiles reads the files the queries: patterns match, sorted by their
+// path relative to the directory of dql.yaml, with forward slashes. A
+// pattern that matches no file is an error.
+func (c *Config) QueryFiles() ([]*irv1.QueryFile, error) {
+	paths := map[string]bool{}
+	for _, pattern := range c.Queries {
+		matches, err := filepath.Glob(c.Resolve(pattern))
+		if err != nil {
+			return nil, fmt.Errorf("queries: %q: %w", pattern, err)
+		}
+		if len(matches) == 0 {
+			return nil, fmt.Errorf("queries: %q matches no file", pattern)
+		}
+		for _, m := range matches {
+			paths[m] = true
+		}
+	}
+	var files []*irv1.QueryFile
+	for _, p := range slices.Sorted(maps.Keys(paths)) {
+		text, err := os.ReadFile(p)
+		if err != nil {
+			return nil, fmt.Errorf("queries: %w", err)
+		}
+		rel, _ := filepath.Rel(c.dir, p)
+		files = append(files, &irv1.QueryFile{Path: filepath.ToSlash(rel), Text: string(text)})
+	}
+	return files, nil
 }
 
 // CustomShapes returns the shapes: entries for the shape layer, sorted by

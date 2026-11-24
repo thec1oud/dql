@@ -4,7 +4,9 @@ package dql.ir.v1;
 
 import "dql/ir/v1/catalog.proto";
 import "dql/ir/v1/diagnostics.proto";
+import "dql/ir/v1/objects.proto";
 import "dql/ir/v1/operators.proto";
+import "dql/ir/v1/queries.proto";
 import "dql/ir/v1/shapes.proto";
 
 option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
@@ -77,5 +79,41 @@ message ShapeLayer {
   repeated KeyMerge merges = 5;
 }
 
-// Query entries (§16). Its fields arrive with M4.
-message QueryLayer {}
+// Query entries and the fragment table they are assembled from (§16).
+message QueryLayer {
+  // From query files and the builder, sorted by name.
+  repeated Query queries = 1;
+  // Rendered by the dialect plugin (§16.2, §18.4).
+  FragmentTable fragments = 2;
+}
+
+// The SQL pieces a dialect plugin renders for the builder, as templates
+// with holes (§16.2, §18.4). The runtime fills holes and numbers
+// placeholders; it never renders SQL itself.
+message FragmentTable {
+  Dialect dialect = 1;
+  Placeholder placeholder = 2;
+  // Sorted by id.
+  repeated Fragment fragments = 3;
+}
+
+message Fragment {
+  // Such as select.user_summary, col.users.email, op.ilike, clause.where
+  // or wrap.distinct_on.
+  string id = 1;
+  // SQL with holes written {0} or {name}.
+  string template = 2;
+  // Set on operators and emulation wrappers (§9.2).
+  Fidelity fidelity = 3;
+}
+
+// How a dialect writes the n-th placeholder.
+enum Placeholder {
+  PLACEHOLDER_UNSPECIFIED = 0;
+  // $1, Postgres.
+  PLACEHOLDER_DOLLAR_NUMBERED = 1;
+  // ?, MySQL, MariaDB and SQLite.
+  PLACEHOLDER_QUESTION = 2;
+  // @p1, SQL Server.
+  PLACEHOLDER_AT_NUMBERED = 3;
+}

@@ -7,6 +7,7 @@ require (
 	github.com/thec1oud/dql/dialects v0.0.0
 	github.com/thec1oud/dql/plugin v0.0.0
 	github.com/thec1oud/dql/proto v0.0.0
+	github.com/thec1oud/dql/querysources v0.0.0
 	github.com/thec1oud/dql/sources v0.0.0
 	github.com/thec1oud/dql/testkit v0.0.0
 )
@@ -41,3 +42,5 @@ replace github.com/thec1oud/dql/sources => ../../sources
 replace github.com/thec1oud/dql/emitters/go => ../../emitters/go
 
 replace github.com/thec1oud/dql/dialects => ../../dialects
+
+replace github.com/thec1oud/dql/querysources => ../../querysources
