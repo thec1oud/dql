@@ -24,7 +24,10 @@ func sameFiles(t *testing.T, dir, want string) {
 		}
 		var out []string
 		for _, e := range entries {
-			out = append(out, e.Name())
+			// The golden package's hand-written test is not generated (§26.5).
+			if strings.HasSuffix(e.Name(), ".dql.go") {
+				out = append(out, e.Name())
+			}
 		}
 		return out
 	}

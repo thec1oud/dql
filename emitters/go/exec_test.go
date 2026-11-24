@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/thec1oud/dql/emitters/go/internal/gen"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
@@ -33,7 +34,7 @@ func TestExecutable(t *testing.T) {
 	if err != nil || len(res.GetDiagnostics()) != 0 {
 		t.Fatal(err, res.GetDiagnostics())
 	}
-	want, _ := filepath.Glob(filepath.Join("testdata", "shopdb", "*"))
+	want, _ := filepath.Glob(filepath.Join("testdata", "shopdb", "*"+gen.Suffix))
 	for _, w := range want {
 		got, err := os.ReadFile(filepath.Join(dir, "out", filepath.Base(w)))
 		if err != nil {

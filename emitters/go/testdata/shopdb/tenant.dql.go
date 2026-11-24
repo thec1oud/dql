@@ -7,6 +7,7 @@
 package shopdb
 
 import (
+	"context"
 	"slices"
 
 	"github.com/google/uuid"
@@ -265,4 +266,209 @@ func DecodeTenantKey(r dql.Row) (TenantKey, error) {
 	var out TenantKey
 	out.ID = dql.Field(d, 0, "id", "", dql.As[uuid.UUID])
 	return out, d.Err()
+}
+
+// The builder queries of shop.app.tenants (§16.3).
+var (
+	tenantGetByPrimary = &dql.Query{
+		Name:      "tenant.get.by_primary",
+		Catalog:   "shop",
+		Kind:      "get",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.tenant.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}},
+		},
+	}
+	tenantFindByPrimary = &dql.Query{
+		Name:      "tenant.find.by_primary",
+		Catalog:   "shop",
+		Kind:      "find",
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "select.tenant.full.flat"},
+			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}},
+		},
+	}
+	tenantCount = &dql.Query{
+		Name:    "tenant.count",
+		Catalog: "shop",
+		Kind:    "count",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "count.tenants"},
+		},
+	}
+	tenantExists = &dql.Query{
+		Name:    "tenant.exists",
+		Catalog: "shop",
+		Kind:    "exists",
+		Plan: []dql.Node{
+			dql.Use{Fragment: "exists.tenants"},
+		},
+	}
+	tenantInsert = &dql.Query{
+		Name:    "tenant.insert",
+		Catalog: "shop",
+		Kind:    "insert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "insert.tenants", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}}},
+		},
+	}
+	tenantUpsertByPrimary = &dql.Query{
+		Name:    "tenant.upsert.by_primary",
+		Catalog: "shop",
+		Kind:    "upsert",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "upsert.tenants.tenants_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.tenants.name"}}}}, Separator: ", "}}},
+		},
+	}
+	tenantPatch = &dql.Query{
+		Name:      "tenant.patch",
+		Catalog:   "shop",
+		Kind:      "patch",
+		Writes:    true,
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.tenants", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+	tenantDelete = &dql.Query{
+		Name:    "tenant.delete",
+		Catalog: "shop",
+		Kind:    "delete",
+		Writes:  true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "delete.tenants", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}}}},
+		},
+	}
+)
+
+// TenantsReadStore reads shop.app.tenants (§26.3).
+type TenantsReadStore interface {
+	Get(ctx context.Context, k TenantKey) (TenantFull, error)
+	Find(ctx context.Context, k TenantKey) (opt.Opt[TenantFull], error)
+	Count(ctx context.Context) (int64, error)
+	Exists(ctx context.Context) (bool, error)
+}
+
+// TenantsStore reads and writes shop.app.tenants (§26.3).
+type TenantsStore interface {
+	TenantsReadStore
+	Insert(ctx context.Context, d TenantDraft) (TenantFull, error)
+	Upsert(ctx context.Context, d TenantDraft) (TenantFull, error)
+	Patch(ctx context.Context, k TenantKey, p TenantPartial) (TenantFull, error)
+	Delete(ctx context.Context, k TenantKey) error
+}
+
+// tenantsReads implements TenantsReadStore on a handle that reads.
+type tenantsReads struct {
+	h dql.Reader
+}
+
+// tenantsWrites implements TenantsStore on a handle that writes.
+type tenantsWrites struct {
+	tenantsReads
+	w dql.Writer
+}
+
+// Get runs tenant.get.by_primary (§19).
+func (s tenantsReads) Get(ctx context.Context, k TenantKey) (TenantFull, error) {
+	st, err := tenantGetByPrimary.Statement(fragments, dql.Args{"key.id": k.ID})
+	if err != nil {
+		return TenantFull{}, err
+	}
+	return dql.OneOf(ctx, s.h, st, DecodeTenantFull)
+}
+
+// Find runs tenant.find.by_primary (§19).
+func (s tenantsReads) Find(ctx context.Context, k TenantKey) (opt.Opt[TenantFull], error) {
+	st, err := tenantFindByPrimary.Statement(fragments, dql.Args{"key.id": k.ID})
+	if err != nil {
+		return opt.None[TenantFull](), err
+	}
+	return dql.OptionalOf(ctx, s.h, st, DecodeTenantFull)
+}
+
+// Count runs tenant.count (§19).
+func (s tenantsReads) Count(ctx context.Context) (int64, error) {
+	st, err := tenantCount.Statement(fragments, dql.Args{})
+	if err != nil {
+		return 0, err
+	}
+	return dql.Count(ctx, s.h, st)
+}
+
+// Exists runs tenant.exists (§19).
+func (s tenantsReads) Exists(ctx context.Context) (bool, error) {
+	st, err := tenantExists.Statement(fragments, dql.Args{})
+	if err != nil {
+		return false, err
+	}
+	return dql.Exists(ctx, s.h, st)
+}
+
+// Insert runs tenant.insert (§20.1).
+func (s tenantsWrites) Insert(ctx context.Context, d TenantDraft) (TenantFull, error) {
+	if err := d.Validate(); err != nil {
+		return TenantFull{}, err
+	}
+	args := dql.Args{"name": d.Name}
+	if v, ok := d.ID.Get(); ok {
+		args["id"] = v
+	}
+	st, err := tenantInsert.Statement(fragments, args)
+	if err != nil {
+		return TenantFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeTenantFull)
+}
+
+// Upsert runs tenant.upsert.by_primary (§20.1).
+func (s tenantsWrites) Upsert(ctx context.Context, d TenantDraft) (TenantFull, error) {
+	if err := d.Validate(); err != nil {
+		return TenantFull{}, err
+	}
+	args := dql.Args{"name": d.Name}
+	if v, ok := d.ID.Get(); ok {
+		args["id"] = v
+	}
+	st, err := tenantUpsertByPrimary.Statement(fragments, args)
+	if err != nil {
+		return TenantFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeTenantFull)
+}
+
+// Patch runs tenant.patch (§20.1).
+func (s tenantsWrites) Patch(ctx context.Context, k TenantKey, p TenantPartial) (TenantFull, error) {
+	if err := p.Validate(); err != nil {
+		return TenantFull{}, err
+	}
+	args := dql.Args{"key.id": k.ID}
+	set := false
+	if v, ok := p.Name.Get(); ok {
+		args["name"] = v
+		set = true
+	}
+	if !set {
+		// Nothing to change: the row as it is.
+		return s.Get(ctx, k)
+	}
+	st, err := tenantPatch.Statement(fragments, args)
+	if err != nil {
+		return TenantFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeTenantFull)
+}
+
+// Delete runs tenant.delete (§20.1).
+func (s tenantsWrites) Delete(ctx context.Context, k TenantKey) error {
+	st, err := tenantDelete.Statement(fragments, dql.Args{"key.id": k.ID})
+	if err != nil {
+		return err
+	}
+	_, err = dql.Exec(ctx, s.w, st)
+	return err
 }
