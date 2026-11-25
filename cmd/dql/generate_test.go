@@ -180,7 +180,7 @@ annotations:
 `
 	out := filepath.Join(t.TempDir(), "bundle.json")
 	code, _, stderr := dql("generate", "-config", write(t, "dql.yaml", cfg), "-bundle", out)
-	if code != 0 || !strings.HasPrefix(stderr, "warning annotation-redundant: core.nonnull on shop.app.users.email changes nothing") {
+	if code != 0 || !strings.HasPrefix(stderr, "warning annotation-redundant shop.app.users.email: core.nonnull on shop.app.users.email changes nothing") {
 		t.Fatalf("%d %q", code, stderr)
 	}
 	b := &irv1.Bundle{}

@@ -106,7 +106,7 @@ func TestGenerateQueryFailures(t *testing.T) {
 		t.Errorf("bad query: %d %q", code, stderr)
 	}
 	unscoped := write(t, "unscoped.sql", "-- name: AllUsers :many\nSELECT id FROM app.users")
-	if code, stderr, _ := generateShapes(t, "queries: ["+unscoped+"]\n"); code != 1 || !strings.Contains(stderr, "error query-unscoped: query reads shop.app.users, which is scoped by tenant_id") {
+	if code, stderr, _ := generateShapes(t, "queries: ["+unscoped+"]\n"); code != 1 || !strings.Contains(stderr, "error query-unscoped shop.app.users: query reads shop.app.users, which is scoped by tenant_id") {
 		t.Errorf("unscoped: %d %q", code, stderr)
 	}
 	if code, stderr, _ := generateShapes(t, "queries: [none/*.sql]\n"); code != 1 || !strings.Contains(stderr, `dql generate: queries: "none/*.sql" matches no file`) {
