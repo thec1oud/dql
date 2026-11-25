@@ -87,8 +87,9 @@ type Step struct {
 	Inject      *Inject `yaml:"inject"`
 	Rollback    bool    `yaml:"rollback"`
 
-	// A select step, op select, reads Shape through the store From, keeping
-	// the rows every Filter holds for, in Order, at most Limit of them. Read
+	// A select step, op select, reads Shape through the store From of the
+	// handle Scope reaches, keeping the rows every Filter holds for, in
+	// Order, at most Limit of them. Read
 	// is all (the default), one, the only row, iter, which streams the rows
 	// and, with Stop, ends iteration after that many, or count.
 	From   string     `yaml:"from"`
@@ -98,6 +99,9 @@ type Step struct {
 	Limit  int64      `yaml:"limit"`
 	Read   string     `yaml:"read"`
 	Stop   int        `yaml:"stop"`
+	// Deleted is with to keep soft-deleted rows too, or only to keep only
+	// them (§21.3).
+	Deleted string `yaml:"deleted"`
 	// Consistency is the read's level: primary, any, bounded, with Bound,
 	// or read_your_writes, with Wait and OrFail. Bound and Wait are Go
 	// durations, as 500ms.
@@ -133,7 +137,8 @@ type Step struct {
 }
 
 // Filter is a predicate of a select step: the column's operator Op, as eq
-// or in, on Value.
+// or in, on Value. Column may name a relation, whose Op is any or none,
+// with no Value.
 type Filter struct {
 	Column string `yaml:"column"`
 	Op     string `yaml:"op"`
@@ -654,17 +659,9 @@ func (r *runner) convert(st Step) []string {
 // call calls the step's method and returns its result, normalized, or its
 // error, or the problems that kept it from being called.
 func (r *runner) call(st Step, storeName, method string) (any, error, []string) {
-	h := r.db
-	if st.Scope != nil {
-		with, ok := member(h, "WithScope")
-		if !ok {
-			return nil, nil, []string{"the handle has no WithScope"}
-		}
-		scope, err := r.decode(st.Scope, with.Type().In(0))
-		if err != nil {
-			return nil, nil, []string{"scope: " + err.Error()}
-		}
-		h = with.Call([]reflect.Value{scope})[0]
+	h, problems := r.handle(st)
+	if problems != nil {
+		return nil, nil, problems
 	}
 	store, ok := member(h, storeName)
 	if !ok {
@@ -688,6 +685,22 @@ func (r *runner) call(st Step, storeName, method string) (any, error, []string) 
 	return nil, nil, nil
 }
 
+// handle is the handle a step runs on: through WithScope, given its scope.
+func (r *runner) handle(st Step) (reflect.Value, []string) {
+	if st.Scope == nil {
+		return r.db, nil
+	}
+	with, ok := member(r.db, "WithScope")
+	if !ok {
+		return reflect.Value{}, []string{"the handle has no WithScope"}
+	}
+	scope, err := r.decode(st.Scope, with.Type().In(0))
+	if err != nil {
+		return reflect.Value{}, []string{"scope: " + err.Error()}
+	}
+	return with.Call([]reflect.Value{scope})[0], nil
+}
+
 // encode turns a result into its JSON form, normalized.
 func encode(v any) any {
 	var out any
@@ -704,7 +717,11 @@ func (r *runner) read(st Step) (any, error, []string) {
 	if !ok {
 		return nil, nil, []string{"no shape " + st.Shape}
 	}
-	store, ok := member(r.db, st.From)
+	h, problems := r.handle(st)
+	if problems != nil {
+		return nil, nil, problems
+	}
+	store, ok := member(h, st.From)
 	if !ok {
 		return nil, nil, []string{"no store " + st.From}
 	}
@@ -727,7 +744,11 @@ func (r *runner) read(st Step) (any, error, []string) {
 		if err == nil {
 			var x reflect.Value
 			if x, err = r.decode(v, op.Type().In(0)); err == nil {
-				b = b.MethodByName("Where").Call(op.Call([]reflect.Value{x}))[0]
+				call := op.Call
+				if op.Type().IsVariadic() {
+					call = op.CallSlice
+				}
+				b = b.MethodByName("Where").Call(call([]reflect.Value{x}))[0]
 				continue
 			}
 		}
@@ -743,6 +764,17 @@ func (r *runner) read(st Step) (any, error, []string) {
 			dir = "Desc"
 		}
 		b = b.MethodByName("OrderBy").Call(col.MethodByName(dir).Call(nil))[0]
+	}
+	switch st.Deleted {
+	case "with", "only":
+		m := b.MethodByName(map[string]string{"with": "WithDeleted", "only": "OnlyDeleted"}[st.Deleted])
+		if !m.IsValid() {
+			return nil, nil, []string{"the schema has no soft delete"}
+		}
+		b = m.Call(nil)[0]
+	case "":
+	default:
+		return nil, nil, []string{"no deleted " + st.Deleted}
 	}
 	if st.Limit > 0 {
 		b = b.MethodByName("Limit").Call([]reflect.Value{reflect.ValueOf(st.Limit)})[0]

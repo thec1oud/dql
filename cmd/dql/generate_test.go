@@ -38,6 +38,9 @@ var (
 	// driftlessURL connects to one holding the running example without what
 	// the dpg snapshot of it lacks, testdata/dpg/drift.sql.
 	driftlessURL string
+	// variantsURL connects to one holding the running example with the
+	// conformance variants applied, conformance/schemas/postgres/variants.sql.
+	variantsURL string
 	// dpgBin is the dpg-snapshot source built as an executable.
 	dpgBin string
 	// echoBin is the echo plugin built as an executable.
@@ -99,6 +102,7 @@ func setup(m *testing.M) int {
 		{&extrasURL, []string{schema, filepath.Join("testdata", "extras.sql")}},
 		{&driftlessURL, []string{schema, filepath.Join("testdata", "dpg", "drift.sql")}},
 		{&opaqueURL, []string{schema, filepath.Join("testdata", "opaque.sql")}},
+		{&variantsURL, []string{schema, filepath.Join(conformanceSchemas, "variants.sql")}},
 	} {
 		db, err := pgtest.Create(ctx, admin, d.files...)
 		if err != nil {

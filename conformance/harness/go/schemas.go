@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/thec1oud/dql/conformance/harness/go/testdata/variantdb"
 	"github.com/thec1oud/dql/emitters/go/testdata/shopdb"
 	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/dqlpgx"
@@ -17,29 +18,15 @@ import (
 
 // Schemas are the schemas scenarios name, each with the Go emitter's code
 // for it: shop is the running example, generated into the emitter's golden
-// package.
+// package, and shop_variants the running example with the design record's
+// variants of it (conformance/schemas/postgres/variants.yaml), generated
+// into testdata/variantdb.
 var Schemas = map[string]Schema{
 	"shop": {
 		DDL:     []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
 		Dialect: "postgres",
 		Exec:    run,
-		Open: func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (any, *dql.Executor, error) {
-			if maxConns == 0 {
-				maxConns = 4
-			}
-			src := dql.SourceConfig{Primary: dql.ConnConfig{DSN: dsn, MaxConns: maxConns}, MaxLag: maxLag}
-			for _, r := range replicas {
-				src.Replicas = append(src.Replicas, dql.ConnConfig{DSN: r, MaxConns: 4})
-			}
-			e, err := shopdb.NewExecutor(ctx, dqlpgx.New(), dql.Config{
-				Sources:  map[string]dql.SourceConfig{"main": src},
-				Catalogs: map[string]string{"shop": "main"},
-			}, append([]dql.Option{dql.WithTrackInterval(trackInterval)}, opts...)...)
-			if err != nil {
-				return nil, nil, err
-			}
-			return shopdb.New(e), e, nil
-		},
+		Open:    opener(shopdb.NewExecutor, shopdb.New),
 		Tables: map[string]any{
 			"tenants": shopdb.Tenants, "users": shopdb.Users, "profiles": shopdb.Profiles,
 			"posts": shopdb.Posts, "tags": shopdb.Tags, "post_tags": shopdb.PostTags,
@@ -106,6 +93,105 @@ var Schemas = map[string]Schema{
 			"user_full":           shopdb.Select[shopdb.UserFull, shopdb.UsersTable],
 		},
 	},
+	"shop_variants": {
+		DDL:     []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/variants.sql", "conformance/schemas/postgres/inject.sql"},
+		Dialect: "postgres",
+		Exec:    run,
+		Open:    opener(variantdb.NewExecutor, variantdb.New),
+		Tables: map[string]any{
+			"tenants": variantdb.Tenants, "users": variantdb.Users, "profiles": variantdb.Profiles,
+			"posts": variantdb.Posts, "tags": variantdb.Tags, "post_tags": variantdb.PostTags,
+		},
+		Changes: []any{
+			variantdb.PostAuthorCreate, variantdb.PostAuthorLink, variantdb.PostAuthorUpdate,
+			variantdb.PostCreateForAuthor, variantdb.PostDeleteForAuthor, variantdb.PostUpdateForAuthor,
+			variantdb.PostCreateForEditor, variantdb.PostDeleteForEditor, variantdb.PostUpdateForEditor,
+			variantdb.PostEditorCreate, variantdb.PostEditorLink, variantdb.PostEditorUpdate,
+			variantdb.PostLinkCreate, variantdb.PostLinkKey, variantdb.PostRefCreate, variantdb.PostRefLink,
+			variantdb.PostTagCreateForPost, variantdb.PostTagDeleteForPost, variantdb.PostTagUpdateForPost,
+			variantdb.PostTagCreateForTag, variantdb.PostTagDeleteForTag, variantdb.PostTagUpdateForTag,
+			variantdb.PostTagPostUpdate, variantdb.PostTagTagUpdate,
+			variantdb.PostTagsCreate, variantdb.PostTagsLink, variantdb.PostTagsUnlink,
+			variantdb.ProfileCreateForUser, variantdb.ProfileDeleteForUser, variantdb.ProfileUpdateForUser,
+			variantdb.ProfileUserUpdate,
+			variantdb.TagLinkCreate, variantdb.TagLinkKey, variantdb.TagPostsCreate, variantdb.TagPostsLink, variantdb.TagPostsUnlink,
+			variantdb.TagRefCreate, variantdb.TagRefLink, variantdb.UserRefCreate, variantdb.UserRefLink,
+			opt.Some[variantdb.PostAuthorChange], opt.Some[variantdb.PostEditorChange], opt.Some[variantdb.PostRef],
+			opt.Some[variantdb.PostTagPostChange], opt.Some[variantdb.PostTagTagChange],
+			opt.Some[variantdb.ProfileChangeForUser], opt.Some[variantdb.ProfileUserChange],
+			opt.Some[variantdb.TagRef], opt.Some[variantdb.UserRef],
+			opt.Some[[]variantdb.PostChangeForAuthor], opt.Some[[]variantdb.PostChangeForEditor],
+			opt.Some[[]variantdb.PostTagChangeForPost], opt.Some[[]variantdb.PostTagChangeForTag],
+			opt.Some[[]variantdb.PostTagsChange], opt.Some[[]variantdb.TagPostsChange],
+		},
+		Inject:    injectPostgres,
+		Terminate: terminatePostgres,
+		Replay:    replayPostgres,
+		Shapes:    variantdb.Shapes,
+		Types: []any{
+			variantdb.PostDraft{}, variantdb.PostDraftNested{}, variantdb.PostDraftNests{}, variantdb.PostFull{},
+			variantdb.PostFullNested{}, variantdb.PostFullNests{}, variantdb.PostKey{}, variantdb.PostPartial{},
+			variantdb.PostPartialNested{}, variantdb.PostPartialNests{}, variantdb.PostTagDraft{},
+			variantdb.PostTagDraftNested{}, variantdb.PostTagDraftNests{}, variantdb.PostTagFull{},
+			variantdb.PostTagFullNested{}, variantdb.PostTagFullNests{}, variantdb.PostTagKey{}, variantdb.PostTagPartial{},
+			variantdb.PostTagPartialNested{}, variantdb.PostTagPartialNests{}, variantdb.ProfileDraft{},
+			variantdb.ProfileDraftNested{}, variantdb.ProfileDraftNests{}, variantdb.ProfileFull{},
+			variantdb.ProfileFullNested{}, variantdb.ProfileFullNests{}, variantdb.ProfileKey{}, variantdb.ProfilePartial{},
+			variantdb.ProfilePartialNested{}, variantdb.ProfilePartialNests{}, variantdb.PublishedPostFull{},
+			variantdb.PublishedPostFullNested{}, variantdb.PublishedPostFullNests{}, variantdb.PublishedPostKey{},
+			variantdb.TagDraft{}, variantdb.TagDraftNested{}, variantdb.TagDraftNests{}, variantdb.TagFull{},
+			variantdb.TagFullNested{}, variantdb.TagFullNests{}, variantdb.TagKey{}, variantdb.TagPartial{},
+			variantdb.TagPartialNested{}, variantdb.TagPartialNests{}, variantdb.TenantDraft{},
+			variantdb.TenantDraftNested{}, variantdb.TenantDraftNests{}, variantdb.TenantFull{},
+			variantdb.TenantFullNested{}, variantdb.TenantFullNests{}, variantdb.TenantKey{}, variantdb.TenantPartial{},
+			variantdb.TenantPartialNested{}, variantdb.TenantPartialNests{}, variantdb.UserDraft{},
+			variantdb.UserDraftNested{}, variantdb.UserDraftNests{}, variantdb.UserFull{}, variantdb.UserFullNested{},
+			variantdb.UserFullNests{}, variantdb.UserKey{}, variantdb.UserPartial{}, variantdb.UserPartialNested{},
+			variantdb.UserPartialNests{}, variantdb.UserScope{}, variantdb.UserSummary{}, variantdb.UserSummaryNamed{}, variantdb.PostWithTags{},
+		},
+		Funcs: map[string]any{
+			"merge_post_by_key": variantdb.MergePostByKey, "merge_post_tag_by_key": variantdb.MergePostTagByKey,
+			"merge_profile_by_key": variantdb.MergeProfileByKey, "merge_tag_by_key": variantdb.MergeTagByKey,
+			"merge_tenant_by_key": variantdb.MergeTenantByKey, "merge_user_by_key": variantdb.MergeUserByKey,
+		},
+		Selects: map[string]any{
+			"post_full":           variantdb.Select[variantdb.PostFull, variantdb.PostsTable],
+			"post_tag_full":       variantdb.Select[variantdb.PostTagFull, variantdb.PostTagsTable],
+			"profile_full":        variantdb.Select[variantdb.ProfileFull, variantdb.ProfilesTable],
+			"published_post_full": variantdb.Select[variantdb.PublishedPostFull, variantdb.PublishedPostsTable],
+			"tag_full":            variantdb.Select[variantdb.TagFull, variantdb.TagsTable],
+			"tenant_full":         variantdb.Select[variantdb.TenantFull, variantdb.TenantsTable],
+			"user_full":           variantdb.Select[variantdb.UserFull, variantdb.UsersTable],
+			"user_summary":        variantdb.Select[variantdb.UserSummary, variantdb.UsersTable],
+			"user_summary_named":  variantdb.Select[variantdb.UserSummaryNamed, variantdb.UsersTable],
+		},
+	},
+}
+
+// opener opens a schema's handle, made by newDB on the executor newExec
+// makes: on the database at dsn with its replicas, at most maxConns
+// connections to it, 4 by default.
+func opener[DB any](
+	newExec func(context.Context, dql.Driver, dql.Config, ...dql.Option) (*dql.Executor, error),
+	newDB func(*dql.Executor) DB,
+) func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (any, *dql.Executor, error) {
+	return func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (any, *dql.Executor, error) {
+		if maxConns == 0 {
+			maxConns = 4
+		}
+		src := dql.SourceConfig{Primary: dql.ConnConfig{DSN: dsn, MaxConns: maxConns}, MaxLag: maxLag}
+		for _, r := range replicas {
+			src.Replicas = append(src.Replicas, dql.ConnConfig{DSN: r, MaxConns: 4})
+		}
+		e, err := newExec(ctx, dqlpgx.New(), dql.Config{
+			Sources:  map[string]dql.SourceConfig{"main": src},
+			Catalogs: map[string]string{"shop": "main"},
+		}, append([]dql.Option{dql.WithTrackInterval(trackInterval)}, opts...)...)
+		if err != nil {
+			return nil, nil, err
+		}
+		return newDB(e), e, nil
+	}
 }
 
 // A replica leaves rotation 1s behind, which the tracker sees within 20ms,
