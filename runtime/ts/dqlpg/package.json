@@ -1,0 +1,30 @@
+{
+  "name": "@dql/pg",
+  "version": "0.1.0",
+  "description": "The dql executor's driver for Postgres, on node-postgres",
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@dql/runtime": "workspace:*",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.10",
+    "@types/pg": "8.23.1"
+  }
+}

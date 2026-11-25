@@ -21,6 +21,8 @@ export type Isolation = "read committed" | "repeatable read" | "serializable";
 
 /** Driver is what the executor needs from a database driver. */
 export interface Driver {
+  /** The statement modes the driver supports, or absent for every mode (§26.4). A source set to another fails when the executor opens. */
+  readonly statementModes?: readonly StatementMode[];
   /** open returns a pool for one server. It does not connect. */
   open(c: PoolConfig): Promise<Pool>;
   /** native returns the database's own fields of e, or undefined when the database did not send e. */

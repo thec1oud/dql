@@ -3,11 +3,12 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "dql"
+    "dql",
+    "dqlpg"
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "typecheck": "tsc -p dql/tsconfig.test.json",
+    "typecheck": "tsc -p dql/tsconfig.test.json && tsc -p dqlpg/tsconfig.test.json",
     "test": "bun test",
     "coverage": "bun test --coverage"
   },
