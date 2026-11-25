@@ -14,6 +14,13 @@ import (
 	"github.com/thec1oud/dql/runtime/go/opt"
 )
 
+// EmailInvite is the shape email_invite of shop.app.users.
+//
+// Bound, so its functions take them as parameters (§14.8): email.
+type EmailInvite struct {
+	PasswordHash string // sensitive
+}
+
 // PostWithTags is the shape post_with_tags of shop.app.posts.
 type PostWithTags struct {
 	PostFull
@@ -51,6 +58,15 @@ type UserSummaryNamed struct {
 	ID          int64
 	Email       EmailAddress
 	DisplayName string // narrowed; enforced when decoding
+}
+
+// ToDraft converts i to UserDraft (§14.9).
+// EmailInvite cannot hold every field, so email supplies email (§14.9).
+func (i EmailInvite) ToDraft(email EmailAddress) UserDraft {
+	var d UserDraft
+	d.Email = email
+	d.PasswordHash = i.PasswordHash
+	return d
 }
 
 // ToFull converts t to PostFull (§14.9).
@@ -103,6 +119,16 @@ func (n UserSummaryNamed) ToUserSummary() UserSummary {
 	s.Email = n.Email
 	s.DisplayName = dql.Ptr(n.DisplayName)
 	return s
+}
+
+// Validate checks i against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (i EmailInvite) Validate() error { return i.validate().Err() }
+
+func (i EmailInvite) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
 }
 
 // Validate checks i against the client-validated constraints of its fields
@@ -181,6 +207,20 @@ func DecodeUserSummaryNamed(r dql.Row) (UserSummaryNamed, error) {
 	out.DisplayName = dql.Field(d, 2, "display_name", "nonnull of shape user_summary_named", dql.String)
 	return out, d.Err()
 }
+
+// LogValue logs i with its sensitive fields as [REDACTED] (§7.5).
+func (i EmailInvite) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("PasswordHash", "[REDACTED]"),
+	)
+}
+
+// String formats i as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (i EmailInvite) String() string { return i.LogValue().String() }
+
+// GoString formats i as String does, for %#v.
+func (i EmailInvite) GoString() string { return i.String() }
 
 // LogValue logs s with its sensitive fields as [REDACTED] (§7.5).
 func (s Signup) LogValue() slog.Value {

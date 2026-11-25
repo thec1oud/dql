@@ -322,7 +322,7 @@ func (g *generator) signatures(e *entity) []signature {
 		case "upsert_set":
 			s.params = "d " + Exported(e.draft.GetHostName().GetWords()) + ", p " + Exported(e.part.GetHostName().GetWords()) + updates
 		case "patch":
-			s.params += ", p " + Exported(part.GetHostName().GetWords()) + updates
+			s.params += ", p " + Exported(part.GetHostName().GetWords()) + g.boundParams(e, x) + updates
 		case "update_where":
 			s.params = "where " + pred + ", p " + Exported(e.part.GetHostName().GetWords()) + updates
 		case "delete_where", "hard_delete_where":
@@ -521,7 +521,14 @@ func (g *generator) methodBody(e *entity, s signature) {
 	if x.shape != nil {
 		payload = x.shape
 	}
-	if payload != nil {
+	if bound := g.boundChecks(e, x); len(bound) > 0 {
+		// A bound field is checked as the shape's own fields are (§14.8).
+		f.printf("\terrs := %s.validate()\n", pv)
+		for _, b := range bound {
+			f.printf("\t%s\n", b)
+		}
+		f.printf("\tif err := errs.Err(); err != nil {\n\t\treturn %serr\n\t}\n", zero)
+	} else if payload != nil {
 		f.printf("\tif err := %s.Validate(); err != nil {\n\t\treturn %serr\n\t}\n", pv, zero)
 	}
 	if x.verb == "upsert_set" {
@@ -690,6 +697,39 @@ func (g *generator) boundParams(e *entity, x entry) string {
 		}
 	}
 	return prefixComma(strings.Join(ps, ", "))
+}
+
+// boundChecks is the checks of a custom write shape's bound fields, each
+// against the client-validated constraints its column has in the Draft or
+// Partial the shape derives from, adding to errs (§10.5, §14.8).
+func (g *generator) boundChecks(e *entity, x entry) []string {
+	if x.shape == nil {
+		return nil
+	}
+	base := e.draft
+	if rootPreset(x.shape) == irv1.Preset_PRESET_PARTIAL {
+		base = e.part
+	}
+	shape := g.dotted(x.shape.GetId())
+	var out []string
+	for _, p := range x.q.GetParams() {
+		col := p.GetName()
+		fld := shapeField(base, col)
+		if !slices.Contains(x.shape.GetBind(), col) || len(fld.GetValidation()) == 0 {
+			continue
+		}
+		at := &irv1.QualifiedName{Catalog: e.q.GetCatalog(), Namespace: e.q.GetNamespace(), Object: e.q.GetObject(), Member: col}
+		value := boundName(e, col)
+		if p.GetNullable() {
+			value = "*" + value
+		}
+		calls := g.checkCalls(fld.GetValidation(), fld.GetType(), e.t, e.q, at, "errs", shape, col, value)
+		if len(calls) > 0 && p.GetNullable() {
+			calls = []string{"if " + boundName(e, col) + " != nil {\n\t\t" + strings.Join(calls, "\n\t\t") + "\n\t}"}
+		}
+		out = append(out, calls...)
+	}
+	return out
 }
 
 // boundName is the Go parameter of a bound column.

@@ -46,6 +46,20 @@ steps:
     expect:
       error: { class: ValidationErrors, kind: length, field: email }
       statements: 0
+  # So is a bound field, against its column's checks.
+  - op: users.insert_email_invite
+    scope: { tenant_id: $acme.id }
+    input: { password_hash: x }
+    bind: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@acme.com"]
+    expect:
+      error: { class: ValidationErrors, kind: length, field: email }
+      statements: 0
+  - op: users.insert_email_invite
+    scope: { tenant_id: $acme.id }
+    input: { password_hash: x }
+    bind: [d@acme.com]
+    expect:
+      row: { email: d@acme.com }
   # A bound field set by an expression too is FieldSetTwice.
   - op: users.insert_quick_invite
     scope: { tenant_id: $acme.id }

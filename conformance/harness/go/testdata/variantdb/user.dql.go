@@ -124,6 +124,13 @@ func (r UserRef) validate() dql.ValidationErrors {
 	return nil
 }
 
+// ToEmailInvite converts d to EmailInvite (§14.9).
+func (d UserDraft) ToEmailInvite() EmailInvite {
+	var i EmailInvite
+	i.PasswordHash = d.PasswordHash
+	return i
+}
+
 // ToQuickInvite converts d to QuickInvite (§14.9).
 func (d UserDraft) ToQuickInvite() QuickInvite {
 	var i QuickInvite
@@ -626,6 +633,16 @@ var (
 			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
 		},
 	}
+	userInsertEmailInvite = &dql.Query{
+		Name:      "user.insert.email_invite",
+		Catalog:   "shop",
+		Kind:      "insert",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.tenant_id"}, dql.Use{Fragment: "name.users.email"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("password_hash"), dql.Param("scope.tenant_id"), dql.Param("email")}, Separator: ", "}}}}},
+		},
+	}
 	userInsertQuickInvite = &dql.Query{
 		Name:      "user.insert.quick_invite",
 		Catalog:   "shop",
@@ -774,6 +791,7 @@ type UsersStore interface {
 	Insert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertMany(ctx context.Context, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error)
 	InsertNested(ctx context.Context, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error)
+	InsertEmailInvite(ctx context.Context, d EmailInvite, email EmailAddress, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertQuickInvite(ctx context.Context, d QuickInvite, passwordHash string, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertSignup(ctx context.Context, d Signup, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertOrIgnore(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
@@ -807,6 +825,7 @@ type UsersUnscopedStore interface {
 	Insert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertMany(ctx context.Context, scope UserScope, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error)
 	InsertNested(ctx context.Context, scope UserScope, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error)
+	InsertEmailInvite(ctx context.Context, scope UserScope, d EmailInvite, email EmailAddress, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertQuickInvite(ctx context.Context, scope UserScope, d QuickInvite, passwordHash string, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertSignup(ctx context.Context, scope UserScope, d Signup, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
@@ -999,6 +1018,24 @@ func (s usersWrites) InsertNested(ctx context.Context, d UserDraftNested, as ...
 		return nil
 	})
 	return out, err
+}
+
+// InsertEmailInvite runs user.insert.email_invite (§20.1).
+func (s usersWrites) InsertEmailInvite(ctx context.Context, d EmailInvite, email EmailAddress, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	errs := d.validate()
+	dqlEmailAddressCheck.Check(&errs, "email_invite", "email", string(email))
+	if err := errs.Err(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"password_hash": d.PasswordHash, "email": email, "scope.tenant_id": s.scope.TenantID}
+	if err := dql.Assign(userInsertEmailInvite, "email_invite", args, dql.Values(as)); err != nil {
+		return UserFull{}, err
+	}
+	st, err := userInsertEmailInvite.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
 }
 
 // InsertQuickInvite runs user.insert.quick_invite (§20.1).
@@ -1537,6 +1574,11 @@ func (u usersUnscoped) InsertMany(ctx context.Context, scope UserScope, ds []Use
 // InsertNested runs user.insert in scope (§21.2).
 func (u usersUnscoped) InsertNested(ctx context.Context, scope UserScope, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error) {
 	return usersWrites{usersReads{u.w, scope}, u.w}.InsertNested(ctx, d, as...)
+}
+
+// InsertEmailInvite runs user.insert.email_invite in scope (§21.2).
+func (u usersUnscoped) InsertEmailInvite(ctx context.Context, scope UserScope, d EmailInvite, email EmailAddress, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertEmailInvite(ctx, d, email, as...)
 }
 
 // InsertQuickInvite runs user.insert.quick_invite in scope (§21.2).

@@ -63,3 +63,67 @@ func TestCustomShapeWrites(t *testing.T) {
 		}
 	}
 }
+
+// §10.5, §14.8: a bound field is checked against its column's
+// client-validated constraints, as the shape's own fields are, before
+// anything is sent; a nullable one when it is set. A Partial-derived shape
+// takes its bound fields after the payload too.
+func TestBoundFieldChecks(t *testing.T) {
+	b := shopShapes(t)
+	var draft, partial *irv1.Shape
+	for _, s := range b.GetShapes().GetShapes() {
+		id := s.GetId()
+		if id.GetEntity().GetObject() != "users" || id.GetForm() != irv1.Form_FORM_FLAT || id.GetForRelation() != "" {
+			continue
+		}
+		switch id.GetPreset() {
+		case irv1.Preset_PRESET_DRAFT:
+			draft = s
+		case irv1.Preset_PRESET_PARTIAL:
+			partial = s
+		}
+	}
+	shape := func(from *irv1.Shape, name, keep, bind string) {
+		s := proto.Clone(from).(*irv1.Shape)
+		s.Id = &irv1.ShapeId{Base: &irv1.ShapeId_Custom{Custom: name}}
+		s.HostName = &irv1.Identifier{Stored: name, Words: strings.Split(name, "_")}
+		s.Fields = slices.DeleteFunc(s.Fields, func(f *irv1.Field) bool { return f.GetColumn() != keep })
+		s.Bind = []string{bind}
+		b.Shapes.Shapes = append(b.Shapes.Shapes, s)
+	}
+	shape(draft, "email_invite", "password_hash", "email")
+	shape(draft, "maybe_invite", "password_hash", "email")
+	shape(partial, "rename_mail", "display_name", "email")
+	custom := func(from, name string, nullable bool, keep ...string) {
+		q := proto.Clone(query(t, b, from)).(*irv1.Query)
+		q.Name = &irv1.Identifier{Stored: name}
+		q.Params = slices.DeleteFunc(q.Params, func(p *irv1.Param) bool { return !slices.Contains(keep, p.GetName()) })
+		for _, p := range q.Params {
+			if p.GetName() == "email" {
+				p.Nullable = nullable
+			}
+		}
+		b.Queries.Queries = append(b.Queries.Queries, q)
+	}
+	custom("user.insert", "user.insert.email_invite", false, "email", "password_hash")
+	custom("user.insert", "user.insert.maybe_invite", true, "email", "password_hash")
+	custom("user.patch", "user.patch.rename_mail", false, "display_name", "email", "key.id", "key.version")
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatalf("codes %q", codes)
+	}
+	contains(t, files, "user.dql.go",
+		"InsertEmailInvite(ctx context.Context, d EmailInvite, email EmailAddress, as ...dql.Assignment[UsersTable]) (UserFull, error) {\n"+
+			"\terrs := d.validate()\n"+
+			"\tdqlEmailAddressCheck.Check(&errs, \"email_invite\", \"email\", string(email))\n"+
+			"\tif err := errs.Err(); err != nil {\n\t\treturn UserFull{}, err\n\t}\n",
+		"InsertMaybeInvite(ctx context.Context, d MaybeInvite, email *EmailAddress, as ...dql.Assignment[UsersTable]) (UserFull, error) {\n"+
+			"\terrs := d.validate()\n"+
+			"\tif email != nil {\n\t\tdqlEmailAddressCheck.Check(&errs, \"maybe_invite\", \"email\", string(*email))\n\t}\n",
+		"PatchRenameMail(ctx context.Context, k UserKey, p RenameMail, email EmailAddress, as ...dql.Update[UsersTable]) (UserFull, error) {\n"+
+			"\terrs := p.validate()\n"+
+			"\tdqlEmailAddressCheck.Check(&errs, \"rename_mail\", \"email\", string(email))\n",
+		"return usersWrites{usersReads{u.w, scope}, u.w}.PatchRenameMail(ctx, k, p, email, as...)",
+		"args := dql.Args{\"email\": email, \"key.id\": k.ID, \"key.version\": k.Version, \"scope.tenant_id\": s.scope.TenantID}",
+	)
+}
