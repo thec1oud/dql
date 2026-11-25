@@ -1,7 +1,8 @@
 # The running example's dql.yaml (§1.3) with the design record's variants of
 # it: posts.deleted_at is soft-delete (§21.3), posts.labels has non-null
-# elements (§8.6), the custom shapes of §14.8, and rename, a Partial-derived
-# shape for Patch<Shape>. Its Go package is
+# elements (§8.6), the custom shapes of §14.8, rename, a Partial-derived
+# shape for Patch<Shape>, and email_invite, whose bound field has a check.
+# Its Go package is
 # conformance/harness/go/testdata/variantdb.
 sources:
   - plugin: pg-live
@@ -42,6 +43,12 @@ shapes:
     from: user.draft
     pick: [email]
     bind: [password_hash]
+  # Not in the record: a bound field with a check, which the store validates
+  # as it does the shape's own fields (§10.5, §14.8).
+  email_invite:
+    from: user.draft
+    pick: [password_hash]
+    bind: [email]
   # Not in the record: a Partial-derived shape, for Patch<Shape> (§14.8).
   rename:
     from: user.partial
