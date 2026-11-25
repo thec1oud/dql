@@ -57,6 +57,7 @@ func (q userScopedQueries) AuthorPostCounts(ctx context.Context) ([]AuthorPostCo
 		Kind:        "select",
 		SQL:         "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts\nFROM app.users u\nLEFT JOIN app.posts p ON p.author_id = u.id\nWHERE u.tenant_id = $1\nGROUP BY u.id, u.display_name",
 		Args:        []any{q.scope.TenantID},
+		Types:       []string{"pg_catalog.uuid"},
 		Consistency: dql.Any,
 	}
 	return dql.AllOf(ctx, q.h, st, decodeAuthorPostCountsRow)
@@ -70,6 +71,7 @@ func (q userScopedQueries) GetUserByEmail(ctx context.Context, email EmailAddres
 		Kind:    "select",
 		SQL:     "SELECT id, tenant_id, email, display_name, created_at, updated_at, version\nFROM app.users\nWHERE tenant_id = $2 AND email = $1",
 		Args:    []any{email, q.scope.TenantID},
+		Types:   []string{"pg_catalog.text", "pg_catalog.uuid"},
 	}
 	return dql.OneOf(ctx, q.h, st, DecodeUserFull)
 }
@@ -82,6 +84,7 @@ func (q userScopedQueries) RenameUser(ctx context.Context, displayName *string, 
 		Kind:    "update",
 		SQL:     "UPDATE app.users\nSET display_name = $1, version = version + 1\nWHERE tenant_id = $4 AND id = $2 AND version = $3",
 		Args:    []any{displayName, id, version, q.scope.TenantID},
+		Types:   []string{"pg_catalog.varchar", "pg_catalog.int8", "pg_catalog.int4", "pg_catalog.uuid"},
 		Writes:  true,
 	}
 	return dql.Exec(ctx, q.w, st)
@@ -114,6 +117,7 @@ func (q unscopedQueries) AuthorPostCounts(ctx context.Context, scope UserScope) 
 		Kind:        "select",
 		SQL:         "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts\nFROM app.users u\nLEFT JOIN app.posts p ON p.author_id = u.id\nWHERE u.tenant_id = $1\nGROUP BY u.id, u.display_name",
 		Args:        []any{scope.TenantID},
+		Types:       []string{"pg_catalog.uuid"},
 		Consistency: dql.Any,
 	}
 	return dql.AllOf(ctx, q.h, st, decodeAuthorPostCountsRow)
@@ -127,6 +131,7 @@ func (q unscopedQueries) GetUserByEmail(ctx context.Context, scope UserScope, em
 		Kind:    "select",
 		SQL:     "SELECT id, tenant_id, email, display_name, created_at, updated_at, version\nFROM app.users\nWHERE tenant_id = $2 AND email = $1",
 		Args:    []any{email, scope.TenantID},
+		Types:   []string{"pg_catalog.text", "pg_catalog.uuid"},
 	}
 	return dql.OneOf(ctx, q.h, st, DecodeUserFull)
 }
@@ -139,6 +144,7 @@ func (q unscopedQueries) RenameUser(ctx context.Context, scope UserScope, displa
 		Kind:    "update",
 		SQL:     "UPDATE app.users\nSET display_name = $1, version = version + 1\nWHERE tenant_id = $4 AND id = $2 AND version = $3",
 		Args:    []any{displayName, id, version, scope.TenantID},
+		Types:   []string{"pg_catalog.varchar", "pg_catalog.int8", "pg_catalog.int4", "pg_catalog.uuid"},
 		Writes:  true,
 	}
 	return dql.Exec(ctx, q.w, st)

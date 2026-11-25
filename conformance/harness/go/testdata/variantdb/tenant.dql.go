@@ -275,6 +275,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.tenant.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}},
@@ -285,6 +286,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.tenant.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}},
@@ -311,6 +313,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.uuid", "name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.tenants", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}}},
 		},
@@ -320,6 +323,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert_or_ignore",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.uuid", "name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.tenants.tenants_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}}},
 		},
@@ -329,6 +333,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.uuid", "name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.tenants.tenants_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.tenants.name"}}}}, Separator: ", "}}},
 		},
@@ -338,6 +343,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert_set",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.uuid", "name": "pg_catalog.text", "set.name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.tenants.tenants_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Param("set.name")}}, dql.Use{Fragment: "set.tenants.id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}}}}, Separator: ", "}}},
 		},
@@ -348,6 +354,7 @@ var (
 		Kind:      "patch",
 		Writes:    true,
 		AtMostOne: true,
+		Types:     map[string]string{"name": "pg_catalog.text", "key.id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.tenants", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}}}},
 		},
@@ -357,6 +364,7 @@ var (
 		Catalog: "shop",
 		Kind:    "update_where",
 		Writes:  true,
+		Types:   map[string]string{"name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.tenants", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tenants.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}}},
 		},
@@ -366,6 +374,7 @@ var (
 		Catalog: "shop",
 		Kind:    "delete",
 		Writes:  true,
+		Types:   map[string]string{"key.id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.tenants", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tenants.id"}, "1": dql.Param("key.id")}}}}}},
 		},
@@ -650,52 +659,52 @@ type tenantsIDColumn struct{}
 
 // Any is operator any on id (§9.4).
 func (tenantsIDColumn) Any(v []uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.any", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.any", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog._uuid"})
 }
 
 // Between is operator between on id (§9.4).
 func (tenantsIDColumn) Between(v0 uuid.UUID, v1 uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.between", "col.tenants.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[TenantsTable]("op.between", "col.tenants.id", dql.Arg{Value: v0, Type: "pg_catalog.uuid"}, dql.Arg{Value: v1, Type: "pg_catalog.uuid"})
 }
 
 // Eq is operator eq on id (§9.4).
 func (tenantsIDColumn) Eq(v uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.eq", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.eq", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Ge is operator ge on id (§9.4).
 func (tenantsIDColumn) Ge(v uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.ge", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.ge", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Gt is operator gt on id (§9.4).
 func (tenantsIDColumn) Gt(v uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.gt", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.gt", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // In is operator in on id (§9.4).
 func (tenantsIDColumn) In(v []uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.in", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.in", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog._uuid"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on id (§9.4).
 func (tenantsIDColumn) IsDistinctFrom(v uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.is_distinct_from", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.is_distinct_from", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Le is operator le on id (§9.4).
 func (tenantsIDColumn) Le(v uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.le", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.le", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Lt is operator lt on id (§9.4).
 func (tenantsIDColumn) Lt(v uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.lt", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.lt", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Ne is operator ne on id (§9.4).
 func (tenantsIDColumn) Ne(v uuid.UUID) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.ne", "col.tenants.id", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.ne", "col.tenants.id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Set assigns dql.Default() to id on a write, in place of a value (§20.2).
@@ -718,12 +727,12 @@ type tenantsNameColumn struct{}
 
 // Any is operator any on name (§9.4).
 func (tenantsNameColumn) Any(v []string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.any", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.any", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // Between is operator between on name (§9.4).
 func (tenantsNameColumn) Between(v0 string, v1 string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.between", "col.tenants.name", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[TenantsTable]("op.between", "col.tenants.name", dql.Arg{Value: v0, Type: "pg_catalog.text"}, dql.Arg{Value: v1, Type: "pg_catalog.text"})
 }
 
 // Contains is operator contains on name (§9.4).
@@ -733,17 +742,17 @@ func (tenantsNameColumn) Contains(v string) dql.Pred[TenantsTable] {
 
 // Eq is operator eq on name (§9.4).
 func (tenantsNameColumn) Eq(v string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.eq", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.eq", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ge is operator ge on name (§9.4).
 func (tenantsNameColumn) Ge(v string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.ge", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.ge", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Gt is operator gt on name (§9.4).
 func (tenantsNameColumn) Gt(v string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.gt", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.gt", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // ILike is operator ilike on name (§9.4).
@@ -753,17 +762,17 @@ func (tenantsNameColumn) ILike(v string) dql.Pred[TenantsTable] {
 
 // In is operator in on name (§9.4).
 func (tenantsNameColumn) In(v []string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.in", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.in", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on name (§9.4).
 func (tenantsNameColumn) IsDistinctFrom(v string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.is_distinct_from", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.is_distinct_from", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Le is operator le on name (§9.4).
 func (tenantsNameColumn) Le(v string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.le", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.le", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Like is operator like on name (§9.4).
@@ -773,12 +782,12 @@ func (tenantsNameColumn) Like(v string) dql.Pred[TenantsTable] {
 
 // Lt is operator lt on name (§9.4).
 func (tenantsNameColumn) Lt(v string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.lt", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.lt", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ne is operator ne on name (§9.4).
 func (tenantsNameColumn) Ne(v string) dql.Pred[TenantsTable] {
-	return dql.Compare[TenantsTable]("op.ne", "col.tenants.name", dql.Arg{Value: v})
+	return dql.Compare[TenantsTable]("op.ne", "col.tenants.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // RegexMatch is operator regex_match on name (§9.4).

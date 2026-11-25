@@ -160,6 +160,7 @@ func (g *generator) fileQuery(f *file, q *irv1.Query, groups []*scopeGroup) *fil
 		fq.scope = groups[i]
 	}
 	used := map[string]bool{"ctx": true, "q": true, "scope": true, "st": true, "err": true}
+	var types []string
 	for _, p := range q.GetParams() {
 		v := fresh(Unexported(strings.Split(p.GetName(), "_")), used)
 		t := g.field(f, p.GetType(), p.GetNullable(), at, "parameter "+p.GetName()+" of query "+name)
@@ -168,15 +169,26 @@ func (g *generator) fileQuery(f *file, q *irv1.Query, groups []*scopeGroup) *fil
 		}
 		fq.params = append(fq.params, v+" "+t)
 		fq.args = append(fq.args, v)
+		types = append(types, g.dbType(p.GetType(), p.GetList()))
 	}
 	for _, c := range q.GetScope().GetColumns() {
 		fq.args = append(fq.args, "{scope}."+g.scopeField(fq.scope, c))
+		var typ *irv1.Type
+		for _, fld := range fq.scope.shape.GetFields() {
+			if fld.GetColumn() == c {
+				typ = fld.GetType()
+			}
+		}
+		types = append(types, g.dbType(typ, false))
 	}
 	g.declare(fq.method, "the method of query "+name, at)
 	var b strings.Builder
 	fmt.Fprintf(&b, "\tst := %s.Statement{\n\t\tQuery: %q,\n\t\tCatalog: %q,\n\t\tKind: %q,\n\t\tSQL: %s,\n", dql, name, q.GetCatalog(), kind(q.GetText()), quote(q.GetText()))
 	if len(fq.args) > 0 {
 		fmt.Fprintf(&b, "\t\tArgs: []any{%s},\n", strings.Join(fq.args, ", "))
+	}
+	if slices.ContainsFunc(types, func(t string) bool { return t != "" }) {
+		fmt.Fprintf(&b, "\t\tTypes: %#v,\n", types)
 	}
 	if q.GetWrites() {
 		b.WriteString("\t\tWrites: true,\n")

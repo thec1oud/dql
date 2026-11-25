@@ -475,6 +475,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.post_id": "pg_catalog.int8", "key.tag_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.post_tag.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}, "1": dql.Param("key.post_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.tag_id"}, "1": dql.Param("key.tag_id")}}}}}},
@@ -485,6 +486,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.post_id": "pg_catalog.int8", "key.tag_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.post_tag.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}, "1": dql.Param("key.post_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.tag_id"}, "1": dql.Param("key.tag_id")}}}}}},
@@ -511,6 +513,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert",
 		Writes:  true,
+		Types:   map[string]string{"post_id": "pg_catalog.int8", "tag_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.post_tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}}},
 		},
@@ -520,6 +523,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert_or_ignore",
 		Writes:  true,
+		Types:   map[string]string{"post_id": "pg_catalog.int8", "tag_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.post_tags.post_tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}}},
 		},
@@ -529,6 +533,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert",
 		Writes:  true,
+		Types:   map[string]string{"post_id": "pg_catalog.int8", "tag_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.post_tags.post_tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.post_tags.post_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.post_tags.post_id"}}}}, Separator: ", "}}},
 		},
@@ -538,6 +543,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert_set",
 		Writes:  true,
+		Types:   map[string]string{"post_id": "pg_catalog.int8", "tag_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.post_tags.post_tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.post_tags.post_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}}}}, Separator: ", "}}},
 		},
@@ -547,6 +553,7 @@ var (
 		Catalog: "shop",
 		Kind:    "delete",
 		Writes:  true,
+		Types:   map[string]string{"key.post_id": "pg_catalog.int8", "key.tag_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.post_tags", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.post_id"}, "1": dql.Param("key.post_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.post_tags.tag_id"}, "1": dql.Param("key.tag_id")}}}}}}}},
 		},
@@ -834,52 +841,52 @@ type postTagsPostIDColumn struct{}
 
 // Any is operator any on post_id (§9.4).
 func (postTagsPostIDColumn) Any(v []int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.any", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.any", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on post_id (§9.4).
 func (postTagsPostIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.between", "col.post_tags.post_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostTagsTable]("op.between", "col.post_tags.post_id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on post_id (§9.4).
 func (postTagsPostIDColumn) Eq(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.eq", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.eq", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on post_id (§9.4).
 func (postTagsPostIDColumn) Ge(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.ge", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.ge", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on post_id (§9.4).
 func (postTagsPostIDColumn) Gt(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.gt", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.gt", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on post_id (§9.4).
 func (postTagsPostIDColumn) In(v []int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.in", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.in", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on post_id (§9.4).
 func (postTagsPostIDColumn) IsDistinctFrom(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.is_distinct_from", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.is_distinct_from", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Le is operator le on post_id (§9.4).
 func (postTagsPostIDColumn) Le(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.le", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.le", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on post_id (§9.4).
 func (postTagsPostIDColumn) Lt(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.lt", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.lt", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on post_id (§9.4).
 func (postTagsPostIDColumn) Ne(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.ne", "col.post_tags.post_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.ne", "col.post_tags.post_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Set assigns dql.Default() to post_id on a write, in place of a value (§20.2).
@@ -902,52 +909,52 @@ type postTagsTagIDColumn struct{}
 
 // Any is operator any on tag_id (§9.4).
 func (postTagsTagIDColumn) Any(v []int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.any", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.any", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on tag_id (§9.4).
 func (postTagsTagIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.between", "col.post_tags.tag_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostTagsTable]("op.between", "col.post_tags.tag_id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on tag_id (§9.4).
 func (postTagsTagIDColumn) Eq(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.eq", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.eq", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on tag_id (§9.4).
 func (postTagsTagIDColumn) Ge(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.ge", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.ge", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on tag_id (§9.4).
 func (postTagsTagIDColumn) Gt(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.gt", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.gt", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on tag_id (§9.4).
 func (postTagsTagIDColumn) In(v []int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.in", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.in", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on tag_id (§9.4).
 func (postTagsTagIDColumn) IsDistinctFrom(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.is_distinct_from", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.is_distinct_from", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Le is operator le on tag_id (§9.4).
 func (postTagsTagIDColumn) Le(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.le", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.le", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on tag_id (§9.4).
 func (postTagsTagIDColumn) Lt(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.lt", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.lt", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on tag_id (§9.4).
 func (postTagsTagIDColumn) Ne(v int64) dql.Pred[PostTagsTable] {
-	return dql.Compare[PostTagsTable]("op.ne", "col.post_tags.tag_id", dql.Arg{Value: v})
+	return dql.Compare[PostTagsTable]("op.ne", "col.post_tags.tag_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Set assigns dql.Default() to tag_id on a write, in place of a value (§20.2).

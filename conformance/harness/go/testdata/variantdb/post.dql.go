@@ -900,6 +900,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.post.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.is_null", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.deleted_at"}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}, "1": dql.Param("key.id")}}}}}},
@@ -910,6 +911,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.post.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.is_null", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.deleted_at"}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}, "1": dql.Param("key.id")}}}}}},
@@ -936,6 +938,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.posts", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}}},
 		},
@@ -945,6 +948,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert_or_ignore",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.posts.posts_one_published_slug", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}}},
 		},
@@ -954,6 +958,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert_or_ignore",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.posts.posts_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}}},
 		},
@@ -963,6 +968,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.posts.posts_one_published_slug", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.id"}}}, dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.author_id"}}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.editor_id"}}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.title"}}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.status"}}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.price"}}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.labels"}}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.published_at"}}}}, Separator: ", "}}},
 		},
@@ -972,6 +978,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.posts.posts_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.author_id"}}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.editor_id"}}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.title"}}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.status"}}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.price"}}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.labels"}}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.posts.published_at"}}}}, Separator: ", "}}},
 		},
@@ -981,6 +988,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert_set",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz", "set.author_id": "pg_catalog.int8", "set.editor_id": "pg_catalog.int8", "set.title": "pg_catalog.text", "set.status": "app.post_status", "set.price": "app.money_amount", "set.labels": "pg_catalog._text", "set.published_at": "pg_catalog.timestamptz"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.posts.posts_one_published_slug", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Param("set.author_id")}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Param("set.editor_id")}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Param("set.title")}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Param("set.status")}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Param("set.price")}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Param("set.labels")}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Param("set.published_at")}}, dql.Use{Fragment: "set.posts.id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}}}}, Separator: ", "}}},
 		},
@@ -990,6 +998,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert_set",
 		Writes:  true,
+		Types:   map[string]string{"id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz", "set.author_id": "pg_catalog.int8", "set.editor_id": "pg_catalog.int8", "set.title": "pg_catalog.text", "set.status": "app.post_status", "set.price": "app.money_amount", "set.labels": "pg_catalog._text", "set.published_at": "pg_catalog.timestamptz"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.posts.posts_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.posts.id"}, dql.Use{Fragment: "name.posts.author_id"}, dql.Use{Fragment: "name.posts.editor_id"}, dql.Use{Fragment: "name.posts.title"}, dql.Use{Fragment: "name.posts.status"}, dql.Use{Fragment: "name.posts.price"}, dql.Use{Fragment: "name.posts.labels"}, dql.Use{Fragment: "name.posts.published_at"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("author_id"), dql.Param("editor_id"), dql.Param("title"), dql.Param("status"), dql.Param("price"), dql.Param("labels"), dql.Param("published_at")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Param("set.author_id")}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Param("set.editor_id")}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Param("set.title")}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Param("set.status")}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Param("set.price")}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Param("set.labels")}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Param("set.published_at")}}, dql.Use{Fragment: "set.posts.id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}}}}, Separator: ", "}}},
 		},
@@ -1000,6 +1009,7 @@ var (
 		Kind:      "patch",
 		Writes:    true,
 		AtMostOne: true,
+		Types:     map[string]string{"author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz", "key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.posts", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.post.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Param("author_id")}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Param("editor_id")}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Param("title")}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Param("status")}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Param("price")}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Param("labels")}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Param("published_at")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.is_null", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.deleted_at"}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}, "1": dql.Param("key.id")}}}}}}}},
 		},
@@ -1009,6 +1019,7 @@ var (
 		Catalog: "shop",
 		Kind:    "update_where",
 		Writes:  true,
+		Types:   map[string]string{"author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.posts", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.author_id", Holes: map[string]dql.Node{"0": dql.Param("author_id")}}, dql.Use{Fragment: "set.posts.editor_id", Holes: map[string]dql.Node{"0": dql.Param("editor_id")}}, dql.Use{Fragment: "set.posts.title", Holes: map[string]dql.Node{"0": dql.Param("title")}}, dql.Use{Fragment: "set.posts.status", Holes: map[string]dql.Node{"0": dql.Param("status")}}, dql.Use{Fragment: "set.posts.price", Holes: map[string]dql.Node{"0": dql.Param("price")}}, dql.Use{Fragment: "set.posts.labels", Holes: map[string]dql.Node{"0": dql.Param("labels")}}, dql.Use{Fragment: "set.posts.published_at", Holes: map[string]dql.Node{"0": dql.Param("published_at")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.is_null", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.deleted_at"}}}}}}},
 		},
@@ -1018,6 +1029,7 @@ var (
 		Catalog: "shop",
 		Kind:    "delete",
 		Writes:  true,
+		Types:   map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.posts", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.posts.deleted_at", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "value.now"}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.is_null", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.deleted_at"}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}, "1": dql.Param("key.id")}}}}}}}},
 		},
@@ -1036,6 +1048,7 @@ var (
 		Catalog: "shop",
 		Kind:    "hard_delete",
 		Writes:  true,
+		Types:   map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.posts", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.posts.id"}, "1": dql.Param("key.id")}}}}}},
 		},
@@ -1901,52 +1914,52 @@ type postsIDColumn struct{}
 
 // Any is operator any on id (§9.4).
 func (postsIDColumn) Any(v []int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on id (§9.4).
 func (postsIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.between", "col.posts.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostsTable]("op.between", "col.posts.id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on id (§9.4).
 func (postsIDColumn) Eq(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on id (§9.4).
 func (postsIDColumn) Ge(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ge", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ge", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on id (§9.4).
 func (postsIDColumn) Gt(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.gt", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.gt", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on id (§9.4).
 func (postsIDColumn) In(v []int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on id (§9.4).
 func (postsIDColumn) IsDistinctFrom(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Le is operator le on id (§9.4).
 func (postsIDColumn) Le(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.le", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.le", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on id (§9.4).
 func (postsIDColumn) Lt(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.lt", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.lt", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on id (§9.4).
 func (postsIDColumn) Ne(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Set assigns dql.Default() to id on a write, in place of a value (§20.2).
@@ -1969,52 +1982,52 @@ type postsAuthorIDColumn struct{}
 
 // Any is operator any on author_id (§9.4).
 func (postsAuthorIDColumn) Any(v []int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on author_id (§9.4).
 func (postsAuthorIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.between", "col.posts.author_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostsTable]("op.between", "col.posts.author_id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on author_id (§9.4).
 func (postsAuthorIDColumn) Eq(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on author_id (§9.4).
 func (postsAuthorIDColumn) Ge(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ge", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ge", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on author_id (§9.4).
 func (postsAuthorIDColumn) Gt(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.gt", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.gt", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on author_id (§9.4).
 func (postsAuthorIDColumn) In(v []int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on author_id (§9.4).
 func (postsAuthorIDColumn) IsDistinctFrom(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Le is operator le on author_id (§9.4).
 func (postsAuthorIDColumn) Le(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.le", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.le", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on author_id (§9.4).
 func (postsAuthorIDColumn) Lt(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.lt", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.lt", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on author_id (§9.4).
 func (postsAuthorIDColumn) Ne(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Set assigns dql.Default() to author_id on a write, in place of a value (§20.2).
@@ -2024,12 +2037,12 @@ func (postsAuthorIDColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
 
 // Add sets author_id to author_id + v on an update (§20.2).
 func (postsAuthorIDColumn) Add(v int64) dql.Update[PostsTable] {
-	return dql.Arith[PostsTable]("op.add", "author_id", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Arith[PostsTable]("op.add", "author_id", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Sub sets author_id to author_id - v on an update (§20.2).
 func (postsAuthorIDColumn) Sub(v int64) dql.Update[PostsTable] {
-	return dql.Arith[PostsTable]("op.sub", "author_id", "col.posts.author_id", dql.Arg{Value: v})
+	return dql.Arith[PostsTable]("op.sub", "author_id", "col.posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Asc orders by author_id, ascending.
@@ -2047,37 +2060,37 @@ type postsEditorIDColumn struct{}
 
 // Any is operator any on editor_id (§9.4).
 func (postsEditorIDColumn) Any(v []int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on editor_id (§9.4).
 func (postsEditorIDColumn) Between(v0 int64, v1 int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.between", "col.posts.editor_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostsTable]("op.between", "col.posts.editor_id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on editor_id (§9.4).
 func (postsEditorIDColumn) Eq(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on editor_id (§9.4).
 func (postsEditorIDColumn) Ge(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ge", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ge", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on editor_id (§9.4).
 func (postsEditorIDColumn) Gt(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.gt", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.gt", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on editor_id (§9.4).
 func (postsEditorIDColumn) In(v []int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on editor_id (§9.4).
 func (postsEditorIDColumn) IsDistinctFrom(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // IsNotNull is operator is_not_null on editor_id (§9.4).
@@ -2092,17 +2105,17 @@ func (postsEditorIDColumn) IsNull() dql.Pred[PostsTable] {
 
 // Le is operator le on editor_id (§9.4).
 func (postsEditorIDColumn) Le(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.le", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.le", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on editor_id (§9.4).
 func (postsEditorIDColumn) Lt(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.lt", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.lt", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on editor_id (§9.4).
 func (postsEditorIDColumn) Ne(v int64) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Set assigns dql.Default() to editor_id on a write, in place of a value (§20.2).
@@ -2112,12 +2125,12 @@ func (postsEditorIDColumn) Set(e dql.DefaultExpr) dql.Assignment[PostsTable] {
 
 // Add sets editor_id to editor_id + v on an update (§20.2).
 func (postsEditorIDColumn) Add(v int64) dql.Update[PostsTable] {
-	return dql.Arith[PostsTable]("op.add", "editor_id", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Arith[PostsTable]("op.add", "editor_id", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Sub sets editor_id to editor_id - v on an update (§20.2).
 func (postsEditorIDColumn) Sub(v int64) dql.Update[PostsTable] {
-	return dql.Arith[PostsTable]("op.sub", "editor_id", "col.posts.editor_id", dql.Arg{Value: v})
+	return dql.Arith[PostsTable]("op.sub", "editor_id", "col.posts.editor_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Asc orders by editor_id, ascending.
@@ -2135,12 +2148,12 @@ type postsTitleColumn struct{}
 
 // Any is operator any on title (§9.4).
 func (postsTitleColumn) Any(v []string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // Between is operator between on title (§9.4).
 func (postsTitleColumn) Between(v0 string, v1 string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.between", "col.posts.title", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostsTable]("op.between", "col.posts.title", dql.Arg{Value: v0, Type: "pg_catalog.text"}, dql.Arg{Value: v1, Type: "pg_catalog.text"})
 }
 
 // Contains is operator contains on title (§9.4).
@@ -2150,17 +2163,17 @@ func (postsTitleColumn) Contains(v string) dql.Pred[PostsTable] {
 
 // Eq is operator eq on title (§9.4).
 func (postsTitleColumn) Eq(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ge is operator ge on title (§9.4).
 func (postsTitleColumn) Ge(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ge", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ge", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Gt is operator gt on title (§9.4).
 func (postsTitleColumn) Gt(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.gt", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.gt", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // ILike is operator ilike on title (§9.4).
@@ -2170,17 +2183,17 @@ func (postsTitleColumn) ILike(v string) dql.Pred[PostsTable] {
 
 // In is operator in on title (§9.4).
 func (postsTitleColumn) In(v []string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on title (§9.4).
 func (postsTitleColumn) IsDistinctFrom(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Le is operator le on title (§9.4).
 func (postsTitleColumn) Le(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.le", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.le", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Like is operator like on title (§9.4).
@@ -2190,12 +2203,12 @@ func (postsTitleColumn) Like(v string) dql.Pred[PostsTable] {
 
 // Lt is operator lt on title (§9.4).
 func (postsTitleColumn) Lt(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.lt", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.lt", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ne is operator ne on title (§9.4).
 func (postsTitleColumn) Ne(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.title", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // RegexMatch is operator regex_match on title (§9.4).
@@ -2228,12 +2241,12 @@ type postsSlugColumn struct{}
 
 // Any is operator any on slug (§9.4).
 func (postsSlugColumn) Any(v []string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // Between is operator between on slug (§9.4).
 func (postsSlugColumn) Between(v0 string, v1 string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.between", "col.posts.slug", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostsTable]("op.between", "col.posts.slug", dql.Arg{Value: v0, Type: "pg_catalog.text"}, dql.Arg{Value: v1, Type: "pg_catalog.text"})
 }
 
 // Contains is operator contains on slug (§9.4).
@@ -2243,17 +2256,17 @@ func (postsSlugColumn) Contains(v string) dql.Pred[PostsTable] {
 
 // Eq is operator eq on slug (§9.4).
 func (postsSlugColumn) Eq(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ge is operator ge on slug (§9.4).
 func (postsSlugColumn) Ge(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ge", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ge", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Gt is operator gt on slug (§9.4).
 func (postsSlugColumn) Gt(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.gt", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.gt", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // ILike is operator ilike on slug (§9.4).
@@ -2263,12 +2276,12 @@ func (postsSlugColumn) ILike(v string) dql.Pred[PostsTable] {
 
 // In is operator in on slug (§9.4).
 func (postsSlugColumn) In(v []string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on slug (§9.4).
 func (postsSlugColumn) IsDistinctFrom(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // IsNotNull is operator is_not_null on slug (§9.4).
@@ -2283,7 +2296,7 @@ func (postsSlugColumn) IsNull() dql.Pred[PostsTable] {
 
 // Le is operator le on slug (§9.4).
 func (postsSlugColumn) Le(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.le", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.le", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Like is operator like on slug (§9.4).
@@ -2293,12 +2306,12 @@ func (postsSlugColumn) Like(v string) dql.Pred[PostsTable] {
 
 // Lt is operator lt on slug (§9.4).
 func (postsSlugColumn) Lt(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.lt", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.lt", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ne is operator ne on slug (§9.4).
 func (postsSlugColumn) Ne(v string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.slug", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.slug", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // RegexMatch is operator regex_match on slug (§9.4).
@@ -2326,52 +2339,52 @@ type postsStatusColumn struct{}
 
 // Any is operator any on status (§9.4).
 func (postsStatusColumn) Any(v []PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.status", dql.Arg{Value: v, Type: "app._post_status"})
 }
 
 // Between is operator between on status (§9.4).
 func (postsStatusColumn) Between(v0 PostStatus, v1 PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.between", "col.posts.status", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostsTable]("op.between", "col.posts.status", dql.Arg{Value: v0, Type: "app.post_status"}, dql.Arg{Value: v1, Type: "app.post_status"})
 }
 
 // Eq is operator eq on status (§9.4).
 func (postsStatusColumn) Eq(v PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.status", dql.Arg{Value: v, Type: "app.post_status"})
 }
 
 // Ge is operator ge on status (§9.4).
 func (postsStatusColumn) Ge(v PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ge", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ge", "col.posts.status", dql.Arg{Value: v, Type: "app.post_status"})
 }
 
 // Gt is operator gt on status (§9.4).
 func (postsStatusColumn) Gt(v PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.gt", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.gt", "col.posts.status", dql.Arg{Value: v, Type: "app.post_status"})
 }
 
 // In is operator in on status (§9.4).
 func (postsStatusColumn) In(v []PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.status", dql.Arg{Value: v, Type: "app._post_status"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on status (§9.4).
 func (postsStatusColumn) IsDistinctFrom(v PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.status", dql.Arg{Value: v, Type: "app.post_status"})
 }
 
 // Le is operator le on status (§9.4).
 func (postsStatusColumn) Le(v PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.le", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.le", "col.posts.status", dql.Arg{Value: v, Type: "app.post_status"})
 }
 
 // Lt is operator lt on status (§9.4).
 func (postsStatusColumn) Lt(v PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.lt", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.lt", "col.posts.status", dql.Arg{Value: v, Type: "app.post_status"})
 }
 
 // Ne is operator ne on status (§9.4).
 func (postsStatusColumn) Ne(v PostStatus) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.status", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.status", dql.Arg{Value: v, Type: "app.post_status"})
 }
 
 // Set assigns dql.Default() to status on a write, in place of a value (§20.2).
@@ -2394,22 +2407,22 @@ type postsPriceColumn struct{}
 
 // Any is operator any on price (§9.4).
 func (postsPriceColumn) Any(v []MoneyAmount) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.price", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.price", dql.Arg{Value: v, Type: "app._money_amount"})
 }
 
 // Eq is operator eq on price (§9.4).
 func (postsPriceColumn) Eq(v MoneyAmount) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.price", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.price", dql.Arg{Value: v, Type: "app.money_amount"})
 }
 
 // In is operator in on price (§9.4).
 func (postsPriceColumn) In(v []MoneyAmount) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.price", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.price", dql.Arg{Value: v, Type: "app._money_amount"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on price (§9.4).
 func (postsPriceColumn) IsDistinctFrom(v MoneyAmount) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.price", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.price", dql.Arg{Value: v, Type: "app.money_amount"})
 }
 
 // IsNotNull is operator is_not_null on price (§9.4).
@@ -2424,7 +2437,7 @@ func (postsPriceColumn) IsNull() dql.Pred[PostsTable] {
 
 // Ne is operator ne on price (§9.4).
 func (postsPriceColumn) Ne(v MoneyAmount) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.price", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.price", dql.Arg{Value: v, Type: "app.money_amount"})
 }
 
 // Set assigns dql.Default() to price on a write, in place of a value (§20.2).
@@ -2457,12 +2470,12 @@ func (postsLabelsColumn) ArrayOverlaps(v []string) dql.Pred[PostsTable] {
 
 // Eq is operator eq on labels (§9.4).
 func (postsLabelsColumn) Eq(v []string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.labels", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.labels", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on labels (§9.4).
 func (postsLabelsColumn) IsDistinctFrom(v []string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.labels", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.labels", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsNotNull is operator is_not_null on labels (§9.4).
@@ -2477,7 +2490,7 @@ func (postsLabelsColumn) IsNull() dql.Pred[PostsTable] {
 
 // Ne is operator ne on labels (§9.4).
 func (postsLabelsColumn) Ne(v []string) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.labels", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.labels", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // Set assigns dql.Default() to labels on a write, in place of a value (§20.2).
@@ -2500,37 +2513,37 @@ type postsPublishedAtColumn struct{}
 
 // Any is operator any on published_at (§9.4).
 func (postsPublishedAtColumn) Any(v []time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // Between is operator between on published_at (§9.4).
 func (postsPublishedAtColumn) Between(v0 time.Time, v1 time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.between", "col.posts.published_at", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostsTable]("op.between", "col.posts.published_at", dql.Arg{Value: v0, Type: "pg_catalog.timestamptz"}, dql.Arg{Value: v1, Type: "pg_catalog.timestamptz"})
 }
 
 // Eq is operator eq on published_at (§9.4).
 func (postsPublishedAtColumn) Eq(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ge is operator ge on published_at (§9.4).
 func (postsPublishedAtColumn) Ge(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ge", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ge", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Gt is operator gt on published_at (§9.4).
 func (postsPublishedAtColumn) Gt(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.gt", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.gt", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // In is operator in on published_at (§9.4).
 func (postsPublishedAtColumn) In(v []time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on published_at (§9.4).
 func (postsPublishedAtColumn) IsDistinctFrom(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // IsNotNull is operator is_not_null on published_at (§9.4).
@@ -2545,17 +2558,17 @@ func (postsPublishedAtColumn) IsNull() dql.Pred[PostsTable] {
 
 // Le is operator le on published_at (§9.4).
 func (postsPublishedAtColumn) Le(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.le", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.le", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Lt is operator lt on published_at (§9.4).
 func (postsPublishedAtColumn) Lt(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.lt", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.lt", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ne is operator ne on published_at (§9.4).
 func (postsPublishedAtColumn) Ne(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Set assigns dql.Now() or dql.Default() to published_at on a write, in place of a value (§20.2).
@@ -2578,37 +2591,37 @@ type postsDeletedAtColumn struct{}
 
 // Any is operator any on deleted_at (§9.4).
 func (postsDeletedAtColumn) Any(v []time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.any", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.any", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // Between is operator between on deleted_at (§9.4).
 func (postsDeletedAtColumn) Between(v0 time.Time, v1 time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.between", "col.posts.deleted_at", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PostsTable]("op.between", "col.posts.deleted_at", dql.Arg{Value: v0, Type: "pg_catalog.timestamptz"}, dql.Arg{Value: v1, Type: "pg_catalog.timestamptz"})
 }
 
 // Eq is operator eq on deleted_at (§9.4).
 func (postsDeletedAtColumn) Eq(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.eq", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.eq", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ge is operator ge on deleted_at (§9.4).
 func (postsDeletedAtColumn) Ge(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ge", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ge", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Gt is operator gt on deleted_at (§9.4).
 func (postsDeletedAtColumn) Gt(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.gt", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.gt", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // In is operator in on deleted_at (§9.4).
 func (postsDeletedAtColumn) In(v []time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.in", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.in", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on deleted_at (§9.4).
 func (postsDeletedAtColumn) IsDistinctFrom(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.is_distinct_from", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // IsNotNull is operator is_not_null on deleted_at (§9.4).
@@ -2623,17 +2636,17 @@ func (postsDeletedAtColumn) IsNull() dql.Pred[PostsTable] {
 
 // Le is operator le on deleted_at (§9.4).
 func (postsDeletedAtColumn) Le(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.le", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.le", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Lt is operator lt on deleted_at (§9.4).
 func (postsDeletedAtColumn) Lt(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.lt", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.lt", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ne is operator ne on deleted_at (§9.4).
 func (postsDeletedAtColumn) Ne(v time.Time) dql.Pred[PostsTable] {
-	return dql.Compare[PostsTable]("op.ne", "col.posts.deleted_at", dql.Arg{Value: v})
+	return dql.Compare[PostsTable]("op.ne", "col.posts.deleted_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Asc orders by deleted_at, ascending.
