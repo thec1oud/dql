@@ -44,6 +44,7 @@ const (
 	CodeRelationNameCollision      = "relation-name-collision"
 	CodeRelationNameEqualsColumn   = "relation-name-equals-column"
 	CodeOverloadNameCollision      = "overload-name-collision"
+	CodeSoftDeleteUnique           = "soft-delete-unique"
 )
 
 // Derive computes every fact of this package in place over catalogs and
@@ -59,6 +60,7 @@ func Derive(catalogs []*irv1.Catalog, opts Options) []*irv1.Diagnostic {
 	d := &deriver{opts: opts, tables: map[string]*tableRef{}, named: map[string][]string{}}
 	d.index(catalogs)
 	d.keys()
+	d.softDeleteUnique()
 	d.relations()
 	d.overloads(catalogs)
 	diagnostics.Sort(d.diags)
