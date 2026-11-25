@@ -5,17 +5,18 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Args, type Assignment, type Builder, Consistency, type Pred, type Query, type Reader, type Shape, type Statement, type Update, type Writer, allOf, arg, assign, count, execByKey, execute, exists, filtered, insertMany, list, newBuilder, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
+import { type Args, type Assignment, type Builder, Consistency, NotFound, type Pred, type Query, type Reader, type Shape, type Statement, type Update, type Writer, allOf, and, arg, assign, atomic, count, execByKey, execute, exists, filtered, insertMany, list, newBuilder, not, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
 import { fragments } from "./dql-fragments.dql.ts";
 import { type AuthorPostCountsRow, type UnscopedQuerier, type UnscopedReadQuerier, type UserScopedQuerier, type UserScopedReadQuerier, decodeAuthorPostCountsRow } from "./dql-queries.dql.ts";
+import { shapes } from "./dql-select.dql.ts";
 import type { EmailAddress, SlugText } from "./dql-types.dql.ts";
-import { type PostDraft, type PostFull, type PostKey, type PostPartial, type PostsReadStore, type PostsStore, type PostsTable, decodePostFull, validatePostDraft, validatePostPartial } from "./post.dql.ts";
-import { type PostTagDraft, type PostTagFull, type PostTagKey, type PostTagPartial, type PostTagsReadStore, type PostTagsStore, type PostTagsTable, decodePostTagFull, validatePostTagDraft, validatePostTagPartial } from "./post_tag.dql.ts";
-import { type ProfileDraft, type ProfileFull, type ProfileKey, type ProfilePartial, type ProfilesReadStore, type ProfilesStore, type ProfilesTable, decodeProfileFull, validateProfileDraft, validateProfilePartial } from "./profile.dql.ts";
+import { type PostDraft, type PostDraftNested, type PostFull, type PostFullNested, type PostKey, type PostPartial, type PostPartialNested, type PostsReadStore, type PostsStore, type PostsTable, type PostsUserScopedStore, decodePostFull, posts, validatePostDraft, validatePostDraftNested, validatePostPartial, validatePostPartialNested } from "./post.dql.ts";
+import { type PostTagDraft, type PostTagDraftNested, type PostTagFull, type PostTagFullNested, type PostTagKey, type PostTagPartial, type PostTagsReadStore, type PostTagsStore, type PostTagsTable, decodePostTagFull, postTags, validatePostTagDraft, validatePostTagDraftNested, validatePostTagPartial } from "./post_tag.dql.ts";
+import { type ProfileDraft, type ProfileDraftNested, type ProfileFull, type ProfileFullNested, type ProfileKey, type ProfilePartial, type ProfilePartialNested, type ProfilesReadStore, type ProfilesStore, type ProfilesTable, type ProfilesUserScopedStore, decodeProfileFull, profiles, validateProfileDraft, validateProfileDraftNested, validateProfilePartial, validateProfilePartialNested } from "./profile.dql.ts";
 import { type PublishedPostFull, type PublishedPostsReadStore, type PublishedPostsTable, decodePublishedPostFull } from "./published_post.dql.ts";
-import { type TagDraft, type TagFull, type TagKey, type TagPartial, type TagsReadStore, type TagsStore, type TagsTable, decodeTagFull, validateTagDraft, validateTagPartial } from "./tag.dql.ts";
+import { type TagDraft, type TagDraftNested, type TagFull, type TagFullNested, type TagKey, type TagPartial, type TagPartialNested, type TagsReadStore, type TagsStore, type TagsTable, decodeTagFull, validateTagDraft, validateTagDraftNested, validateTagPartial, validateTagPartialNested } from "./tag.dql.ts";
 import { type TenantDraft, type TenantFull, type TenantKey, type TenantPartial, type TenantsReadStore, type TenantsStore, type TenantsTable, decodeTenantFull, validateTenantDraft, validateTenantPartial } from "./tenant.dql.ts";
-import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserScope, type UsersReadStore, type UsersStore, type UsersTable, type UsersUnscopedReadStore, type UsersUnscopedStore, decodeUserFull, validateUserDraft, validateUserPartial } from "./user.dql.ts";
+import { type UserDraft, type UserDraftNested, type UserFull, type UserFullNested, type UserKey, type UserPartial, type UserPartialNested, type UserScope, type UsersReadStore, type UsersStore, type UsersTable, type UsersUnscopedReadStore, type UsersUnscopedStore, decodeUserFull, validateUserDraft, validateUserDraftNested, validateUserPartial, validateUserPartialNested } from "./user.dql.ts";
 
 // The builder queries of shop.app.post_tags (§16.3).
 
@@ -189,6 +190,53 @@ export class PostTagsWrites extends PostTagsReads implements PostTagsStore {
       rows.push(args);
     }
     return insertMany(this.w, fragments, postTagInsert, rows, decodePostTagFull);
+  }
+
+  /** insertNested runs post_tag.insert with the rows d nests, in one transaction: owning creates first, then the row, then its dependents and links; it returns them read back (§20.5). */
+  async insertNested(d: PostTagDraftNested, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFullNested> {
+    throwIfIssues(validatePostTagDraftNested(d));
+    return atomic(this.w, async (w: Writer) => {
+      const postTagsStore = new PostTagsWrites(w);
+      const postsStore = new PostsWrites(w);
+      const tagsStore = new TagsWrites(w);
+      const draft: PostTagDraft = { ...d, postId: d.postId!, tagId: d.tagId! };
+      let createdPost: PostFull | undefined;
+      if (d.post !== undefined) {
+        const ref = d.post;
+        switch (ref.kind) {
+          case "link": {
+            draft.postId = ref.key.id;
+            break;
+          }
+          case "create": {
+            const related = await postsStore.insert(ref.draft);
+            createdPost = related;
+            draft.postId = related.id;
+            break;
+          }
+        }
+      }
+      let createdTag: TagFull | undefined;
+      if (d.tag !== undefined) {
+        const ref = d.tag;
+        switch (ref.kind) {
+          case "link": {
+            draft.tagId = ref.key.id;
+            break;
+          }
+          case "create": {
+            const related = await tagsStore.insert(ref.draft);
+            createdTag = related;
+            draft.tagId = related.id;
+            break;
+          }
+        }
+      }
+      const row = await postTagsStore.insert(draft, ...as);
+      const postRow = createdPost ?? (await postsStore.get({ id: row.postId }));
+      const tagRow = createdTag ?? (await tagsStore.get({ id: row.tagId }));
+      return { ...row, post: postRow, tag: tagRow };
+    });
   }
 
   /** insertOrIgnore runs post_tag.insert_or_ignore.by_primary (§20.1). */
@@ -1422,6 +1470,40 @@ export class TagsWrites extends TagsReads implements TagsStore {
     return insertMany(this.w, fragments, tagInsert, rows, decodeTagFull);
   }
 
+  /** insertNested runs tag.insert with the rows d nests, in one transaction: owning creates first, then the row, then its dependents and links; it returns them read back (§20.5). */
+  async insertNested(d: TagDraftNested, ...as: Assignment<TagsTable>[]): Promise<TagFullNested> {
+    throwIfIssues(validateTagDraftNested(d));
+    return atomic(this.w, async (w: Writer) => {
+      const tagsStore = new TagsWrites(w);
+      const postTagsStore = new PostTagsWrites(w);
+      const postsStore = new PostsWrites(w);
+      const draft: TagDraft = { ...d };
+      const row = await tagsStore.insert(draft, ...as);
+      const postTagsRows: PostTagFull[] = [];
+      const postsRows: PostFull[] = [];
+      for (const c of d.postTags ?? []) {
+        const child = await postTagsStore.insert({ ...c, tagId: row.id });
+        postTagsRows.push(child);
+        postsRows.push(await postsStore.get({ id: child.postId }));
+      }
+      for (const ref of d.posts ?? []) {
+        let far: PostFull;
+        switch (ref.kind) {
+          case "link":
+            far = await postsStore.get(ref.key);
+            break;
+          case "create":
+            far = await postsStore.insert(ref.draft);
+            break;
+        }
+        const junction = await postTagsStore.insert({ tagId: row.id, postId: far.id });
+        postTagsRows.push(junction);
+        postsRows.push(far);
+      }
+      return { ...row, postTags: postTagsRows, posts: postsRows };
+    });
+  }
+
   /** insertOrIgnoreByName runs tag.insert_or_ignore.by_name (§20.1). */
   async insertOrIgnoreByName(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull | undefined> {
     throwIfIssues(validateTagDraft(d));
@@ -1469,6 +1551,68 @@ export class TagsWrites extends TagsReads implements TagsStore {
       return this.get(k);
     }
     return oneOf(this.w, statementOf(tagPatch, fragments, args), decodeTagFull);
+  }
+
+  /** patchNested runs tag.patch with the changes p nests, in one transaction: owning changes first, then the row, then its dependents and links under their collection policies; it returns the row and its relations as they now are (§20.5). */
+  async patchNested(k: TagKey, p: TagPartialNested, ...as: Update<TagsTable>[]): Promise<TagFullNested> {
+    throwIfIssues(validateTagPartialNested(p));
+    return atomic(this.w, async (w: Writer) => {
+      const tagsStore = new TagsWrites(w);
+      const postTagsStore = new PostTagsWrites(w);
+      const postsStore = new PostsWrites(w);
+      const part: TagPartial = { ...p };
+      const row = await tagsStore.patch(k, part, ...as);
+      if (p.postTags !== undefined) {
+        for (const ch of p.postTags) {
+          switch (ch.kind) {
+            case "create": {
+              await postTagsStore.insert({ ...ch.draft, tagId: row.id });
+              break;
+            }
+            case "update": {
+              const child = await postTagsStore.get(ch.key);
+              if (child.tagId !== row.id) {
+                throw new NotFound({ query: "post_tag.get.by_primary" });
+              }
+              break;
+            }
+            case "delete": {
+              const child = await postTagsStore.get(ch.key);
+              if (child.tagId !== row.id) {
+                throw new NotFound({ query: "post_tag.get.by_primary" });
+              }
+              await postTagsStore.delete(ch.key);
+              break;
+            }
+          }
+        }
+      }
+      if (p.posts !== undefined) {
+        for (const ch of p.posts) {
+          switch (ch.kind) {
+            case "link": {
+              await postTagsStore.insertOrIgnore({ tagId: row.id, postId: ch.key.id });
+              break;
+            }
+            case "create": {
+              const related = await postsStore.insert(ch.draft);
+              await postTagsStore.insertOrIgnore({ tagId: row.id, postId: related.id });
+              break;
+            }
+            case "unlink": {
+              await postTagsStore.delete({ tagId: row.id, postId: ch.key.id });
+              break;
+            }
+          }
+        }
+      }
+      const postTagsRows = await postTagsStore.select(shapes.postTagFull).where(postTags.tagId.eq(row.id)).orderBy(postTags.postId.asc(), postTags.tagId.asc()).all();
+      const postsRows: PostFull[] = [];
+      for (const j of postTagsRows) {
+        postsRows.push(await postsStore.get({ id: j.postId }));
+      }
+      return { ...row, postTags: postTagsRows, posts: postsRows };
+    });
   }
 
   /** updateWhere runs tag.update_where (§20.1). */
@@ -2090,6 +2234,37 @@ export class UsersWrites extends UsersReads implements UsersStore {
     return insertMany(this.w, fragments, userInsert, rows, decodeUserFull);
   }
 
+  /** insertNested runs user.insert with the rows d nests, in one transaction: owning creates first, then the row, then its dependents and links; it returns them read back (§20.5). */
+  async insertNested(d: UserDraftNested, ...as: Assignment<UsersTable>[]): Promise<UserFullNested> {
+    throwIfIssues(validateUserDraftNested(d));
+    return atomic(this.w, async (w: Writer) => {
+      const usersStore = new UsersWrites(w, { tenantId: this.scope.tenantId });
+      const postsStore = new PostsWrites(w);
+      const profilesStore = new ProfilesWrites(w);
+      const tenantsStore = new TenantsWrites(w);
+      const draft: UserDraft = { ...d };
+      const row = await usersStore.insert(draft, ...as);
+      const postsToAuthorRows: PostFull[] = [];
+      const postsToEditorRows: PostFull[] = [];
+      let profileRow: ProfileFull | null = null;
+      for (const c of d.postsToAuthor ?? []) {
+        const child = await postsStore.insert({ ...c, authorId: row.id });
+        postsToAuthorRows.push(child);
+      }
+      for (const c of d.postsToEditor ?? []) {
+        const child = await postsStore.insert({ ...c, editorId: row.id });
+        postsToEditorRows.push(child);
+      }
+      if (d.profile !== undefined) {
+        const c = d.profile;
+        const child = await profilesStore.insert({ ...c, userId: row.id });
+        profileRow = child;
+      }
+      const tenantRow = (await tenantsStore.get({ id: row.tenantId }));
+      return { ...row, postsToAuthor: postsToAuthorRows, postsToEditor: postsToEditorRows, profile: profileRow, tenant: tenantRow };
+    });
+  }
+
   /** insertOrIgnore runs user.insert_or_ignore.by_primary (§20.1). */
   async insertOrIgnore(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined> {
     throwIfIssues(validateUserDraft(d));
@@ -2248,6 +2423,110 @@ export class UsersWrites extends UsersReads implements UsersStore {
     return versionedOne(this.w, statementOf(userPatch, fragments, args), found, decodeUserFull);
   }
 
+  /** patchNested runs user.patch with the changes p nests, in one transaction: owning changes first, then the row, then its dependents and links under their collection policies; it returns the row and its relations as they now are (§20.5). */
+  async patchNested(k: UserKey, p: UserPartialNested, ...as: Update<UsersTable>[]): Promise<UserFullNested> {
+    throwIfIssues(validateUserPartialNested(p));
+    return atomic(this.w, async (w: Writer) => {
+      const usersStore = new UsersWrites(w, { tenantId: this.scope.tenantId });
+      const postsStore = new PostsWrites(w);
+      const profilesStore = new ProfilesWrites(w);
+      const tenantsStore = new TenantsWrites(w);
+      const part: UserPartial = { ...p };
+      const row = await usersStore.patch(k, part, ...as);
+      if (p.postsToAuthor !== undefined) {
+        const kept: PostKey[] = [];
+        for (const ch of p.postsToAuthor) {
+          switch (ch.kind) {
+            case "create": {
+              const child = await postsStore.insert({ ...ch.draft, authorId: row.id });
+              kept.push({ id: child.id });
+              break;
+            }
+            case "update": {
+              const child = await postsStore.get(ch.key);
+              if (child.authorId !== row.id) {
+                throw new NotFound({ query: "post.get.by_primary" });
+              }
+              await postsStore.patch(ch.key, ch.partial);
+              kept.push(ch.key);
+              break;
+            }
+            case "delete": {
+              const child = await postsStore.get(ch.key);
+              if (child.authorId !== row.id) {
+                throw new NotFound({ query: "post.get.by_primary" });
+              }
+              await postsStore.delete(ch.key);
+              break;
+            }
+          }
+        }
+        // Replace removes the children the changes leave out.
+        let where = posts.authorId.eq(row.id);
+        for (const key of kept) {
+          where = and(where, not(posts.id.eq(key.id)));
+        }
+        await postsStore.deleteWhere(where);
+      }
+      if (p.postsToEditor !== undefined) {
+        for (const ch of p.postsToEditor) {
+          switch (ch.kind) {
+            case "create": {
+              await postsStore.insert({ ...ch.draft, editorId: row.id });
+              break;
+            }
+            case "update": {
+              const child = await postsStore.get(ch.key);
+              if (child.editorId !== row.id) {
+                throw new NotFound({ query: "post.get.by_primary" });
+              }
+              await postsStore.patch(ch.key, ch.partial);
+              break;
+            }
+            case "delete": {
+              const child = await postsStore.get(ch.key);
+              if (child.editorId !== row.id) {
+                throw new NotFound({ query: "post.get.by_primary" });
+              }
+              await postsStore.patch(ch.key, { editorId: null });
+              break;
+            }
+          }
+        }
+      }
+      if (p.profile !== undefined) {
+        const ch = p.profile;
+        switch (ch.kind) {
+          case "create": {
+            await profilesStore.insert({ ...ch.draft, userId: row.id });
+            break;
+          }
+          case "update": {
+            const child = await profilesStore.get(ch.key);
+            if (child.userId !== row.id) {
+              throw new NotFound({ query: "profile.get.by_primary" });
+            }
+            await profilesStore.patch(ch.key, ch.partial);
+            break;
+          }
+          case "delete": {
+            const child = await profilesStore.get(ch.key);
+            if (child.userId !== row.id) {
+              throw new NotFound({ query: "profile.get.by_primary" });
+            }
+            await profilesStore.delete(ch.key);
+            break;
+          }
+        }
+      }
+      const postsToAuthorRows = await postsStore.select(shapes.postFull).where(posts.authorId.eq(row.id)).orderBy(posts.id.asc()).all();
+      const postsToEditorRows = await postsStore.select(shapes.postFull).where(posts.editorId.eq(row.id)).orderBy(posts.id.asc()).all();
+      const profileRow = (await profilesStore.select(shapes.profileFull).where(profiles.userId.eq(row.id)).orderBy(profiles.userId.asc()).optionalOne()) ?? null;
+      const tenantRow = await tenantsStore.get({ id: row.tenantId });
+      return { ...row, postsToAuthor: postsToAuthorRows, postsToEditor: postsToEditorRows, profile: profileRow, tenant: tenantRow };
+    });
+  }
+
   /** updateWhere runs user.update_where (§20.1). */
   async updateWhere(where: Pred<UsersTable>, p: UserPartial, ...as: Update<UsersTable>[]): Promise<number> {
     throwIfIssues(validateUserPartial(p));
@@ -2342,6 +2621,11 @@ export class UsersUnscopedWrites extends UsersUnscopedReads implements UsersUnsc
     return new UsersWrites(this.w, scope).insertMany(ds, ...as);
   }
 
+  /** insertNested runs user.insert in scope (§21.2). */
+  insertNested(scope: UserScope, d: UserDraftNested, ...as: Assignment<UsersTable>[]): Promise<UserFullNested> {
+    return new UsersWrites(this.w, scope).insertNested(d, ...as);
+  }
+
   /** insertOrIgnore runs user.insert_or_ignore.by_primary in scope (§21.2). */
   insertOrIgnore(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined> {
     return new UsersWrites(this.w, scope).insertOrIgnore(d, ...as);
@@ -2375,6 +2659,11 @@ export class UsersUnscopedWrites extends UsersUnscopedReads implements UsersUnsc
   /** patch runs user.patch in scope (§21.2). */
   patch(scope: UserScope, k: UserKey, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull> {
     return new UsersWrites(this.w, scope).patch(k, p, ...as);
+  }
+
+  /** patchNested runs user.patch in scope (§21.2). */
+  patchNested(scope: UserScope, k: UserKey, p: UserPartialNested, ...as: Update<UsersTable>[]): Promise<UserFullNested> {
+    return new UsersWrites(this.w, scope).patchNested(k, p, ...as);
   }
 
   /** updateWhere runs user.update_where in scope (§21.2). */
@@ -2512,5 +2801,258 @@ export class UnscopedQueries extends UnscopedReadQueries implements UnscopedQuer
       writes: true,
     };
     return execute(this.w, st);
+  }
+}
+
+/** PostsUserScopedWrites implements PostsUserScopedStore on a handle with scope UserScope. */
+export class PostsUserScopedWrites extends PostsWrites implements PostsUserScopedStore {
+  readonly scope: UserScope;
+
+  constructor(w: Writer, scope: UserScope) {
+    super(w);
+    this.scope = scope;
+  }
+
+  /** insertNested runs post.insert with the rows d nests, in one transaction: owning creates first, then the row, then its dependents and links; it returns them read back (§20.5). */
+  async insertNested(d: PostDraftNested, ...as: Assignment<PostsTable>[]): Promise<PostFullNested> {
+    throwIfIssues(validatePostDraftNested(d));
+    return atomic(this.w, async (w: Writer) => {
+      const postsStore = new PostsWrites(w);
+      const usersStore = new UsersWrites(w, { tenantId: this.scope.tenantId });
+      const postTagsStore = new PostTagsWrites(w);
+      const tagsStore = new TagsWrites(w);
+      const draft: PostDraft = { ...d, authorId: d.authorId! };
+      let createdAuthor: UserFull | undefined;
+      if (d.author !== undefined) {
+        const ref = d.author;
+        switch (ref.kind) {
+          case "link": {
+            draft.authorId = ref.key.id;
+            break;
+          }
+          case "create": {
+            const related = await usersStore.insert(ref.draft);
+            createdAuthor = related;
+            draft.authorId = related.id;
+            break;
+          }
+        }
+      }
+      let createdEditor: UserFull | undefined;
+      if (d.editor !== undefined) {
+        const ref = d.editor;
+        switch (ref.kind) {
+          case "link": {
+            draft.editorId = ref.key.id;
+            break;
+          }
+          case "create": {
+            const related = await usersStore.insert(ref.draft);
+            createdEditor = related;
+            draft.editorId = related.id;
+            break;
+          }
+        }
+      }
+      const row = await postsStore.insert(draft, ...as);
+      const postTagsRows: PostTagFull[] = [];
+      const tagsRows: TagFull[] = [];
+      for (const c of d.postTags ?? []) {
+        const child = await postTagsStore.insert({ ...c, postId: row.id });
+        postTagsRows.push(child);
+        tagsRows.push(await tagsStore.get({ id: child.tagId }));
+      }
+      for (const ref of d.tags ?? []) {
+        let far: TagFull;
+        switch (ref.kind) {
+          case "link":
+            far = await tagsStore.get(ref.key);
+            break;
+          case "create":
+            far = await tagsStore.insert(ref.draft);
+            break;
+        }
+        const junction = await postTagsStore.insert({ postId: row.id, tagId: far.id });
+        postTagsRows.push(junction);
+        tagsRows.push(far);
+      }
+      const authorRow = createdAuthor ?? (await usersStore.get({ id: row.authorId, version: 0 }));
+      const editorRow = row.editorId === null ? null : createdEditor ?? (await usersStore.get({ id: row.editorId, version: 0 }));
+      return { ...row, author: authorRow, editor: editorRow, postTags: postTagsRows, tags: tagsRows };
+    });
+  }
+
+  /** patchNested runs post.patch with the changes p nests, in one transaction: owning changes first, then the row, then its dependents and links under their collection policies; it returns the row and its relations as they now are (§20.5). */
+  async patchNested(k: PostKey, p: PostPartialNested, ...as: Update<PostsTable>[]): Promise<PostFullNested> {
+    throwIfIssues(validatePostPartialNested(p));
+    return atomic(this.w, async (w: Writer) => {
+      const postsStore = new PostsWrites(w);
+      const usersStore = new UsersWrites(w, { tenantId: this.scope.tenantId });
+      const postTagsStore = new PostTagsWrites(w);
+      const tagsStore = new TagsWrites(w);
+      const part: PostPartial = { ...p };
+      const cur = await postsStore.get(k);
+      if (p.author !== undefined) {
+        const ch = p.author;
+        switch (ch.kind) {
+          case "link": {
+            part.authorId = ch.key.id;
+            break;
+          }
+          case "create": {
+            const related = await usersStore.insert(ch.draft);
+            part.authorId = related.id;
+            break;
+          }
+          case "update": {
+            const related = await usersStore.get({ id: cur.authorId, version: 0 });
+            await usersStore.patch({ id: related.id, version: related.version }, ch.partial);
+            break;
+          }
+        }
+      }
+      if (p.editor !== undefined) {
+        const ch = p.editor;
+        switch (ch.kind) {
+          case "link": {
+            part.editorId = ch.key.id;
+            break;
+          }
+          case "create": {
+            const related = await usersStore.insert(ch.draft);
+            part.editorId = related.id;
+            break;
+          }
+          case "update": {
+            if (cur.editorId === null) {
+              throw new NotFound({ query: "user.patch" });
+            }
+            const related = await usersStore.get({ id: cur.editorId, version: 0 });
+            await usersStore.patch({ id: related.id, version: related.version }, ch.partial);
+            break;
+          }
+          case "unlink": {
+            part.editorId = null;
+            break;
+          }
+        }
+      }
+      const row = await postsStore.patch(k, part, ...as);
+      if (p.postTags !== undefined) {
+        for (const ch of p.postTags) {
+          switch (ch.kind) {
+            case "create": {
+              await postTagsStore.insert({ ...ch.draft, postId: row.id });
+              break;
+            }
+            case "update": {
+              const child = await postTagsStore.get(ch.key);
+              if (child.postId !== row.id) {
+                throw new NotFound({ query: "post_tag.get.by_primary" });
+              }
+              break;
+            }
+            case "delete": {
+              const child = await postTagsStore.get(ch.key);
+              if (child.postId !== row.id) {
+                throw new NotFound({ query: "post_tag.get.by_primary" });
+              }
+              await postTagsStore.delete(ch.key);
+              break;
+            }
+          }
+        }
+      }
+      if (p.tags !== undefined) {
+        for (const ch of p.tags) {
+          switch (ch.kind) {
+            case "link": {
+              await postTagsStore.insertOrIgnore({ postId: row.id, tagId: ch.key.id });
+              break;
+            }
+            case "create": {
+              const related = await tagsStore.insert(ch.draft);
+              await postTagsStore.insertOrIgnore({ postId: row.id, tagId: related.id });
+              break;
+            }
+            case "unlink": {
+              await postTagsStore.delete({ postId: row.id, tagId: ch.key.id });
+              break;
+            }
+          }
+        }
+      }
+      const authorRow = await usersStore.get({ id: row.authorId, version: 0 });
+      const editorRow = row.editorId === null ? null : await usersStore.get({ id: row.editorId, version: 0 });
+      const postTagsRows = await postTagsStore.select(shapes.postTagFull).where(postTags.postId.eq(row.id)).orderBy(postTags.postId.asc(), postTags.tagId.asc()).all();
+      const tagsRows: TagFull[] = [];
+      for (const j of postTagsRows) {
+        tagsRows.push(await tagsStore.get({ id: j.tagId }));
+      }
+      return { ...row, author: authorRow, editor: editorRow, postTags: postTagsRows, tags: tagsRows };
+    });
+  }
+}
+
+/** ProfilesUserScopedWrites implements ProfilesUserScopedStore on a handle with scope UserScope. */
+export class ProfilesUserScopedWrites extends ProfilesWrites implements ProfilesUserScopedStore {
+  readonly scope: UserScope;
+
+  constructor(w: Writer, scope: UserScope) {
+    super(w);
+    this.scope = scope;
+  }
+
+  /** insertNested runs profile.insert with the rows d nests, in one transaction: owning creates first, then the row, then its dependents and links; it returns them read back (§20.5). */
+  async insertNested(d: ProfileDraftNested, ...as: Assignment<ProfilesTable>[]): Promise<ProfileFullNested> {
+    throwIfIssues(validateProfileDraftNested(d));
+    return atomic(this.w, async (w: Writer) => {
+      const profilesStore = new ProfilesWrites(w);
+      const usersStore = new UsersWrites(w, { tenantId: this.scope.tenantId });
+      const draft: ProfileDraft = { ...d, userId: d.userId! };
+      let createdUser: UserFull | undefined;
+      if (d.user !== undefined) {
+        const ref = d.user;
+        switch (ref.kind) {
+          case "link": {
+            draft.userId = ref.key.id;
+            break;
+          }
+          case "create": {
+            const related = await usersStore.insert(ref.draft);
+            createdUser = related;
+            draft.userId = related.id;
+            break;
+          }
+        }
+      }
+      const row = await profilesStore.insert(draft, ...as);
+      const userRow = createdUser ?? (await usersStore.get({ id: row.userId, version: 0 }));
+      return { ...row, user: userRow };
+    });
+  }
+
+  /** patchNested runs profile.patch with the changes p nests, in one transaction: owning changes first, then the row, then its dependents and links under their collection policies; it returns the row and its relations as they now are (§20.5). */
+  async patchNested(k: ProfileKey, p: ProfilePartialNested, ...as: Update<ProfilesTable>[]): Promise<ProfileFullNested> {
+    throwIfIssues(validateProfilePartialNested(p));
+    return atomic(this.w, async (w: Writer) => {
+      const profilesStore = new ProfilesWrites(w);
+      const usersStore = new UsersWrites(w, { tenantId: this.scope.tenantId });
+      const part: ProfilePartial = { ...p };
+      const cur = await profilesStore.get(k);
+      if (p.user !== undefined) {
+        const ch = p.user;
+        switch (ch.kind) {
+          case "update": {
+            const related = await usersStore.get({ id: cur.userId, version: 0 });
+            await usersStore.patch({ id: related.id, version: related.version }, ch.partial);
+            break;
+          }
+        }
+      }
+      const row = await profilesStore.patch(k, part, ...as);
+      const userRow = await usersStore.get({ id: row.userId, version: 0 });
+      return { ...row, user: userRow };
+    });
   }
 }

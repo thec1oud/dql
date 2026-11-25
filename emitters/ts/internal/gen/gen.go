@@ -133,6 +133,11 @@ type generator struct {
 	// impl is dql-stores.dql.ts, which holds the classes implementing the
 	// stores' and queriers' interfaces.
 	impl *file
+	// byTable holds every table's entity, and scopedStores says, by
+	// interface name, whether each scoped store of an entity without a
+	// scope has methods (§21.1).
+	byTable      map[key]*entity
+	scopedStores map[string]bool
 }
 
 // decl is a module-level name: what declares it, for diagnostics, and the

@@ -588,6 +588,7 @@ export interface PostTagsReadStore {
 export interface PostTagsStore extends PostTagsReadStore {
   insert(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull>;
   insertMany(ds: readonly PostTagDraft[], ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull[]>;
+  insertNested(d: PostTagDraftNested, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFullNested>;
   insertOrIgnore(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull | undefined>;
   upsert(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull>;
   upsertSet(d: PostTagDraft, p: PostTagPartial, ...as: Update<PostTagsTable>[]): Promise<PostTagFull>;

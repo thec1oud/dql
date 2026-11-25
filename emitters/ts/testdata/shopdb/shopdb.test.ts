@@ -359,3 +359,253 @@ test("upsertSet", async () => {
   expect(await failure(h.users.upsertSet(d, { email: "a".repeat(321) as EmailAddress }))).toBe("ValidationErrors");
   expect(await failure(h.users.upsertSet({ ...d, email: "a".repeat(321) as EmailAddress }, {}))).toBe("ValidationErrors");
 });
+
+test("insertNested", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const h = db.withScope({ tenantId: acme.id });
+
+  // The user first, then its dependents with its key; the bound tenant is
+  // read back.
+  const u = await h.users.insertNested({
+    email: parseEmailAddress("ann@acme.com"),
+    passwordHash: "x",
+    profile: { bio: "Hi" },
+    postsToAuthor: [{ title: "Hello" }, { title: "Again" }],
+  });
+  expect(u.tenant).toEqual(acme);
+  expect([u.profile?.bio, u.profile?.userId]).toEqual(["Hi", u.id]);
+  expect(u.postsToAuthor.map((p) => [p.title, p.authorId])).toEqual([
+    ["Hello", u.id],
+    ["Again", u.id],
+  ]);
+  expect(u.postsToEditor).toEqual([]);
+  const b = await unscoped(h).users.insertNested(
+    { tenantId: acme.id },
+    { email: parseEmailAddress("bob@acme.com"), passwordHash: "x", postsToEditor: [{ authorId: u.id, title: "Edited" }] },
+    users.createdAt.set(now),
+  );
+  expect(b.profile).toBeNull();
+  expect(b.postsToEditor.map((p) => p.editorId)).toEqual([b.id]);
+
+  // A failing child rolls the whole graph back.
+  const first = u.postsToAuthor[0] as PostFull;
+  const dup = await h.users
+    .insertNested({ email: parseEmailAddress("cid@acme.com"), passwordHash: "x", postsToAuthor: [{ id: first.id, title: "Dup" }] })
+    .catch((e: unknown) => e);
+  expect(classOf(dup)).toBe("UniqueViolation");
+  expect(await h.users.select(shapes.userFull).where(users.email.eq(parseEmailAddress("cid@acme.com"))).exists()).toBe(false);
+  expect(await failure(h.users.insertNested({ email: "a".repeat(321) as EmailAddress, passwordHash: "x" }))).toBe("ValidationErrors");
+
+  // Many-to-many: links and creates write junction rows; junction children
+  // read their far rows back.
+  const second = u.postsToAuthor[1] as PostFull;
+  const tag = await db.tags.insertNested({
+    name: parseSlugText("go"),
+    postTags: [{ postId: first.id }],
+    posts: [
+      { kind: "link", key: { id: second.id } },
+      { kind: "create", draft: { authorId: u.id, title: "New" } },
+    ],
+  });
+  expect(tag.posts.map((p) => p.title)).toEqual(["Hello", "Again", "New"]);
+  expect(tag.postTags.map((pt) => pt.postId)).toEqual(tag.posts.map((p) => p.id));
+
+  // Owning relations: a create is inserted first, a link sets the key.
+  const edited = b.postsToEditor[0] as PostFull;
+  let pt = await db.postTags.insertNested({ post: { kind: "link", key: { id: edited.id } }, tag: { kind: "create", draft: { name: parseSlugText("db") } } });
+  expect([pt.post.id, pt.tag.name as string, pt.tagId]).toEqual([edited.id, "db", pt.tag.id]);
+  pt = await db.postTags.insertNested({ postId: first.id, tag: { kind: "link", key: { id: pt.tagId } } });
+  expect([pt.post.id, pt.tag.name as string]).toEqual([first.id, "db"]);
+  expect(await failure(db.postTags.insertNested({ postId: first.id, post: { kind: "link", key: { id: edited.id } }, tagId: pt.tagId }))).not.toBe("no error");
+});
+
+test("insertNested on a scoped handle", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const other = await db.tenants.insert({ name: "other" });
+  const h = db.withScope({ tenantId: acme.id });
+  const ann = await h.users.insert({ email: parseEmailAddress("ann@acme.com"), passwordHash: "x" });
+  const go = await db.tags.insert({ name: parseSlugText("go") });
+
+  const p = await h.posts.insertNested({
+    title: "Hello",
+    author: { kind: "link", key: UserFull.key(ann) },
+    editor: { kind: "create", draft: { email: parseEmailAddress("ed@acme.com"), passwordHash: "x" } },
+    postTags: [{ tagId: go.id }],
+    tags: [{ kind: "create", draft: { name: parseSlugText("db") } }],
+  });
+  expect([p.author.id, p.editor?.tenantId, p.editorId]).toEqual([ann.id, acme.id, p.editor?.id ?? null]);
+  expect(p.tags.map((t) => t.name as string)).toEqual(["go", "db"]);
+  expect(p.postTags).toHaveLength(2);
+  const q = await h.posts.insertNested({ title: "Plain", authorId: ann.id });
+  expect([q.author.id, q.editor, q.tags]).toEqual([ann.id, null, []]);
+
+  // The scope reads the author back: one in another tenant is not found,
+  // and the post is rolled back.
+  const bob = await db.withScope({ tenantId: other.id }).users.insert({ email: parseEmailAddress("bob@other.com"), passwordHash: "x" });
+  expect(await failure(h.posts.insertNested({ title: "Cross", authorId: bob.id }))).toBe("NotFound");
+  expect(await h.posts.select(shapes.postFull).where(posts.title.eq("Cross")).exists()).toBe(false);
+
+  const pr = await h.profiles.insertNested({ user: { kind: "create", draft: { email: parseEmailAddress("cid@acme.com"), passwordHash: "x" } } });
+  expect([pr.user.email as string, pr.userId]).toEqual(["cid@acme.com", pr.user.id]);
+  await h.write((tx: UserScopedWriteTx) => tx.profiles.insertNested({ userId: ann.id }));
+});
+
+test("patchNested", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const h = db.withScope({ tenantId: acme.id });
+  const u = await h.users.insertNested({
+    email: parseEmailAddress("ann@acme.com"),
+    passwordHash: "x",
+    profile: { bio: "Hi" },
+    postsToAuthor: [{ title: "One" }, { title: "Two" }, { title: "Three" }],
+  });
+  const ed = await h.users.insert({ email: parseEmailAddress("ed@acme.com"), passwordHash: "x" });
+  const edited = await h.posts.insert({ authorId: u.id, editorId: ed.id, title: "Edited" });
+  const [one, two] = u.postsToAuthor as [PostFull, PostFull];
+
+  // posts_to_author is replace + delete: the posts the changes leave out
+  // are deleted. posts_to_editor is merge + unlink: delete clears editor_id.
+  const got = await h.users.patchNested(UserFull.key(u), {
+    displayName: "Ann",
+    postsToAuthor: [
+      { kind: "update", key: PostFull.key(one), partial: { title: "First" } },
+      { kind: "delete", key: PostFull.key(two) },
+      { kind: "create", draft: { title: "Four" } },
+    ],
+    profile: { kind: "update", key: { userId: u.id }, partial: { bio: null } },
+  });
+  expect([got.displayName, got.version]).toEqual(["Ann", u.version + 1]);
+  expect(got.postsToAuthor.map((p) => p.title)).toEqual(["First", "Four"]);
+  expect([got.profile?.bio, got.tenant]).toEqual([null, acme]);
+  expect(await failure(h.posts.get(PostFull.key(edited)))).toBe("NotFound");
+  let e = await h.users.patchNested(UserFull.key(ed), {
+    postsToEditor: [{ kind: "create", draft: { authorId: u.id, title: "Draft" } }],
+    profile: { kind: "create", draft: {} },
+  });
+  expect(e.postsToEditor).toHaveLength(1);
+  expect(e.profile).not.toBeNull();
+  const draft = e.postsToEditor[0] as PostFull;
+  e = await unscoped(h).users.patchNested({ tenantId: acme.id }, UserFull.key(e), {
+    postsToEditor: [
+      { kind: "update", key: PostFull.key(draft), partial: { title: "Edit" } },
+      { kind: "delete", key: PostFull.key(draft) },
+    ],
+    profile: { kind: "delete", key: { userId: ed.id } },
+  });
+  expect([e.postsToEditor, e.profile]).toEqual([[], null]);
+
+  // A change naming another parent's child is NotFound, and nothing of the
+  // patch stays.
+  expect(
+    await failure(
+      h.users.patchNested(UserFull.key(e), { displayName: "Ed", postsToAuthor: [{ kind: "update", key: PostFull.key(one), partial: {} }] }),
+    ),
+  ).toBe("NotFound");
+  expect((await h.users.get(UserFull.key(e))).displayName).toBeNull();
+  for (const p of [
+    { postsToEditor: [{ kind: "delete" as const, key: PostFull.key(one) }] },
+    { postsToEditor: [{ kind: "update" as const, key: PostFull.key(one), partial: {} }] },
+    { profile: { kind: "update" as const, key: { userId: u.id }, partial: {} } },
+    { profile: { kind: "delete" as const, key: { userId: u.id } } },
+    { postsToAuthor: [{ kind: "delete" as const, key: PostFull.key(one) }] },
+  ]) {
+    expect(await failure(h.users.patchNested(UserFull.key(e), p))).toBe("NotFound");
+  }
+  expect(await failure(h.users.patchNested(UserFull.key(e), { email: "a".repeat(321) as EmailAddress }))).toBe("ValidationErrors");
+});
+
+test("patchNested links", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const h = db.withScope({ tenantId: acme.id });
+  const u = await h.users.insert({ email: parseEmailAddress("ann@acme.com"), passwordHash: "x" });
+  const one = await h.posts.insert({ authorId: u.id, title: "One" });
+  const two = await h.posts.insert({ authorId: u.id, title: "Two" });
+  const other = await db.tags.insert({ name: parseSlugText("other") });
+  await db.postTags.insert({ postId: one.id, tagId: other.id });
+
+  // Tags: posts links through post_tags; post_tags changes its rows.
+  const tag = await db.tags.insert({ name: parseSlugText("go") });
+  let got = await db.tags.patchNested(
+    { id: tag.id },
+    {
+      name: parseSlugText("golang"),
+      posts: [
+        { kind: "link", key: { id: one.id } },
+        { kind: "link", key: { id: one.id } },
+        { kind: "create", draft: { authorId: u.id, title: "Three" } },
+      ],
+    },
+  );
+  expect(got.name as string).toBe("golang");
+  expect(got.posts.map((p) => p.title)).toEqual(["One", "Three"]);
+  expect(got.postTags).toHaveLength(2);
+  got = await db.tags.patchNested(
+    { id: tag.id },
+    {
+      posts: [{ kind: "unlink", key: { id: one.id } }],
+      postTags: [
+        { kind: "create", draft: { postId: two.id } },
+        { kind: "update", key: { postId: two.id, tagId: tag.id }, partial: {} },
+      ],
+    },
+  );
+  expect(got.posts.map((p) => p.title)).toEqual(["Two", "Three"]);
+  got = await db.tags.patchNested({ id: tag.id }, { postTags: [{ kind: "delete", key: { postId: two.id, tagId: tag.id } }] });
+  expect(got.posts.map((p) => p.title)).toEqual(["Three"]);
+  for (const ch of [
+    { kind: "update" as const, key: { postId: one.id, tagId: other.id }, partial: {} },
+    { kind: "delete" as const, key: { postId: one.id, tagId: other.id } },
+    { kind: "delete" as const, key: { postId: two.id, tagId: tag.id } },
+  ]) {
+    expect(await failure(db.tags.patchNested({ id: tag.id }, { postTags: [ch] }))).toBe("NotFound");
+  }
+
+  // Scoped posts: owning changes go first, through users in scope.
+  const ed = await h.users.insert({ email: parseEmailAddress("ed@acme.com"), passwordHash: "x" });
+  let p = await h.posts.patchNested(PostFull.key(one), {
+    title: "First",
+    author: { kind: "update", partial: { displayName: "Ann" } },
+    editor: { kind: "create", draft: { email: parseEmailAddress("eve@acme.com"), passwordHash: "x" } },
+    tags: [
+      { kind: "link", key: { id: tag.id } },
+      { kind: "create", draft: { name: parseSlugText("sql") } },
+      { kind: "unlink", key: { id: other.id } },
+    ],
+  });
+  expect([p.title, p.author.displayName, p.editor?.email as string]).toEqual(["First", "Ann", "eve@acme.com"]);
+  expect(p.tags.map((t) => t.name as string)).toEqual(["golang", "sql"]);
+  p = await h.posts.patchNested(PostFull.key(one), {
+    author: { kind: "link", key: UserFull.key(ed) },
+    editor: { kind: "update", partial: { displayName: "Eve" } },
+    postTags: [
+      { kind: "delete", key: { postId: one.id, tagId: tag.id } },
+      { kind: "create", draft: { tagId: other.id } },
+      { kind: "update", key: { postId: one.id, tagId: other.id }, partial: {} },
+    ],
+  });
+  expect([p.author.id, p.editor?.displayName, p.tags[0]?.id]).toEqual([ed.id, "Eve", other.id]);
+  expect(p.tags).toHaveLength(2);
+  p = await h.posts.patchNested(PostFull.key(one), {
+    author: { kind: "create", draft: { email: parseEmailAddress("new@acme.com"), passwordHash: "x" } },
+    editor: { kind: "unlink" },
+  });
+  expect([p.author.email as string, p.editor]).toEqual(["new@acme.com", null]);
+  p = await h.posts.patchNested(PostFull.key(one), { editor: { kind: "link", key: UserFull.key(u) } });
+  expect(p.editor?.id).toBe(u.id);
+  for (const c of [
+    { postTags: [{ kind: "delete" as const, key: { postId: two.id, tagId: tag.id } }] },
+    { postTags: [{ kind: "update" as const, key: { postId: two.id, tagId: tag.id }, partial: {} }] },
+  ]) {
+    expect(await failure(h.posts.patchNested(PostFull.key(two), c))).toBe("NotFound");
+  }
+  expect(await failure(h.posts.patchNested(PostFull.key(two), { editor: { kind: "update", partial: {} } }))).toBe("NotFound");
+
+  // Scoped profiles: the owning user's update.
+  await h.profiles.insert({ userId: u.id });
+  const pr = await h.profiles.patchNested({ userId: u.id }, { bio: "Hi", user: { kind: "update", partial: { displayName: "Annie" } } });
+  expect([pr.bio, pr.user.displayName]).toEqual(["Hi", "Annie"]);
+});

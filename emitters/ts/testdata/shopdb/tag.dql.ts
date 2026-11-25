@@ -567,11 +567,13 @@ export interface TagsReadStore {
 export interface TagsStore extends TagsReadStore {
   insert(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull>;
   insertMany(ds: readonly TagDraft[], ...as: Assignment<TagsTable>[]): Promise<TagFull[]>;
+  insertNested(d: TagDraftNested, ...as: Assignment<TagsTable>[]): Promise<TagFullNested>;
   insertOrIgnoreByName(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull | undefined>;
   insertOrIgnore(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull | undefined>;
   upsertByName(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull>;
   upsert(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull>;
   patch(k: TagKey, p: TagPartial, ...as: Update<TagsTable>[]): Promise<TagFull>;
+  patchNested(k: TagKey, p: TagPartialNested, ...as: Update<TagsTable>[]): Promise<TagFullNested>;
   updateWhere(where: Pred<TagsTable>, p: TagPartial, ...as: Update<TagsTable>[]): Promise<number>;
   delete(k: TagKey): Promise<void>;
   deleteWhere(where: Pred<TagsTable>): Promise<number>;
