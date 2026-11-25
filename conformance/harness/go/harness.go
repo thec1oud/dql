@@ -82,7 +82,9 @@ type Step struct {
 	// server fail its next writes, and Rollback ends each run with an error,
 	// so that it rolls back. Its expect takes error, and attempts, how many
 	// times its closure ran. A step in it whose call fails where it expects
-	// no error ends the run with that error.
+	// no error ends the run with that error. Op retry runs Steps the same
+	// way under Retry(policy).Do, outside a transaction, with Retry's
+	// attempts and On, the classes it reruns after (§22.4).
 	Steps       []Step  `yaml:"steps"`
 	Propagation string  `yaml:"propagation"`
 	Isolation   string  `yaml:"isolation"`
@@ -158,6 +160,8 @@ type OrderKey struct {
 // Retry is a transaction's retry policy: how many runs, without backoff.
 type Retry struct {
 	Attempts int `yaml:"attempts"`
+	// On is the error classes an op retry step reruns after (§22.4).
+	On []string `yaml:"on"`
 }
 
 // Inject is what the server does on the step's next Times writes: sleep for
@@ -840,7 +844,7 @@ func (r *runner) transact(st Step) ([]string, error) {
 func (r *runner) transaction(st Step) ([]string, error) {
 	mark := r.events.mark()
 	m, ok := member(r.db, st.Op)
-	if !ok {
+	if !ok && st.Op != "retry" {
 		return []string{"no transaction " + st.Op}, nil
 	}
 	var opts []reflect.Value
@@ -865,11 +869,11 @@ func (r *runner) transaction(st Step) ([]string, error) {
 	}
 	runs := 0
 	var inner []string
-	fn := reflect.MakeFunc(m.Type().In(1), func(in []reflect.Value) []reflect.Value {
+	body := func(ctx context.Context) error {
 		runs++
 		inner = nil
 		outer := r.ctx
-		r.ctx = in[0].Interface().(context.Context)
+		r.ctx = ctx
 		defer func() { r.ctx = outer }()
 		var err error
 		for i, s := range st.Steps {
@@ -885,14 +889,31 @@ func (r *runner) transaction(st Step) ([]string, error) {
 		if err == nil && st.Rollback {
 			err = errRollback
 		}
-		out := reflect.New(reflect.TypeFor[error]()).Elem()
-		if err != nil {
-			out.Set(reflect.ValueOf(err))
+		return err
+	}
+	var err error
+	if st.Op == "retry" {
+		// Retry(policy).Do reruns the steps after the classes On names
+		// (§22.4), outside any transaction.
+		p := dql.RetryPolicy{Initial: time.Microsecond, Max: time.Microsecond}
+		if st.Retry != nil {
+			p.Attempts = st.Retry.Attempts
+			for _, c := range st.Retry.On {
+				p.On = append(p.On, dql.Class(c))
+			}
 		}
-		return []reflect.Value{out}
-	})
-	out := m.Call(append([]reflect.Value{reflect.ValueOf(r.ctx), fn}, opts...))
-	err, _ := out[0].Interface().(error)
+		err = dql.Retry(p).Do(r.ctx, body)
+	} else {
+		fn := reflect.MakeFunc(m.Type().In(1), func(in []reflect.Value) []reflect.Value {
+			out := reflect.New(reflect.TypeFor[error]()).Elem()
+			if err := body(in[0].Interface().(context.Context)); err != nil {
+				out.Set(reflect.ValueOf(err))
+			}
+			return []reflect.Value{out}
+		})
+		out := m.Call(append([]reflect.Value{reflect.ValueOf(r.ctx), fn}, opts...))
+		err, _ = out[0].Interface().(error)
+	}
 	if errors.Is(err, errRollback) {
 		err = nil
 	}

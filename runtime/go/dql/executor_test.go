@@ -3,6 +3,7 @@ package dql
 import (
 	"context"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -77,7 +78,7 @@ func TestNew(t *testing.T) {
 	}
 	// Sources open in name order, each connecting once (§22.1).
 	expect(t, d, `open pg://wh max 1 setup ["SET TIME ZONE 'UTC'"]; pg://wh#1 put back; open pg://shop max 2 setup ["SET TIME ZONE 'UTC'"]; pg://shop#1 put back`)
-	if e.retry != DefaultRetry {
+	if !reflect.DeepEqual(e.retry, DefaultRetry) {
 		t.Errorf("retry %v", e.retry)
 	}
 	e.Close()

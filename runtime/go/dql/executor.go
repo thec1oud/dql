@@ -21,7 +21,7 @@ type Config struct {
 	Catalogs map[string]string
 	// The level of a read whose statement sets none; unset is Primary.
 	Consistency Consistency
-	// The zero policy is DefaultRetry.
+	// A policy without Attempts is DefaultRetry.
 	Retry RetryPolicy
 }
 
@@ -143,7 +143,7 @@ func New(ctx context.Context, d Driver, dialect Dialect, c Config, opts ...Optio
 	if e.consistency.level == unset {
 		e.consistency = Primary
 	}
-	if e.retry == (RetryPolicy{}) {
+	if e.retry.Attempts == 0 {
 		e.retry = DefaultRetry
 	}
 	for _, o := range opts {
