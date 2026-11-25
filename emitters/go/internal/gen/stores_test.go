@@ -53,7 +53,7 @@ func TestDialectFile(t *testing.T) {
 		`{Catalog: "shop", Schema: "app", Object: "users", Class: dql.ClassNotNullViolation, Name: "email"}: {Name: "email", Kind: dql.ConstraintNotNull, Sensitive: true},`,
 		"Replication: &dql.Replication{\n\t\tPosition: \"SELECT pg_current_wal_lsn()::text\",",
 		"MaxParams: 65535,",
-		"StatementModes: []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe},",
+		"StatementModes: []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple},",
 		`var Catalogs = []string{"shop"}`,
 	)
 	contains(t, files, "dql-fragments.dql.go", "Placeholder: dql.DollarNumbered,", "\"col.users.email\": `u.\"email\"`,")

@@ -201,12 +201,13 @@ type Assign struct {
 // shopdb.Select[shopdb.TenantFull, shopdb.TenantsTable]. Open opens the
 // handle and its executor on the database at dsn, with replicas of it at the
 // replicas' DSNs and at most maxConns connections to it, 0 meaning a default,
-// and Replay pauses or resumes the replay of the replica at dsn.
+// sending statements in mode, and Replay pauses or resumes the replay of the
+// replica at dsn.
 type Schema struct {
 	DDL       []string
 	Dialect   string
 	Exec      func(ctx context.Context, dsn, sql string) error
-	Open      func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (db any, exec *dql.Executor, err error)
+	Open      func(ctx context.Context, dsn string, replicas []string, maxConns int, mode dql.StatementMode, opts ...dql.Option) (db any, exec *dql.Executor, err error)
 	Replay    func(ctx context.Context, dsn string, pause bool) error
 	Tables    map[string]any
 	Changes   []any

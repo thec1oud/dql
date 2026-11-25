@@ -62,7 +62,7 @@ func (d *Driver) Open(_ context.Context, c dql.PoolConfig) (dql.Pool, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &pool{p}, nil
+	return &pool{p: p, simple: c.Mode == dql.ModeSimple}, nil
 }
 
 // modes are pgx's ways of sending the statement modes (§26.4): prepare
@@ -132,31 +132,57 @@ func (d *Driver) Broken(err error) bool {
 		pgconn.SafeToRetry(err)
 }
 
-type pool struct{ p *pgxpool.Pool }
+type pool struct {
+	p      *pgxpool.Pool
+	simple bool
+}
 
 func (p *pool) Acquire(ctx context.Context) (dql.Conn, error) {
 	c, err := p.p.Acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &conn{c}, nil
+	return &conn{c: c, simple: p.simple}, nil
 }
 
 func (p *pool) Close() { p.p.Close() }
 
-type conn struct{ c *pgxpool.Conn }
+// conn is one connection. In simple mode it sends each value as text
+// (§26.4).
+type conn struct {
+	c      *pgxpool.Conn
+	simple bool
+}
 
-func (c *conn) Query(ctx context.Context, sql string, args []any, _ []string) (dql.Rows, error) {
-	r, err := c.c.Query(ctx, sql, encodeArgs(args)...)
+func (c *conn) Query(ctx context.Context, sql string, args []any, types []string) (dql.Rows, error) {
+	vals, err := c.args(args, types)
+	if err != nil {
+		return nil, err
+	}
+	r, err := c.c.Query(ctx, sql, vals...)
 	if err != nil {
 		return nil, err
 	}
 	return &rows{r: r, m: c.c.Conn().TypeMap()}, nil
 }
 
-func (c *conn) Exec(ctx context.Context, sql string, args []any, _ []string) (int64, error) {
-	tag, err := c.c.Exec(ctx, sql, encodeArgs(args)...)
+func (c *conn) Exec(ctx context.Context, sql string, args []any, types []string) (int64, error) {
+	vals, err := c.args(args, types)
+	if err != nil {
+		return 0, err
+	}
+	tag, err := c.c.Exec(ctx, sql, vals...)
 	return tag.RowsAffected(), err
+}
+
+// args encodes a statement's arguments. The server describes a prepared or
+// described statement, so pgx encodes each value by its parameter's type;
+// in simple mode the arguments' declared types stand in (simpleArgs).
+func (c *conn) args(args []any, types []string) ([]any, error) {
+	if c.simple {
+		return simpleArgs(c.c.Conn().TypeMap(), args, types)
+	}
+	return encodeArgs(args), nil
 }
 
 func (c *conn) Begin(ctx context.Context, o dql.TxOptions) error {

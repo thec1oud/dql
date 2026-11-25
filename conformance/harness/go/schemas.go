@@ -170,16 +170,16 @@ var Schemas = map[string]Schema{
 
 // opener opens a schema's handle, made by newDB on the executor newExec
 // makes: on the database at dsn with its replicas, at most maxConns
-// connections to it, 4 by default.
+// connections to it, 4 by default, sending statements in mode (§26.4).
 func opener[DB any](
 	newExec func(context.Context, dql.Driver, dql.Config, ...dql.Option) (*dql.Executor, error),
 	newDB func(*dql.Executor) DB,
-) func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (any, *dql.Executor, error) {
-	return func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (any, *dql.Executor, error) {
+) func(ctx context.Context, dsn string, replicas []string, maxConns int, mode dql.StatementMode, opts ...dql.Option) (any, *dql.Executor, error) {
+	return func(ctx context.Context, dsn string, replicas []string, maxConns int, mode dql.StatementMode, opts ...dql.Option) (any, *dql.Executor, error) {
 		if maxConns == 0 {
 			maxConns = 4
 		}
-		src := dql.SourceConfig{Primary: dql.ConnConfig{DSN: dsn, MaxConns: maxConns}, MaxLag: maxLag}
+		src := dql.SourceConfig{Primary: dql.ConnConfig{DSN: dsn, MaxConns: maxConns}, MaxLag: maxLag, StatementMode: mode}
 		for _, r := range replicas {
 			src.Replicas = append(src.Replicas, dql.ConnConfig{DSN: r, MaxConns: 4})
 		}

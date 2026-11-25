@@ -90,7 +90,7 @@ var Dialect = dql.Dialect{
 		Replayed: "SELECT pg_last_wal_replay_lsn() >= ALL (SELECT p::pg_lsn FROM unnest($1::text[]) p)",
 	},
 	MaxParams:      65535,
-	StatementModes: []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe},
+	StatementModes: []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple},
 }
 
 // Catalogs are the catalogs this package reads, each bound to a source
