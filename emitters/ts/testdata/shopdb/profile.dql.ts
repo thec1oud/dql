@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Temporal } from "@dql/runtime";
+import type { Keyed, Temporal } from "@dql/runtime";
 import type { UserFull, UserPartial, UserRef } from "./user.dql.ts";
 
 /** ProfileDraft is the shape profile.draft.flat of shop.app.profiles. */
@@ -83,3 +83,126 @@ export type ProfileChangeForUser =
 /** ProfileUserChange holds one change to a related shop.app.users: update (§14.5, §14.6). */
 export type ProfileUserChange =
   | { kind: "update"; partial: UserPartial };
+
+/** ProfileDraft converts ProfileDraft values to other shapes (§14.9). */
+export const ProfileDraft = {
+  /** toPartial converts d to ProfilePartial (§14.9). */
+  toPartial(d: ProfileDraft): ProfilePartial {
+    const p: ProfilePartial = {};
+    if (d.bio !== undefined) p.bio = d.bio;
+    if (d.birthday !== undefined) p.birthday = d.birthday;
+    return p;
+  },
+} as const;
+
+/** ProfileDraftNested converts ProfileDraftNested values to other shapes (§14.9). */
+export const ProfileDraftNested = {
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: ProfileDraftNested): ProfileDraftNests {
+    const n2: ProfileDraftNests = {};
+    if (n.user !== undefined) n2.user = n.user;
+    return n2;
+  },
+} as const;
+
+/** ProfileFull converts ProfileFull values to other shapes (§14.9). */
+export const ProfileFull = {
+  /** toDraft converts f to ProfileDraft (§14.9). */
+  toDraft(f: ProfileFull): ProfileDraft {
+    return {
+      userId: f.userId,
+      bio: f.bio,
+      birthday: f.birthday,
+    };
+  },
+  /** key converts f to ProfileKey (§14.9). */
+  key(f: ProfileFull): ProfileKey {
+    return {
+      userId: f.userId,
+    };
+  },
+  /** toPartial converts f to ProfilePartial (§14.9). */
+  toPartial(f: ProfileFull): ProfilePartial {
+    return {
+      bio: f.bio,
+      birthday: f.birthday,
+    };
+  },
+} as const;
+
+/** ProfileFullNested converts ProfileFullNested values to other shapes (§14.9). */
+export const ProfileFullNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: ProfileFullNested): ProfileFull {
+    return {
+      userId: n.userId,
+      bio: n.bio,
+      birthday: n.birthday,
+    };
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: ProfileFullNested): ProfileFullNests {
+    return {
+      user: n.user,
+    };
+  },
+} as const;
+
+/** ProfilePartial converts ProfilePartial values to other shapes (§14.9). */
+export const ProfilePartial = {
+  /** applyToDraft returns a copy of d with the fields p holds set; fields ProfileDraft cannot hold are ignored (§14.9). */
+  applyToDraft(p: ProfilePartial, d: ProfileDraft): ProfileDraft {
+    const out: ProfileDraft = { ...d };
+    if (p.bio !== undefined) out.bio = p.bio;
+    if (p.birthday !== undefined) out.birthday = p.birthday;
+    return out;
+  },
+  /** applyTo returns a copy of f with the fields p holds set; fields ProfileFull cannot hold are ignored (§14.9). */
+  applyTo(p: ProfilePartial, f: ProfileFull): ProfileFull {
+    const out: ProfileFull = { ...f };
+    if (p.bio !== undefined) out.bio = p.bio;
+    if (p.birthday !== undefined) out.birthday = p.birthday;
+    return out;
+  },
+} as const;
+
+/** ProfilePartialNested converts ProfilePartialNested values to other shapes (§14.9). */
+export const ProfilePartialNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: ProfilePartialNested): ProfilePartial {
+    const p: ProfilePartial = {};
+    if (n.bio !== undefined) p.bio = n.bio;
+    if (n.birthday !== undefined) p.birthday = n.birthday;
+    return p;
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: ProfilePartialNested): ProfilePartialNests {
+    const n2: ProfilePartialNests = {};
+    if (n.user !== undefined) n2.user = n.user;
+    return n2;
+  },
+} as const;
+
+/**
+ * mergeProfileByKey applies each change to the rows its key matches and
+ * returns them, with the keys of changes that matched no row. Keys compare
+ * exactly, or after a certified fold (§8.9, §14.9).
+ */
+export function mergeProfileByKey(
+  rows: readonly ProfileFull[],
+  changes: readonly Keyed<ProfileKey, ProfilePartial>[],
+): { merged: ProfileFull[]; unmatched: ProfileKey[] } {
+  const merged = [...rows];
+  const unmatched: ProfileKey[] = [];
+  for (const c of changes) {
+    let matched = false;
+    for (const [i, r] of merged.entries()) {
+      if (r.userId === c.key.userId) {
+        merged[i] = ProfilePartial.applyTo(c.value, r);
+        matched = true;
+      }
+    }
+    if (!matched) unmatched.push(c.key);
+  }
+  return { merged, unmatched };
+}

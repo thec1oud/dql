@@ -5,6 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
+import type { Keyed } from "@dql/runtime";
 import type { SlugText } from "./dql-types.dql.ts";
 import type { PostDraft, PostFull, PostKey, PostLink } from "./post.dql.ts";
 import type { PostTagChangeForTag, PostTagDraftForTag, PostTagFull } from "./post_tag.dql.ts";
@@ -72,3 +73,127 @@ export type TagPostsChange =
 export type TagRef =
   | { kind: "link"; key: TagKey }
   | { kind: "create"; draft: TagDraft };
+
+/** TagDraft converts TagDraft values to other shapes (§14.9). */
+export const TagDraft = {
+  /** toPartial converts d to TagPartial (§14.9). */
+  toPartial(d: TagDraft): TagPartial {
+    return {
+      name: d.name,
+    };
+  },
+} as const;
+
+/** TagDraftNested converts TagDraftNested values to other shapes (§14.9). */
+export const TagDraftNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: TagDraftNested): TagDraft {
+    return {
+      name: n.name,
+    };
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: TagDraftNested): TagDraftNests {
+    const n2: TagDraftNests = {};
+    if (n.postTags !== undefined) n2.postTags = n.postTags;
+    if (n.posts !== undefined) n2.posts = n.posts;
+    return n2;
+  },
+} as const;
+
+/** TagFull converts TagFull values to other shapes (§14.9). */
+export const TagFull = {
+  /** toDraft converts f to TagDraft (§14.9). */
+  toDraft(f: TagFull): TagDraft {
+    return {
+      name: f.name,
+    };
+  },
+  /** key converts f to TagKey (§14.9). */
+  key(f: TagFull): TagKey {
+    return {
+      id: f.id,
+    };
+  },
+  /** toPartial converts f to TagPartial (§14.9). */
+  toPartial(f: TagFull): TagPartial {
+    return {
+      name: f.name,
+    };
+  },
+} as const;
+
+/** TagFullNested converts TagFullNested values to other shapes (§14.9). */
+export const TagFullNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: TagFullNested): TagFull {
+    return {
+      id: n.id,
+      name: n.name,
+    };
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: TagFullNested): TagFullNests {
+    return {
+      postTags: n.postTags,
+      posts: n.posts,
+    };
+  },
+} as const;
+
+/** TagPartial converts TagPartial values to other shapes (§14.9). */
+export const TagPartial = {
+  /** applyToDraft returns a copy of d with the fields p holds set; fields TagDraft cannot hold are ignored (§14.9). */
+  applyToDraft(p: TagPartial, d: TagDraft): TagDraft {
+    const out: TagDraft = { ...d };
+    if (p.name !== undefined) out.name = p.name;
+    return out;
+  },
+  /** applyTo returns a copy of f with the fields p holds set; fields TagFull cannot hold are ignored (§14.9). */
+  applyTo(p: TagPartial, f: TagFull): TagFull {
+    const out: TagFull = { ...f };
+    if (p.name !== undefined) out.name = p.name;
+    return out;
+  },
+} as const;
+
+/** TagPartialNested converts TagPartialNested values to other shapes (§14.9). */
+export const TagPartialNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: TagPartialNested): TagPartial {
+    const p: TagPartial = {};
+    if (n.name !== undefined) p.name = n.name;
+    return p;
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: TagPartialNested): TagPartialNests {
+    const n2: TagPartialNests = {};
+    if (n.postTags !== undefined) n2.postTags = n.postTags;
+    if (n.posts !== undefined) n2.posts = n.posts;
+    return n2;
+  },
+} as const;
+
+/**
+ * mergeTagByKey applies each change to the rows its key matches and
+ * returns them, with the keys of changes that matched no row. Keys compare
+ * exactly, or after a certified fold (§8.9, §14.9).
+ */
+export function mergeTagByKey(
+  rows: readonly TagFull[],
+  changes: readonly Keyed<TagKey, TagPartial>[],
+): { merged: TagFull[]; unmatched: TagKey[] } {
+  const merged = [...rows];
+  const unmatched: TagKey[] = [];
+  for (const c of changes) {
+    let matched = false;
+    for (const [i, r] of merged.entries()) {
+      if (r.id === c.key.id) {
+        merged[i] = TagPartial.applyTo(c.value, r);
+        matched = true;
+      }
+    }
+    if (!matched) unmatched.push(c.key);
+  }
+  return { merged, unmatched };
+}

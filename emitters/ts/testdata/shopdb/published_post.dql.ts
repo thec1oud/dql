@@ -27,3 +27,30 @@ export interface PublishedPostFullNests {
 export interface PublishedPostKey {
   id: bigint; // asserted non-null; checked when decoding
 }
+
+/** PublishedPostFull converts PublishedPostFull values to other shapes (§14.9). */
+export const PublishedPostFull = {
+  /** key converts f to PublishedPostKey (§14.9). */
+  key(f: PublishedPostFull): PublishedPostKey {
+    return {
+      id: f.id,
+    };
+  },
+} as const;
+
+/** PublishedPostFullNested converts PublishedPostFullNested values to other shapes (§14.9). */
+export const PublishedPostFullNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: PublishedPostFullNested): PublishedPostFull {
+    return {
+      id: n.id,
+      title: n.title,
+      authorId: n.authorId,
+      publishedAt: n.publishedAt,
+    };
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: PublishedPostFullNested): PublishedPostFullNests {
+    return {};
+  },
+} as const;

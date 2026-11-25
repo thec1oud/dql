@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Temporal, Uuid } from "@dql/runtime";
+import type { Keyed, Temporal, Uuid } from "@dql/runtime";
 import type { EmailAddress } from "./dql-types.dql.ts";
 import type { PostChangeForAuthor, PostChangeForEditor, PostDraftForAuthor, PostDraftForEditor, PostFull } from "./post.dql.ts";
 import type { ProfileChangeForUser, ProfileDraftForUser, ProfileFull } from "./profile.dql.ts";
@@ -85,3 +85,157 @@ export interface UserScope {
 export type UserRef =
   | { kind: "link"; key: UserKey }
   | { kind: "create"; draft: UserDraft };
+
+/** UserDraft converts UserDraft values to other shapes (§14.9). */
+export const UserDraft = {
+  /** toPartial converts d to UserPartial (§14.9). */
+  toPartial(d: UserDraft): UserPartial {
+    const p: UserPartial = {
+      email: d.email,
+      passwordHash: d.passwordHash,
+    };
+    if (d.displayName !== undefined) p.displayName = d.displayName;
+    return p;
+  },
+} as const;
+
+/** UserDraftNested converts UserDraftNested values to other shapes (§14.9). */
+export const UserDraftNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: UserDraftNested): UserDraft {
+    const d: UserDraft = {
+      email: n.email,
+      passwordHash: n.passwordHash,
+    };
+    if (n.displayName !== undefined) d.displayName = n.displayName;
+    if (n.createdAt !== undefined) d.createdAt = n.createdAt;
+    if (n.updatedAt !== undefined) d.updatedAt = n.updatedAt;
+    if (n.version !== undefined) d.version = n.version;
+    return d;
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: UserDraftNested): UserDraftNests {
+    const n2: UserDraftNests = {};
+    if (n.postsToAuthor !== undefined) n2.postsToAuthor = n.postsToAuthor;
+    if (n.postsToEditor !== undefined) n2.postsToEditor = n.postsToEditor;
+    if (n.profile !== undefined) n2.profile = n.profile;
+    return n2;
+  },
+} as const;
+
+/** UserFull converts UserFull values to other shapes (§14.9). */
+export const UserFull = {
+  /** toDraft converts f to UserDraft (§14.9). UserFull cannot hold every field, so passwordHash supplies password_hash. */
+  toDraft(f: UserFull, passwordHash: string): UserDraft {
+    return {
+      email: f.email,
+      displayName: f.displayName,
+      passwordHash,
+      createdAt: f.createdAt,
+      updatedAt: f.updatedAt,
+      version: f.version,
+    };
+  },
+  /** key converts f to UserKey (§14.9). */
+  key(f: UserFull): UserKey {
+    return {
+      id: f.id,
+      version: f.version,
+    };
+  },
+  /** toPartial converts f to UserPartial (§14.9). */
+  toPartial(f: UserFull): UserPartial {
+    return {
+      email: f.email,
+      displayName: f.displayName,
+    };
+  },
+} as const;
+
+/** UserFullNested converts UserFullNested values to other shapes (§14.9). */
+export const UserFullNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: UserFullNested): UserFull {
+    return {
+      id: n.id,
+      tenantId: n.tenantId,
+      email: n.email,
+      displayName: n.displayName,
+      createdAt: n.createdAt,
+      updatedAt: n.updatedAt,
+      version: n.version,
+    };
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: UserFullNested): UserFullNests {
+    return {
+      postsToAuthor: n.postsToAuthor,
+      postsToEditor: n.postsToEditor,
+      profile: n.profile,
+      tenant: n.tenant,
+    };
+  },
+} as const;
+
+/** UserPartial converts UserPartial values to other shapes (§14.9). */
+export const UserPartial = {
+  /** applyToDraft returns a copy of d with the fields p holds set; fields UserDraft cannot hold are ignored (§14.9). */
+  applyToDraft(p: UserPartial, d: UserDraft): UserDraft {
+    const out: UserDraft = { ...d };
+    if (p.email !== undefined) out.email = p.email;
+    if (p.displayName !== undefined) out.displayName = p.displayName;
+    if (p.passwordHash !== undefined) out.passwordHash = p.passwordHash;
+    return out;
+  },
+  /** applyTo returns a copy of f with the fields p holds set; fields UserFull cannot hold are ignored (§14.9). */
+  applyTo(p: UserPartial, f: UserFull): UserFull {
+    const out: UserFull = { ...f };
+    if (p.email !== undefined) out.email = p.email;
+    if (p.displayName !== undefined) out.displayName = p.displayName;
+    return out;
+  },
+} as const;
+
+/** UserPartialNested converts UserPartialNested values to other shapes (§14.9). */
+export const UserPartialNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: UserPartialNested): UserPartial {
+    const p: UserPartial = {};
+    if (n.email !== undefined) p.email = n.email;
+    if (n.displayName !== undefined) p.displayName = n.displayName;
+    if (n.passwordHash !== undefined) p.passwordHash = n.passwordHash;
+    return p;
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: UserPartialNested): UserPartialNests {
+    const n2: UserPartialNests = {};
+    if (n.postsToAuthor !== undefined) n2.postsToAuthor = n.postsToAuthor;
+    if (n.postsToEditor !== undefined) n2.postsToEditor = n.postsToEditor;
+    if (n.profile !== undefined) n2.profile = n.profile;
+    return n2;
+  },
+} as const;
+
+/**
+ * mergeUserByKey applies each change to the rows its key matches and
+ * returns them, with the keys of changes that matched no row. Keys compare
+ * exactly, or after a certified fold (§8.9, §14.9).
+ */
+export function mergeUserByKey(
+  rows: readonly UserFull[],
+  changes: readonly Keyed<UserKey, UserPartial>[],
+): { merged: UserFull[]; unmatched: UserKey[] } {
+  const merged = [...rows];
+  const unmatched: UserKey[] = [];
+  for (const c of changes) {
+    let matched = false;
+    for (const [i, r] of merged.entries()) {
+      if (r.id === c.key.id) {
+        merged[i] = UserPartial.applyTo(c.value, r);
+        matched = true;
+      }
+    }
+    if (!matched) unmatched.push(c.key);
+  }
+  return { merged, unmatched };
+}

@@ -12,6 +12,7 @@ import {
   type ValidationIssue,
   classOf,
   describeIssue,
+  bytesEqual,
   foldAscii,
   issuesAt,
   length,
@@ -184,6 +185,12 @@ describe("checks", () => {
 });
 
 describe("collections", () => {
+  test("bytesEqual", () => {
+    expect(bytesEqual(new Uint8Array([1, 2]), new Uint8Array([1, 2]))).toBe(true);
+    expect(bytesEqual(new Uint8Array([1, 2]), new Uint8Array([1, 3]))).toBe(false);
+    expect(bytesEqual(new Uint8Array([1]), new Uint8Array([1, 2]))).toBe(false);
+  });
+
   test("foldAscii", () => {
     expect(foldAscii("ÀBC-Ünï-XyZ") as string).toBe("Àbc-Ünï-xyz");
   });

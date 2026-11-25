@@ -59,10 +59,13 @@ type shapeIndex struct {
 	// files holds each entity's file, custom the custom shapes' file.
 	files  map[key]*file
 	custom *file
+	// members holds each shape's companion members, by shape key, in the
+	// order the conversion table lists them (§14.9).
+	members map[string][]member
 }
 
 func (g *generator) indexShapes() {
-	g.ix = shapeIndex{tables: map[key]*irv1.Table{}, shapes: map[string]*irv1.Shape{}, unions: map[string]*irv1.RelationUnion{}, files: map[key]*file{}}
+	g.ix = shapeIndex{tables: map[key]*irv1.Table{}, shapes: map[string]*irv1.Shape{}, unions: map[string]*irv1.RelationUnion{}, files: map[key]*file{}, members: map[string][]member{}}
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, t := range ns.GetTables() {
 			g.ix.tables[keyOf(q(t.GetName().GetStored()))] = t

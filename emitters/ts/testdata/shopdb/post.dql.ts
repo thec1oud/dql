@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Temporal } from "@dql/runtime";
+import type { Keyed, Temporal } from "@dql/runtime";
 import type { MoneyAmount, PostStatus } from "./dql-types.dql.ts";
 import type { PostTagChangeForPost, PostTagDraftForPost, PostTagFull } from "./post_tag.dql.ts";
 import type { TagDraft, TagFull, TagKey, TagLink } from "./tag.dql.ts";
@@ -180,3 +180,172 @@ export type PostTagsChange =
   | { kind: "link"; key: TagKey }
   | { kind: "create"; draft: TagDraft }
   | { kind: "unlink"; key: TagKey };
+
+/** PostDraft converts PostDraft values to other shapes (§14.9). */
+export const PostDraft = {
+  /** toPartial converts d to PostPartial (§14.9). */
+  toPartial(d: PostDraft): PostPartial {
+    const p: PostPartial = {
+      authorId: d.authorId,
+      title: d.title,
+    };
+    if (d.editorId !== undefined) p.editorId = d.editorId;
+    if (d.status !== undefined) p.status = d.status;
+    if (d.price !== undefined) p.price = d.price;
+    if (d.labels !== undefined) p.labels = d.labels;
+    if (d.publishedAt !== undefined) p.publishedAt = d.publishedAt;
+    return p;
+  },
+} as const;
+
+/** PostDraftNested converts PostDraftNested values to other shapes (§14.9). */
+export const PostDraftNested = {
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: PostDraftNested): PostDraftNests {
+    const n2: PostDraftNests = {};
+    if (n.author !== undefined) n2.author = n.author;
+    if (n.editor !== undefined) n2.editor = n.editor;
+    if (n.postTags !== undefined) n2.postTags = n.postTags;
+    if (n.tags !== undefined) n2.tags = n.tags;
+    return n2;
+  },
+} as const;
+
+/** PostFull converts PostFull values to other shapes (§14.9). */
+export const PostFull = {
+  /** toDraft converts f to PostDraft (§14.9). */
+  toDraft(f: PostFull): PostDraft {
+    return {
+      id: f.id,
+      authorId: f.authorId,
+      editorId: f.editorId,
+      title: f.title,
+      status: f.status,
+      price: f.price,
+      labels: f.labels,
+      publishedAt: f.publishedAt,
+    };
+  },
+  /** key converts f to PostKey (§14.9). */
+  key(f: PostFull): PostKey {
+    return {
+      id: f.id,
+    };
+  },
+  /** toPartial converts f to PostPartial (§14.9). */
+  toPartial(f: PostFull): PostPartial {
+    return {
+      authorId: f.authorId,
+      editorId: f.editorId,
+      title: f.title,
+      status: f.status,
+      price: f.price,
+      labels: f.labels,
+      publishedAt: f.publishedAt,
+    };
+  },
+} as const;
+
+/** PostFullNested converts PostFullNested values to other shapes (§14.9). */
+export const PostFullNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: PostFullNested): PostFull {
+    return {
+      id: n.id,
+      authorId: n.authorId,
+      editorId: n.editorId,
+      title: n.title,
+      slug: n.slug,
+      status: n.status,
+      price: n.price,
+      labels: n.labels,
+      publishedAt: n.publishedAt,
+    };
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: PostFullNested): PostFullNests {
+    return {
+      author: n.author,
+      editor: n.editor,
+      postTags: n.postTags,
+      tags: n.tags,
+    };
+  },
+} as const;
+
+/** PostPartial converts PostPartial values to other shapes (§14.9). */
+export const PostPartial = {
+  /** applyToDraft returns a copy of d with the fields p holds set; fields PostDraft cannot hold are ignored (§14.9). */
+  applyToDraft(p: PostPartial, d: PostDraft): PostDraft {
+    const out: PostDraft = { ...d };
+    if (p.authorId !== undefined) out.authorId = p.authorId;
+    if (p.editorId !== undefined) out.editorId = p.editorId;
+    if (p.title !== undefined) out.title = p.title;
+    if (p.status !== undefined) out.status = p.status;
+    if (p.price !== undefined) out.price = p.price;
+    if (p.labels !== undefined) out.labels = p.labels;
+    if (p.publishedAt !== undefined) out.publishedAt = p.publishedAt;
+    return out;
+  },
+  /** applyTo returns a copy of f with the fields p holds set; fields PostFull cannot hold are ignored (§14.9). */
+  applyTo(p: PostPartial, f: PostFull): PostFull {
+    const out: PostFull = { ...f };
+    if (p.authorId !== undefined) out.authorId = p.authorId;
+    if (p.editorId !== undefined) out.editorId = p.editorId;
+    if (p.title !== undefined) out.title = p.title;
+    if (p.status !== undefined) out.status = p.status;
+    if (p.price !== undefined) out.price = p.price;
+    if (p.labels !== undefined) out.labels = p.labels;
+    if (p.publishedAt !== undefined) out.publishedAt = p.publishedAt;
+    return out;
+  },
+} as const;
+
+/** PostPartialNested converts PostPartialNested values to other shapes (§14.9). */
+export const PostPartialNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: PostPartialNested): PostPartial {
+    const p: PostPartial = {};
+    if (n.authorId !== undefined) p.authorId = n.authorId;
+    if (n.editorId !== undefined) p.editorId = n.editorId;
+    if (n.title !== undefined) p.title = n.title;
+    if (n.status !== undefined) p.status = n.status;
+    if (n.price !== undefined) p.price = n.price;
+    if (n.labels !== undefined) p.labels = n.labels;
+    if (n.publishedAt !== undefined) p.publishedAt = n.publishedAt;
+    return p;
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: PostPartialNested): PostPartialNests {
+    const n2: PostPartialNests = {};
+    if (n.author !== undefined) n2.author = n.author;
+    if (n.editor !== undefined) n2.editor = n.editor;
+    if (n.postTags !== undefined) n2.postTags = n.postTags;
+    if (n.tags !== undefined) n2.tags = n.tags;
+    return n2;
+  },
+} as const;
+
+/**
+ * mergePostByKey applies each change to the rows its key matches and
+ * returns them, with the keys of changes that matched no row. Keys compare
+ * exactly, or after a certified fold (§8.9, §14.9).
+ */
+export function mergePostByKey(
+  rows: readonly PostFull[],
+  changes: readonly Keyed<PostKey, PostPartial>[],
+): { merged: PostFull[]; unmatched: PostKey[] } {
+  const merged = [...rows];
+  const unmatched: PostKey[] = [];
+  for (const c of changes) {
+    let matched = false;
+    for (const [i, r] of merged.entries()) {
+      if (r.id === c.key.id) {
+        merged[i] = PostPartial.applyTo(c.value, r);
+        matched = true;
+      }
+    }
+    if (!matched) unmatched.push(c.key);
+  }
+  return { merged, unmatched };
+}
