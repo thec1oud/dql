@@ -5455,8 +5455,7 @@
     },
     "statementModes": [
       "STATEMENT_MODE_PREPARE",
-      "STATEMENT_MODE_DESCRIBE",
-      "STATEMENT_MODE_SIMPLE"
+      "STATEMENT_MODE_DESCRIBE"
     ]
   },
   "queries": {

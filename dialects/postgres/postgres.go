@@ -58,7 +58,9 @@ func (*Plugin) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, e
 // be an array of arrays. No reference may cross catalogs (§5.1). Every connection runs in UTC (§22.7), and
 // SQLSTATEs map into the error taxonomy (§23.1). A statement binds at most
 // 65,535 parameters (§25.2); replicas serve every consistency level through
-// WAL positions (§22.5); pgx sends statements in all three modes (§26.4).
+// WAL positions (§22.5). pgx sends statements prepared or described
+// (§26.4); its simple protocol cannot send array, composite or range
+// parameters, whose types it does not know, so simple is not declared.
 func Profile() *irv1.CapabilityProfile {
 	exact := irv1.Fidelity_FIDELITY_EXACT
 	deterministic := &irv1.OperatorCondition{Collation: &irv1.Collation{Deterministic: irv1.Tristate_TRISTATE_TRUE}}
@@ -92,7 +94,7 @@ func Profile() *irv1.CapabilityProfile {
 		},
 		Replication: &irv1.ReplicationQueries{Position: position, Lag: lag, Replayed: replayed},
 		StatementModes: []irv1.StatementMode{
-			irv1.StatementMode_STATEMENT_MODE_PREPARE, irv1.StatementMode_STATEMENT_MODE_DESCRIBE, irv1.StatementMode_STATEMENT_MODE_SIMPLE,
+			irv1.StatementMode_STATEMENT_MODE_PREPARE, irv1.StatementMode_STATEMENT_MODE_DESCRIBE,
 		},
 	}
 }

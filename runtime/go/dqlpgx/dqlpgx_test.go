@@ -570,3 +570,35 @@ func TestDecode(t *testing.T) {
 		t.Error("isRange")
 	}
 }
+
+// §26.4: the statement modes pgx supports run the same statements, with
+// values of user-defined types, arrays and list parameters. Its simple
+// protocol cannot send arrays without their types, so the Postgres
+// dialect does not declare simple.
+func TestStatementModes(t *testing.T) {
+	ctx := context.Background()
+	dsn := database(t)
+	for _, m := range []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe} {
+		e, err := dql.New(ctx, New("mood"), dialect, dql.Config{
+			Sources:  map[string]dql.SourceConfig{"main": {Primary: dql.ConnConfig{DSN: dsn, MaxConns: 2}, StatementMode: m}},
+			Catalogs: map[string]string{"shop": "main"},
+		})
+		if err != nil {
+			t.Fatal(m, err)
+		}
+		id := int64(m) + 100
+		s := stmt("INSERT INTO item (id, name, mood, moods) VALUES ($1, $2, $3, $4)", id, "mode "+m.String(), "happy", []string{"sad", "happy"})
+		s.Writes = true
+		if _, err := dql.Exec(ctx, e, s); err != nil {
+			t.Fatal(m, err)
+		}
+		// Twice, so prepare and describe reuse what they cached.
+		for range 2 {
+			row, err := dql.One(ctx, e, stmt("SELECT name, mood, moods FROM item WHERE id = ANY($1)", []int64{id}))
+			if err != nil || !reflect.DeepEqual(row, dql.Row{"mode " + m.String(), "happy", []any{"sad", "happy"}}) {
+				t.Fatalf("%s: row %#v, %v", m, row, err)
+			}
+		}
+		e.Close()
+	}
+}

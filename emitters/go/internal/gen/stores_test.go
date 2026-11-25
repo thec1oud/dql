@@ -53,6 +53,7 @@ func TestDialectFile(t *testing.T) {
 		`{Catalog: "shop", Schema: "app", Object: "users", Class: dql.ClassNotNullViolation, Name: "email"}: {Name: "email", Kind: dql.ConstraintNotNull, Sensitive: true},`,
 		"Replication: &dql.Replication{\n\t\tPosition: \"SELECT pg_current_wal_lsn()::text\",",
 		"MaxParams: 65535,",
+		"StatementModes: []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe},",
 		`var Catalogs = []string{"shop"}`,
 	)
 	contains(t, files, "dql-fragments.dql.go", "Placeholder: dql.DollarNumbered,", "\"col.users.email\": `u.\"email\"`,")
@@ -61,7 +62,7 @@ func TestDialectFile(t *testing.T) {
 	// placeholders, and templates a raw string cannot hold.
 	p := b.GetCapabilities()
 	p.ConsistencyLevels = []irv1.ConsistencyLevel{irv1.ConsistencyLevel_CONSISTENCY_PRIMARY}
-	p.MaxParams, p.SessionSetup, p.Violations = 0, nil, nil
+	p.MaxParams, p.SessionSetup, p.Violations, p.StatementModes = 0, nil, nil, nil
 	p.ErrorCodes = append(p.ErrorCodes, &irv1.ErrorCode{Code: "XX000"})
 	t2 := b.GetQueries().GetFragments()
 	t2.Placeholder = irv1.Placeholder_PLACEHOLDER_QUESTION
@@ -71,7 +72,7 @@ func TestDialectFile(t *testing.T) {
 		t.Fatal(codes)
 	}
 	d := files["dql-dialect.dql.go"]
-	for _, absent := range []string{"Replication", "MaxParams", "Setup", "Violations", "XX000"} {
+	for _, absent := range []string{"Replication", "MaxParams", "Setup", "Violations", "XX000", "StatementModes"} {
 		if strings.Contains(d, absent) {
 			t.Errorf("dialect has %s:\n%s", absent, d)
 		}
@@ -82,10 +83,14 @@ func TestDialectFile(t *testing.T) {
 	// style the runtime lacks.
 	p.Violations = []*irv1.ViolationReport{{Kind: irv1.ErrorKind_ERROR_KIND_DEADLOCK, Object: qnShop("users"), Reported: "x", Rule: "x"}}
 	t2.Placeholder = irv1.Placeholder_PLACEHOLDER_UNSPECIFIED
+	// A statement mode the runtime lacks is left out, so no source can
+	// choose it (§26.4).
+	p.StatementModes = []irv1.StatementMode{99}
 	files, _ = generate(t, b, Options{})
 	if strings.Contains(files["dql-dialect.dql.go"], `Name: "x"`) || strings.Contains(files["dql-fragments.dql.go"], "Placeholder:") {
 		t.Error("unknown rule or placeholder kept")
 	}
+	contains(t, files, "dql-dialect.dql.go", "StatementModes: []dql.StatementMode{},")
 
 	// Without a profile or a fragment table there is no query surface.
 	b.Capabilities, b.Queries = nil, nil
