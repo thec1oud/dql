@@ -124,6 +124,21 @@ func (r UserRef) validate() dql.ValidationErrors {
 	return nil
 }
 
+// ToQuickInvite converts d to QuickInvite (§14.9).
+func (d UserDraft) ToQuickInvite() QuickInvite {
+	var i QuickInvite
+	i.Email = d.Email
+	return i
+}
+
+// ToSignup converts d to Signup (§14.9).
+func (d UserDraft) ToSignup() Signup {
+	var s Signup
+	s.Email = d.Email
+	s.PasswordHash = d.PasswordHash
+	return s
+}
+
 // ToPartial converts d to UserPartial (§14.9).
 func (d UserDraft) ToPartial() UserPartial {
 	var p UserPartial
@@ -203,6 +218,13 @@ func (n UserFullNested) Flat() UserFull {
 // Nests returns n's relations, without its own fields (§14.4, §14.9).
 func (n UserFullNested) Nests() UserFullNests {
 	return n.UserFullNests
+}
+
+// ToRename converts p to Rename (§14.9).
+func (p UserPartial) ToRename() Rename {
+	var r Rename
+	r.DisplayName = p.DisplayName
+	return r
 }
 
 // ApplyToDraft returns d with the fields p holds set; fields UserDraft cannot hold are
@@ -604,6 +626,26 @@ var (
 			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
 		},
 	}
+	userInsertQuickInvite = &dql.Query{
+		Name:      "user.insert.quick_invite",
+		Catalog:   "shop",
+		Kind:      "insert",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.tenant_id"}, dql.Use{Fragment: "name.users.password_hash"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("scope.tenant_id"), dql.Param("password_hash")}, Separator: ", "}}}}},
+		},
+	}
+	userInsertSignup = &dql.Query{
+		Name:      "user.insert.signup",
+		Catalog:   "shop",
+		Kind:      "insert",
+		Writes:    true,
+		Sensitive: map[string]bool{"password_hash": true},
+		Plan: []dql.Node{
+			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("password_hash"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
+		},
+	}
 	userInsertOrIgnoreByPrimary = &dql.Query{
 		Name:      "user.insert_or_ignore.by_primary",
 		Catalog:   "shop",
@@ -675,6 +717,16 @@ var (
 			dql.Use{Fragment: "update.users", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.user.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
 		},
 	}
+	userPatchRename = &dql.Query{
+		Name:      "user.patch.rename",
+		Catalog:   "shop",
+		Kind:      "patch",
+		Writes:    true,
+		AtMostOne: true,
+		Plan: []dql.Node{
+			dql.Use{Fragment: "update.users", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.user.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("display_name")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
+		},
+	}
 	userUpdateWhere = &dql.Query{
 		Name:      "user.update_where",
 		Catalog:   "shop",
@@ -722,6 +774,8 @@ type UsersStore interface {
 	Insert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertMany(ctx context.Context, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error)
 	InsertNested(ctx context.Context, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error)
+	InsertQuickInvite(ctx context.Context, d QuickInvite, passwordHash string, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	InsertSignup(ctx context.Context, d Signup, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertOrIgnore(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	Upsert(ctx context.Context, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
@@ -730,6 +784,7 @@ type UsersStore interface {
 	UpsertSetByTenantIDAndEmail(ctx context.Context, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
 	Patch(ctx context.Context, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
 	PatchNested(ctx context.Context, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error)
+	PatchRename(ctx context.Context, k UserKey, p Rename, as ...dql.Update[UsersTable]) (UserFull, error)
 	UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error)
 	Delete(ctx context.Context, k UserKey) error
 	DeleteWhere(ctx context.Context, where dql.Pred[UsersTable]) (int64, error)
@@ -752,6 +807,8 @@ type UsersUnscopedStore interface {
 	Insert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertMany(ctx context.Context, scope UserScope, ds []UserDraft, as ...dql.Assignment[UsersTable]) ([]UserFull, error)
 	InsertNested(ctx context.Context, scope UserScope, d UserDraftNested, as ...dql.Assignment[UsersTable]) (UserFullNested, error)
+	InsertQuickInvite(ctx context.Context, scope UserScope, d QuickInvite, passwordHash string, as ...dql.Assignment[UsersTable]) (UserFull, error)
+	InsertSignup(ctx context.Context, scope UserScope, d Signup, as ...dql.Assignment[UsersTable]) (UserFull, error)
 	InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	InsertOrIgnoreByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error)
 	Upsert(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (UserFull, error)
@@ -760,6 +817,7 @@ type UsersUnscopedStore interface {
 	UpsertSetByTenantIDAndEmail(ctx context.Context, scope UserScope, d UserDraft, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
 	Patch(ctx context.Context, scope UserScope, k UserKey, p UserPartial, as ...dql.Update[UsersTable]) (UserFull, error)
 	PatchNested(ctx context.Context, scope UserScope, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error)
+	PatchRename(ctx context.Context, scope UserScope, k UserKey, p Rename, as ...dql.Update[UsersTable]) (UserFull, error)
 	UpdateWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error)
 	Delete(ctx context.Context, scope UserScope, k UserKey) error
 	DeleteWhere(ctx context.Context, scope UserScope, where dql.Pred[UsersTable]) (int64, error)
@@ -941,6 +999,38 @@ func (s usersWrites) InsertNested(ctx context.Context, d UserDraftNested, as ...
 		return nil
 	})
 	return out, err
+}
+
+// InsertQuickInvite runs user.insert.quick_invite (§20.1).
+func (s usersWrites) InsertQuickInvite(ctx context.Context, d QuickInvite, passwordHash string, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	if err := d.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": passwordHash, "scope.tenant_id": s.scope.TenantID}
+	if err := dql.Assign(userInsertQuickInvite, "quick_invite", args, dql.Values(as)); err != nil {
+		return UserFull{}, err
+	}
+	st, err := userInsertQuickInvite.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
+}
+
+// InsertSignup runs user.insert.signup (§20.1).
+func (s usersWrites) InsertSignup(ctx context.Context, d Signup, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	if err := d.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"email": d.Email, "password_hash": d.PasswordHash, "scope.tenant_id": s.scope.TenantID}
+	if err := dql.Assign(userInsertSignup, "signup", args, dql.Values(as)); err != nil {
+		return UserFull{}, err
+	}
+	st, err := userInsertSignup.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.OneOf(ctx, s.w, st, DecodeUserFull)
 }
 
 // InsertOrIgnore runs user.insert_or_ignore.by_primary (§20.1).
@@ -1317,6 +1407,29 @@ func (s usersWrites) PatchNested(ctx context.Context, k UserKey, p UserPartialNe
 	return out, err
 }
 
+// PatchRename runs user.patch.rename (§20.1).
+func (s usersWrites) PatchRename(ctx context.Context, k UserKey, p Rename, as ...dql.Update[UsersTable]) (UserFull, error) {
+	if err := p.Validate(); err != nil {
+		return UserFull{}, err
+	}
+	args := dql.Args{"key.id": k.ID, "key.version": k.Version, "scope.tenant_id": s.scope.TenantID}
+	if v, ok := p.DisplayName.Get(); ok {
+		args["display_name"] = v
+	}
+	if err := dql.Assign(userPatchRename, "rename", args, as); err != nil {
+		return UserFull{}, err
+	}
+	st, err := userPatchRename.Statement(fragments, args)
+	if err != nil {
+		return UserFull{}, err
+	}
+	exists, err := userFindByPrimary.Statement(fragments, dql.Args{"key.id": k.ID, "scope.tenant_id": s.scope.TenantID})
+	if err != nil {
+		return UserFull{}, err
+	}
+	return dql.VersionedOne(ctx, s.w, st, exists, DecodeUserFull)
+}
+
 // UpdateWhere runs user.update_where (§20.1).
 func (s usersWrites) UpdateWhere(ctx context.Context, where dql.Pred[UsersTable], p UserPartial, as ...dql.Update[UsersTable]) (int64, error) {
 	if err := p.Validate(); err != nil {
@@ -1426,6 +1539,16 @@ func (u usersUnscoped) InsertNested(ctx context.Context, scope UserScope, d User
 	return usersWrites{usersReads{u.w, scope}, u.w}.InsertNested(ctx, d, as...)
 }
 
+// InsertQuickInvite runs user.insert.quick_invite in scope (§21.2).
+func (u usersUnscoped) InsertQuickInvite(ctx context.Context, scope UserScope, d QuickInvite, passwordHash string, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertQuickInvite(ctx, d, passwordHash, as...)
+}
+
+// InsertSignup runs user.insert.signup in scope (§21.2).
+func (u usersUnscoped) InsertSignup(ctx context.Context, scope UserScope, d Signup, as ...dql.Assignment[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.InsertSignup(ctx, d, as...)
+}
+
 // InsertOrIgnore runs user.insert_or_ignore.by_primary in scope (§21.2).
 func (u usersUnscoped) InsertOrIgnore(ctx context.Context, scope UserScope, d UserDraft, as ...dql.Assignment[UsersTable]) (opt.Opt[UserFull], error) {
 	return usersWrites{usersReads{u.w, scope}, u.w}.InsertOrIgnore(ctx, d, as...)
@@ -1464,6 +1587,11 @@ func (u usersUnscoped) Patch(ctx context.Context, scope UserScope, k UserKey, p 
 // PatchNested runs user.patch in scope (§21.2).
 func (u usersUnscoped) PatchNested(ctx context.Context, scope UserScope, k UserKey, p UserPartialNested, as ...dql.Update[UsersTable]) (UserFullNested, error) {
 	return usersWrites{usersReads{u.w, scope}, u.w}.PatchNested(ctx, k, p, as...)
+}
+
+// PatchRename runs user.patch.rename in scope (§21.2).
+func (u usersUnscoped) PatchRename(ctx context.Context, scope UserScope, k UserKey, p Rename, as ...dql.Update[UsersTable]) (UserFull, error) {
+	return usersWrites{usersReads{u.w, scope}, u.w}.PatchRename(ctx, k, p, as...)
 }
 
 // UpdateWhere runs user.update_where in scope (§21.2).

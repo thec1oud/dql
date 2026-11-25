@@ -60,11 +60,14 @@ type Step struct {
 	Op string `yaml:"op"`
 	// Scope reaches the store through the handle's WithScope.
 	Scope map[string]any `yaml:"scope"`
-	// Key, Input and Set fill the method's parameters in order: a Key shape
-	// takes Key, the first other shape Input and the second Set.
-	Key   any `yaml:"key"`
-	Input any `yaml:"input"`
-	Set   any `yaml:"set"`
+	// Key, Input, Bind and Set fill the method's parameters in order: a Key
+	// shape takes Key, and the other parameters take Input, then each of
+	// Bind, a custom write shape's bound fields in its order (§14.8), then
+	// Set.
+	Key   any   `yaml:"key"`
+	Input any   `yaml:"input"`
+	Bind  []any `yaml:"bind"`
+	Set   any   `yaml:"set"`
 	// Where is "all" for a filtered write over every row.
 	Where string `yaml:"where"`
 	// Assign holds the operation's expressions (§20.2).
@@ -912,7 +915,7 @@ func (r *runner) args(st Step, storeName string, t reflect.Type) ([]reflect.Valu
 	if err != nil {
 		return nil, err
 	}
-	payloads := []any{input, st.Set}
+	payloads := append(append([]any{input}, st.Bind...), st.Set)
 	for i := 1; i < t.NumIn(); i++ {
 		p := t.In(i)
 		switch {

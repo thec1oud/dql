@@ -7,9 +7,11 @@
 package variantdb
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/thec1oud/dql/runtime/go/dql"
+	"github.com/thec1oud/dql/runtime/go/opt"
 )
 
 // PostWithTags is the shape post_with_tags of shop.app.posts.
@@ -17,6 +19,24 @@ type PostWithTags struct {
 	PostFull
 	Author UserSummary
 	Tags   []TagFull
+}
+
+// QuickInvite is the shape quick_invite of shop.app.users.
+//
+// Bound, so its functions take them as parameters (§14.8): password_hash.
+type QuickInvite struct {
+	Email EmailAddress
+}
+
+// Rename is the shape rename of shop.app.users.
+type Rename struct {
+	DisplayName opt.Opt[*string]
+}
+
+// Signup is the shape signup of shop.app.users.
+type Signup struct {
+	Email        EmailAddress
+	PasswordHash string // sensitive
 }
 
 // UserSummary is the shape user_summary of shop.app.users.
@@ -36,6 +56,30 @@ type UserSummaryNamed struct {
 // ToFull converts t to PostFull (§14.9).
 func (t PostWithTags) ToFull() PostFull {
 	return t.PostFull
+}
+
+// ToDraft converts i to UserDraft (§14.9).
+// QuickInvite cannot hold every field, so passwordHash supplies password_hash (§14.9).
+func (i QuickInvite) ToDraft(passwordHash string) UserDraft {
+	var d UserDraft
+	d.Email = i.Email
+	d.PasswordHash = passwordHash
+	return d
+}
+
+// ToPartial converts r to UserPartial (§14.9).
+func (r Rename) ToPartial() UserPartial {
+	var p UserPartial
+	p.DisplayName = r.DisplayName
+	return p
+}
+
+// ToDraft converts s to UserDraft (§14.9).
+func (s Signup) ToDraft() UserDraft {
+	var d UserDraft
+	d.Email = s.Email
+	d.PasswordHash = s.PasswordHash
+	return d
 }
 
 // ToUserSummaryNamed converts s to UserSummaryNamed, and fails where a field UserSummaryNamed narrows
@@ -59,6 +103,38 @@ func (n UserSummaryNamed) ToUserSummary() UserSummary {
 	s.Email = n.Email
 	s.DisplayName = dql.Ptr(n.DisplayName)
 	return s
+}
+
+// Validate checks i against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (i QuickInvite) Validate() error { return i.validate().Err() }
+
+func (i QuickInvite) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlEmailAddressCheck.Check(&v, "quick_invite", "email", string(i.Email))
+	return v
+}
+
+// Validate checks r against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (r Rename) Validate() error { return r.validate().Err() }
+
+func (r Rename) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	return v
+}
+
+// Validate checks s against the client-validated constraints of its fields
+// and of what it nests (§10.5): nil, or dql.ValidationErrors with each
+// issue's path.
+func (s Signup) Validate() error { return s.validate().Err() }
+
+func (s Signup) validate() dql.ValidationErrors {
+	var v dql.ValidationErrors
+	dqlEmailAddressCheck.Check(&v, "signup", "email", string(s.Email))
+	return v
 }
 
 // DecodePostWithTags decodes r, a row of post_with_tags. The row holds the shape's
@@ -105,3 +181,18 @@ func DecodeUserSummaryNamed(r dql.Row) (UserSummaryNamed, error) {
 	out.DisplayName = dql.Field(d, 2, "display_name", "nonnull of shape user_summary_named", dql.String)
 	return out, d.Err()
 }
+
+// LogValue logs s with its sensitive fields as [REDACTED] (§7.5).
+func (s Signup) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Any("Email", s.Email),
+		slog.String("PasswordHash", "[REDACTED]"),
+	)
+}
+
+// String formats s as LogValue does, so fmt never prints a sensitive
+// field (§7.5).
+func (s Signup) String() string { return s.LogValue().String() }
+
+// GoString formats s as String does, for %#v.
+func (s Signup) GoString() string { return s.String() }
