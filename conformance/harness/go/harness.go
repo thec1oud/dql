@@ -130,8 +130,13 @@ type Step struct {
 	// rollback, or, when empty, not at all, leaving it open.
 	End string `yaml:"end"`
 
-	// SQL holds a sql step's statements by dialect.
-	SQL map[string]string `yaml:"sql"`
+	// SQL holds a sql step's statements by dialect, and a raw step's: it
+	// runs them through the handle's Raw on Source, as Exec when Exec is
+	// set, whose value is the rows affected, and otherwise as Query, whose
+	// value is the rows. Args are its parameters (§17, §22.1).
+	SQL    map[string]string `yaml:"sql"`
+	Source string            `yaml:"source"`
+	Exec   bool              `yaml:"exec"`
 
 	// A convert step calls Call: with From, the method of that shape's
 	// value decoded from Input, and without it, the schema's function. Args
@@ -443,6 +448,9 @@ func (r *runner) run(st Step) ([]string, error) {
 	if st.Op == "convert" {
 		return r.convert(st), nil
 	}
+	if st.Op == "raw" {
+		return r.raw(st)
+	}
 	storeName, method, ok := strings.Cut(st.Op, ".")
 	if !ok && st.Op != "select" {
 		return r.transact(st)
@@ -604,6 +612,45 @@ func (r *runner) begin(st Step) []string {
 }
 
 // convert runs a convert step.
+// raw runs a raw step through the handle's escape hatch (§17, §22.1).
+func (r *runner) raw(st Step) ([]string, error) {
+	sql, ok := st.SQL[r.dialect]
+	if !ok {
+		return []string{"no sql for " + r.dialect}, nil
+	}
+	h := r.db.MethodByName("Raw").Call([]reflect.Value{reflect.ValueOf(st.Source)})[0]
+	method := "Query"
+	if st.Exec {
+		method = "Exec"
+	}
+	args := []reflect.Value{reflect.ValueOf(r.ctx), reflect.ValueOf(sql)}
+	for _, a := range st.Args {
+		v, err := r.resolve(a)
+		if err != nil {
+			return []string{"args: " + err.Error()}, nil
+		}
+		args = append(args, reflect.ValueOf(v))
+	}
+	mark := r.events.mark()
+	out := h.MethodByName(method).Call(args)
+	r.fired = r.events.since(mark)
+	err, _ := out[1].Interface().(error)
+	if _, ok := st.Expect["error"]; err != nil && !ok {
+		return []string{"unexpected error: " + err.Error()}, err
+	}
+	result := out[0].Interface()
+	if n, ok := result.(int64); ok {
+		result = float64(n)
+	} else {
+		rows := []any{}
+		for _, row := range result.([]dql.Row) {
+			rows = append(rows, normalize([]any(row)))
+		}
+		result = rows
+	}
+	return r.compare(st, result, err), nil
+}
+
 func (r *runner) convert(st Step) []string {
 	var f reflect.Value
 	var args []reflect.Value
@@ -1393,6 +1440,7 @@ func (r *runner) compareEvents(want any) []string {
 var misuses = map[string]error{
 	"NoTransaction": dql.ErrNoTransaction, "InTransaction": dql.ErrInTransaction,
 	"ReadOnly": dql.ErrReadOnly, "IndependentDepth": dql.ErrIndependentDepth,
+	"UnknownSource": dql.ErrUnknownSource,
 }
 
 func (r *runner) compareError(want any, err error) []string {

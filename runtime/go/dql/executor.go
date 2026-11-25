@@ -264,6 +264,24 @@ func (e *Executor) source(catalog string) (*sourcePool, error) {
 	return s, nil
 }
 
+// sourceOf returns the source a statement runs on: the one a raw
+// statement names, else its catalog's.
+func (e *Executor) sourceOf(s *Statement) (*sourcePool, error) {
+	if s.source == "" {
+		return e.source(s.Catalog)
+	}
+	for _, src := range e.sources {
+		if src.name == s.source {
+			return src, nil
+		}
+	}
+	return nil, fmt.Errorf("%w: %s", ErrUnknownSource, s.source)
+}
+
+// ErrUnknownSource is the error of a raw statement on a source the
+// executor does not have (§22.1).
+var ErrUnknownSource = errors.New("dql: no source is named")
+
 // conn acquires a connection of s outside any transaction, or for one; an
 // independent transaction waits at most the independent timeout and then
 // fails with PoolExhausted (§22.6).

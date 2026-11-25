@@ -168,6 +168,20 @@ func (g *generator) variant(f *file, v *variant) {
 		}
 		f.printf(",\n\t}\n}\n\n")
 		r := receiver(splitWords(h.name))
+		// The raw escape hatch, typed by the handle's capability (§17,
+		// §22.1, §22.2).
+		held, raw, rawType := r+".exec", "RawWrite", "RawWriter"
+		if !h.exec {
+			held = r + ".tx"
+		}
+		if !h.write {
+			raw, rawType = "Raw", "RawReader"
+		}
+		f.printf("// Raw runs SQL text on the source named source: on its primary, or in\n"+
+			"// the transaction there that the handle or the context holds, with the\n"+
+			"// driver's values undecoded (§17, §22.1).\n"+
+			"func (%s %s) Raw(source string) %s.%s { return %s.%s(%s, source) }\n\n",
+			r, h.name, dql, rawType, dql, raw, held)
 		if h.exec {
 			f.printf("func (%s %s) executor() *%s.Executor { return %s.exec }\n\n", r, h.name, dql, r)
 			f.printf(`// Write runs fn in a write transaction, which commits when fn returns nil

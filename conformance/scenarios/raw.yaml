@@ -1,0 +1,58 @@
+scenario: raw
+schema: shop
+# The raw connection is the escape hatch (design record §17, §22.1): SQL
+# text on a source picked by name, with values as parameters, run on its
+# primary or in the transaction there, reported to hooks as query raw.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: raw
+    source: main
+    sql:
+      postgres: SELECT name FROM app.tenants WHERE id = $1
+    args: [$acme.id]
+    expect:
+      value: [[acme]]
+      events: [{ query: raw, kind: raw, rows: 1 }]
+  - op: raw
+    source: main
+    exec: true
+    sql:
+      postgres: UPDATE app.tenants SET name = $1 WHERE id = $2
+    args: [Acme, $acme.id]
+    expect:
+      value: 1
+  - op: tenants.get
+    key: { id: $acme.id }
+    expect:
+      row: { name: Acme }
+  # In a transaction it joins it, so the rollback drops its write too.
+  - op: write
+    rollback: true
+    steps:
+      - op: tenants.insert
+        input: { name: globex }
+      - op: raw
+        source: main
+        exec: true
+        sql:
+          postgres: DELETE FROM app.tenants WHERE name = 'Acme'
+        expect: { value: 1 }
+  - op: tenants.count
+    expect: { value: 1 }
+  # Errors map into the taxonomy, without the values.
+  - op: raw
+    source: main
+    exec: true
+    sql:
+      postgres: INSERT INTO app.tenants (id, name) VALUES ($1, $2)
+    args: [$acme.id, secret-name]
+    expect:
+      error: { class: UniqueViolation, hides: secret-name }
+  - op: raw
+    source: nowhere
+    sql:
+      postgres: SELECT 1
+    expect:
+      error: { misuse: UnknownSource }
