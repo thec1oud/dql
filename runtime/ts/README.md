@@ -6,6 +6,7 @@ The TypeScript runtime that dql's generated TypeScript uses (design record §15,
 | --- | --- | --- |
 | `@dql/runtime` | `dql` | Values, errors, validation and execution |
 | `@dql/pg` | `dqlpg` | The executor's driver for Postgres, on node-postgres |
+| `@dql/otel` | `dqlotel` | Hooks that report to OpenTelemetry: spans for queries and transactions, metrics for durations, pool waits, retries, leaks and replica lag |
 
 Hooks observe queries, transactions, pools and replicas (§24): pass them as `hooks` when opening the executor. `logHooks(logger)` logs the events to any logger with `debug`, `info`, `warn` and `error(message, attrs)`, such as `console` or a winston logger; wrap a pino logger to swap its arguments.
 
