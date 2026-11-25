@@ -76,7 +76,7 @@ func encode(v any) any {
 			}
 			return out
 		}
-		var a pgtype.Array[any]
+		a := pgtype.Array[any]{Elements: []any{}}
 		flatten(r, 0, &a)
 		if len(a.Dims) == 1 {
 			return a.Elements
