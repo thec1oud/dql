@@ -90,3 +90,25 @@ export {
   unchecked,
   weak,
 } from "./decode.js";
+export { currentSignal, withSignal, withTimeout } from "./context.js";
+export type { BeginOptions, Conn, Driver, Isolation, NativeError, Pool, PoolConfig, Rows, Sent, StatementMode } from "./driver.js";
+export type { ErrorMap, Reported } from "./translate.js";
+export { DEFAULT_RETRY, Retried, Retrier, type RetryPolicy, retry } from "./retry.js";
+export {
+  type Binding,
+  type Config,
+  type ConnConfig,
+  type Dialect,
+  Executor,
+  type ExecutorOptions,
+  type Propagation,
+  ReadTx,
+  type Reader,
+  type SourceConfig,
+  type TxOptions,
+  UsageError,
+  type UsageReason,
+  WriteTx,
+  type Writer,
+} from "./executor.js";
+export { RAW_QUERY, RawReader, RawWriter, type Statement, execute, queryAll, queryOne, queryOptional, raw, rawWrite } from "./statement.js";
