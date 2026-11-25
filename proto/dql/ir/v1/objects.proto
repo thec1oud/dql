@@ -251,6 +251,14 @@ message Uniqueness {
   // predicate or expression (§11.1).
   bool identifies = 7;
   repeated google.protobuf.Any extensions = 8;
+  // Columns the predicate requires to be NULL: the source recognizes a
+  // conjunct `c IS NULL` at the predicate's top level. The core reads these,
+  // never the predicate's text, to tell whether a unique key on a
+  // soft-delete table excludes deleted rows (§21.3).
+  repeated string predicate_null_columns = 9;
+  // Columns the predicate requires to be not true (false or NULL): conjuncts
+  // `NOT c`, `c = false`, `c IS FALSE` and `c IS NOT TRUE` (§21.3).
+  repeated string predicate_not_true_columns = 10;
 }
 
 enum UniquenessKind {

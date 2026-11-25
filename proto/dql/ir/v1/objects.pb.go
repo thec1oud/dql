@@ -2085,10 +2085,18 @@ type Uniqueness struct {
 	NullsDistinct bool        `protobuf:"varint,6,opt,name=nulls_distinct,json=nullsDistinct,proto3" json:"nulls_distinct,omitempty"`
 	// True only for a key whose columns are all non-null and that has no
 	// predicate or expression (§11.1).
-	Identifies    bool         `protobuf:"varint,7,opt,name=identifies,proto3" json:"identifies,omitempty"`
-	Extensions    []*anypb.Any `protobuf:"bytes,8,rep,name=extensions,proto3" json:"extensions,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Identifies bool         `protobuf:"varint,7,opt,name=identifies,proto3" json:"identifies,omitempty"`
+	Extensions []*anypb.Any `protobuf:"bytes,8,rep,name=extensions,proto3" json:"extensions,omitempty"`
+	// Columns the predicate requires to be NULL: the source recognizes a
+	// conjunct `c IS NULL` at the predicate's top level. The core reads these,
+	// never the predicate's text, to tell whether a unique key on a
+	// soft-delete table excludes deleted rows (§21.3).
+	PredicateNullColumns []string `protobuf:"bytes,9,rep,name=predicate_null_columns,json=predicateNullColumns,proto3" json:"predicate_null_columns,omitempty"`
+	// Columns the predicate requires to be not true (false or NULL): conjuncts
+	// `NOT c`, `c = false`, `c IS FALSE` and `c IS NOT TRUE` (§21.3).
+	PredicateNotTrueColumns []string `protobuf:"bytes,10,rep,name=predicate_not_true_columns,json=predicateNotTrueColumns,proto3" json:"predicate_not_true_columns,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Uniqueness) Reset() {
@@ -2173,6 +2181,20 @@ func (x *Uniqueness) GetIdentifies() bool {
 func (x *Uniqueness) GetExtensions() []*anypb.Any {
 	if x != nil {
 		return x.Extensions
+	}
+	return nil
+}
+
+func (x *Uniqueness) GetPredicateNullColumns() []string {
+	if x != nil {
+		return x.PredicateNullColumns
+	}
+	return nil
+}
+
+func (x *Uniqueness) GetPredicateNotTrueColumns() []string {
+	if x != nil {
+		return x.PredicateNotTrueColumns
 	}
 	return nil
 }
@@ -3172,7 +3194,7 @@ const file_dql_ir_v1_objects_proto_rawDesc = "" +
 	"\x06values\x18\x01 \x03(\v2\x10.dql.ir.v1.ValueR\x06values\"\x14\n" +
 	"\x12NotEmptyConstraint\")\n" +
 	"\x11PatternConstraint\x12\x14\n" +
-	"\x05regex\x18\x01 \x01(\tR\x05regex\"\xd9\x02\n" +
+	"\x05regex\x18\x01 \x01(\tR\x05regex\"\xcc\x03\n" +
 	"\n" +
 	"Uniqueness\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12-\n" +
@@ -3186,7 +3208,10 @@ const file_dql_ir_v1_objects_proto_rawDesc = "" +
 	"identifies\x124\n" +
 	"\n" +
 	"extensions\x18\b \x03(\v2\x14.google.protobuf.AnyR\n" +
-	"extensions\"E\n" +
+	"extensions\x124\n" +
+	"\x16predicate_null_columns\x18\t \x03(\tR\x14predicateNullColumns\x12;\n" +
+	"\x1apredicate_not_true_columns\x18\n" +
+	" \x03(\tR\x17predicateNotTrueColumns\"E\n" +
 	"\x0fIndexExpression\x12\x1a\n" +
 	"\bposition\x18\x01 \x01(\rR\bposition\x12\x16\n" +
 	"\x06native\x18\x02 \x01(\tR\x06native\"\xbc\x03\n" +
