@@ -88,6 +88,8 @@ describe("checks", () => {
     ["héllo", 5, 6, 5],
     ["😀", 1, 4, 2],
     ["日本", 2, 6, 2],
+    ["\u00e9\u07ff\u0800", 3, 7, 3],
+    ["\ud800", 1, 3, 1],
   ])("length(%j)", (s, chars, bytes, units) => {
     expect(length(s, "characters")).toBe(chars);
     expect(length(s, "bytes")).toBe(bytes);

@@ -7,13 +7,18 @@
 import type { Decimal } from "./decimal.js";
 import type { LengthUnit, ValidationIssue } from "./validation.js";
 
-const encoder = new TextEncoder();
-
 /** length counts s in unit: code points, UTF-8 bytes or UTF-16 code units. */
 export function length(s: string, unit: LengthUnit): number {
   switch (unit) {
-    case "bytes":
-      return encoder.encode(s).length;
+    case "bytes": {
+      // UTF-8: a lone surrogate counts as the 3 bytes of U+FFFD, as encoders write it.
+      let n = 0;
+      for (const c of s) {
+        const cp = c.codePointAt(0) as number;
+        n += cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4;
+      }
+      return n;
+    }
     case "utf16_code_units":
       return s.length;
     case "characters": {
