@@ -15,5 +15,9 @@ The workspace uses Bun: `bun.lock` is committed, `tsc` type checks and builds, a
 bun install --frozen-lockfile
 bun run build        # before typecheck: a package checks against the others' declarations
 bun run typecheck
-DQL_TEST_POSTGRES_URL=postgres://postgres@localhost:5432/postgres bun run coverage     # 100% coverage required
+# 100% coverage required; @dql/pg's tests need Postgres and a streaming replica,
+# such as conformance/replica/compose.yaml starts.
+DQL_TEST_POSTGRES_URL=postgres://postgres:postgres@localhost:5432/postgres \
+DQL_TEST_POSTGRES_REPLICA_URL=postgres://postgres:postgres@localhost:5433/postgres \
+bun run coverage
 ```

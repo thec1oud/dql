@@ -111,4 +111,5 @@ export {
   WriteTx,
   type Writer,
 } from "./executor.js";
+export { Consistency, type Replication, Session, currentSession, withSession } from "./routing.js";
 export { RAW_QUERY, RawReader, RawWriter, type Statement, execute, queryAll, queryOne, queryOptional, raw, rawWrite } from "./statement.js";

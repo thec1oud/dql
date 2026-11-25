@@ -12,6 +12,9 @@ import {
   queryOne,
   raw,
   rawWrite,
+  Consistency,
+  currentSession,
+  withSession,
   withSignal,
   withTimeout,
 } from "@dql/runtime";
@@ -317,6 +320,35 @@ describe("statements and transactions", () => {
     // An already-aborted wait fails at once.
     const gone = await e.beginRead({ propagation: "independent" }).then((r) => withSignal(AbortSignal.abort(), () => queryAll(r, q("SELECT 1")))).catch((x) => x);
     expect(classOf(gone)).toBe("Canceled");
+  });
+});
+
+describe("replicas (§22.5)", () => {
+  test("read-your-writes on a streaming replica", async () => {
+    const replicaBase = process.env["DQL_TEST_POSTGRES_REPLICA_URL"];
+    if (replicaBase === undefined || replicaBase === "") {
+      throw new Error("DQL_TEST_POSTGRES_REPLICA_URL is not set; this test needs a streaming replica of DQL_TEST_POSTGRES_URL's server");
+    }
+    const r = new URL(replicaBase);
+    r.pathname = `/${name}`;
+    const replication = {
+      position: "SELECT pg_current_wal_lsn()::text",
+      lag: "SELECT (CASE WHEN NOT pg_is_in_recovery() THEN NULL WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0 ELSE extract(epoch FROM now() - pg_last_xact_replay_timestamp()) END)::float8",
+      replayed: "SELECT pg_last_wal_replay_lsn() >= ALL (SELECT p::pg_lsn FROM unnest($1::text[]) p)",
+    };
+    const e = await Executor.open(new PgDriver(), { ...dialect, replication }, {
+      sources: { main: { primary: { dsn: url }, replicas: [{ dsn: r.toString() }], maxLag: 60_000 } },
+      catalogs: { shop: "main" },
+    });
+    executors.push(e);
+    const where = q("SELECT pg_is_in_recovery()");
+    expect((await queryOne(e, { ...where, consistency: Consistency.any })).values).toEqual([true]);
+    await withSession(async () => {
+      await rawWrite(e, "main").exec("DELETE FROM tag");
+      expect(currentSession()?.token()).toMatch(/^main=[0-9A-F]+%2F[0-9A-F]+$/);
+      const read = await queryOne(e, { ...where, consistency: Consistency.readYourWrites.wait(5000) });
+      expect(read.values).toEqual([true]);
+    });
   });
 });
 

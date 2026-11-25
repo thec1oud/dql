@@ -1,11 +1,13 @@
 // The ambient context (design record §22.3). TypeScript has no
 // context.Context, so an AsyncLocalStorage carries what Go's ctx does: the
-// active transaction, the operation that tracks pair-form transactions, and
-// the abort signal and deadline every statement honors. Calls keep the
-// shapes of §26.1, such as await h.users.insert(draft).
+// active transaction, the operation that tracks pair-form transactions, the
+// read-your-writes session, and the abort signal and deadline every
+// statement honors. Calls keep the shapes of §26.1, such as
+// await h.users.insert(draft).
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { Frame, Root } from "./executor.js";
+import type { Session } from "./routing.js";
 
 /** @internal Ambient is what the context carries. */
 export interface Ambient {
@@ -13,6 +15,8 @@ export interface Ambient {
   readonly frame?: Frame;
   /** The pair-form roots begun under the current operation. */
   readonly operation?: Set<Root>;
+  /** Records the request's writes for read-your-writes reads (§22.5). */
+  readonly session?: Session;
   /** Aborts every statement and wait. */
   readonly signal?: AbortSignal;
   /** When the signal aborts on its own, in epoch milliseconds, so a retry stops before it would pass it (§22.4). */

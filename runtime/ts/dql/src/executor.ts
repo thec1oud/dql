@@ -2,26 +2,32 @@
 
 import { ambient, within } from "./context.js";
 import type { BeginOptions, Conn, Driver, Isolation, Pool, Rows, Sent, StatementMode } from "./driver.js";
-import { type Origin, PoolExhausted, ConnectionError } from "./errors.js";
-import { DEFAULT_RETRY, type RetryPolicy, backoff, fits, retried, retryable, wait } from "./retry.js";
+import { ConnectionError, PoolExhausted, ReplicaUnavailable } from "./errors.js";
+import { DEFAULT_RETRY, type RetryPolicy, backoff, retried, retryable, wait } from "./retry.js";
+import { Consistency, type Replication, type Session } from "./routing.js";
 import { type ErrorMap, Translator } from "./translate.js";
 
 /**
  * Config is the runtime configuration that lives with the application
- * (§22.1): its sources, which source serves each catalog, and the default
- * retry policy.
+ * (§22.1): its sources, which source serves each catalog, the default read
+ * consistency and the default retry policy.
  */
 export interface Config {
   readonly sources: Readonly<Record<string, SourceConfig>>;
   /** The source of each catalog of the generated package. */
   readonly catalogs?: Readonly<Record<string, string>>;
+  /** The level of a read that sets none; absent is primary. */
+  readonly consistency?: Consistency;
   /** Absent is DEFAULT_RETRY. */
   readonly retry?: RetryPolicy;
 }
 
-/** SourceConfig is one source (§22.1). */
+/** SourceConfig is one source's primary and replicas (§22.1). */
 export interface SourceConfig {
   readonly primary: ConnConfig;
+  readonly replicas?: readonly ConnConfig[];
+  /** How far behind, in milliseconds, a replica may fall before it leaves rotation; absent is 2000 (§22.5). */
+  readonly maxLag?: number;
   /** Connections kept for independent transactions only (§22.6). */
   readonly independentReserve?: number;
   /** How the source's servers are sent statements; absent is prepare (§26.4). */
@@ -37,15 +43,16 @@ export interface ConnConfig {
 
 /**
  * Dialect is the generated description of the target dialect: its name, the
- * statements every new connection runs (§22.7), its error map (§23), how many
- * parameters one statement may bind, or 0 for no limit (§25.2), and the
- * statement modes its drivers support, or absent to allow every mode
- * (§26.4).
+ * statements every new connection runs (§22.7), its error map (§23), how it
+ * reads replica positions (§22.5), how many parameters one statement may
+ * bind, or 0 for no limit (§25.2), and the statement modes its drivers
+ * support, or absent to allow every mode (§26.4).
  */
 export interface Dialect {
   readonly name: string;
   readonly setup: readonly string[];
   readonly errors: ErrorMap;
+  readonly replication?: Replication;
   readonly maxParams?: number;
   readonly statementModes?: readonly StatementMode[];
 }
@@ -58,6 +65,8 @@ export interface ExecutorOptions {
   readonly independentDepth?: number;
   /** The source of randomness of retry jitter, uniform in [0, 1). The default is Math.random. */
   readonly random?: () => number;
+  /** How often, in milliseconds, the tracker polls each replica's lag (§22.5). The default is 500. */
+  readonly trackInterval?: number;
 }
 
 /** Propagation is how a new transaction relates to the one the context carries (§22.3). */
@@ -80,6 +89,8 @@ export interface TxOptions {
   readonly isolation?: Isolation;
   /** Overrides the executor's retry policy for one closure (§22.4). */
   readonly retry?: RetryPolicy;
+  /** How fresh a read transaction it begins must be, which decides whether it may run on a replica (§22.5). */
+  readonly consistency?: Consistency;
 }
 
 /** UsageReason names a misuse of the executor. */
@@ -90,7 +101,8 @@ export type UsageReason =
   | "independent_depth"
   | "done"
   | "statement_mode"
-  | "unknown_source";
+  | "unknown_source"
+  | "no_replication";
 
 const usageMessages: Record<UsageReason, string> = {
   no_transaction: "dql: a mandatory transaction found no transaction to join",
@@ -100,6 +112,7 @@ const usageMessages: Record<UsageReason, string> = {
   done: "dql: the transaction has already committed or rolled back",
   statement_mode: "dql: the dialect does not support the statement mode",
   unknown_source: "dql: no source is named",
+  no_replication: "dql: the dialect cannot route reads to replicas",
 };
 
 /** UsageError reports a misuse of the executor, such as a write in a read transaction. Its messages are the Go runtime's. */
@@ -181,14 +194,35 @@ export class Slots {
   }
 }
 
-/** SourcePool is one source's pool. */
+/** Replica is one replica of a source, in rotation while the tracker last found it reachable and at most the source's max lag behind. */
+export class Replica {
+  in = false;
+  /** How far behind, in milliseconds. */
+  lag = 0;
+
+  constructor(readonly pool: Pool) {}
+}
+
+/** SourcePool is one source's primary pool and its replicas. */
 export class SourcePool {
+  readonly replicas: Replica[] = [];
+  /** Turns reads across the replicas. */
+  next = 0;
+
   constructor(
     readonly name: string,
     readonly pool: Pool,
     /** Limits the connections outside independent transactions when some are reserved for them. */
     readonly general: Slots | undefined,
+    readonly maxLag: number,
   ) {}
+
+  async close(): Promise<void> {
+    await this.pool.close();
+    for (const r of this.replicas) {
+      await r.pool.close();
+    }
+  }
 }
 
 /** GeneralConn frees its slot when released. */
@@ -246,6 +280,12 @@ export class Executor implements Writer {
   private readonly independentDepth: number;
   /** @internal */
   readonly random: () => number;
+  private readonly consistency: Consistency;
+  private readonly trackInterval: number;
+  /** The tracker's next poll, and the poll running, if any. */
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private polling: Promise<void> | undefined;
+  private closed = false;
 
   private constructor(
     private readonly driver: Driver,
@@ -259,11 +299,15 @@ export class Executor implements Writer {
     this.independentTimeout = options.independentTimeout ?? 250;
     this.independentDepth = options.independentDepth ?? 2;
     this.random = options.random ?? Math.random;
+    this.consistency = config.consistency ?? Consistency.primary;
+    this.trackInterval = options.trackInterval ?? 500;
   }
 
   /**
    * open opens every source of config and connects to each primary, failing
-   * when one does not connect (§22.1).
+   * when one does not connect (§22.1). A replica need not connect: the
+   * tracker puts it in rotation once it answers, and polls every replica
+   * until close.
    */
   static async open(driver: Driver, dialect: Dialect, config: Config, options: ExecutorOptions = {}): Promise<Executor> {
     const e = new Executor(driver, dialect, config, options);
@@ -285,45 +329,194 @@ export class Executor implements Writer {
       await e.close();
       throw err;
     }
+    await e.poll();
+    e.track();
     return e;
   }
 
   private async open(name: string, c: SourceConfig): Promise<SourcePool> {
+    if ((c.replicas ?? []).length > 0 && this.dialect.replication === undefined) {
+      throw new UsageError("no_replication", `dql: source ${name}`);
+    }
     const mode = c.statementMode ?? "prepare";
     if (![this.dialect.statementModes, this.driver.statementModes].every((modes) => modes === undefined || modes.includes(mode))) {
       throw new UsageError("statement_mode", `dql: source ${name}`, mode);
     }
-    let dsn = c.primary.dsn;
-    if (dsn.startsWith("env:")) {
-      const v = dsn.slice(4);
-      dsn = process.env[v] ?? "";
-      if (dsn === "") {
-        throw new Error(`dql: source ${name}: environment variable ${v} is not set`);
-      }
-    }
-    const origin: Origin = { dialect: this.dialect.name };
-    let pool: Pool;
-    try {
-      pool = await this.driver.open({ dsn, maxConns: c.primary.maxConns ?? 0, setup: this.dialect.setup, mode });
-    } catch (err) {
-      throw new ConnectionError(name, err, origin);
-    }
+    const pool = await this.openPool(name, c.primary, mode);
     const reserve = c.independentReserve ?? 0;
-    const s = new SourcePool(name, pool, reserve > 0 ? new Slots(Math.max((c.primary.maxConns ?? 0) - reserve, 1)) : undefined);
+    const s = new SourcePool(name, pool, reserve > 0 ? new Slots(Math.max((c.primary.maxConns ?? 0) - reserve, 1)) : undefined, c.maxLag ?? 2000);
     try {
+      for (const rc of c.replicas ?? []) {
+        s.replicas.push(new Replica(await this.openPool(name, rc, mode)));
+      }
       (await pool.acquire()).release();
     } catch (err) {
-      await pool.close();
-      throw new ConnectionError(name, err, origin);
+      await s.close();
+      throw err instanceof ConnectionError ? err : new ConnectionError(name, err, { dialect: this.dialect.name });
     }
     return s;
   }
 
-  /** close closes every source's pools. */
-  async close(): Promise<void> {
-    for (const s of this.sources) {
-      await s.pool.close();
+  /** openPool opens a pool of one server of a source. A dsn written env:NAME is the environment variable NAME. */
+  private async openPool(source: string, c: ConnConfig, mode: StatementMode): Promise<Pool> {
+    let dsn = c.dsn;
+    if (dsn.startsWith("env:")) {
+      const v = dsn.slice(4);
+      dsn = process.env[v] ?? "";
+      if (dsn === "") {
+        throw new Error(`dql: source ${source}: environment variable ${v} is not set`);
+      }
     }
+    try {
+      return await this.driver.open({ dsn, maxConns: c.maxConns ?? 0, setup: this.dialect.setup, mode });
+    } catch (err) {
+      throw new ConnectionError(source, err, { dialect: this.dialect.name });
+    }
+  }
+
+  /** close stops the replica tracker and closes every source's pools. */
+  async close(): Promise<void> {
+    this.closed = true;
+    clearTimeout(this.timer);
+    await this.polling;
+    for (const s of this.sources) {
+      await s.close();
+    }
+  }
+
+  /** track polls the replicas every track interval until close. The timer does not keep the process alive. */
+  private track(): void {
+    if (this.closed || !this.sources.some((s) => s.replicas.length > 0)) {
+      return;
+    }
+    this.timer = setTimeout(() => {
+      this.polling = this.poll().then(() => this.track());
+    }, this.trackInterval);
+    this.timer.unref?.();
+  }
+
+  /** @internal poll updates every replica's lag and rotation. */
+  async poll(): Promise<void> {
+    for (const s of this.sources) {
+      for (const r of s.replicas) {
+        const lag = await this.lag(r);
+        r.lag = lag ?? 0;
+        r.in = lag !== undefined && lag <= s.maxLag;
+      }
+    }
+  }
+
+  /** lag asks a replica how far behind it is, in milliseconds, or undefined when it cannot answer or is not a replica. */
+  private async lag(r: Replica): Promise<number | undefined> {
+    const signal = AbortSignal.timeout(this.trackInterval);
+    let c: Conn;
+    try {
+      c = await r.pool.acquire(signal);
+    } catch {
+      return undefined;
+    }
+    try {
+      const v = await first(c, (this.dialect.replication as Replication).lag, [], signal);
+      return typeof v === "number" ? v * 1000 : undefined;
+    } catch {
+      return undefined;
+    } finally {
+      c.release();
+    }
+  }
+
+  /**
+   * @internal route returns the connection a read outside a write transaction
+   * runs on (guide §5.6), and whether it is a replica's: a replica when its
+   * consistency level allows one, else the primary.
+   */
+  async route(s: SourcePool, c: Consistency | undefined, independent: boolean, q: string): Promise<[Conn, boolean]> {
+    const level = c ?? this.consistency;
+    const onPrimary = async (): Promise<[Conn, boolean]> => [await this.conn(s, independent, q), false];
+    if (level.level === "primary" || s.replicas.length === 0) {
+      return onPrimary();
+    }
+    let positions: string[] = [];
+    if (level.level === "read-your-writes") {
+      const [pending, primaryOnly] = ambient().session?.pending(s.name) ?? [[], false];
+      if (primaryOnly) {
+        return onPrimary();
+      }
+      positions = pending;
+    }
+    const deadline = Date.now() + level.waitFor;
+    let pause = 1;
+    for (;;) {
+      const conn = await this.replicaConn(s, level, positions);
+      if (conn !== undefined) {
+        return [conn, true];
+      }
+      const left = deadline - Date.now();
+      if (positions.length === 0 || left <= 0) {
+        break;
+      }
+      pause = Math.min(2 * pause, 50, left);
+      if (!(await wait(pause))) {
+        break;
+      }
+    }
+    if (positions.length > 0 && level.fails) {
+      throw new ReplicaUnavailable(s.name, { dialect: this.dialect.name, query: q });
+    }
+    return onPrimary();
+  }
+
+  /**
+   * replicaConn returns a connection to a replica in rotation that meets c and
+   * has replayed positions, taking replicas in turn, or undefined. A replica
+   * that does not connect or answer leaves rotation.
+   */
+  private async replicaConn(s: SourcePool, c: Consistency, positions: string[]): Promise<Conn | undefined> {
+    const start = ++s.next;
+    const signal = ambient().signal;
+    for (let k = 0; k < s.replicas.length; k++) {
+      const r = s.replicas[(start + k) % s.replicas.length] as Replica;
+      if (!r.in || (c.level === "bounded" && r.lag > c.bound)) {
+        continue;
+      }
+      let conn: Conn;
+      try {
+        conn = await r.pool.acquire(signal);
+      } catch {
+        r.in = false;
+        continue;
+      }
+      if (positions.length === 0) {
+        return conn;
+      }
+      try {
+        if ((await first(conn, (this.dialect.replication as Replication).replayed, [positions], signal)) === true) {
+          return conn;
+        }
+      } catch {
+        r.in = false;
+      }
+      conn.release();
+    }
+    return undefined;
+  }
+
+  /**
+   * @internal recordWrite records, in session, the position a replica must
+   * replay to see what conn, a primary connection of s, has committed. A
+   * position it cannot read sends the session's reads of s to the primary.
+   */
+  async recordWrite(session: Session | undefined, s: SourcePool, conn: Conn): Promise<void> {
+    if (session === undefined || s.replicas.length === 0) {
+      return;
+    }
+    let pos: unknown;
+    try {
+      pos = await first(conn, (this.dialect.replication as Replication).position, [], undefined);
+    } catch {
+      pos = "";
+    }
+    session.record(s.name, typeof pos === "string" ? pos : "");
   }
 
   [bind](): Binding {
@@ -470,7 +663,7 @@ export class Executor implements Writer {
   /** newRoot begins a root transaction, tracking it in the context's operation. */
   private newRoot(readOnly: boolean, c: TxOptions, independent: number): Frame {
     const options: BeginOptions = c.isolation === undefined ? { readOnly } : { readOnly, isolation: c.isolation };
-    const r = new Root(this, options, independent);
+    const r = new Root(this, options, independent, c.consistency, ambient().session);
     ambient().operation?.add(r);
     return new Frame(r, undefined, "");
   }
@@ -536,6 +729,10 @@ export class Root {
     readonly options: BeginOptions,
     /** How deep in independent transactions. */
     readonly independent: number,
+    /** How fresh a read transaction must be. */
+    readonly consistency: Consistency | undefined,
+    /** Records the positions of the root's commits. */
+    readonly session: Session | undefined,
   ) {}
 
   /** conn returns the root's connection to s, beginning the transaction there on first use. */
@@ -551,7 +748,7 @@ export class Root {
 
   private async open(s: SourcePool, q: string): Promise<Conn> {
     const e = this.executor;
-    const c = await e.conn(s, this.independent > 0, q);
+    const c = this.options.readOnly ? (await e.route(s, this.consistency, this.independent > 0, q))[0] : await e.conn(s, this.independent > 0, q);
     try {
       await c.begin(this.options, ambient().signal);
     } catch (err) {
@@ -584,6 +781,9 @@ export class Root {
       try {
         if (commit && !failed) {
           await c.commit();
+          if (!this.options.readOnly) {
+            await this.executor.recordWrite(this.session, s, c);
+          }
         } else {
           await c.rollback();
         }
@@ -705,3 +905,13 @@ export class WriteTx extends TxHandle implements Writer {
 
 /** ReadTx is a read transaction: a handle that only reads (§22.2). */
 export class ReadTx extends TxHandle {}
+
+/** first returns the first value of the first row of a statement. */
+async function first(c: Conn, sql: string, args: unknown[], signal: AbortSignal | undefined): Promise<unknown> {
+  const rows = await c.query({ query: "", sql, args, ...(signal === undefined ? {} : { signal }) });
+  try {
+    return (await rows.next())?.values[0];
+  } finally {
+    await rows.close();
+  }
+}
