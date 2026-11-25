@@ -572,6 +572,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.int8", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.user.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}}},
@@ -582,6 +583,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.email": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.user.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.email"}, "1": dql.Param("key.email")}}}}}},
@@ -592,6 +594,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.int8", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.user.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}}},
@@ -602,6 +605,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.email": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.user.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.email"}, "1": dql.Param("key.email")}}}}}},
@@ -611,6 +615,7 @@ var (
 		Name:    "user.count",
 		Catalog: "shop",
 		Kind:    "count",
+		Types:   map[string]string{"scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "count.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}}}}},
 		},
@@ -619,6 +624,7 @@ var (
 		Name:    "user.exists",
 		Catalog: "shop",
 		Kind:    "exists",
+		Types:   map[string]string{"scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "exists.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}}}}},
 		},
@@ -629,6 +635,7 @@ var (
 		Kind:      "insert",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
 		},
@@ -639,6 +646,7 @@ var (
 		Kind:      "insert",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"password_hash": "pg_catalog.text", "email": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.tenant_id"}, dql.Use{Fragment: "name.users.email"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("password_hash"), dql.Param("scope.tenant_id"), dql.Param("email")}, Separator: ", "}}}}},
 		},
@@ -649,6 +657,7 @@ var (
 		Kind:      "insert",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "password_hash": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.tenant_id"}, dql.Use{Fragment: "name.users.password_hash"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("scope.tenant_id"), dql.Param("password_hash")}, Separator: ", "}}}}},
 		},
@@ -659,6 +668,7 @@ var (
 		Kind:      "insert",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "password_hash": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.users", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("password_hash"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
 		},
@@ -669,6 +679,7 @@ var (
 		Kind:      "insert_or_ignore",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.users.users_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
 		},
@@ -679,6 +690,7 @@ var (
 		Kind:      "insert_or_ignore",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.users.users_tenant_email_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}}},
 		},
@@ -689,6 +701,7 @@ var (
 		Kind:      "upsert",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.users.users_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.email"}}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.display_name"}}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.password_hash"}}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
 		},
@@ -699,6 +712,7 @@ var (
 		Kind:      "upsert",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.users.users_tenant_email_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.display_name"}}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.users.password_hash"}}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
 		},
@@ -709,6 +723,7 @@ var (
 		Kind:      "upsert_set",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true, "set.password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "set.email": "pg_catalog.text", "set.display_name": "pg_catalog.varchar", "set.password_hash": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.users.users_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("set.email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("set.display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("set.password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
 		},
@@ -719,6 +734,7 @@ var (
 		Kind:      "upsert_set",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true, "set.password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "set.email": "pg_catalog.text", "set.display_name": "pg_catalog.varchar", "set.password_hash": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.users.users_tenant_email_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.users.email"}, dql.Use{Fragment: "name.users.display_name"}, dql.Use{Fragment: "name.users.password_hash"}, dql.Use{Fragment: "name.users.created_at"}, dql.Use{Fragment: "name.users.updated_at"}, dql.Use{Fragment: "name.users.version"}, dql.Use{Fragment: "name.users.tenant_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.user.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("email"), dql.Param("display_name"), dql.Param("password_hash"), dql.Param("created_at"), dql.Param("updated_at"), dql.Param("version"), dql.Param("scope.tenant_id")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("set.email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("set.display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("set.password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}}},
 		},
@@ -730,6 +746,7 @@ var (
 		Writes:    true,
 		AtMostOne: true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "key.id": "pg_catalog.int8", "key.version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.users", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.user.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
 		},
@@ -740,6 +757,7 @@ var (
 		Kind:      "patch",
 		Writes:    true,
 		AtMostOne: true,
+		Types:     map[string]string{"display_name": "pg_catalog.varchar", "key.id": "pg_catalog.int8", "key.version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.users", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.user.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("display_name")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
 		},
@@ -750,6 +768,7 @@ var (
 		Kind:      "update_where",
 		Writes:    true,
 		Sensitive: map[string]bool{"password_hash": true},
+		Types:     map[string]string{"email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.users", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.users.email", Holes: map[string]dql.Node{"0": dql.Param("email")}}, dql.Use{Fragment: "set.users.display_name", Holes: map[string]dql.Node{"0": dql.Param("display_name")}}, dql.Use{Fragment: "set.users.password_hash", Holes: map[string]dql.Node{"0": dql.Param("password_hash")}}, dql.Use{Fragment: "set.users.version", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.add", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Use{Fragment: "value.one"}}}}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}}}}},
 		},
@@ -759,6 +778,7 @@ var (
 		Catalog: "shop",
 		Kind:    "delete",
 		Writes:  true,
+		Types:   map[string]string{"key.id": "pg_catalog.int8", "key.version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "bool.and", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.id"}, "1": dql.Param("key.id")}}}}, "1": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.version"}, "1": dql.Param("key.version")}}}}}}}},
 		},
@@ -768,6 +788,7 @@ var (
 		Catalog: "shop",
 		Kind:    "delete_where",
 		Writes:  true,
+		Types:   map[string]string{"scope.tenant_id": "pg_catalog.uuid"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.users", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.users.tenant_id"}, "1": dql.Param("scope.tenant_id")}}}}}},
 		},
@@ -1680,52 +1701,52 @@ type usersIDColumn struct{}
 
 // Any is operator any on id (§9.4).
 func (usersIDColumn) Any(v []int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.any", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.any", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on id (§9.4).
 func (usersIDColumn) Between(v0 int64, v1 int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.between", "col.users.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[UsersTable]("op.between", "col.users.id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on id (§9.4).
 func (usersIDColumn) Eq(v int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.eq", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.eq", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on id (§9.4).
 func (usersIDColumn) Ge(v int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ge", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ge", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on id (§9.4).
 func (usersIDColumn) Gt(v int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.gt", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.gt", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on id (§9.4).
 func (usersIDColumn) In(v []int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.in", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.in", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on id (§9.4).
 func (usersIDColumn) IsDistinctFrom(v int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Le is operator le on id (§9.4).
 func (usersIDColumn) Le(v int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.le", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.le", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on id (§9.4).
 func (usersIDColumn) Lt(v int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.lt", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.lt", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on id (§9.4).
 func (usersIDColumn) Ne(v int64) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ne", "col.users.id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ne", "col.users.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Asc orders by id, ascending.
@@ -1743,52 +1764,52 @@ type usersTenantIDColumn struct{}
 
 // Any is operator any on tenant_id (§9.4).
 func (usersTenantIDColumn) Any(v []uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.any", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.any", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog._uuid"})
 }
 
 // Between is operator between on tenant_id (§9.4).
 func (usersTenantIDColumn) Between(v0 uuid.UUID, v1 uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.between", "col.users.tenant_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[UsersTable]("op.between", "col.users.tenant_id", dql.Arg{Value: v0, Type: "pg_catalog.uuid"}, dql.Arg{Value: v1, Type: "pg_catalog.uuid"})
 }
 
 // Eq is operator eq on tenant_id (§9.4).
 func (usersTenantIDColumn) Eq(v uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.eq", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.eq", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Ge is operator ge on tenant_id (§9.4).
 func (usersTenantIDColumn) Ge(v uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ge", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ge", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Gt is operator gt on tenant_id (§9.4).
 func (usersTenantIDColumn) Gt(v uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.gt", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.gt", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // In is operator in on tenant_id (§9.4).
 func (usersTenantIDColumn) In(v []uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.in", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.in", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog._uuid"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on tenant_id (§9.4).
 func (usersTenantIDColumn) IsDistinctFrom(v uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Le is operator le on tenant_id (§9.4).
 func (usersTenantIDColumn) Le(v uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.le", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.le", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Lt is operator lt on tenant_id (§9.4).
 func (usersTenantIDColumn) Lt(v uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.lt", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.lt", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Ne is operator ne on tenant_id (§9.4).
 func (usersTenantIDColumn) Ne(v uuid.UUID) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ne", "col.users.tenant_id", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ne", "col.users.tenant_id", dql.Arg{Value: v, Type: "pg_catalog.uuid"})
 }
 
 // Asc orders by tenant_id, ascending.
@@ -1806,12 +1827,12 @@ type usersEmailColumn struct{}
 
 // Any is operator any on email (§9.4).
 func (usersEmailColumn) Any(v []EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.any", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.any", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // Between is operator between on email (§9.4).
 func (usersEmailColumn) Between(v0 EmailAddress, v1 EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.between", "col.users.email", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[UsersTable]("op.between", "col.users.email", dql.Arg{Value: v0, Type: "pg_catalog.text"}, dql.Arg{Value: v1, Type: "pg_catalog.text"})
 }
 
 // Contains is operator contains on email (§9.4).
@@ -1821,17 +1842,17 @@ func (usersEmailColumn) Contains(v string) dql.Pred[UsersTable] {
 
 // Eq is operator eq on email (§9.4).
 func (usersEmailColumn) Eq(v EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.eq", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.eq", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ge is operator ge on email (§9.4).
 func (usersEmailColumn) Ge(v EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ge", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ge", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Gt is operator gt on email (§9.4).
 func (usersEmailColumn) Gt(v EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.gt", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.gt", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // ILike is operator ilike on email (§9.4).
@@ -1841,17 +1862,17 @@ func (usersEmailColumn) ILike(v string) dql.Pred[UsersTable] {
 
 // In is operator in on email (§9.4).
 func (usersEmailColumn) In(v []EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.in", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.in", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on email (§9.4).
 func (usersEmailColumn) IsDistinctFrom(v EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Le is operator le on email (§9.4).
 func (usersEmailColumn) Le(v EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.le", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.le", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Like is operator like on email (§9.4).
@@ -1861,12 +1882,12 @@ func (usersEmailColumn) Like(v string) dql.Pred[UsersTable] {
 
 // Lt is operator lt on email (§9.4).
 func (usersEmailColumn) Lt(v EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.lt", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.lt", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ne is operator ne on email (§9.4).
 func (usersEmailColumn) Ne(v EmailAddress) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ne", "col.users.email", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ne", "col.users.email", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // RegexMatch is operator regex_match on email (§9.4).
@@ -1899,12 +1920,12 @@ type usersDisplayNameColumn struct{}
 
 // Any is operator any on display_name (§9.4).
 func (usersDisplayNameColumn) Any(v []string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.any", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.any", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog._varchar"})
 }
 
 // Between is operator between on display_name (§9.4).
 func (usersDisplayNameColumn) Between(v0 string, v1 string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.between", "col.users.display_name", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[UsersTable]("op.between", "col.users.display_name", dql.Arg{Value: v0, Type: "pg_catalog.varchar"}, dql.Arg{Value: v1, Type: "pg_catalog.varchar"})
 }
 
 // Contains is operator contains on display_name (§9.4).
@@ -1914,17 +1935,17 @@ func (usersDisplayNameColumn) Contains(v string) dql.Pred[UsersTable] {
 
 // Eq is operator eq on display_name (§9.4).
 func (usersDisplayNameColumn) Eq(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.eq", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.eq", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog.varchar"})
 }
 
 // Ge is operator ge on display_name (§9.4).
 func (usersDisplayNameColumn) Ge(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ge", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ge", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog.varchar"})
 }
 
 // Gt is operator gt on display_name (§9.4).
 func (usersDisplayNameColumn) Gt(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.gt", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.gt", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog.varchar"})
 }
 
 // ILike is operator ilike on display_name (§9.4).
@@ -1934,12 +1955,12 @@ func (usersDisplayNameColumn) ILike(v string) dql.Pred[UsersTable] {
 
 // In is operator in on display_name (§9.4).
 func (usersDisplayNameColumn) In(v []string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.in", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.in", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog._varchar"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on display_name (§9.4).
 func (usersDisplayNameColumn) IsDistinctFrom(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog.varchar"})
 }
 
 // IsNotNull is operator is_not_null on display_name (§9.4).
@@ -1954,7 +1975,7 @@ func (usersDisplayNameColumn) IsNull() dql.Pred[UsersTable] {
 
 // Le is operator le on display_name (§9.4).
 func (usersDisplayNameColumn) Le(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.le", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.le", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog.varchar"})
 }
 
 // Like is operator like on display_name (§9.4).
@@ -1964,12 +1985,12 @@ func (usersDisplayNameColumn) Like(v string) dql.Pred[UsersTable] {
 
 // Lt is operator lt on display_name (§9.4).
 func (usersDisplayNameColumn) Lt(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.lt", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.lt", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog.varchar"})
 }
 
 // Ne is operator ne on display_name (§9.4).
 func (usersDisplayNameColumn) Ne(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ne", "col.users.display_name", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ne", "col.users.display_name", dql.Arg{Value: v, Type: "pg_catalog.varchar"})
 }
 
 // RegexMatch is operator regex_match on display_name (§9.4).
@@ -2002,12 +2023,12 @@ type usersPasswordHashColumn struct{}
 
 // Any is operator any on password_hash (§9.4).
 func (usersPasswordHashColumn) Any(v []string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.any", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.any", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog._text"})
 }
 
 // Between is operator between on password_hash (§9.4).
 func (usersPasswordHashColumn) Between(v0 string, v1 string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.between", "col.users.password_hash", dql.Arg{Value: v0, Sensitive: true}, dql.Arg{Value: v1, Sensitive: true})
+	return dql.Compare[UsersTable]("op.between", "col.users.password_hash", dql.Arg{Value: v0, Sensitive: true, Type: "pg_catalog.text"}, dql.Arg{Value: v1, Sensitive: true, Type: "pg_catalog.text"})
 }
 
 // Contains is operator contains on password_hash (§9.4).
@@ -2017,17 +2038,17 @@ func (usersPasswordHashColumn) Contains(v string) dql.Pred[UsersTable] {
 
 // Eq is operator eq on password_hash (§9.4).
 func (usersPasswordHashColumn) Eq(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.eq", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.eq", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog.text"})
 }
 
 // Ge is operator ge on password_hash (§9.4).
 func (usersPasswordHashColumn) Ge(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ge", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.ge", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog.text"})
 }
 
 // Gt is operator gt on password_hash (§9.4).
 func (usersPasswordHashColumn) Gt(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.gt", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.gt", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog.text"})
 }
 
 // ILike is operator ilike on password_hash (§9.4).
@@ -2037,17 +2058,17 @@ func (usersPasswordHashColumn) ILike(v string) dql.Pred[UsersTable] {
 
 // In is operator in on password_hash (§9.4).
 func (usersPasswordHashColumn) In(v []string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.in", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.in", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on password_hash (§9.4).
 func (usersPasswordHashColumn) IsDistinctFrom(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog.text"})
 }
 
 // Le is operator le on password_hash (§9.4).
 func (usersPasswordHashColumn) Le(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.le", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.le", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog.text"})
 }
 
 // Like is operator like on password_hash (§9.4).
@@ -2057,12 +2078,12 @@ func (usersPasswordHashColumn) Like(v string) dql.Pred[UsersTable] {
 
 // Lt is operator lt on password_hash (§9.4).
 func (usersPasswordHashColumn) Lt(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.lt", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.lt", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog.text"})
 }
 
 // Ne is operator ne on password_hash (§9.4).
 func (usersPasswordHashColumn) Ne(v string) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ne", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true})
+	return dql.Compare[UsersTable]("op.ne", "col.users.password_hash", dql.Arg{Value: v, Sensitive: true, Type: "pg_catalog.text"})
 }
 
 // RegexMatch is operator regex_match on password_hash (§9.4).
@@ -2095,52 +2116,52 @@ type usersCreatedAtColumn struct{}
 
 // Any is operator any on created_at (§9.4).
 func (usersCreatedAtColumn) Any(v []time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.any", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.any", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // Between is operator between on created_at (§9.4).
 func (usersCreatedAtColumn) Between(v0 time.Time, v1 time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.between", "col.users.created_at", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[UsersTable]("op.between", "col.users.created_at", dql.Arg{Value: v0, Type: "pg_catalog.timestamptz"}, dql.Arg{Value: v1, Type: "pg_catalog.timestamptz"})
 }
 
 // Eq is operator eq on created_at (§9.4).
 func (usersCreatedAtColumn) Eq(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.eq", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.eq", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ge is operator ge on created_at (§9.4).
 func (usersCreatedAtColumn) Ge(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ge", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ge", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Gt is operator gt on created_at (§9.4).
 func (usersCreatedAtColumn) Gt(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.gt", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.gt", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // In is operator in on created_at (§9.4).
 func (usersCreatedAtColumn) In(v []time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.in", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.in", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on created_at (§9.4).
 func (usersCreatedAtColumn) IsDistinctFrom(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Le is operator le on created_at (§9.4).
 func (usersCreatedAtColumn) Le(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.le", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.le", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Lt is operator lt on created_at (§9.4).
 func (usersCreatedAtColumn) Lt(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.lt", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.lt", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ne is operator ne on created_at (§9.4).
 func (usersCreatedAtColumn) Ne(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ne", "col.users.created_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ne", "col.users.created_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Set assigns dql.Now() or dql.Default() to created_at on a write, in place of a value (§20.2).
@@ -2163,52 +2184,52 @@ type usersUpdatedAtColumn struct{}
 
 // Any is operator any on updated_at (§9.4).
 func (usersUpdatedAtColumn) Any(v []time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.any", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.any", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // Between is operator between on updated_at (§9.4).
 func (usersUpdatedAtColumn) Between(v0 time.Time, v1 time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.between", "col.users.updated_at", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[UsersTable]("op.between", "col.users.updated_at", dql.Arg{Value: v0, Type: "pg_catalog.timestamptz"}, dql.Arg{Value: v1, Type: "pg_catalog.timestamptz"})
 }
 
 // Eq is operator eq on updated_at (§9.4).
 func (usersUpdatedAtColumn) Eq(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.eq", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.eq", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ge is operator ge on updated_at (§9.4).
 func (usersUpdatedAtColumn) Ge(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ge", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ge", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Gt is operator gt on updated_at (§9.4).
 func (usersUpdatedAtColumn) Gt(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.gt", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.gt", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // In is operator in on updated_at (§9.4).
 func (usersUpdatedAtColumn) In(v []time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.in", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.in", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on updated_at (§9.4).
 func (usersUpdatedAtColumn) IsDistinctFrom(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Le is operator le on updated_at (§9.4).
 func (usersUpdatedAtColumn) Le(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.le", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.le", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Lt is operator lt on updated_at (§9.4).
 func (usersUpdatedAtColumn) Lt(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.lt", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.lt", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ne is operator ne on updated_at (§9.4).
 func (usersUpdatedAtColumn) Ne(v time.Time) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ne", "col.users.updated_at", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ne", "col.users.updated_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Set assigns dql.Now() or dql.Default() to updated_at on a write, in place of a value (§20.2).
@@ -2231,52 +2252,52 @@ type usersVersionColumn struct{}
 
 // Any is operator any on version (§9.4).
 func (usersVersionColumn) Any(v []int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.any", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.any", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog._int4"})
 }
 
 // Between is operator between on version (§9.4).
 func (usersVersionColumn) Between(v0 int32, v1 int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.between", "col.users.version", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[UsersTable]("op.between", "col.users.version", dql.Arg{Value: v0, Type: "pg_catalog.int4"}, dql.Arg{Value: v1, Type: "pg_catalog.int4"})
 }
 
 // Eq is operator eq on version (§9.4).
 func (usersVersionColumn) Eq(v int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.eq", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.eq", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog.int4"})
 }
 
 // Ge is operator ge on version (§9.4).
 func (usersVersionColumn) Ge(v int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ge", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ge", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog.int4"})
 }
 
 // Gt is operator gt on version (§9.4).
 func (usersVersionColumn) Gt(v int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.gt", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.gt", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog.int4"})
 }
 
 // In is operator in on version (§9.4).
 func (usersVersionColumn) In(v []int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.in", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.in", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog._int4"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on version (§9.4).
 func (usersVersionColumn) IsDistinctFrom(v int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.is_distinct_from", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog.int4"})
 }
 
 // Le is operator le on version (§9.4).
 func (usersVersionColumn) Le(v int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.le", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.le", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog.int4"})
 }
 
 // Lt is operator lt on version (§9.4).
 func (usersVersionColumn) Lt(v int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.lt", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.lt", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog.int4"})
 }
 
 // Ne is operator ne on version (§9.4).
 func (usersVersionColumn) Ne(v int32) dql.Pred[UsersTable] {
-	return dql.Compare[UsersTable]("op.ne", "col.users.version", dql.Arg{Value: v})
+	return dql.Compare[UsersTable]("op.ne", "col.users.version", dql.Arg{Value: v, Type: "pg_catalog.int4"})
 }
 
 // Set assigns dql.Default() to version on a write, in place of a value (§20.2).
@@ -2375,7 +2396,7 @@ func (usersTenantRelation) All(p dql.Pred[TenantsTable]) dql.Pred[UsersTable] {
 }
 
 func (s usersReads) from(UsersTable) dql.From {
-	return dql.From{H: s.h, Scope: []dql.Node{dql.Compare[UsersTable]("op.eq", "col.users.tenant_id", dql.Arg{Value: s.scope.TenantID}).Node()}}
+	return dql.From{H: s.h, Scope: []dql.Node{dql.Compare[UsersTable]("op.eq", "col.users.tenant_id", dql.Arg{Value: s.scope.TenantID, Type: "pg_catalog.uuid"}).Node()}}
 }
 
 func (u usersUnscopedReads) from(UsersTable) dql.From { return dql.From{H: u.h} }

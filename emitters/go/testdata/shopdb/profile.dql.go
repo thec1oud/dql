@@ -468,6 +468,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.user_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.profile.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}},
@@ -478,6 +479,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.user_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.profile.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}},
@@ -504,6 +506,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert",
 		Writes:  true,
+		Types:   map[string]string{"user_id": "pg_catalog.int8", "bio": "pg_catalog.text", "birthday": "pg_catalog.date"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.profiles", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}}},
 		},
@@ -513,6 +516,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert_or_ignore",
 		Writes:  true,
+		Types:   map[string]string{"user_id": "pg_catalog.int8", "bio": "pg_catalog.text", "birthday": "pg_catalog.date"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.profiles.profiles_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}}},
 		},
@@ -522,6 +526,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert",
 		Writes:  true,
+		Types:   map[string]string{"user_id": "pg_catalog.int8", "bio": "pg_catalog.text", "birthday": "pg_catalog.date"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.profiles.profiles_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.profiles.bio"}}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.profiles.birthday"}}}}, Separator: ", "}}},
 		},
@@ -531,6 +536,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert_set",
 		Writes:  true,
+		Types:   map[string]string{"user_id": "pg_catalog.int8", "bio": "pg_catalog.text", "birthday": "pg_catalog.date", "set.bio": "pg_catalog.text", "set.birthday": "pg_catalog.date"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.profiles.profiles_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Param("set.bio")}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Param("set.birthday")}}, dql.Use{Fragment: "set.profiles.user_id", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}}}}, Separator: ", "}}},
 		},
@@ -541,6 +547,7 @@ var (
 		Kind:      "patch",
 		Writes:    true,
 		AtMostOne: true,
+		Types:     map[string]string{"bio": "pg_catalog.text", "birthday": "pg_catalog.date", "key.user_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.profiles", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.profile.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Param("bio")}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Param("birthday")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}}}},
 		},
@@ -550,6 +557,7 @@ var (
 		Catalog: "shop",
 		Kind:    "update_where",
 		Writes:  true,
+		Types:   map[string]string{"bio": "pg_catalog.text", "birthday": "pg_catalog.date"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.profiles", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.profiles.bio", Holes: map[string]dql.Node{"0": dql.Param("bio")}}, dql.Use{Fragment: "set.profiles.birthday", Holes: map[string]dql.Node{"0": dql.Param("birthday")}}}, Separator: ", "}}},
 		},
@@ -559,6 +567,7 @@ var (
 		Catalog: "shop",
 		Kind:    "delete",
 		Writes:  true,
+		Types:   map[string]string{"key.user_id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.profiles", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.profiles.user_id"}, "1": dql.Param("key.user_id")}}}}}},
 		},
@@ -978,52 +987,52 @@ type profilesUserIDColumn struct{}
 
 // Any is operator any on user_id (§9.4).
 func (profilesUserIDColumn) Any(v []int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.any", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.any", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on user_id (§9.4).
 func (profilesUserIDColumn) Between(v0 int64, v1 int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.between", "col.profiles.user_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[ProfilesTable]("op.between", "col.profiles.user_id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on user_id (§9.4).
 func (profilesUserIDColumn) Eq(v int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on user_id (§9.4).
 func (profilesUserIDColumn) Ge(v int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on user_id (§9.4).
 func (profilesUserIDColumn) Gt(v int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on user_id (§9.4).
 func (profilesUserIDColumn) In(v []int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.in", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.in", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on user_id (§9.4).
 func (profilesUserIDColumn) IsDistinctFrom(v int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Le is operator le on user_id (§9.4).
 func (profilesUserIDColumn) Le(v int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.le", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.le", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on user_id (§9.4).
 func (profilesUserIDColumn) Lt(v int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on user_id (§9.4).
 func (profilesUserIDColumn) Ne(v int64) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.user_id", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.user_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Set assigns dql.Default() to user_id on a write, in place of a value (§20.2).
@@ -1046,12 +1055,12 @@ type profilesBioColumn struct{}
 
 // Any is operator any on bio (§9.4).
 func (profilesBioColumn) Any(v []string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.any", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.any", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // Between is operator between on bio (§9.4).
 func (profilesBioColumn) Between(v0 string, v1 string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.between", "col.profiles.bio", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[ProfilesTable]("op.between", "col.profiles.bio", dql.Arg{Value: v0, Type: "pg_catalog.text"}, dql.Arg{Value: v1, Type: "pg_catalog.text"})
 }
 
 // Contains is operator contains on bio (§9.4).
@@ -1061,17 +1070,17 @@ func (profilesBioColumn) Contains(v string) dql.Pred[ProfilesTable] {
 
 // Eq is operator eq on bio (§9.4).
 func (profilesBioColumn) Eq(v string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ge is operator ge on bio (§9.4).
 func (profilesBioColumn) Ge(v string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Gt is operator gt on bio (§9.4).
 func (profilesBioColumn) Gt(v string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // ILike is operator ilike on bio (§9.4).
@@ -1081,12 +1090,12 @@ func (profilesBioColumn) ILike(v string) dql.Pred[ProfilesTable] {
 
 // In is operator in on bio (§9.4).
 func (profilesBioColumn) In(v []string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.in", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.in", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on bio (§9.4).
 func (profilesBioColumn) IsDistinctFrom(v string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // IsNotNull is operator is_not_null on bio (§9.4).
@@ -1101,7 +1110,7 @@ func (profilesBioColumn) IsNull() dql.Pred[ProfilesTable] {
 
 // Le is operator le on bio (§9.4).
 func (profilesBioColumn) Le(v string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.le", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.le", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Like is operator like on bio (§9.4).
@@ -1111,12 +1120,12 @@ func (profilesBioColumn) Like(v string) dql.Pred[ProfilesTable] {
 
 // Lt is operator lt on bio (§9.4).
 func (profilesBioColumn) Lt(v string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ne is operator ne on bio (§9.4).
 func (profilesBioColumn) Ne(v string) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.bio", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.bio", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // RegexMatch is operator regex_match on bio (§9.4).
@@ -1149,37 +1158,37 @@ type profilesBirthdayColumn struct{}
 
 // Any is operator any on birthday (§9.4).
 func (profilesBirthdayColumn) Any(v []civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.any", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.any", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog._date"})
 }
 
 // Between is operator between on birthday (§9.4).
 func (profilesBirthdayColumn) Between(v0 civil.Date, v1 civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.between", "col.profiles.birthday", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[ProfilesTable]("op.between", "col.profiles.birthday", dql.Arg{Value: v0, Type: "pg_catalog.date"}, dql.Arg{Value: v1, Type: "pg_catalog.date"})
 }
 
 // Eq is operator eq on birthday (§9.4).
 func (profilesBirthdayColumn) Eq(v civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.eq", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog.date"})
 }
 
 // Ge is operator ge on birthday (§9.4).
 func (profilesBirthdayColumn) Ge(v civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.ge", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog.date"})
 }
 
 // Gt is operator gt on birthday (§9.4).
 func (profilesBirthdayColumn) Gt(v civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.gt", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog.date"})
 }
 
 // In is operator in on birthday (§9.4).
 func (profilesBirthdayColumn) In(v []civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.in", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.in", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog._date"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on birthday (§9.4).
 func (profilesBirthdayColumn) IsDistinctFrom(v civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.is_distinct_from", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog.date"})
 }
 
 // IsNotNull is operator is_not_null on birthday (§9.4).
@@ -1194,17 +1203,17 @@ func (profilesBirthdayColumn) IsNull() dql.Pred[ProfilesTable] {
 
 // Le is operator le on birthday (§9.4).
 func (profilesBirthdayColumn) Le(v civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.le", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.le", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog.date"})
 }
 
 // Lt is operator lt on birthday (§9.4).
 func (profilesBirthdayColumn) Lt(v civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.lt", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog.date"})
 }
 
 // Ne is operator ne on birthday (§9.4).
 func (profilesBirthdayColumn) Ne(v civil.Date) dql.Pred[ProfilesTable] {
-	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.birthday", dql.Arg{Value: v})
+	return dql.Compare[ProfilesTable]("op.ne", "col.profiles.birthday", dql.Arg{Value: v, Type: "pg_catalog.date"})
 }
 
 // Set assigns dql.Now() or dql.Default() to birthday on a write, in place of a value (§20.2).

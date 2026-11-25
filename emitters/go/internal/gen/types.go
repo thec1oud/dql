@@ -168,3 +168,34 @@ func packageName(path string) string {
 		return r
 	}, last)
 }
+
+// dbType is the database type a value of t is sent as, written
+// namespace.name as the database names it, such as pg_catalog.int4: a
+// domain's base type, or, for a list of t, its array type. A runtime
+// encodes arguments by it where the server does not describe the
+// statement (§26.4). It is "" where the bundle does not say.
+func (g *generator) dbType(t *irv1.Type, list bool) string {
+	for t.GetNamed().GetDomain() != nil {
+		t = g.named[keyOf(t.GetNamed().GetDomain())].base
+	}
+	if a := t.GetArray(); a != nil {
+		if list {
+			return ""
+		}
+		if a.GetElement().GetNamed().GetDomain() != nil {
+			return g.dbType(a.GetElement(), true)
+		}
+	}
+	n := t.GetNative().GetName()
+	name := n.GetObject()
+	if name == "" {
+		return ""
+	}
+	if list {
+		name = "_" + name
+	}
+	if ns := n.GetNamespace(); ns != "" {
+		name = ns + "." + name
+	}
+	return name
+}

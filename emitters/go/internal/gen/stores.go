@@ -203,6 +203,21 @@ func (g *generator) queryVars(e *entity) {
 		if len(sensitive) > 0 {
 			f.printf("\t\tSensitive: map[string]bool{%s},\n", strings.Join(sensitive, ", "))
 		}
+		var types []string
+		for _, p := range q.GetParams() {
+			if t := g.dbType(p.GetType(), p.GetList()); t != "" {
+				types = append(types, fmt.Sprintf("%q: %q", p.GetName(), t))
+			}
+		}
+		for _, fld := range e.scope.GetFields() {
+			name := "scope." + fld.GetColumn()
+			if t := g.dbType(fld.GetType(), false); t != "" && usesParam(q.GetPlan().GetParts(), name) {
+				types = append(types, fmt.Sprintf("%q: %q", name, t))
+			}
+		}
+		if len(types) > 0 {
+			f.printf("\t\tTypes: map[string]string{%s},\n", strings.Join(types, ", "))
+		}
 		f.printf("\t\tPlan: []%s.Node{\n", dql)
 		for _, u := range q.GetPlan().GetParts() {
 			f.printf("\t\t\t%s,\n", g.use(f, u, e.q))
@@ -210,6 +225,24 @@ func (g *generator) queryVars(e *entity) {
 		f.printf("\t\t},\n\t}\n")
 	}
 	f.printf(")\n\n")
+}
+
+// usesParam reports whether parameter name fills a hole of the fragment
+// uses.
+func usesParam(uses []*irv1.FragmentUse, name string) bool {
+	for _, u := range uses {
+		for _, h := range u.GetHoles() {
+			if h.GetParam() == name || usesParam([]*irv1.FragmentUse{h.GetFragment()}, name) {
+				return true
+			}
+			for _, it := range h.GetList().GetItems() {
+				if it.GetParam() == name || usesParam([]*irv1.FragmentUse{it.GetFragment()}, name) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // paramColumn is the column a parameter of a builder query fills: key.id

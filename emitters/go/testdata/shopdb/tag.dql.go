@@ -406,6 +406,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.tag.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.name"}, "1": dql.Param("key.name")}}}},
@@ -416,6 +417,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.tag.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}},
@@ -426,6 +428,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.tag.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.name"}, "1": dql.Param("key.name")}}}},
@@ -436,6 +439,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.tag.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}},
@@ -462,6 +466,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert",
 		Writes:  true,
+		Types:   map[string]string{"name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "insert.tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
 		},
@@ -471,6 +476,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert_or_ignore",
 		Writes:  true,
+		Types:   map[string]string{"name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.tags.tags_name_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
 		},
@@ -480,6 +486,7 @@ var (
 		Catalog: "shop",
 		Kind:    "insert_or_ignore",
 		Writes:  true,
+		Types:   map[string]string{"name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "ignore.tags.tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
 		},
@@ -489,6 +496,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert",
 		Writes:  true,
+		Types:   map[string]string{"name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.tags.tags_name_key", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.tags.name"}}}}, Separator: ", "}}},
 		},
@@ -498,6 +506,7 @@ var (
 		Catalog: "shop",
 		Kind:    "upsert",
 		Writes:  true,
+		Types:   map[string]string{"name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "upsert.tags.tags_pkey", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "excluded.tags.name"}}}}, Separator: ", "}}},
 		},
@@ -508,6 +517,7 @@ var (
 		Kind:      "patch",
 		Writes:    true,
 		AtMostOne: true,
+		Types:     map[string]string{"name": "pg_catalog.text", "key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.tags", Holes: map[string]dql.Node{"returning": dql.Use{Fragment: "returning.tag.full.flat"}, "sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}, "where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}}}},
 		},
@@ -517,6 +527,7 @@ var (
 		Catalog: "shop",
 		Kind:    "update_where",
 		Writes:  true,
+		Types:   map[string]string{"name": "pg_catalog.text"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "update.tags", Holes: map[string]dql.Node{"sets": dql.List{Items: []dql.Node{dql.Use{Fragment: "set.tags.name", Holes: map[string]dql.Node{"0": dql.Param("name")}}}, Separator: ", "}}},
 		},
@@ -526,6 +537,7 @@ var (
 		Catalog: "shop",
 		Kind:    "delete",
 		Writes:  true,
+		Types:   map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "delete.tags", Holes: map[string]dql.Node{"where": dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.tags.id"}, "1": dql.Param("key.id")}}}}}},
 		},
@@ -971,52 +983,52 @@ type tagsIDColumn struct{}
 
 // Any is operator any on id (§9.4).
 func (tagsIDColumn) Any(v []int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.any", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.any", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on id (§9.4).
 func (tagsIDColumn) Between(v0 int64, v1 int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.between", "col.tags.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[TagsTable]("op.between", "col.tags.id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on id (§9.4).
 func (tagsIDColumn) Eq(v int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.eq", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.eq", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on id (§9.4).
 func (tagsIDColumn) Ge(v int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.ge", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.ge", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on id (§9.4).
 func (tagsIDColumn) Gt(v int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.gt", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.gt", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on id (§9.4).
 func (tagsIDColumn) In(v []int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.in", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.in", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on id (§9.4).
 func (tagsIDColumn) IsDistinctFrom(v int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.is_distinct_from", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.is_distinct_from", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Le is operator le on id (§9.4).
 func (tagsIDColumn) Le(v int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.le", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.le", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on id (§9.4).
 func (tagsIDColumn) Lt(v int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.lt", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.lt", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on id (§9.4).
 func (tagsIDColumn) Ne(v int64) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.ne", "col.tags.id", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.ne", "col.tags.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Asc orders by id, ascending.
@@ -1034,12 +1046,12 @@ type tagsNameColumn struct{}
 
 // Any is operator any on name (§9.4).
 func (tagsNameColumn) Any(v []SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.any", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.any", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // Between is operator between on name (§9.4).
 func (tagsNameColumn) Between(v0 SlugText, v1 SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.between", "col.tags.name", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[TagsTable]("op.between", "col.tags.name", dql.Arg{Value: v0, Type: "pg_catalog.text"}, dql.Arg{Value: v1, Type: "pg_catalog.text"})
 }
 
 // Contains is operator contains on name (§9.4).
@@ -1049,17 +1061,17 @@ func (tagsNameColumn) Contains(v string) dql.Pred[TagsTable] {
 
 // Eq is operator eq on name (§9.4).
 func (tagsNameColumn) Eq(v SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.eq", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.eq", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ge is operator ge on name (§9.4).
 func (tagsNameColumn) Ge(v SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.ge", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.ge", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Gt is operator gt on name (§9.4).
 func (tagsNameColumn) Gt(v SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.gt", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.gt", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // ILike is operator ilike on name (§9.4).
@@ -1069,17 +1081,17 @@ func (tagsNameColumn) ILike(v string) dql.Pred[TagsTable] {
 
 // In is operator in on name (§9.4).
 func (tagsNameColumn) In(v []SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.in", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.in", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on name (§9.4).
 func (tagsNameColumn) IsDistinctFrom(v SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.is_distinct_from", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.is_distinct_from", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Le is operator le on name (§9.4).
 func (tagsNameColumn) Le(v SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.le", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.le", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Like is operator like on name (§9.4).
@@ -1089,12 +1101,12 @@ func (tagsNameColumn) Like(v string) dql.Pred[TagsTable] {
 
 // Lt is operator lt on name (§9.4).
 func (tagsNameColumn) Lt(v SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.lt", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.lt", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ne is operator ne on name (§9.4).
 func (tagsNameColumn) Ne(v SlugText) dql.Pred[TagsTable] {
-	return dql.Compare[TagsTable]("op.ne", "col.tags.name", dql.Arg{Value: v})
+	return dql.Compare[TagsTable]("op.ne", "col.tags.name", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // RegexMatch is operator regex_match on name (§9.4).

@@ -344,7 +344,7 @@ func TestSelectShapes(t *testing.T) {
 	if s := files["dql-select.dql.go"]; strings.Contains(s, "Shapes") || strings.Contains(s, "ForUpdate") || strings.Contains(s, "Distinct") {
 		t.Error(s)
 	}
-	contains(t, files, "user.dql.go", `dql.Arg{Value: s.scope.TenantID, Sensitive: true}`)
+	contains(t, files, "user.dql.go", `dql.Arg{Value: s.scope.TenantID, Sensitive: true, Type: "pg_catalog.uuid"}`)
 }
 
 // §18.4: fragment ids name a table behind its namespace when that is not

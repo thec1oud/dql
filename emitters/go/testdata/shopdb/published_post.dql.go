@@ -106,6 +106,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "get",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.published_post.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.published_posts.id"}, "1": dql.Param("key.id")}}}},
@@ -116,6 +117,7 @@ var (
 		Catalog:   "shop",
 		Kind:      "find",
 		AtMostOne: true,
+		Types:     map[string]string{"key.id": "pg_catalog.int8"},
 		Plan: []dql.Node{
 			dql.Use{Fragment: "select.published_post.full.flat"},
 			dql.Use{Fragment: "clause.where", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "op.eq", Holes: map[string]dql.Node{"0": dql.Use{Fragment: "col.published_posts.id"}, "1": dql.Param("key.id")}}}},
@@ -212,52 +214,52 @@ type publishedPostsIDColumn struct{}
 
 // Any is operator any on id (§9.4).
 func (publishedPostsIDColumn) Any(v []int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.any", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.any", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on id (§9.4).
 func (publishedPostsIDColumn) Between(v0 int64, v1 int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.between", "col.published_posts.id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PublishedPostsTable]("op.between", "col.published_posts.id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on id (§9.4).
 func (publishedPostsIDColumn) Eq(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.eq", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.eq", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on id (§9.4).
 func (publishedPostsIDColumn) Ge(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.ge", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.ge", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on id (§9.4).
 func (publishedPostsIDColumn) Gt(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.gt", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.gt", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on id (§9.4).
 func (publishedPostsIDColumn) In(v []int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.in", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.in", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on id (§9.4).
 func (publishedPostsIDColumn) IsDistinctFrom(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.is_distinct_from", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.is_distinct_from", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Le is operator le on id (§9.4).
 func (publishedPostsIDColumn) Le(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.le", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.le", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on id (§9.4).
 func (publishedPostsIDColumn) Lt(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.lt", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.lt", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on id (§9.4).
 func (publishedPostsIDColumn) Ne(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.ne", "col.published_posts.id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.ne", "col.published_posts.id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Asc orders by id, ascending.
@@ -275,12 +277,12 @@ type publishedPostsTitleColumn struct{}
 
 // Any is operator any on title (§9.4).
 func (publishedPostsTitleColumn) Any(v []string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.any", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.any", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // Between is operator between on title (§9.4).
 func (publishedPostsTitleColumn) Between(v0 string, v1 string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.between", "col.published_posts.title", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PublishedPostsTable]("op.between", "col.published_posts.title", dql.Arg{Value: v0, Type: "pg_catalog.text"}, dql.Arg{Value: v1, Type: "pg_catalog.text"})
 }
 
 // Contains is operator contains on title (§9.4).
@@ -290,17 +292,17 @@ func (publishedPostsTitleColumn) Contains(v string) dql.Pred[PublishedPostsTable
 
 // Eq is operator eq on title (§9.4).
 func (publishedPostsTitleColumn) Eq(v string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.eq", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.eq", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ge is operator ge on title (§9.4).
 func (publishedPostsTitleColumn) Ge(v string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.ge", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.ge", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Gt is operator gt on title (§9.4).
 func (publishedPostsTitleColumn) Gt(v string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.gt", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.gt", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // ILike is operator ilike on title (§9.4).
@@ -310,17 +312,17 @@ func (publishedPostsTitleColumn) ILike(v string) dql.Pred[PublishedPostsTable] {
 
 // In is operator in on title (§9.4).
 func (publishedPostsTitleColumn) In(v []string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.in", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.in", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog._text"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on title (§9.4).
 func (publishedPostsTitleColumn) IsDistinctFrom(v string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.is_distinct_from", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.is_distinct_from", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Le is operator le on title (§9.4).
 func (publishedPostsTitleColumn) Le(v string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.le", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.le", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Like is operator like on title (§9.4).
@@ -330,12 +332,12 @@ func (publishedPostsTitleColumn) Like(v string) dql.Pred[PublishedPostsTable] {
 
 // Lt is operator lt on title (§9.4).
 func (publishedPostsTitleColumn) Lt(v string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.lt", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.lt", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // Ne is operator ne on title (§9.4).
 func (publishedPostsTitleColumn) Ne(v string) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.ne", "col.published_posts.title", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.ne", "col.published_posts.title", dql.Arg{Value: v, Type: "pg_catalog.text"})
 }
 
 // RegexMatch is operator regex_match on title (§9.4).
@@ -363,37 +365,37 @@ type publishedPostsAuthorIDColumn struct{}
 
 // Any is operator any on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) Any(v []int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.any", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.any", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // Between is operator between on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) Between(v0 int64, v1 int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.between", "col.published_posts.author_id", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PublishedPostsTable]("op.between", "col.published_posts.author_id", dql.Arg{Value: v0, Type: "pg_catalog.int8"}, dql.Arg{Value: v1, Type: "pg_catalog.int8"})
 }
 
 // Eq is operator eq on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) Eq(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.eq", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.eq", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ge is operator ge on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) Ge(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.ge", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.ge", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Gt is operator gt on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) Gt(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.gt", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.gt", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // In is operator in on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) In(v []int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.in", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.in", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog._int8"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) IsDistinctFrom(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.is_distinct_from", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.is_distinct_from", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // IsNotNull is operator is_not_null on author_id (§9.4).
@@ -408,17 +410,17 @@ func (publishedPostsAuthorIDColumn) IsNull() dql.Pred[PublishedPostsTable] {
 
 // Le is operator le on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) Le(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.le", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.le", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Lt is operator lt on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) Lt(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.lt", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.lt", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Ne is operator ne on author_id (§9.4).
 func (publishedPostsAuthorIDColumn) Ne(v int64) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.ne", "col.published_posts.author_id", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.ne", "col.published_posts.author_id", dql.Arg{Value: v, Type: "pg_catalog.int8"})
 }
 
 // Asc orders by author_id, ascending.
@@ -436,37 +438,37 @@ type publishedPostsPublishedAtColumn struct{}
 
 // Any is operator any on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) Any(v []time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.any", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.any", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // Between is operator between on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) Between(v0 time.Time, v1 time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.between", "col.published_posts.published_at", dql.Arg{Value: v0}, dql.Arg{Value: v1})
+	return dql.Compare[PublishedPostsTable]("op.between", "col.published_posts.published_at", dql.Arg{Value: v0, Type: "pg_catalog.timestamptz"}, dql.Arg{Value: v1, Type: "pg_catalog.timestamptz"})
 }
 
 // Eq is operator eq on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) Eq(v time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.eq", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.eq", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ge is operator ge on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) Ge(v time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.ge", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.ge", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Gt is operator gt on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) Gt(v time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.gt", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.gt", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // In is operator in on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) In(v []time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.in", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.in", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog._timestamptz"})
 }
 
 // IsDistinctFrom is operator is_distinct_from on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) IsDistinctFrom(v time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.is_distinct_from", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.is_distinct_from", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // IsNotNull is operator is_not_null on published_at (§9.4).
@@ -481,17 +483,17 @@ func (publishedPostsPublishedAtColumn) IsNull() dql.Pred[PublishedPostsTable] {
 
 // Le is operator le on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) Le(v time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.le", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.le", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Lt is operator lt on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) Lt(v time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.lt", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.lt", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Ne is operator ne on published_at (§9.4).
 func (publishedPostsPublishedAtColumn) Ne(v time.Time) dql.Pred[PublishedPostsTable] {
-	return dql.Compare[PublishedPostsTable]("op.ne", "col.published_posts.published_at", dql.Arg{Value: v})
+	return dql.Compare[PublishedPostsTable]("op.ne", "col.published_posts.published_at", dql.Arg{Value: v, Type: "pg_catalog.timestamptz"})
 }
 
 // Asc orders by published_at, ascending.

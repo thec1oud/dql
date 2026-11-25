@@ -294,6 +294,7 @@ func (g *generator) assignments(decls *strings.Builder, e *entity, c *irv1.Colum
 	if e.sensitive[col] {
 		sensitive = ", Sensitive: true"
 	}
+	sensitive += typeField(g.dbType(c.GetType(), false))
 	for _, op := range c.GetOperators() {
 		name := op.GetName()
 		if (name != "add" && name != "sub") || !g.fragmentIDs["op."+name] || !carries(e.part) {
@@ -331,13 +332,14 @@ func (g *generator) operands(f *file, e *entity, c *irv1.Column, op string) (str
 	// The first operand is the column, which binds the type variable.
 	what := "column " + c.GetName().GetStored()
 	var bound string
+	var boundType *irv1.Type
 	switch a := sig.GetArgs()[0]; {
 	case a.GetVar() != "":
-		bound = g.goType(f, c.GetType(), e.q, what)
+		bound, boundType = g.goType(f, c.GetType(), e.q, what), c.GetType()
 	case a.GetArray() != nil && c.GetType().GetArray() != nil:
-		bound = strings.TrimPrefix(g.goType(f, c.GetType(), e.q, what), "[]")
+		bound, boundType = strings.TrimPrefix(g.goType(f, c.GetType(), e.q, what), "[]"), c.GetType().GetArray().GetElement()
 	case a.GetRange() != nil && c.GetType().GetRange() != nil:
-		bound = g.goType(f, c.GetType().GetRange().GetElement(), e.q, what)
+		bound, boundType = g.goType(f, c.GetType().GetRange().GetElement(), e.q, what), c.GetType().GetRange().GetElement()
 	case a.GetType() != nil:
 	default:
 		return "", "", false
@@ -349,16 +351,19 @@ func (g *generator) operands(f *file, e *entity, c *irv1.Column, op string) (str
 	}
 	var params, args []string
 	for i, a := range sig.GetArgs()[1:] {
-		var t string
+		var t, db string
 		switch {
 		case a.GetVar() != "":
-			t = bound
+			t, db = bound, g.dbType(boundType, false)
 		case a.GetArray().GetVar() != "":
-			t = "[]" + bound
+			t, db = "[]"+bound, g.dbType(boundType, true)
 		case a.GetRange().GetVar() != "":
 			t = dql + ".Range[" + bound + "]"
+			if c.GetType().GetRange() != nil {
+				db = g.dbType(c.GetType(), false)
+			}
 		case a.GetType() != nil:
-			t = g.goType(f, a.GetType(), e.q, what)
+			t, db = g.goType(f, a.GetType(), e.q, what), g.dbType(a.GetType(), false)
 		default:
 			return "", "", false
 		}
@@ -367,7 +372,7 @@ func (g *generator) operands(f *file, e *entity, c *irv1.Column, op string) (str
 			v = "v"
 		}
 		params = append(params, v+" "+t)
-		args = append(args, fmt.Sprintf(", %s.Arg{Value: %s%s}", dql, v, sensitive))
+		args = append(args, fmt.Sprintf(", %s.Arg{Value: %s%s%s}", dql, v, sensitive, typeField(db)))
 	}
 	return strings.Join(params, ", "), strings.Join(args, ""), true
 }
@@ -384,8 +389,8 @@ func (g *generator) sources(e *entity) {
 		if e.sensitive[fld.GetColumn()] {
 			sensitive = ", Sensitive: true"
 		}
-		preds = append(preds, fmt.Sprintf("%s.Compare[%s](%q, %q, %s.Arg{Value: s.scope.%s%s}).Node()",
-			dql, e.tableType(), "op.eq", e.colFragment(fld.GetColumn()), dql, g.fieldName(e.scope, fld.GetColumn()), sensitive))
+		preds = append(preds, fmt.Sprintf("%s.Compare[%s](%q, %q, %s.Arg{Value: s.scope.%s%s%s}).Node()",
+			dql, e.tableType(), "op.eq", e.colFragment(fld.GetColumn()), dql, g.fieldName(e.scope, fld.GetColumn()), sensitive, typeField(g.dbType(fld.GetType(), false))))
 	}
 	scope, visible := "", ""
 	if len(preds) > 0 {
@@ -398,4 +403,13 @@ func (g *generator) sources(e *entity) {
 	if e.scope != nil {
 		f.printf("func (u %sUnscopedReads) from(%s) %s.From { return %s.From{H: u.h%s} }\n\n", e.lower(), e.tableType(), dql, dql, visible)
 	}
+}
+
+// typeField is the Type field of a dql.Arg literal holding a value of
+// database type t, or nothing when t is not known.
+func typeField(t string) string {
+	if t == "" {
+		return ""
+	}
+	return fmt.Sprintf(", Type: %q", t)
 }
