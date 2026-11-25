@@ -89,7 +89,8 @@ var Dialect = dql.Dialect{
 		Lag:      "SELECT (CASE WHEN NOT pg_is_in_recovery() THEN NULL WHEN pg_last_wal_receive_lsn() = pg_last_wal_replay_lsn() THEN 0 ELSE extract(epoch FROM now() - pg_last_xact_replay_timestamp()) END)::float8",
 		Replayed: "SELECT pg_last_wal_replay_lsn() >= ALL (SELECT p::pg_lsn FROM unnest($1::text[]) p)",
 	},
-	MaxParams: 65535,
+	MaxParams:      65535,
+	StatementModes: []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe},
 }
 
 // Catalogs are the catalogs this package reads, each bound to a source

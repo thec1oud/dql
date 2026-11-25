@@ -49,6 +49,7 @@ func (d *Driver) Open(_ context.Context, c dql.PoolConfig) (dql.Pool, error) {
 	if c.MaxConns > 0 {
 		cfg.MaxConns = int32(c.MaxConns)
 	}
+	cfg.ConnConfig.DefaultQueryExecMode = modes[c.Mode]
 	cfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
 		for _, s := range c.Setup {
 			if _, err := conn.Exec(ctx, s); err != nil {
@@ -62,6 +63,16 @@ func (d *Driver) Open(_ context.Context, c dql.PoolConfig) (dql.Pool, error) {
 		return nil, err
 	}
 	return &pool{p}, nil
+}
+
+// modes are pgx's ways of sending the statement modes (§26.4): prepare
+// caches named prepared statements; describe sends unnamed statements,
+// caching only their descriptions, which poolers in transaction mode
+// allow; simple uses the simple protocol, with values encoded as text.
+var modes = map[dql.StatementMode]pgx.QueryExecMode{
+	dql.ModePrepare:  pgx.QueryExecModeCacheStatement,
+	dql.ModeDescribe: pgx.QueryExecModeCacheDescribe,
+	dql.ModeSimple:   pgx.QueryExecModeSimpleProtocol,
 }
 
 // register loads the driver's types and their array types into conn's type

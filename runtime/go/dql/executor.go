@@ -34,6 +34,9 @@ type SourceConfig struct {
 	MaxLag time.Duration
 	// Connections kept for independent transactions only (§22.6).
 	IndependentReserve int
+	// How the source's servers are sent statements; the zero value is
+	// ModePrepare (§26.4).
+	StatementMode StatementMode
 }
 
 // ConnConfig is a server to connect to. A DSN written env:NAME is the
@@ -45,14 +48,16 @@ type ConnConfig struct {
 
 // Dialect is the generated description of the target dialect: its name,
 // the statements every new connection runs (§22.7), its error map (§23),
-// how it reads replica positions (§22.5) and how many parameters one
-// statement may bind, or 0 for no limit (§25.2).
+// how it reads replica positions (§22.5), how many parameters one
+// statement may bind, or 0 for no limit (§25.2), and the statement modes
+// its drivers support, or nil to allow every mode (§26.4).
 type Dialect struct {
-	Name        string
-	Setup       []string
-	Errors      ErrorMap
-	Replication *Replication
-	MaxParams   int
+	Name           string
+	Setup          []string
+	Errors         ErrorMap
+	Replication    *Replication
+	MaxParams      int
+	StatementModes []StatementMode
 }
 
 // Option configures an Executor.
@@ -184,7 +189,10 @@ func (e *Executor) open(ctx context.Context, name string, c SourceConfig) (*sour
 	if len(c.Replicas) > 0 && e.dialect.Replication == nil {
 		return nil, fmt.Errorf("dql: source %s: %w", name, ErrNoReplication)
 	}
-	pool, err := e.openPool(ctx, name, c.Primary)
+	if err := e.dialect.checkMode(name, c.StatementMode); err != nil {
+		return nil, err
+	}
+	pool, err := e.openPool(ctx, name, c.Primary, c.StatementMode)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +201,7 @@ func (e *Executor) open(ctx context.Context, name string, c SourceConfig) (*sour
 		s.maxLag = defaultMaxLag
 	}
 	for _, rc := range c.Replicas {
-		rp, err := e.openPool(ctx, name, rc)
+		rp, err := e.openPool(ctx, name, rc, c.StatementMode)
 		if err != nil {
 			s.close()
 			return nil, err
@@ -214,14 +222,14 @@ func (e *Executor) open(ctx context.Context, name string, c SourceConfig) (*sour
 
 // openPool opens a pool of one server of a source. A DSN written env:NAME
 // is the environment variable NAME.
-func (e *Executor) openPool(ctx context.Context, source string, c ConnConfig) (Pool, error) {
+func (e *Executor) openPool(ctx context.Context, source string, c ConnConfig, mode StatementMode) (Pool, error) {
 	dsn := c.DSN
 	if v, ok := strings.CutPrefix(dsn, "env:"); ok {
 		if dsn = os.Getenv(v); dsn == "" {
 			return nil, fmt.Errorf("dql: source %s: environment variable %s is not set", source, v)
 		}
 	}
-	pool, err := e.driver.Open(ctx, PoolConfig{DSN: dsn, MaxConns: c.MaxConns, Setup: e.dialect.Setup})
+	pool, err := e.driver.Open(ctx, PoolConfig{DSN: dsn, MaxConns: c.MaxConns, Setup: e.dialect.Setup, Mode: mode})
 	if err != nil {
 		return nil, &ConnectionError{Origin: Origin{Dialect: e.dialect.Name}, Source: source, Err: err}
 	}

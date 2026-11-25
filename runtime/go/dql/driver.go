@@ -27,6 +27,8 @@ type PoolConfig struct {
 	// Statements every new connection runs, in order, before its first use
 	// (§22.7).
 	Setup []string
+	// How statements are sent (§26.4).
+	Mode StatementMode
 }
 
 // Pool is a pool of connections to one server.

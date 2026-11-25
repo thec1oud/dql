@@ -103,6 +103,17 @@ func (g *generator) dialect() {
 	if p.GetMaxParams() > 0 {
 		f.printf("\tMaxParams: %d,\n", p.GetMaxParams())
 	}
+	// The statement modes a source may choose (§26.4). A mode this runtime
+	// does not know is left out, so a source cannot choose it.
+	var modes []string
+	for _, m := range p.GetStatementModes() {
+		if name, ok := statementModes[m]; ok {
+			modes = append(modes, dql+"."+name)
+		}
+	}
+	if len(p.GetStatementModes()) > 0 {
+		f.printf("\tStatementModes: []%s.StatementMode{%s},\n", dql, strings.Join(modes, ", "))
+	}
 	f.printf("}\n\n")
 	var catalogs []string
 	for _, c := range g.b.GetCatalogs() {
@@ -184,4 +195,11 @@ func (g *generator) consistency(f *file, c *irv1.Consistency) string {
 		return dql + ".ReadYourWrites"
 	}
 	return dql + ".Primary"
+}
+
+// statementModes are the runtime's names of the statement modes (§26.4).
+var statementModes = map[irv1.StatementMode]string{
+	irv1.StatementMode_STATEMENT_MODE_PREPARE:  "ModePrepare",
+	irv1.StatementMode_STATEMENT_MODE_DESCRIBE: "ModeDescribe",
+	irv1.StatementMode_STATEMENT_MODE_SIMPLE:   "ModeSimple",
 }

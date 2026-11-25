@@ -111,6 +111,46 @@ func TestNew(t *testing.T) {
 	}
 }
 
+// §26.4: each source chooses a statement mode the dialect supports; its
+// primary and replicas are opened in it.
+func TestStatementModes(t *testing.T) {
+	ctx := context.Background()
+	d := &fakeDriver{handle: rows()}
+	dialect := replicated()
+	dialect.StatementModes = []StatementMode{ModePrepare, ModeDescribe}
+	src := SourceConfig{Primary: ConnConfig{DSN: "p", MaxConns: 1}, Replicas: []ConnConfig{{DSN: "r", MaxConns: 1}}, StatementMode: ModeDescribe}
+	e, err := New(ctx, d, dialect, Config{Sources: map[string]SourceConfig{"main": src}}, WithTrackInterval(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.Close()
+	if len(d.pools) != 2 || d.pools[0].cfg.Mode != ModeDescribe || d.pools[1].cfg.Mode != ModeDescribe {
+		t.Errorf("pools %v", d.pools)
+	}
+	src.StatementMode = ModeSimple
+	_, err = New(ctx, &fakeDriver{}, dialect, Config{Sources: map[string]SourceConfig{"main": src}})
+	if !errors.Is(err, ErrStatementMode) || err.Error() != "dql: source main: dql: the dialect does not support the statement mode: simple" {
+		t.Error(err)
+	}
+	// A dialect that declares none allows none; one that declares nothing
+	// allows every one.
+	dialect.StatementModes = []StatementMode{}
+	if _, err := New(ctx, &fakeDriver{}, dialect, Config{Sources: map[string]SourceConfig{"main": src}}); !errors.Is(err, ErrStatementMode) {
+		t.Error(err)
+	}
+	dialect.StatementModes = nil
+	e, err = New(ctx, &fakeDriver{handle: rows()}, dialect, Config{Sources: map[string]SourceConfig{"main": src}}, WithTrackInterval(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.Close()
+	for m, want := range map[StatementMode]string{ModePrepare: "prepare", ModeDescribe: "describe", ModeSimple: "simple", 7: "StatementMode(7)"} {
+		if m.String() != want {
+			t.Errorf("%d: %s", int(m), m)
+		}
+	}
+}
+
 func TestStatements(t *testing.T) {
 	ctx := context.Background()
 	d := &fakeDriver{}
