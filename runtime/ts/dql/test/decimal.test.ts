@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test } from "bun:test";
 import { Decimal, MAX_PARSE_EXPONENT } from "../src/index.js";
 
 const p = (s: string): Decimal => Decimal.parse(s);
@@ -99,7 +99,7 @@ describe("arithmetic", () => {
     ["-0.001", "0", -1],
   ] as const)("cmp(%s, %s)", (a, b, want) => {
     expect(p(a).cmp(p(b))).toBe(want);
-    expect(p(b).cmp(p(a))).toBe(-want || 0);
+    expect(p(b).cmp(p(a))).toBe((-want || 0) as -1 | 0 | 1);
     expect(p(a).equals(p(b))).toBe(want === 0);
   });
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test } from "bun:test";
 import {
   MAX_VERSION,
   MIN_VERSION,
@@ -65,7 +65,7 @@ describe("Temporal", () => {
 
 describe("brands", () => {
   test("uuid", () => {
-    expect(parseUuid("A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11")).toBe("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
+    expect(parseUuid("A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11") as string).toBe("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
     for (const s of ["", "a0eebc999c0b4ef8bb6d6bb9bd380a11", "{a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11}", "g0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"]) {
       expect(() => parseUuid(s)).toThrow(SyntaxError);
     }
@@ -84,7 +84,7 @@ describe("brands", () => {
     "::ffff:1.2.3.4",
     "fe80::1:2.3.4.5/128",
   ])("inet %s", (s) => {
-    expect(parseInet(s)).toBe(s);
+    expect(parseInet(s) as string).toBe(s);
   });
 
   test.each([
@@ -111,15 +111,15 @@ describe("brands", () => {
   });
 
   test("cidr", () => {
-    expect(parseCidr("10.0.0.0/8")).toBe("10.0.0.0/8");
-    expect(parseCidr("2001:db8::/32")).toBe("2001:db8::/32");
+    expect(parseCidr("10.0.0.0/8") as string).toBe("10.0.0.0/8");
+    expect(parseCidr("2001:db8::/32") as string).toBe("2001:db8::/32");
     expect(() => parseCidr("10.0.0.1/8")).toThrow(SyntaxError);
     expect(() => parseCidr("10.0.0.0")).toThrow(SyntaxError);
     expect(() => parseCidr("x/8")).toThrow(SyntaxError);
   });
 
   test("macaddr", () => {
-    expect(parseMacAddr("08:00:2B:01:02:03")).toBe("08:00:2b:01:02:03");
+    expect(parseMacAddr("08:00:2B:01:02:03") as string).toBe("08:00:2b:01:02:03");
     expect(() => parseMacAddr("08-00-2b-01-02-03")).toThrow(SyntaxError);
   });
 });
