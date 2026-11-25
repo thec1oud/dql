@@ -421,10 +421,27 @@ func opaqueMapped(c *config.Config) []*irv1.QualifiedName {
 }
 
 // printDiagnostics prints diagnostics as dql check prints configuration
-// errors: severity, code and message.
+// errors: severity, code, the qualified target when there is one (guide
+// §7.13), and message.
 func printDiagnostics(w io.Writer, ds []*irv1.Diagnostic) {
 	for _, d := range ds {
 		severity := strings.ToLower(strings.TrimPrefix(d.GetSeverity().String(), "SEVERITY_"))
-		fmt.Fprintf(w, "%s %s: %s\n", severity, d.GetCode(), d.GetMessage())
+		head := severity + " " + d.GetCode()
+		if t := qualified(d.GetTarget()); t != "" {
+			head += " " + t
+		}
+		fmt.Fprintf(w, "%s: %s\n", head, d.GetMessage())
 	}
+}
+
+// qualified spells a target as catalog.namespace.object.member, leaving
+// out the parts it lacks.
+func qualified(q *irv1.QualifiedName) string {
+	var parts []string
+	for _, p := range []string{q.GetCatalog(), q.GetNamespace(), q.GetObject(), q.GetMember()} {
+		if p != "" {
+			parts = append(parts, p)
+		}
+	}
+	return strings.Join(parts, ".")
 }

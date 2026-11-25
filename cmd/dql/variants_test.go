@@ -28,7 +28,7 @@ func TestGenerateConformanceVariants(t *testing.T) {
 	cfg := write(t, "dql.yaml", string(raw))
 	// shop's partial index on published slugs says nothing of deleted_at:
 	// the record's own soft-delete-unique example, a warning (§21.3).
-	const warning = "warning soft-delete-unique: unique index on a soft-delete table does not exclude deleted rows; a deleted row's values cannot be reused\n"
+	const warning = "warning soft-delete-unique shop.app.posts.posts_one_published_slug: unique index on a soft-delete table does not exclude deleted rows; a deleted row's values cannot be reused\n"
 	if code, _, stderr := dql("generate", "-config", cfg); code != 0 || stderr != warning {
 		t.Fatalf("%d %q", code, stderr)
 	}

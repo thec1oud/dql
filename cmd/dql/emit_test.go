@@ -100,7 +100,7 @@ func TestGenerateEmitterFailures(t *testing.T) {
 	emit := "emit:\n  - plugin: go\n    dialect: postgres\n    package: shopdb\n    out: gen\n" +
 		"  - plugin: kotlin\n    path: " + echoEmitter + "\n    dialect: postgres\n    types:\n      public.citext: { kotlin: String }\n"
 	code, _, stderr := dql("generate", "-config", write(t, "dql.yaml", extras+emit))
-	want := "error go-opaque-unmapped: domain shop.app.handle has opaque type public.citext, which the go emitter's types setting does not map"
+	want := "error go-opaque-unmapped shop.app.handle: domain shop.app.handle has opaque type public.citext, which the go emitter's types setting does not map"
 	if code != 1 || !strings.Contains(stderr, want) || !strings.Contains(stderr, "emit[1] (kotlin)") {
 		t.Errorf("emitter diagnostics: %d %q; want %q", code, stderr, want)
 	}
