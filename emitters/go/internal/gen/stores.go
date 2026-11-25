@@ -38,12 +38,18 @@ type entry struct {
 	by []string
 	// v is the Go variable holding the query.
 	v string
+	// shape is the custom write shape an insert or patch takes in place of
+	// the Draft or Partial (§14.8), nil for the presets.
+	shape *irv1.Shape
 }
 
 // method is the store method of an entry: its verb, and By and the key's
 // words when it names a key other than the primary.
 func (e entry) method() string {
 	m := Exported(strings.Split(e.verb, "_"))
+	if e.shape != nil {
+		m += Exported(e.shape.GetHostName().GetWords())
+	}
 	if e.by != nil {
 		m += "By" + Exported(e.by)
 	}
@@ -115,7 +121,7 @@ func (g *generator) entities() []*entity {
 			continue
 		}
 		e := byTable[keyOf(q.GetTables()[0])]
-		x, ok := parseEntry(e, q)
+		x, ok := g.parseEntry(e, q)
 		if !ok {
 			g.diags = append(g.diags, &irv1.Diagnostic{Severity: irv1.Severity_SEVERITY_WARNING, Code: CodeQueryUnsupported, Target: q.GetTables()[0],
 				Message: fmt.Sprintf("builder query %s is an operation the go emitter does not generate; it is left out", q.GetName().GetStored())})
@@ -135,8 +141,9 @@ func (g *generator) entities() []*entity {
 
 // parseEntry reads an entry's name: the entity's words joined by _, the
 // operation, and by_ with the key's words, as user.get.by_primary or
-// post.upsert.by_posts_one_published_slug.
-func parseEntry(e *entity, q *irv1.Query) (entry, bool) {
+// post.upsert.by_posts_one_published_slug, or the custom write shape an
+// insert or patch takes, as user.insert.quick_invite (§14.8).
+func (g *generator) parseEntry(e *entity, q *irv1.Query) (entry, bool) {
 	parts := strings.Split(q.GetName().GetStored(), ".")
 	if e == nil || len(parts) < 2 || len(parts) > 3 || parts[0] != strings.Join(e.t.GetHostName().GetWords(), "_") || !slices.Contains(verbs, parts[1]) {
 		return entry{}, false
@@ -145,7 +152,8 @@ func parseEntry(e *entity, q *irv1.Query) (entry, bool) {
 	if len(parts) == 3 {
 		by, ok := strings.CutPrefix(parts[2], "by_")
 		if !ok {
-			return entry{}, false
+			x.shape = g.ix.shapes[shapeKey(&irv1.ShapeId{Base: &irv1.ShapeId_Custom{Custom: parts[2]}})]
+			return x, x.shape != nil && (x.verb == "insert" || x.verb == "patch")
 		}
 		if by != "primary" {
 			x.by = strings.Split(by, "_")
@@ -304,13 +312,17 @@ func (g *generator) signatures(e *entity) []signature {
 		pred := dql + ".Pred[" + e.tableType() + "]"
 		values := ", as ..." + dql + ".Assignment[" + e.tableType() + "]"
 		updates := ", as ..." + dql + ".Update[" + e.tableType() + "]"
+		draft, part := e.draft, e.part
+		if x.shape != nil {
+			draft, part = x.shape, x.shape
+		}
 		switch x.verb {
 		case "insert", "insert_or_ignore", "upsert":
-			s.params = "d " + Exported(e.draft.GetHostName().GetWords()) + values
+			s.params = "d " + Exported(draft.GetHostName().GetWords()) + g.boundParams(e, x) + values
 		case "upsert_set":
 			s.params = "d " + Exported(e.draft.GetHostName().GetWords()) + ", p " + Exported(e.part.GetHostName().GetWords()) + updates
 		case "patch":
-			s.params += ", p " + Exported(e.part.GetHostName().GetWords()) + updates
+			s.params += ", p " + Exported(part.GetHostName().GetWords()) + updates
 		case "update_where":
 			s.params = "where " + pred + ", p " + Exported(e.part.GetHostName().GetWords()) + updates
 		case "delete_where", "hard_delete_where":
@@ -329,12 +341,12 @@ func (g *generator) signatures(e *entity) []signature {
 			s.results = "error"
 		}
 		out = append(out, s)
-		if x.verb == "patch" && x.by == nil {
+		if x.verb == "patch" && x.by == nil && x.shape == nil {
 			if p, ok := g.nestedPatch(e, e.scope); ok {
 				out = append(out, g.nestedPatchSignature(e, p))
 			}
 		}
-		if x.verb == "insert" {
+		if x.verb == "insert" && x.shape == nil {
 			out = append(out, signature{name: "InsertMany", params: "ds []" + Exported(e.draft.GetHostName().GetWords()) + values, results: "([]" + full + ", error)", x: x, many: true})
 			if p, ok := g.nestedInsert(e, e.scope); ok {
 				out = append(out, g.nestedSignature(e, p))
@@ -506,6 +518,9 @@ func (g *generator) methodBody(e *entity, s signature) {
 	default:
 		payload = nil
 	}
+	if x.shape != nil {
+		payload = x.shape
+	}
 	if payload != nil {
 		f.printf("\tif err := %s.Validate(); err != nil {\n\t\treturn %serr\n\t}\n", pv, zero)
 	}
@@ -635,6 +650,9 @@ func (g *generator) args(e *entity, x entry, payload *irv1.Shape, pv string, tra
 			lit = append(lit, fmt.Sprintf("%q: %s", name, Unexported(column(e.t, paramColumn(name)).GetHostName().GetWords())))
 		case x.verb == "upsert_set" && strings.HasPrefix(name, "set.") && shapeField(e.part, name[len("set."):]) != nil:
 			conds = append(conds, fmt.Sprintf("\tif v, ok := p.%s.Get(); ok {\n\t\targs[%q] = v\n\t}\n", g.fieldName(e.part, name[len("set."):]), name))
+		case slices.Contains(x.shape.GetBind(), name):
+			// A bound field is passed as its own parameter (§14.8).
+			lit = append(lit, fmt.Sprintf("%q: %s", name, boundName(e, name)))
 		case payload != nil && shapeField(payload, name) != nil:
 			fld := shapeField(payload, name)
 			v := pv + "." + g.fieldName(payload, name)
@@ -660,4 +678,21 @@ func (g *generator) args(e *entity, x entry, payload *irv1.Shape, pv string, tra
 		lit = append(lit, fmt.Sprintf("%q: s.scope.%s", "scope."+c, g.fieldName(e.scope, c)))
 	}
 	return strings.Join(lit, ", "), conds
+}
+
+// boundParams is the parameters of a custom write shape's bound fields,
+// after its payload, in the shape's order (§14.8).
+func (g *generator) boundParams(e *entity, x entry) string {
+	var ps []string
+	for _, p := range x.q.GetParams() {
+		if slices.Contains(x.shape.GetBind(), p.GetName()) {
+			ps = append(ps, boundName(e, p.GetName())+" "+g.field(e.f, p.GetType(), p.GetNullable(), e.q, "parameter "+p.GetName()))
+		}
+	}
+	return prefixComma(strings.Join(ps, ", "))
+}
+
+// boundName is the Go parameter of a bound column.
+func boundName(e *entity, col string) string {
+	return Unexported(column(e.t, col).GetHostName().GetWords())
 }
