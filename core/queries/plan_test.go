@@ -274,6 +274,12 @@ func TestPlanCustomShapes(t *testing.T) {
 	if qs["user.insert.bare"] != nil || qs["user.patch.bare"] != nil {
 		t.Error("a shape without lineage got queries")
 	}
+	// Custom shapes get Insert and Patch only.
+	for name := range qs {
+		if strings.Contains(name, ".quick_invite.") || strings.HasPrefix(name, "user.update_where.") {
+			t.Errorf("custom shape query %s", name)
+		}
+	}
 }
 
 // A query whose fragments the dialect lacks is left out, as are the writes

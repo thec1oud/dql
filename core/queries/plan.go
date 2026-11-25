@@ -41,14 +41,16 @@ func TableID(cats []*irv1.Catalog, q *irv1.QualifiedName) string {
 //   - <entity>.count and <entity>.exists count the rows a handle sees.
 //   - <entity>.insert, <entity>.upsert.by_<key> and <entity>.patch take the
 //     Draft, Partial and Key presets, and <entity>.insert.<shape> and
-//     <entity>.patch.<shape> each custom write shape; all return the Full.
+//     <entity>.patch.<shape> each custom write shape, its bound columns as
+//     parameters (§14.8); all return the Full. Custom shapes get no other
+//     operation.
 //   - <entity>.upsert_set.by_<key> upserts the Draft and, on conflict, sets
 //     the Partial's fields it holds, whose parameters are named set.<column>.
 //   - <entity>.insert_or_ignore.by_<key> inserts the Draft unless the row
 //     conflicts on the uniqueness fact, and returns the Full or no row.
 //   - <entity>.delete removes by Key, setting the soft-delete column on a
 //     soft-delete entity, which also has <entity>.hard_delete.
-//   - <entity>.update_where (and .update_where.<shape>), <entity>.delete_where
+//   - <entity>.update_where, <entity>.delete_where
 //     and <entity>.hard_delete_where write the rows a filter keeps: their
 //     WHERE holds the scope's and the soft delete's filters, and the runtime
 //     adds the call's (§20.1).
@@ -317,6 +319,9 @@ func (p *planner) entity(e *entity) {
 			cols, row, params := e.values(s)
 			p.add(e, e.spelling+".insert"+suffix, irv1.Cardinality_CARDINALITY_ONE, true, params, full,
 				use("insert."+e.id, cols, row, returning))
+			if custom != "" {
+				break
+			}
 			// An insert that skips a row conflicting on a uniqueness fact
 			// returns no row.
 			for _, u := range e.t.GetUniqueness() {
@@ -432,9 +437,12 @@ func (p *planner) patch(e *entity, s *irv1.Shape, suffix string, full *irv1.Shap
 		return
 	}
 	// The update of the rows a filter keeps: the runtime adds the call's
-	// filter to the scope's and the soft delete's (§20.1).
-	p.add(e, e.spelling+".update_where"+suffix, irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil,
-		use("update."+e.id, list("sets", sets), where(e.visible())))
+	// filter to the scope's and the soft delete's (§20.1). A custom shape
+	// gets only Patch.
+	if suffix == "" {
+		p.add(e, e.spelling+".update_where", irv1.Cardinality_CARDINALITY_EXEC_ROWS, true, params, nil,
+			use("update."+e.id, list("sets", sets), where(e.visible())))
+	}
 	preds, keyParams, ok := e.target()
 	if !ok {
 		return
