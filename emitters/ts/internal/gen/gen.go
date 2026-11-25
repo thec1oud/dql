@@ -73,6 +73,7 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 	g := newGenerator(b, o)
 	g.version()
 	g.types()
+	g.shapes()
 	if g.failed() {
 		sortDiagnostics(g.diags)
 		return nil, g.diags
@@ -91,10 +92,14 @@ type generator struct {
 	b     *irv1.Bundle
 	o     Options
 	named map[key]named
+	ix    shapeIndex
 	files []*file
 	// decls says what declares each module-level name so far, and where.
 	decls map[string]decl
 	diags []*irv1.Diagnostic
+	// reported holds each diagnostic's code, target and message, so that a
+	// column every shape of an entity holds reports its type once.
+	reported map[string]bool
 }
 
 // decl is a module-level name: what declares it, for diagnostics, and the
@@ -147,6 +152,7 @@ func newGenerator(b *irv1.Bundle, o Options) *generator {
 			g.named[keyOf(q(c.GetName().GetStored()))] = named{words: c.GetHostName().GetWords()}
 		}
 	})
+	g.indexShapes()
 	return g
 }
 
@@ -170,11 +176,20 @@ func (g *generator) failed() bool {
 }
 
 func (g *generator) errorf(code string, target *irv1.QualifiedName, format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	k := fmt.Sprintf("%s\x00%v\x00%s\x00%s", code, keyOf(target), target.GetMember(), msg)
+	if g.reported[k] {
+		return
+	}
+	if g.reported == nil {
+		g.reported = map[string]bool{}
+	}
+	g.reported[k] = true
 	g.diags = append(g.diags, &irv1.Diagnostic{
 		Severity: irv1.Severity_SEVERITY_ERROR,
 		Code:     code,
 		Target:   target,
-		Message:  fmt.Sprintf(format, args...),
+		Message:  msg,
 	})
 }
 

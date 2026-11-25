@@ -33,3 +33,5 @@ emit:
   - plugin: ts
     dialect: postgres
     out: src/shopdb
+    types:
+      public.citext: { ts: string }
