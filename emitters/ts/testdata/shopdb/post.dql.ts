@@ -720,3 +720,22 @@ export function mergePostByKey(
   }
   return { merged, unmatched };
 }
+
+/** PostsReadStore reads shop.app.posts (§26.3). */
+export interface PostsReadStore {
+  get(k: PostKey): Promise<PostFull>;
+  find(k: PostKey): Promise<PostFull | undefined>;
+  count(): Promise<bigint>;
+  exists(): Promise<boolean>;
+}
+
+/** PostsStore reads and writes shop.app.posts (§26.3). */
+export interface PostsStore extends PostsReadStore {
+  insert(d: PostDraft): Promise<PostFull>;
+  insertOrIgnoreByPostsOnePublishedSlug(d: PostDraft): Promise<PostFull | undefined>;
+  insertOrIgnore(d: PostDraft): Promise<PostFull | undefined>;
+  upsertByPostsOnePublishedSlug(d: PostDraft): Promise<PostFull>;
+  upsert(d: PostDraft): Promise<PostFull>;
+  patch(k: PostKey, p: PostPartial): Promise<PostFull>;
+  delete(k: PostKey): Promise<void>;
+}

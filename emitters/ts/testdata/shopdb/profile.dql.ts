@@ -421,3 +421,20 @@ export function mergeProfileByKey(
   }
   return { merged, unmatched };
 }
+
+/** ProfilesReadStore reads shop.app.profiles (§26.3). */
+export interface ProfilesReadStore {
+  get(k: ProfileKey): Promise<ProfileFull>;
+  find(k: ProfileKey): Promise<ProfileFull | undefined>;
+  count(): Promise<bigint>;
+  exists(): Promise<boolean>;
+}
+
+/** ProfilesStore reads and writes shop.app.profiles (§26.3). */
+export interface ProfilesStore extends ProfilesReadStore {
+  insert(d: ProfileDraft): Promise<ProfileFull>;
+  insertOrIgnore(d: ProfileDraft): Promise<ProfileFull | undefined>;
+  upsert(d: ProfileDraft): Promise<ProfileFull>;
+  patch(k: ProfileKey, p: ProfilePartial): Promise<ProfileFull>;
+  delete(k: ProfileKey): Promise<void>;
+}

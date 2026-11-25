@@ -87,8 +87,18 @@ func TestShopGolden(t *testing.T) {
 		golden.Assert(t, filepath.Join("testdata", "shopdb", filepath.Base(f)), got)
 	}
 	// Erasable syntax only, so Node, Bun and Deno run the modules as they are.
-	check := exec.Command(tsc, "-p", filepath.Join("testdata", "tsconfig.json"))
-	if msg, err := check.CombinedOutput(); err != nil {
-		t.Fatalf("the golden package does not type check (run bun install and bun run build in runtime/ts first): %v\n%s", err, msg)
+	// The configuration maps the runtime's packages to their builds without
+	// an extension: tsc reads the declarations and Bun runs the JavaScript.
+	for _, config := range []string{"tsconfig.json", "tsconfig.test.json"} {
+		check := exec.Command(tsc, "-p", filepath.Join("testdata", config))
+		if msg, err := check.CombinedOutput(); err != nil {
+			t.Fatalf("the golden package does not type check with %s (run bun install and bun run build in runtime/ts first): %v\n%s", config, err, msg)
+		}
+	}
+	// The package's hand-written test runs it on Postgres (§26.5).
+	run := exec.Command("bun", "test")
+	run.Dir = filepath.Join("testdata", "shopdb")
+	if msg, err := run.CombinedOutput(); err != nil {
+		t.Fatalf("the golden package's test fails: %v\n%s", err, msg)
 	}
 }

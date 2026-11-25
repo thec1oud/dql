@@ -110,3 +110,11 @@ export const PublishedPostFullNested = {
     return {};
   },
 } as const;
+
+/** PublishedPostsReadStore reads shop.app.published_posts (§26.3). */
+export interface PublishedPostsReadStore {
+  getByLogicalKey(id: bigint): Promise<PublishedPostFull>;
+  findByLogicalKey(id: bigint): Promise<PublishedPostFull | undefined>;
+  count(): Promise<bigint>;
+  exists(): Promise<boolean>;
+}
