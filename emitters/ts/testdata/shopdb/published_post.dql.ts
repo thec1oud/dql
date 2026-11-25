@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { Decoder, type Row, Temporal, asInstanceOf, asInt64, asString } from "@dql/runtime";
+import { type Builder, Decoder, type Order, type Pred, type Row, type Shape, Temporal, allRows, arg, asInstanceOf, asInt64, asString, compare, ordered } from "@dql/runtime";
 
 /** PublishedPostFull is the shape published_post.full.flat of shop.app.published_posts. */
 export interface PublishedPostFull {
@@ -111,8 +111,262 @@ export const PublishedPostFullNested = {
   },
 } as const;
 
+/** PublishedPostsTable stands for table shop.app.published_posts in builder reads: it types the table's predicates and order keys (§18.2). */
+export interface PublishedPostsTable {
+  readonly __table: "shop.app.published_posts";
+}
+
+/** publishedPosts is table shop.app.published_posts in builder reads (§18.2): its columns and relations make predicates and order keys on its rows. */
+export const publishedPosts = {
+  /** allRows keeps every row: a filtered write must be given it to write them all (§20.1). */
+  allRows(): Pred<PublishedPostsTable> {
+    return allRows<PublishedPostsTable>();
+  },
+  /** id is column id in builder reads (§9.4). */
+  id: {
+    /** any is operator any on id (§9.4). */
+    any(v: readonly bigint[]): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.any", "col.published_posts.id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.between", "col.published_posts.id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on id (§9.4). */
+    eq(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.eq", "col.published_posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on id (§9.4). */
+    ge(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ge", "col.published_posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on id (§9.4). */
+    gt(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.gt", "col.published_posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on id (§9.4). */
+    in(v: readonly bigint[]): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.in", "col.published_posts.id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.is_distinct_from", "col.published_posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** le is operator le on id (§9.4). */
+    le(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.le", "col.published_posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on id (§9.4). */
+    lt(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.lt", "col.published_posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on id (§9.4). */
+    ne(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ne", "col.published_posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by id, ascending. */
+    asc(): Order<PublishedPostsTable> {
+      return ordered<PublishedPostsTable>("order.asc", "col.published_posts.id");
+    },
+    /** desc orders by id, descending. */
+    desc(): Order<PublishedPostsTable> {
+      return ordered<PublishedPostsTable>("order.desc", "col.published_posts.id");
+    },
+  },
+  /** title is column title in builder reads (§9.4). */
+  title: {
+    /** any is operator any on title (§9.4). */
+    any(v: readonly string[]): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.any", "col.published_posts.title", arg(v, false, "pg_catalog._text"));
+    },
+    /** between is operator between on title (§9.4). */
+    between(v0: string, v1: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.between", "col.published_posts.title", arg(v0, false, "pg_catalog.text"), arg(v1, false, "pg_catalog.text"));
+    },
+    /** contains is operator contains on title (§9.4). */
+    contains(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.contains", "col.published_posts.title", arg(v));
+    },
+    /** eq is operator eq on title (§9.4). */
+    eq(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.eq", "col.published_posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** ge is operator ge on title (§9.4). */
+    ge(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ge", "col.published_posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** gt is operator gt on title (§9.4). */
+    gt(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.gt", "col.published_posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** ilike is operator ilike on title (§9.4). */
+    ilike(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ilike", "col.published_posts.title", arg(v));
+    },
+    /** in is operator in on title (§9.4). */
+    in(v: readonly string[]): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.in", "col.published_posts.title", arg(v, false, "pg_catalog._text"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on title (§9.4). */
+    isDistinctFrom(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.is_distinct_from", "col.published_posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** le is operator le on title (§9.4). */
+    le(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.le", "col.published_posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** like is operator like on title (§9.4). */
+    like(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.like", "col.published_posts.title", arg(v));
+    },
+    /** lt is operator lt on title (§9.4). */
+    lt(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.lt", "col.published_posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** ne is operator ne on title (§9.4). */
+    ne(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ne", "col.published_posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** regexMatch is operator regex_match on title (§9.4). */
+    regexMatch(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.regex_match", "col.published_posts.title", arg(v));
+    },
+    /** startsWith is operator starts_with on title (§9.4). */
+    startsWith(v: string): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.starts_with", "col.published_posts.title", arg(v));
+    },
+    /** asc orders by title, ascending. */
+    asc(): Order<PublishedPostsTable> {
+      return ordered<PublishedPostsTable>("order.asc", "col.published_posts.title");
+    },
+    /** desc orders by title, descending. */
+    desc(): Order<PublishedPostsTable> {
+      return ordered<PublishedPostsTable>("order.desc", "col.published_posts.title");
+    },
+  },
+  /** authorId is column author_id in builder reads (§9.4). */
+  authorId: {
+    /** any is operator any on author_id (§9.4). */
+    any(v: readonly bigint[]): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.any", "col.published_posts.author_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on author_id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.between", "col.published_posts.author_id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on author_id (§9.4). */
+    eq(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.eq", "col.published_posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on author_id (§9.4). */
+    ge(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ge", "col.published_posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on author_id (§9.4). */
+    gt(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.gt", "col.published_posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on author_id (§9.4). */
+    in(v: readonly bigint[]): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.in", "col.published_posts.author_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on author_id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.is_distinct_from", "col.published_posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** isNotNull is operator is_not_null on author_id (§9.4). */
+    isNotNull(): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.is_not_null", "col.published_posts.author_id");
+    },
+    /** isNull is operator is_null on author_id (§9.4). */
+    isNull(): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.is_null", "col.published_posts.author_id");
+    },
+    /** le is operator le on author_id (§9.4). */
+    le(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.le", "col.published_posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on author_id (§9.4). */
+    lt(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.lt", "col.published_posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on author_id (§9.4). */
+    ne(v: bigint): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ne", "col.published_posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by author_id, ascending. */
+    asc(): Order<PublishedPostsTable> {
+      return ordered<PublishedPostsTable>("order.asc", "col.published_posts.author_id");
+    },
+    /** desc orders by author_id, descending. */
+    desc(): Order<PublishedPostsTable> {
+      return ordered<PublishedPostsTable>("order.desc", "col.published_posts.author_id");
+    },
+  },
+  /** publishedAt is column published_at in builder reads (§9.4). */
+  publishedAt: {
+    /** any is operator any on published_at (§9.4). */
+    any(v: readonly Temporal.Instant[]): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.any", "col.published_posts.published_at", arg(v, false, "pg_catalog._timestamptz"));
+    },
+    /** between is operator between on published_at (§9.4). */
+    between(v0: Temporal.Instant, v1: Temporal.Instant): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.between", "col.published_posts.published_at", arg(v0, false, "pg_catalog.timestamptz"), arg(v1, false, "pg_catalog.timestamptz"));
+    },
+    /** eq is operator eq on published_at (§9.4). */
+    eq(v: Temporal.Instant): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.eq", "col.published_posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** ge is operator ge on published_at (§9.4). */
+    ge(v: Temporal.Instant): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ge", "col.published_posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** gt is operator gt on published_at (§9.4). */
+    gt(v: Temporal.Instant): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.gt", "col.published_posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** in is operator in on published_at (§9.4). */
+    in(v: readonly Temporal.Instant[]): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.in", "col.published_posts.published_at", arg(v, false, "pg_catalog._timestamptz"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on published_at (§9.4). */
+    isDistinctFrom(v: Temporal.Instant): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.is_distinct_from", "col.published_posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** isNotNull is operator is_not_null on published_at (§9.4). */
+    isNotNull(): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.is_not_null", "col.published_posts.published_at");
+    },
+    /** isNull is operator is_null on published_at (§9.4). */
+    isNull(): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.is_null", "col.published_posts.published_at");
+    },
+    /** le is operator le on published_at (§9.4). */
+    le(v: Temporal.Instant): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.le", "col.published_posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** lt is operator lt on published_at (§9.4). */
+    lt(v: Temporal.Instant): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.lt", "col.published_posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** ne is operator ne on published_at (§9.4). */
+    ne(v: Temporal.Instant): Pred<PublishedPostsTable> {
+      return compare<PublishedPostsTable>("op.ne", "col.published_posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** asc orders by published_at, ascending. */
+    asc(): Order<PublishedPostsTable> {
+      return ordered<PublishedPostsTable>("order.asc", "col.published_posts.published_at");
+    },
+    /** desc orders by published_at, descending. */
+    desc(): Order<PublishedPostsTable> {
+      return ordered<PublishedPostsTable>("order.desc", "col.published_posts.published_at");
+    },
+  },
+} as const;
+
 /** PublishedPostsReadStore reads shop.app.published_posts (§26.3). */
 export interface PublishedPostsReadStore {
+  select<T>(shape: Shape<T, PublishedPostsTable>): Builder<T, PublishedPostsTable>;
   getByLogicalKey(id: bigint): Promise<PublishedPostFull>;
   findByLogicalKey(id: bigint): Promise<PublishedPostFull | undefined>;
   count(): Promise<bigint>;

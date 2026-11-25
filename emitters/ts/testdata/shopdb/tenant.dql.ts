@@ -5,8 +5,8 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { Decoder, type Keyed, type Row, type Uuid, type ValidationIssue, asString } from "@dql/runtime";
-import { type UserFull, decodeUserFull } from "./user.dql.ts";
+import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, type Uuid, type ValidationIssue, allRows, arg, asString, compare, not, ordered, related } from "@dql/runtime";
+import { type UserFull, type UsersTable, decodeUserFull } from "./user.dql.ts";
 
 /** TenantDraft is the shape tenant.draft.flat of shop.app.tenants. */
 export interface TenantDraft {
@@ -289,8 +289,159 @@ export function mergeTenantByKey(
   return { merged, unmatched };
 }
 
+/** TenantsTable stands for table shop.app.tenants in builder reads: it types the table's predicates and order keys (§18.2). */
+export interface TenantsTable {
+  readonly __table: "shop.app.tenants";
+}
+
+/** tenants is table shop.app.tenants in builder reads (§18.2): its columns and relations make predicates and order keys on its rows. */
+export const tenants = {
+  /** allRows keeps every row: a filtered write must be given it to write them all (§20.1). */
+  allRows(): Pred<TenantsTable> {
+    return allRows<TenantsTable>();
+  },
+  /** id is column id in builder reads (§9.4). */
+  id: {
+    /** any is operator any on id (§9.4). */
+    any(v: readonly Uuid[]): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.any", "col.tenants.id", arg(v, false, "pg_catalog._uuid"));
+    },
+    /** between is operator between on id (§9.4). */
+    between(v0: Uuid, v1: Uuid): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.between", "col.tenants.id", arg(v0, false, "pg_catalog.uuid"), arg(v1, false, "pg_catalog.uuid"));
+    },
+    /** eq is operator eq on id (§9.4). */
+    eq(v: Uuid): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.eq", "col.tenants.id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** ge is operator ge on id (§9.4). */
+    ge(v: Uuid): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.ge", "col.tenants.id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** gt is operator gt on id (§9.4). */
+    gt(v: Uuid): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.gt", "col.tenants.id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** in is operator in on id (§9.4). */
+    in(v: readonly Uuid[]): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.in", "col.tenants.id", arg(v, false, "pg_catalog._uuid"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on id (§9.4). */
+    isDistinctFrom(v: Uuid): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.is_distinct_from", "col.tenants.id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** le is operator le on id (§9.4). */
+    le(v: Uuid): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.le", "col.tenants.id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** lt is operator lt on id (§9.4). */
+    lt(v: Uuid): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.lt", "col.tenants.id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** ne is operator ne on id (§9.4). */
+    ne(v: Uuid): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.ne", "col.tenants.id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** asc orders by id, ascending. */
+    asc(): Order<TenantsTable> {
+      return ordered<TenantsTable>("order.asc", "col.tenants.id");
+    },
+    /** desc orders by id, descending. */
+    desc(): Order<TenantsTable> {
+      return ordered<TenantsTable>("order.desc", "col.tenants.id");
+    },
+  },
+  /** name is column name in builder reads (§9.4). */
+  name: {
+    /** any is operator any on name (§9.4). */
+    any(v: readonly string[]): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.any", "col.tenants.name", arg(v, false, "pg_catalog._text"));
+    },
+    /** between is operator between on name (§9.4). */
+    between(v0: string, v1: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.between", "col.tenants.name", arg(v0, false, "pg_catalog.text"), arg(v1, false, "pg_catalog.text"));
+    },
+    /** contains is operator contains on name (§9.4). */
+    contains(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.contains", "col.tenants.name", arg(v));
+    },
+    /** eq is operator eq on name (§9.4). */
+    eq(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.eq", "col.tenants.name", arg(v, false, "pg_catalog.text"));
+    },
+    /** ge is operator ge on name (§9.4). */
+    ge(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.ge", "col.tenants.name", arg(v, false, "pg_catalog.text"));
+    },
+    /** gt is operator gt on name (§9.4). */
+    gt(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.gt", "col.tenants.name", arg(v, false, "pg_catalog.text"));
+    },
+    /** ilike is operator ilike on name (§9.4). */
+    ilike(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.ilike", "col.tenants.name", arg(v));
+    },
+    /** in is operator in on name (§9.4). */
+    in(v: readonly string[]): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.in", "col.tenants.name", arg(v, false, "pg_catalog._text"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on name (§9.4). */
+    isDistinctFrom(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.is_distinct_from", "col.tenants.name", arg(v, false, "pg_catalog.text"));
+    },
+    /** le is operator le on name (§9.4). */
+    le(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.le", "col.tenants.name", arg(v, false, "pg_catalog.text"));
+    },
+    /** like is operator like on name (§9.4). */
+    like(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.like", "col.tenants.name", arg(v));
+    },
+    /** lt is operator lt on name (§9.4). */
+    lt(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.lt", "col.tenants.name", arg(v, false, "pg_catalog.text"));
+    },
+    /** ne is operator ne on name (§9.4). */
+    ne(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.ne", "col.tenants.name", arg(v, false, "pg_catalog.text"));
+    },
+    /** regexMatch is operator regex_match on name (§9.4). */
+    regexMatch(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.regex_match", "col.tenants.name", arg(v));
+    },
+    /** startsWith is operator starts_with on name (§9.4). */
+    startsWith(v: string): Pred<TenantsTable> {
+      return compare<TenantsTable>("op.starts_with", "col.tenants.name", arg(v));
+    },
+    /** asc orders by name, ascending. */
+    asc(): Order<TenantsTable> {
+      return ordered<TenantsTable>("order.asc", "col.tenants.name");
+    },
+    /** desc orders by name, descending. */
+    desc(): Order<TenantsTable> {
+      return ordered<TenantsTable>("order.desc", "col.tenants.name");
+    },
+  },
+  /** users is relation users in builder reads (§18.2). */
+  users: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<UsersTable>[]): Pred<TenantsTable> {
+      return related<TenantsTable, UsersTable>("rel.tenants.users", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<UsersTable>[]): Pred<TenantsTable> {
+      return not(related<TenantsTable, UsersTable>("rel.tenants.users", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<UsersTable>): Pred<TenantsTable> {
+      return not(related<TenantsTable, UsersTable>("rel.tenants.users", not(p)));
+    },
+  },
+} as const;
+
 /** TenantsReadStore reads shop.app.tenants (§26.3). */
 export interface TenantsReadStore {
+  select<T>(shape: Shape<T, TenantsTable>): Builder<T, TenantsTable>;
   get(k: TenantKey): Promise<TenantFull>;
   find(k: TenantKey): Promise<TenantFull | undefined>;
   count(): Promise<bigint>;

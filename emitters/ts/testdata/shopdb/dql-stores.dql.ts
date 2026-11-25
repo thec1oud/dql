@@ -5,16 +5,16 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Args, type Query, type Reader, type Writer, count, execByKey, exists, list, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
+import { type Args, type Builder, type Query, type Reader, type Shape, type Writer, arg, count, execByKey, exists, list, newBuilder, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
 import { fragments } from "./dql-fragments.dql.ts";
 import type { EmailAddress, SlugText } from "./dql-types.dql.ts";
-import { type PostDraft, type PostFull, type PostKey, type PostPartial, type PostsReadStore, type PostsStore, decodePostFull, validatePostDraft, validatePostPartial } from "./post.dql.ts";
-import { type PostTagDraft, type PostTagFull, type PostTagKey, type PostTagsReadStore, type PostTagsStore, decodePostTagFull, validatePostTagDraft } from "./post_tag.dql.ts";
-import { type ProfileDraft, type ProfileFull, type ProfileKey, type ProfilePartial, type ProfilesReadStore, type ProfilesStore, decodeProfileFull, validateProfileDraft, validateProfilePartial } from "./profile.dql.ts";
-import { type PublishedPostFull, type PublishedPostsReadStore, decodePublishedPostFull } from "./published_post.dql.ts";
-import { type TagDraft, type TagFull, type TagKey, type TagPartial, type TagsReadStore, type TagsStore, decodeTagFull, validateTagDraft, validateTagPartial } from "./tag.dql.ts";
-import { type TenantDraft, type TenantFull, type TenantKey, type TenantPartial, type TenantsReadStore, type TenantsStore, decodeTenantFull, validateTenantDraft, validateTenantPartial } from "./tenant.dql.ts";
-import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserScope, type UsersReadStore, type UsersStore, type UsersUnscopedReadStore, type UsersUnscopedStore, decodeUserFull, validateUserDraft, validateUserPartial } from "./user.dql.ts";
+import { type PostDraft, type PostFull, type PostKey, type PostPartial, type PostsReadStore, type PostsStore, type PostsTable, decodePostFull, validatePostDraft, validatePostPartial } from "./post.dql.ts";
+import { type PostTagDraft, type PostTagFull, type PostTagKey, type PostTagsReadStore, type PostTagsStore, type PostTagsTable, decodePostTagFull, validatePostTagDraft } from "./post_tag.dql.ts";
+import { type ProfileDraft, type ProfileFull, type ProfileKey, type ProfilePartial, type ProfilesReadStore, type ProfilesStore, type ProfilesTable, decodeProfileFull, validateProfileDraft, validateProfilePartial } from "./profile.dql.ts";
+import { type PublishedPostFull, type PublishedPostsReadStore, type PublishedPostsTable, decodePublishedPostFull } from "./published_post.dql.ts";
+import { type TagDraft, type TagFull, type TagKey, type TagPartial, type TagsReadStore, type TagsStore, type TagsTable, decodeTagFull, validateTagDraft, validateTagPartial } from "./tag.dql.ts";
+import { type TenantDraft, type TenantFull, type TenantKey, type TenantPartial, type TenantsReadStore, type TenantsStore, type TenantsTable, decodeTenantFull, validateTenantDraft, validateTenantPartial } from "./tenant.dql.ts";
+import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserScope, type UsersReadStore, type UsersStore, type UsersTable, type UsersUnscopedReadStore, type UsersUnscopedStore, decodeUserFull, validateUserDraft, validateUserPartial } from "./user.dql.ts";
 
 // The builder queries of shop.app.post_tags (§16.3).
 
@@ -110,6 +110,11 @@ export class PostTagsReads implements PostTagsReadStore {
 
   constructor(h: Reader) {
     this.h = h;
+  }
+
+  /** select starts a read of shape through the store (§18.2). */
+  select<T>(shape: Shape<T, PostTagsTable>): Builder<T, PostTagsTable> {
+    return newBuilder(fragments, { h: this.h }, shape);
   }
 
   /** get runs post_tag.get.by_primary (§19). */
@@ -297,6 +302,11 @@ export class PostsReads implements PostsReadStore {
 
   constructor(h: Reader) {
     this.h = h;
+  }
+
+  /** select starts a read of shape through the store (§18.2). */
+  select<T>(shape: Shape<T, PostsTable>): Builder<T, PostsTable> {
+    return newBuilder(fragments, { h: this.h }, shape);
   }
 
   /** get runs post.get.by_primary (§19). */
@@ -608,6 +618,11 @@ export class ProfilesReads implements ProfilesReadStore {
     this.h = h;
   }
 
+  /** select starts a read of shape through the store (§18.2). */
+  select<T>(shape: Shape<T, ProfilesTable>): Builder<T, ProfilesTable> {
+    return newBuilder(fragments, { h: this.h }, shape);
+  }
+
   /** get runs profile.get.by_primary (§19). */
   async get(k: ProfileKey): Promise<ProfileFull> {
     return oneOf(this.h, statementOf(profileGetByPrimary, fragments, { "key.user_id": k.userId }), decodeProfileFull);
@@ -753,6 +768,11 @@ export class PublishedPostsReads implements PublishedPostsReadStore {
 
   constructor(h: Reader) {
     this.h = h;
+  }
+
+  /** select starts a read of shape through the store (§18.2). */
+  select<T>(shape: Shape<T, PublishedPostsTable>): Builder<T, PublishedPostsTable> {
+    return newBuilder(fragments, { h: this.h }, shape);
   }
 
   /** getByLogicalKey runs published_post.get.by_logical_key (§19). */
@@ -928,6 +948,11 @@ export class TagsReads implements TagsReadStore {
 
   constructor(h: Reader) {
     this.h = h;
+  }
+
+  /** select starts a read of shape through the store (§18.2). */
+  select<T>(shape: Shape<T, TagsTable>): Builder<T, TagsTable> {
+    return newBuilder(fragments, { h: this.h }, shape);
   }
 
   /** getByName runs tag.get.by_name (§19). */
@@ -1133,6 +1158,11 @@ export class TenantsReads implements TenantsReadStore {
 
   constructor(h: Reader) {
     this.h = h;
+  }
+
+  /** select starts a read of shape through the store (§18.2). */
+  select<T>(shape: Shape<T, TenantsTable>): Builder<T, TenantsTable> {
+    return newBuilder(fragments, { h: this.h }, shape);
   }
 
   /** get runs tenant.get.by_primary (§19). */
@@ -1381,6 +1411,11 @@ export class UsersReads implements UsersReadStore {
     this.scope = scope;
   }
 
+  /** select starts a read of shape through the store (§18.2). */
+  select<T>(shape: Shape<T, UsersTable>): Builder<T, UsersTable> {
+    return newBuilder(fragments, { h: this.h, scope: [use("op.eq", { "0": use("col.users.tenant_id"), "1": arg(this.scope.tenantId, false, "pg_catalog.uuid") })] }, shape);
+  }
+
   /** get runs user.get.by_primary (§19). */
   async get(k: UserKey): Promise<UserFull> {
     return oneOf(this.h, statementOf(userGetByPrimary, fragments, { "key.id": k.id, "scope.tenant_id": this.scope.tenantId }), decodeUserFull);
@@ -1546,6 +1581,11 @@ export class UsersUnscopedReads implements UsersUnscopedReadStore {
 
   constructor(h: Reader) {
     this.h = h;
+  }
+
+  /** select starts a read of shape through the store (§18.2). */
+  select<T>(shape: Shape<T, UsersTable>): Builder<T, UsersTable> {
+    return newBuilder(fragments, { h: this.h }, shape);
   }
 
   /** get runs user.get.by_primary in scope (§21.2). */

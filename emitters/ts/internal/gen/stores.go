@@ -67,13 +67,17 @@ type entity struct {
 	// plural names the store types, from the table's own name, as the
 	// record's h.users does (§26.1); member names the handles' field.
 	plural, member string
-	full           *irv1.Shape
-	key            *irv1.Shape
-	draft          *irv1.Shape
-	part           *irv1.Shape
-	scope          *irv1.Shape
+	// id names the table in fragment ids (§18.4).
+	id    string
+	full  *irv1.Shape
+	key   *irv1.Shape
+	draft *irv1.Shape
+	part  *irv1.Shape
+	scope *irv1.Shape
 	// versioned: the Key holds an expected version (§20.4).
 	versioned bool
+	// softDelete is the entity's soft-delete column, if any (§21.3).
+	softDelete *irv1.Column
 	// sensitive holds the entity's sensitive columns (§24).
 	sensitive map[string]bool
 	entries   map[string]entry
@@ -106,7 +110,7 @@ func (g *generator) entities() []*entity {
 	var out []*entity
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, t := range ns.GetTables() {
-			e := &entity{q: q(t.GetName().GetStored()), t: t, plural: TypeName(t.GetName().GetWords()), member: MemberName(t.GetName().GetWords()),
+			e := &entity{q: q(t.GetName().GetStored()), t: t, id: g.tableID(q(t.GetName().GetStored())), plural: TypeName(t.GetName().GetWords()), member: MemberName(t.GetName().GetWords()),
 				sensitive: map[string]bool{}, entries: map[string]entry{}}
 			preset := func(p irv1.Preset, form irv1.Form) *irv1.Shape {
 				return g.ix.shapes[shapeKey(&irv1.ShapeId{Base: &irv1.ShapeId_Entity{Entity: e.q}, Preset: p, Form: form})]
@@ -115,6 +119,11 @@ func (g *generator) entities() []*entity {
 			e.draft, e.part = preset(irv1.Preset_PRESET_DRAFT, irv1.Form_FORM_FLAT), preset(irv1.Preset_PRESET_PARTIAL, irv1.Form_FORM_FLAT)
 			for _, fld := range e.key.GetFields() {
 				e.versioned = e.versioned || fld.GetRole() == irv1.FieldRole_FIELD_ROLE_EXPECTED_VERSION
+			}
+			for _, c := range t.GetColumns() {
+				if slices.ContainsFunc(c.GetAnnotations(), func(a *irv1.Annotation) bool { return a.GetKey() == "core.soft-delete" }) {
+					e.softDelete = c
+				}
 			}
 			byTable[keyOf(e.q)] = e
 			out = append(out, e)
@@ -150,7 +159,11 @@ func (g *generator) entities() []*entity {
 		}
 		slices.SortStableFunc(e.order, func(a, b entry) int { return slices.Index(verbs, a.verb) - slices.Index(verbs, b.verb) })
 	}
-	return slices.DeleteFunc(out, func(e *entity) bool { return len(e.order) == 0 })
+	out = slices.DeleteFunc(out, func(e *entity) bool { return len(e.order) == 0 })
+	for _, e := range out {
+		e.f = g.entityFile(e.q)
+	}
+	return out
 }
 
 // parseEntry reads an entry's name: the entity's words joined by _, the
@@ -183,7 +196,6 @@ func (g *generator) stores(es []*entity) {
 	f := g.newFile("dql-stores")
 	f.internal = true
 	for _, e := range es {
-		e.f = g.entityFile(e.q)
 		g.storeIfaces(e)
 	}
 	for _, e := range es {
@@ -407,6 +419,11 @@ func (g *generator) storeIfaces(e *entity) {
 			extends = " extends " + extends
 		}
 		f.printf("/** %s %s %s (§26.3). */\nexport interface %s%s {\n", name, doc, what, name, extends)
+		if extends == "" {
+			// Builder reads go through the store (§18.2).
+			t := g.ref(f, e.tableType(), false)
+			f.printf("  select<T>(shape: %s<T, %s>): %s<T, %s>;\n", f.rt("Shape", false), t, f.rt("Builder", false), t)
+		}
 		for _, s := range sigs {
 			if reads[s.x.verb] != write {
 				f.printf("  %s(%s): Promise<%s>;\n", s.name, s.list(scope), s.result)
@@ -446,6 +463,7 @@ func (g *generator) storeClasses(f *file, e *entity) {
 		f.printf("    this.scope = scope;\n")
 	}
 	f.printf("  }\n")
+	g.selectMethod(f, e, true)
 	g.methods(f, e, sigs, false)
 	f.printf("}\n\n")
 	if e.writes() {
@@ -461,6 +479,7 @@ func (g *generator) storeClasses(f *file, e *entity) {
 	g.declare(f, e.unscopedReads(), "the unscoped read store of "+what, e.q)
 	f.printf("/** %s implements %s on a handle that reads. */\nexport class %s implements %s {\n  readonly h: %s;\n\n  constructor(h: %s) {\n    this.h = h;\n  }\n",
 		e.unscopedReads(), e.unscopedReadStore(), e.unscopedReads(), ref(e.unscopedReadStore()), reader, reader)
+	g.selectMethod(f, e, false)
 	g.unscopedMethods(f, e, sigs, scopeType, false)
 	f.printf("}\n\n")
 	if e.writes() {

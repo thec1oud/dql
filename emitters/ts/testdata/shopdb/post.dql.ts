@@ -5,13 +5,13 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { Decoder, type Keyed, type Row, Temporal, type ValidationIssue, array, asEnum, asInstanceOf, asInt64, asString, issuesAt, nest, nullableElem } from "@dql/runtime";
+import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type ValidationIssue, allRows, arg, array, asEnum, asInstanceOf, asInt64, asString, compare, issuesAt, nest, not, nullableElem, ordered, related } from "@dql/runtime";
 import { dqlPostsTitleCheck } from "./dql-checks.dql.ts";
 import { dqlDecodeMoneyAmount } from "./dql-decoders.dql.ts";
 import { type MoneyAmount, PostStatus } from "./dql-types.dql.ts";
-import { type PostTagChangeForPost, type PostTagDraftForPost, type PostTagFull, decodePostTagFull, validatePostTagChangeForPost, validatePostTagDraftForPost } from "./post_tag.dql.ts";
-import { type TagDraft, type TagFull, type TagKey, type TagLink, decodeTagFull, validateTagDraft, validateTagLink } from "./tag.dql.ts";
-import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserRef, decodeUserFull, redactUserDraft, redactUserPartial, redactUserRef, validateUserDraft, validateUserPartial, validateUserRef } from "./user.dql.ts";
+import { type PostTagChangeForPost, type PostTagDraftForPost, type PostTagFull, type PostTagsTable, decodePostTagFull, validatePostTagChangeForPost, validatePostTagDraftForPost } from "./post_tag.dql.ts";
+import { type TagDraft, type TagFull, type TagKey, type TagLink, type TagsTable, decodeTagFull, validateTagDraft, validateTagLink } from "./tag.dql.ts";
+import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserRef, type UsersTable, decodeUserFull, redactUserDraft, redactUserPartial, redactUserRef, validateUserDraft, validateUserPartial, validateUserRef } from "./user.dql.ts";
 
 /** PostDraft is the shape post.draft.flat of shop.app.posts. */
 export interface PostDraft {
@@ -721,8 +721,581 @@ export function mergePostByKey(
   return { merged, unmatched };
 }
 
+/** PostsTable stands for table shop.app.posts in builder reads: it types the table's predicates and order keys (§18.2). */
+export interface PostsTable {
+  readonly __table: "shop.app.posts";
+}
+
+/** posts is table shop.app.posts in builder reads (§18.2): its columns and relations make predicates and order keys on its rows. */
+export const posts = {
+  /** allRows keeps every row: a filtered write must be given it to write them all (§20.1). */
+  allRows(): Pred<PostsTable> {
+    return allRows<PostsTable>();
+  },
+  /** id is column id in builder reads (§9.4). */
+  id: {
+    /** any is operator any on id (§9.4). */
+    any(v: readonly bigint[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.any", "col.posts.id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.between", "col.posts.id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on id (§9.4). */
+    eq(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on id (§9.4). */
+    ge(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.ge", "col.posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on id (§9.4). */
+    gt(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.gt", "col.posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on id (§9.4). */
+    in(v: readonly bigint[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.in", "col.posts.id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** le is operator le on id (§9.4). */
+    le(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.le", "col.posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on id (§9.4). */
+    lt(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.lt", "col.posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on id (§9.4). */
+    ne(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by id, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.id");
+    },
+    /** desc orders by id, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.id");
+    },
+  },
+  /** authorId is column author_id in builder reads (§9.4). */
+  authorId: {
+    /** any is operator any on author_id (§9.4). */
+    any(v: readonly bigint[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.any", "col.posts.author_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on author_id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.between", "col.posts.author_id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on author_id (§9.4). */
+    eq(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on author_id (§9.4). */
+    ge(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.ge", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on author_id (§9.4). */
+    gt(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.gt", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on author_id (§9.4). */
+    in(v: readonly bigint[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.in", "col.posts.author_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on author_id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** le is operator le on author_id (§9.4). */
+    le(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.le", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on author_id (§9.4). */
+    lt(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.lt", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on author_id (§9.4). */
+    ne(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by author_id, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.author_id");
+    },
+    /** desc orders by author_id, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.author_id");
+    },
+  },
+  /** editorId is column editor_id in builder reads (§9.4). */
+  editorId: {
+    /** any is operator any on editor_id (§9.4). */
+    any(v: readonly bigint[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.any", "col.posts.editor_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on editor_id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.between", "col.posts.editor_id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on editor_id (§9.4). */
+    eq(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on editor_id (§9.4). */
+    ge(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.ge", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on editor_id (§9.4). */
+    gt(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.gt", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on editor_id (§9.4). */
+    in(v: readonly bigint[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.in", "col.posts.editor_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on editor_id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** isNotNull is operator is_not_null on editor_id (§9.4). */
+    isNotNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_not_null", "col.posts.editor_id");
+    },
+    /** isNull is operator is_null on editor_id (§9.4). */
+    isNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_null", "col.posts.editor_id");
+    },
+    /** le is operator le on editor_id (§9.4). */
+    le(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.le", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on editor_id (§9.4). */
+    lt(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.lt", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on editor_id (§9.4). */
+    ne(v: bigint): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by editor_id, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.editor_id");
+    },
+    /** desc orders by editor_id, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.editor_id");
+    },
+  },
+  /** title is column title in builder reads (§9.4). */
+  title: {
+    /** any is operator any on title (§9.4). */
+    any(v: readonly string[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.any", "col.posts.title", arg(v, false, "pg_catalog._text"));
+    },
+    /** between is operator between on title (§9.4). */
+    between(v0: string, v1: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.between", "col.posts.title", arg(v0, false, "pg_catalog.text"), arg(v1, false, "pg_catalog.text"));
+    },
+    /** contains is operator contains on title (§9.4). */
+    contains(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.contains", "col.posts.title", arg(v));
+    },
+    /** eq is operator eq on title (§9.4). */
+    eq(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** ge is operator ge on title (§9.4). */
+    ge(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.ge", "col.posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** gt is operator gt on title (§9.4). */
+    gt(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.gt", "col.posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** ilike is operator ilike on title (§9.4). */
+    ilike(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.ilike", "col.posts.title", arg(v));
+    },
+    /** in is operator in on title (§9.4). */
+    in(v: readonly string[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.in", "col.posts.title", arg(v, false, "pg_catalog._text"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on title (§9.4). */
+    isDistinctFrom(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** le is operator le on title (§9.4). */
+    le(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.le", "col.posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** like is operator like on title (§9.4). */
+    like(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.like", "col.posts.title", arg(v));
+    },
+    /** lt is operator lt on title (§9.4). */
+    lt(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.lt", "col.posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** ne is operator ne on title (§9.4). */
+    ne(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.title", arg(v, false, "pg_catalog.text"));
+    },
+    /** regexMatch is operator regex_match on title (§9.4). */
+    regexMatch(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.regex_match", "col.posts.title", arg(v));
+    },
+    /** startsWith is operator starts_with on title (§9.4). */
+    startsWith(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.starts_with", "col.posts.title", arg(v));
+    },
+    /** asc orders by title, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.title");
+    },
+    /** desc orders by title, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.title");
+    },
+  },
+  /** slug is column slug in builder reads (§9.4). */
+  slug: {
+    /** any is operator any on slug (§9.4). */
+    any(v: readonly string[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.any", "col.posts.slug", arg(v, false, "pg_catalog._text"));
+    },
+    /** between is operator between on slug (§9.4). */
+    between(v0: string, v1: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.between", "col.posts.slug", arg(v0, false, "pg_catalog.text"), arg(v1, false, "pg_catalog.text"));
+    },
+    /** contains is operator contains on slug (§9.4). */
+    contains(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.contains", "col.posts.slug", arg(v));
+    },
+    /** eq is operator eq on slug (§9.4). */
+    eq(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.slug", arg(v, false, "pg_catalog.text"));
+    },
+    /** ge is operator ge on slug (§9.4). */
+    ge(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.ge", "col.posts.slug", arg(v, false, "pg_catalog.text"));
+    },
+    /** gt is operator gt on slug (§9.4). */
+    gt(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.gt", "col.posts.slug", arg(v, false, "pg_catalog.text"));
+    },
+    /** ilike is operator ilike on slug (§9.4). */
+    ilike(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.ilike", "col.posts.slug", arg(v));
+    },
+    /** in is operator in on slug (§9.4). */
+    in(v: readonly string[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.in", "col.posts.slug", arg(v, false, "pg_catalog._text"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on slug (§9.4). */
+    isDistinctFrom(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.slug", arg(v, false, "pg_catalog.text"));
+    },
+    /** isNotNull is operator is_not_null on slug (§9.4). */
+    isNotNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_not_null", "col.posts.slug");
+    },
+    /** isNull is operator is_null on slug (§9.4). */
+    isNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_null", "col.posts.slug");
+    },
+    /** le is operator le on slug (§9.4). */
+    le(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.le", "col.posts.slug", arg(v, false, "pg_catalog.text"));
+    },
+    /** like is operator like on slug (§9.4). */
+    like(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.like", "col.posts.slug", arg(v));
+    },
+    /** lt is operator lt on slug (§9.4). */
+    lt(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.lt", "col.posts.slug", arg(v, false, "pg_catalog.text"));
+    },
+    /** ne is operator ne on slug (§9.4). */
+    ne(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.slug", arg(v, false, "pg_catalog.text"));
+    },
+    /** regexMatch is operator regex_match on slug (§9.4). */
+    regexMatch(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.regex_match", "col.posts.slug", arg(v));
+    },
+    /** startsWith is operator starts_with on slug (§9.4). */
+    startsWith(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.starts_with", "col.posts.slug", arg(v));
+    },
+    /** asc orders by slug, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.slug");
+    },
+    /** desc orders by slug, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.slug");
+    },
+  },
+  /** status is column status in builder reads (§9.4). */
+  status: {
+    /** any is operator any on status (§9.4). */
+    any(v: readonly PostStatus[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.any", "col.posts.status", arg(v, false, "app._post_status"));
+    },
+    /** between is operator between on status (§9.4). */
+    between(v0: PostStatus, v1: PostStatus): Pred<PostsTable> {
+      return compare<PostsTable>("op.between", "col.posts.status", arg(v0, false, "app.post_status"), arg(v1, false, "app.post_status"));
+    },
+    /** eq is operator eq on status (§9.4). */
+    eq(v: PostStatus): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.status", arg(v, false, "app.post_status"));
+    },
+    /** ge is operator ge on status (§9.4). */
+    ge(v: PostStatus): Pred<PostsTable> {
+      return compare<PostsTable>("op.ge", "col.posts.status", arg(v, false, "app.post_status"));
+    },
+    /** gt is operator gt on status (§9.4). */
+    gt(v: PostStatus): Pred<PostsTable> {
+      return compare<PostsTable>("op.gt", "col.posts.status", arg(v, false, "app.post_status"));
+    },
+    /** in is operator in on status (§9.4). */
+    in(v: readonly PostStatus[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.in", "col.posts.status", arg(v, false, "app._post_status"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on status (§9.4). */
+    isDistinctFrom(v: PostStatus): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.status", arg(v, false, "app.post_status"));
+    },
+    /** le is operator le on status (§9.4). */
+    le(v: PostStatus): Pred<PostsTable> {
+      return compare<PostsTable>("op.le", "col.posts.status", arg(v, false, "app.post_status"));
+    },
+    /** lt is operator lt on status (§9.4). */
+    lt(v: PostStatus): Pred<PostsTable> {
+      return compare<PostsTable>("op.lt", "col.posts.status", arg(v, false, "app.post_status"));
+    },
+    /** ne is operator ne on status (§9.4). */
+    ne(v: PostStatus): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.status", arg(v, false, "app.post_status"));
+    },
+    /** asc orders by status, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.status");
+    },
+    /** desc orders by status, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.status");
+    },
+  },
+  /** price is column price in builder reads (§9.4). */
+  price: {
+    /** any is operator any on price (§9.4). */
+    any(v: readonly MoneyAmount[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.any", "col.posts.price", arg(v, false, "app._money_amount"));
+    },
+    /** eq is operator eq on price (§9.4). */
+    eq(v: MoneyAmount): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.price", arg(v, false, "app.money_amount"));
+    },
+    /** in is operator in on price (§9.4). */
+    in(v: readonly MoneyAmount[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.in", "col.posts.price", arg(v, false, "app._money_amount"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on price (§9.4). */
+    isDistinctFrom(v: MoneyAmount): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.price", arg(v, false, "app.money_amount"));
+    },
+    /** isNotNull is operator is_not_null on price (§9.4). */
+    isNotNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_not_null", "col.posts.price");
+    },
+    /** isNull is operator is_null on price (§9.4). */
+    isNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_null", "col.posts.price");
+    },
+    /** ne is operator ne on price (§9.4). */
+    ne(v: MoneyAmount): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.price", arg(v, false, "app.money_amount"));
+    },
+    /** asc orders by price, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.price");
+    },
+    /** desc orders by price, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.price");
+    },
+  },
+  /** labels is column labels in builder reads (§9.4). */
+  labels: {
+    /** arrayContains is operator array_contains on labels (§9.4). */
+    arrayContains(v: string): Pred<PostsTable> {
+      return compare<PostsTable>("op.array_contains", "col.posts.labels", arg(v));
+    },
+    /** arrayOverlaps is operator array_overlaps on labels (§9.4). */
+    arrayOverlaps(v: readonly string[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.array_overlaps", "col.posts.labels", arg(v));
+    },
+    /** eq is operator eq on labels (§9.4). */
+    eq(v: (string | null)[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.labels", arg(v, false, "pg_catalog._text"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on labels (§9.4). */
+    isDistinctFrom(v: (string | null)[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.labels", arg(v, false, "pg_catalog._text"));
+    },
+    /** isNotNull is operator is_not_null on labels (§9.4). */
+    isNotNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_not_null", "col.posts.labels");
+    },
+    /** isNull is operator is_null on labels (§9.4). */
+    isNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_null", "col.posts.labels");
+    },
+    /** ne is operator ne on labels (§9.4). */
+    ne(v: (string | null)[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.labels", arg(v, false, "pg_catalog._text"));
+    },
+    /** asc orders by labels, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.labels");
+    },
+    /** desc orders by labels, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.labels");
+    },
+  },
+  /** publishedAt is column published_at in builder reads (§9.4). */
+  publishedAt: {
+    /** any is operator any on published_at (§9.4). */
+    any(v: readonly Temporal.Instant[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.any", "col.posts.published_at", arg(v, false, "pg_catalog._timestamptz"));
+    },
+    /** between is operator between on published_at (§9.4). */
+    between(v0: Temporal.Instant, v1: Temporal.Instant): Pred<PostsTable> {
+      return compare<PostsTable>("op.between", "col.posts.published_at", arg(v0, false, "pg_catalog.timestamptz"), arg(v1, false, "pg_catalog.timestamptz"));
+    },
+    /** eq is operator eq on published_at (§9.4). */
+    eq(v: Temporal.Instant): Pred<PostsTable> {
+      return compare<PostsTable>("op.eq", "col.posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** ge is operator ge on published_at (§9.4). */
+    ge(v: Temporal.Instant): Pred<PostsTable> {
+      return compare<PostsTable>("op.ge", "col.posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** gt is operator gt on published_at (§9.4). */
+    gt(v: Temporal.Instant): Pred<PostsTable> {
+      return compare<PostsTable>("op.gt", "col.posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** in is operator in on published_at (§9.4). */
+    in(v: readonly Temporal.Instant[]): Pred<PostsTable> {
+      return compare<PostsTable>("op.in", "col.posts.published_at", arg(v, false, "pg_catalog._timestamptz"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on published_at (§9.4). */
+    isDistinctFrom(v: Temporal.Instant): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_distinct_from", "col.posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** isNotNull is operator is_not_null on published_at (§9.4). */
+    isNotNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_not_null", "col.posts.published_at");
+    },
+    /** isNull is operator is_null on published_at (§9.4). */
+    isNull(): Pred<PostsTable> {
+      return compare<PostsTable>("op.is_null", "col.posts.published_at");
+    },
+    /** le is operator le on published_at (§9.4). */
+    le(v: Temporal.Instant): Pred<PostsTable> {
+      return compare<PostsTable>("op.le", "col.posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** lt is operator lt on published_at (§9.4). */
+    lt(v: Temporal.Instant): Pred<PostsTable> {
+      return compare<PostsTable>("op.lt", "col.posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** ne is operator ne on published_at (§9.4). */
+    ne(v: Temporal.Instant): Pred<PostsTable> {
+      return compare<PostsTable>("op.ne", "col.posts.published_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** asc orders by published_at, ascending. */
+    asc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.asc", "col.posts.published_at");
+    },
+    /** desc orders by published_at, descending. */
+    desc(): Order<PostsTable> {
+      return ordered<PostsTable>("order.desc", "col.posts.published_at");
+    },
+  },
+  /** author is relation author in builder reads (§18.2). */
+  author: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<UsersTable>[]): Pred<PostsTable> {
+      return related<PostsTable, UsersTable>("rel.posts.author", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<UsersTable>[]): Pred<PostsTable> {
+      return not(related<PostsTable, UsersTable>("rel.posts.author", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<UsersTable>): Pred<PostsTable> {
+      return not(related<PostsTable, UsersTable>("rel.posts.author", not(p)));
+    },
+  },
+  /** editor is relation editor in builder reads (§18.2). */
+  editor: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<UsersTable>[]): Pred<PostsTable> {
+      return related<PostsTable, UsersTable>("rel.posts.editor", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<UsersTable>[]): Pred<PostsTable> {
+      return not(related<PostsTable, UsersTable>("rel.posts.editor", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<UsersTable>): Pred<PostsTable> {
+      return not(related<PostsTable, UsersTable>("rel.posts.editor", not(p)));
+    },
+  },
+  /** postTags is relation post_tags in builder reads (§18.2). */
+  postTags: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<PostTagsTable>[]): Pred<PostsTable> {
+      return related<PostsTable, PostTagsTable>("rel.posts.post_tags", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<PostTagsTable>[]): Pred<PostsTable> {
+      return not(related<PostsTable, PostTagsTable>("rel.posts.post_tags", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<PostTagsTable>): Pred<PostsTable> {
+      return not(related<PostsTable, PostTagsTable>("rel.posts.post_tags", not(p)));
+    },
+  },
+  /** tags is relation tags in builder reads (§18.2). */
+  tags: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<TagsTable>[]): Pred<PostsTable> {
+      return related<PostsTable, TagsTable>("rel.posts.tags", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<TagsTable>[]): Pred<PostsTable> {
+      return not(related<PostsTable, TagsTable>("rel.posts.tags", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<TagsTable>): Pred<PostsTable> {
+      return not(related<PostsTable, TagsTable>("rel.posts.tags", not(p)));
+    },
+  },
+} as const;
+
 /** PostsReadStore reads shop.app.posts (§26.3). */
 export interface PostsReadStore {
+  select<T>(shape: Shape<T, PostsTable>): Builder<T, PostsTable>;
   get(k: PostKey): Promise<PostFull>;
   find(k: PostKey): Promise<PostFull | undefined>;
   count(): Promise<bigint>;

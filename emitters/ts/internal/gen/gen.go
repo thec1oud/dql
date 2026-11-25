@@ -86,6 +86,7 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 		g.dialect()
 		if g.b.GetQueries().GetFragments() != nil {
 			es := g.entities()
+			g.selects(es)
 			g.stores(es)
 			g.handles(es)
 		}
