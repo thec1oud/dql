@@ -130,6 +130,9 @@ type generator struct {
 	namedDecoders map[key]string
 	// fragmentIDs holds the ids of the fragment table (§16.2).
 	fragmentIDs map[string]bool
+	// impl is dql-stores.dql.ts, which holds the classes implementing the
+	// stores' and queriers' interfaces.
+	impl *file
 }
 
 // decl is a module-level name: what declares it, for diagnostics, and the

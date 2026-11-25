@@ -195,6 +195,7 @@ func (g *generator) parseEntry(e *entity, q *irv1.Query) (entry, bool) {
 func (g *generator) stores(es []*entity) {
 	f := g.newFile("dql-stores")
 	f.internal = true
+	g.impl = f
 	for _, e := range es {
 		g.storeIfaces(e)
 	}
