@@ -443,6 +443,8 @@ func TestValues(t *testing.T) {
 		{"int4", dql.Ptr(int32(3)), int64(3)},
 		{"int4[]", []int32(nil), nil},
 		{"int4[]", []int32{1, 2}, []any{int64(1), int64(2)}},
+		{"int4[]", []int32{}, []any{}},
+		{"int8[]", [][]int64{}, []any{}},
 		{"int8[]", [][]int64{{1, 2}, {3, 4}}, []any{[]any{int64(1), int64(2)}, []any{int64(3), int64(4)}}},
 		{"date[]", []civil.Date{date}, []any{date}},
 		{"mood[]", []mood{"happy"}, []any{"happy"}},
