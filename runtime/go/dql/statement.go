@@ -41,7 +41,7 @@ type Statement struct {
 	Consistency Consistency
 	// For hooks (§24): the kind of query, such as select or insert; which
 	// arguments hold sensitive values, by position; and whether the call
-	// opts out of query events.
+	// opts out of events, its pool wait included.
 	Kind      string
 	Sensitive []bool
 	NoLog     bool
