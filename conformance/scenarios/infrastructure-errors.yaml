@@ -1,0 +1,45 @@
+scenario: infrastructure-errors
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+  - op: tenants.insert
+    input: { name: globex }
+  # A read of one row that finds several (§19).
+  - op: select
+    from: tenants
+    shape: tenant_full
+    read: one
+    expect:
+      error: { class: TooManyRows }
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: eq, value: acme }]
+    read: one
+    expect:
+      row: { name: acme }
+  # The server stalls the insert; the call's deadline passes first.
+  - op: tenants.insert
+    input: { name: late }
+    inject: { delay: 5s, times: 1 }
+    deadline: 200ms
+    expect:
+      error: { class: Timeout }
+  # The caller cancels the call while the server stalls.
+  - op: tenants.insert
+    input: { name: canceled }
+    inject: { delay: 5s, times: 1 }
+    cancel: 200ms
+    expect:
+      error: { class: Canceled }
+  # The server ends the connection while the insert runs.
+  - op: tenants.insert
+    input: { name: cut }
+    inject: { delay: 5s, times: 1 }
+    terminate: 200ms
+    expect:
+      error: { class: ConnectionError }
+  # None of the three wrote, and the pool recovers.
+  - op: tenants.count
+    expect: { value: 2 }

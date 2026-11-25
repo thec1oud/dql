@@ -21,8 +21,11 @@ import (
 var Schemas = map[string]Schema{
 	"shop": {
 		DDL: []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
-		Open: func(ctx context.Context, dsn string, replicas []string, opts ...dql.Option) (any, func(), error) {
-			src := dql.SourceConfig{Primary: dql.ConnConfig{DSN: dsn, MaxConns: 4}, MaxLag: maxLag}
+		Open: func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (any, *dql.Executor, error) {
+			if maxConns == 0 {
+				maxConns = 4
+			}
+			src := dql.SourceConfig{Primary: dql.ConnConfig{DSN: dsn, MaxConns: maxConns}, MaxLag: maxLag}
 			for _, r := range replicas {
 				src.Replicas = append(src.Replicas, dql.ConnConfig{DSN: r, MaxConns: 4})
 			}
@@ -33,7 +36,7 @@ var Schemas = map[string]Schema{
 			if err != nil {
 				return nil, nil, err
 			}
-			return shopdb.New(e), e.Close, nil
+			return shopdb.New(e), e, nil
 		},
 		Tables: map[string]any{
 			"tenants": shopdb.Tenants, "users": shopdb.Users, "profiles": shopdb.Profiles,
@@ -61,9 +64,10 @@ var Schemas = map[string]Schema{
 			opt.Some[[]shopdb.PostTagChangeForPost], opt.Some[[]shopdb.PostTagChangeForTag],
 			opt.Some[[]shopdb.PostTagsChange], opt.Some[[]shopdb.TagPostsChange],
 		},
-		Inject: injectPostgres,
-		Replay: replayPostgres,
-		Shapes: shopdb.Shapes,
+		Inject:    injectPostgres,
+		Terminate: terminatePostgres,
+		Replay:    replayPostgres,
+		Shapes:    shopdb.Shapes,
 		Selects: map[string]any{
 			"post_full":           shopdb.Select[shopdb.PostFull, shopdb.PostsTable],
 			"post_tag_full":       shopdb.Select[shopdb.PostTagFull, shopdb.PostTagsTable],
@@ -100,15 +104,31 @@ var sqlstates = map[string]string{
 }
 
 // injectPostgres sets the plan of conformance/schemas/postgres/inject.sql:
-// the next times writes fail with class's SQLSTATE. Times 0 clears it.
-func injectPostgres(ctx context.Context, dsn, class string, times int) error {
-	code, ok := sqlstates[class]
-	if !ok && times > 0 {
-		return fmt.Errorf("no injected failure of class %s", class)
+// the next in.Times writes sleep for in.Delay, or else fail with in.Class's
+// SQLSTATE. Times 0 clears it.
+func injectPostgres(ctx context.Context, dsn string, in Inject) error {
+	code, ok := sqlstates[in.Class]
+	delay := "NULL"
+	if in.Delay != "" {
+		d, err := time.ParseDuration(in.Delay)
+		if err != nil {
+			return fmt.Errorf("delay: %w", err)
+		}
+		delay, ok = fmt.Sprintf("'%d microseconds'", d.Microseconds()), true
+	}
+	if !ok && in.Times > 0 {
+		return fmt.Errorf("no injected failure of class %s", in.Class)
 	}
 	return run(ctx, dsn, fmt.Sprintf(`TRUNCATE conformance.injection;
-INSERT INTO conformance.injection VALUES ('%s', %d);
-SELECT setval('conformance.injected', 1, false);`, code, times))
+INSERT INTO conformance.injection VALUES ('%s', %d, %s);
+SELECT setval('conformance.injected', 1, false);`, code, in.Times, delay))
+}
+
+// terminatePostgres ends every other connection to the database at dsn, as
+// a server shutting them down would.
+func terminatePostgres(ctx context.Context, dsn string) error {
+	return run(ctx, dsn, `SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+WHERE datname = current_database() AND pid <> pg_backend_pid()`)
 }
 
 // Database creates a database from the DDL files, in order, on the server

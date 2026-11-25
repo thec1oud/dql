@@ -11,7 +11,12 @@
 // shape through the query builder (§18.2): all its rows, a stream of them, or
 // their count. A scenario of replica runs on a source with a streaming
 // replica, and its control steps start a session, pause or resume the
-// replica's replay, or sleep (§22.5).
+// replica's replay, or sleep (§22.5). A step's call may run under a
+// deadline, be canceled, or have its connection terminated while the server
+// sleeps in an injected delay, so that each infrastructure error is the
+// server's or the driver's own (§23.1). An operation step runs its steps as
+// one operation, in which a pair-form transaction left open is rolled back
+// and reported (§22.3).
 package harness
 
 import (
@@ -39,7 +44,9 @@ type Scenario struct {
 	Name    string `yaml:"scenario"`
 	Schema  string `yaml:"schema"`
 	Replica bool   `yaml:"replica"`
-	Steps   []Step `yaml:"steps"`
+	// MaxConns bounds the primary's pool; 0 is the schema's default.
+	MaxConns int    `yaml:"max_conns"`
+	Steps    []Step `yaml:"steps"`
 	// File is where the scenario was read from.
 	File string `yaml:"-"`
 }
@@ -78,8 +85,8 @@ type Step struct {
 
 	// A select step, op select, reads Shape through the store From, keeping
 	// the rows every Filter holds for, in Order, at most Limit of them. Read
-	// is all (the default), iter, which streams the rows and, with Stop,
-	// ends iteration after that many, or count.
+	// is all (the default), one, the only row, iter, which streams the rows
+	// and, with Stop, ends iteration after that many, or count.
 	From   string     `yaml:"from"`
 	Shape  string     `yaml:"shape"`
 	Filter []Filter   `yaml:"filter"`
@@ -97,6 +104,18 @@ type Step struct {
 
 	// Duration is how long a sleep step sleeps.
 	Duration string `yaml:"duration"`
+
+	// Deadline and Cancel end a call's context after that long, as a
+	// deadline or a cancellation, and Terminate ends its connections after
+	// that long. Each is a Go duration.
+	Deadline  string `yaml:"deadline"`
+	Cancel    string `yaml:"cancel"`
+	Terminate string `yaml:"terminate"`
+
+	// A begin step, op begin_write or begin_read, begins a pair-form
+	// transaction, runs Steps on it and ends it as End says: commit,
+	// rollback, or, when empty, not at all, leaving it open.
+	End string `yaml:"end"`
 }
 
 // Filter is a predicate of a select step: the column's operator Op, as eq
@@ -119,11 +138,12 @@ type Retry struct {
 	Attempts int `yaml:"attempts"`
 }
 
-// Inject is a failure of a retryable class that the server raises for the
-// transaction's next Times writes.
+// Inject is what the server does on the step's next Times writes: sleep for
+// Delay, a Go duration, or else raise a failure of the retryable Class.
 type Inject struct {
 	Class string `yaml:"class"`
 	Times int    `yaml:"times"`
+	Delay string `yaml:"delay"`
 }
 
 // Assign is one expression on a column: set to now or default, or add or
@@ -140,29 +160,33 @@ type Assign struct {
 // tables' column handles, the functions that build its nested changes (each
 // change type's constructors, as shopdb.PostAuthorLink, and opt.Some for
 // each optional nest's type, as opt.Some[shopdb.PostAuthorChange]), and how
-// to make the database at dsn fail its next times writes with class. Shapes
+// to make the database at dsn fail or stall its next writes, and to end
+// every other connection to it. Shapes
 // holds its read shapes, and Selects the Select that reads each, by the
 // shape's name, instantiated for it, as
 // shopdb.Select[shopdb.TenantFull, shopdb.TenantsTable]. Open opens the
-// handle on the database at dsn, with replicas of it at the replicas' DSNs,
+// handle and its executor on the database at dsn, with replicas of it at the
+// replicas' DSNs and at most maxConns connections to it, 0 meaning a default,
 // and Replay pauses or resumes the replay of the replica at dsn.
 type Schema struct {
-	DDL     []string
-	Open    func(ctx context.Context, dsn string, replicas []string, opts ...dql.Option) (db any, close func(), err error)
-	Replay  func(ctx context.Context, dsn string, pause bool) error
-	Tables  map[string]any
-	Changes []any
-	Inject  func(ctx context.Context, dsn, class string, times int) error
-	Shapes  any
-	Selects map[string]any
+	DDL       []string
+	Open      func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (db any, exec *dql.Executor, err error)
+	Replay    func(ctx context.Context, dsn string, pause bool) error
+	Tables    map[string]any
+	Changes   []any
+	Inject    func(ctx context.Context, dsn string, in Inject) error
+	Terminate func(ctx context.Context, dsn string) error
+	Shapes    any
+	Selects   map[string]any
 }
 
-// Target is what a scenario runs on: a schema's handle, open on the
-// database at DSN and its replica at ReplicaDSN, if any, and the recorder
-// of its executor's hook events.
+// Target is what a scenario runs on: a schema's handle and its executor,
+// open on the database at DSN and its replica at ReplicaDSN, if any, and the
+// recorder of the executor's hook events.
 type Target struct {
 	Schema     Schema
 	DB         any
+	Exec       *dql.Executor
 	DSN        string
 	ReplicaDSN string
 	Events     *Recorder
@@ -195,10 +219,12 @@ func Load(dir string) ([]Scenario, error) {
 func Run(ctx context.Context, sc Scenario, t Target) []string {
 	s := t.Schema
 	r := &runner{ctx: ctx, db: reflect.ValueOf(t.DB), tables: s.Tables, saved: map[string]any{}, events: t.Events,
-		inject:  func(class string, times int) error { return s.Inject(ctx, t.DSN, class, times) },
-		replay:  func(pause bool) error { return s.Replay(ctx, t.ReplicaDSN, pause) },
-		base:    ctx,
-		changes: map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
+		inject:    func(in Inject) error { return s.Inject(ctx, t.DSN, in) },
+		terminate: func() error { return s.Terminate(ctx, t.DSN) },
+		operation: func(ctx context.Context) (context.Context, func()) { return t.Exec.Operation(ctx) },
+		replay:    func(pause bool) error { return s.Replay(ctx, t.ReplicaDSN, pause) },
+		base:      ctx,
+		changes:   map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
 		nested: map[reflect.Type]bool{}, shapes: reflect.ValueOf(s.Shapes), selects: map[string]reflect.Value{}}
 	for name, f := range s.Selects {
 		r.selects[norm(name)] = reflect.ValueOf(f)
@@ -221,11 +247,15 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 }
 
 type runner struct {
-	ctx    context.Context
-	db     reflect.Value
-	tables map[string]any
-	saved  map[string]any
-	inject func(class string, times int) error
+	ctx       context.Context
+	db        reflect.Value
+	tables    map[string]any
+	saved     map[string]any
+	inject    func(Inject) error
+	terminate func() error
+	// operation begins an operation on ctx and returns the function that
+	// ends it.
+	operation func(ctx context.Context) (context.Context, func())
 	// replay pauses or resumes the replica's replay, paused says whether it
 	// is paused, and base is the context a session step starts from.
 	replay func(pause bool) error
@@ -346,20 +376,30 @@ func (r *runner) run(st Step) ([]string, error) {
 	if ps, ok := r.control(st); ok {
 		return ps, nil
 	}
+	switch st.Op {
+	case "operation":
+		return r.operate(st), nil
+	case "begin_write", "begin_read":
+		return r.begin(st), nil
+	}
 	storeName, method, ok := strings.Cut(st.Op, ".")
 	if !ok && st.Op != "select" {
 		return r.transact(st)
 	}
+	finish, problems := r.prepare(st)
+	if problems != nil {
+		return problems, nil
+	}
 	mark := r.events.mark()
 	var result any
 	var err error
-	var problems []string
 	if ok {
 		result, err, problems = r.call(st, storeName, method)
 	} else {
 		result, err, problems = r.read(st)
 	}
 	r.fired = r.events.since(mark)
+	problems = append(problems, finish()...)
 	if problems != nil {
 		return problems, nil
 	}
@@ -370,6 +410,136 @@ func (r *runner) run(st Step) ([]string, error) {
 		r.saved[st.Save] = result
 	}
 	return r.compare(st, result, err), nil
+}
+
+// prepare sets up a step's call: the injected delay or failure, and the
+// deadline, cancellation and termination, which act on r.ctx. The function
+// it returns undoes them once the call returns, and reports what failed.
+func (r *runner) prepare(st Step) (func() []string, []string) {
+	outer := r.ctx
+	undo := []func() []string{func() []string {
+		r.ctx = outer
+		return nil
+	}}
+	finish := func() []string {
+		var problems []string
+		for i := len(undo) - 1; i >= 0; i-- {
+			problems = append(problems, undo[i]()...)
+		}
+		return problems
+	}
+	if st.Inject != nil {
+		if err := r.inject(*st.Inject); err != nil {
+			return nil, []string{"inject: " + err.Error()}
+		}
+		undo = append(undo, func() []string {
+			r.inject(Inject{})
+			return nil
+		})
+	}
+	for _, t := range []struct {
+		name, after string
+		start       func(d time.Duration) func() []string
+	}{
+		{"deadline", st.Deadline, func(d time.Duration) func() []string {
+			ctx, cancel := context.WithTimeout(r.ctx, d)
+			r.ctx = ctx
+			return func() []string { cancel(); return nil }
+		}},
+		{"cancel", st.Cancel, func(d time.Duration) func() []string {
+			ctx, cancel := context.WithCancel(r.ctx)
+			r.ctx = ctx
+			stop := time.AfterFunc(d, cancel)
+			return func() []string { stop.Stop(); cancel(); return nil }
+		}},
+		{"terminate", st.Terminate, func(d time.Duration) func() []string {
+			done := make(chan error, 1)
+			go func() {
+				time.Sleep(d)
+				done <- r.terminate()
+			}()
+			return func() []string {
+				if err := <-done; err != nil {
+					return []string{"terminate: " + err.Error()}
+				}
+				return nil
+			}
+		}},
+	} {
+		if t.after == "" {
+			continue
+		}
+		d, err := time.ParseDuration(t.after)
+		if err != nil {
+			finish()
+			return nil, []string{fmt.Sprintf("%s: %s", t.name, err)}
+		}
+		undo = append(undo, t.start(d))
+	}
+	return finish, nil
+}
+
+// operate runs an operation step: its steps in one operation, which rolls
+// back and reports each pair-form transaction left open when it ends. Its
+// expect takes events, all that the steps and the operation's end fired.
+func (r *runner) operate(st Step) []string {
+	mark := r.events.mark()
+	outer := r.ctx
+	ctx, end := r.operation(r.ctx)
+	r.ctx = ctx
+	problems := r.steps(st.Steps)
+	r.ctx = outer
+	end()
+	r.fired = r.events.since(mark)
+	return append(problems, r.compare(Step{Expect: st.Expect}, nil, nil)...)
+}
+
+// steps runs steps in order and returns their problems, each prefixed with
+// its step.
+func (r *runner) steps(steps []Step) []string {
+	var problems []string
+	for i, s := range steps {
+		ps, _ := r.run(s)
+		for _, p := range ps {
+			problems = append(problems, fmt.Sprintf("step %d (%s): %s", i+1, s.Op, p))
+		}
+	}
+	return problems
+}
+
+// ends are a begin step's ends by the method that ends the transaction.
+var ends = map[string]string{"commit": "Commit", "rollback": "Rollback", "": ""}
+
+// begin runs a begin step: it begins a pair-form transaction, runs its steps
+// on the transaction's stores and context, and then commits it, rolls it
+// back or leaves it open. Its expect takes error, of the beginning or the
+// end, and events.
+func (r *runner) begin(st Step) []string {
+	end, ok := ends[st.End]
+	if !ok {
+		return []string{"no end " + st.End}
+	}
+	m, ok := member(r.db, map[string]string{"begin_write": "BeginWrite", "begin_read": "BeginRead"}[st.Op])
+	if !ok {
+		return []string{"no transaction " + st.Op}
+	}
+	mark := r.events.mark()
+	out := m.Call([]reflect.Value{reflect.ValueOf(r.ctx)})
+	err, _ := out[1].Interface().(error)
+	var problems []string
+	if err == nil {
+		tx := out[0]
+		outerDB, outerCtx := r.db, r.ctx
+		r.db = tx
+		r.ctx = tx.MethodByName("Context").Call([]reflect.Value{reflect.ValueOf(r.ctx)})[0].Interface().(context.Context)
+		problems = r.steps(st.Steps)
+		r.db, r.ctx = outerDB, outerCtx
+		if end != "" {
+			err, _ = tx.MethodByName(end).Call([]reflect.Value{reflect.ValueOf(r.ctx)})[0].Interface().(error)
+		}
+	}
+	r.fired = r.events.since(mark)
+	return append(problems, r.compare(Step{Expect: st.Expect}, nil, err)...)
 }
 
 // call calls the step's method and returns its result, normalized, or its
@@ -477,8 +647,8 @@ func (r *runner) read(st Step) (any, error, []string) {
 	}
 	ctx := reflect.ValueOf(r.ctx)
 	switch st.Read {
-	case "", "all", "count":
-		m := map[string]string{"": "All", "all": "All", "count": "Count"}[st.Read]
+	case "", "all", "count", "one":
+		m := map[string]string{"": "All", "all": "All", "count": "Count", "one": "One"}[st.Read]
 		out := b.MethodByName(m).Call([]reflect.Value{ctx})
 		if e, _ := out[1].Interface().(error); e != nil {
 			return nil, e, nil
@@ -544,10 +714,10 @@ func (r *runner) transaction(st Step) ([]string, error) {
 		opts = append(opts, reflect.ValueOf(dql.WithRetry(dql.RetryPolicy{Attempts: st.Retry.Attempts, Initial: time.Microsecond, Max: time.Microsecond})))
 	}
 	if st.Inject != nil {
-		if err := r.inject(st.Inject.Class, st.Inject.Times); err != nil {
+		if err := r.inject(*st.Inject); err != nil {
 			return []string{"inject: " + err.Error()}, nil
 		}
-		defer r.inject("", 0)
+		defer r.inject(Inject{})
 	}
 	runs := 0
 	var inner []string
