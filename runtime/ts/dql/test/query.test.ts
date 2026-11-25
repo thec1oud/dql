@@ -292,20 +292,20 @@ describe("the builder (§18)", () => {
     f.onAny("user.count").returns([7n]);
     f.onAny("user.exists").returns([true]);
     expect(await b.one()).toBe(7n);
-    expect(await b.optional()).toBe(7n);
+    expect(await b.optionalOne()).toBe(7n);
     expect(await b.all()).toEqual([7n]);
     const streamed: bigint[] = [];
-    for await (const v of b.iterate()) {
+    for await (const v of b.iter()) {
       streamed.push(v);
     }
     expect(streamed).toEqual([7n]);
     expect(await b.count()).toBe(7n);
     expect(await b.exists()).toBe(true);
     f.onAny("user.select").returns();
-    expect(await b.optional()).toBe(undefined);
+    expect(await b.optionalOne()).toBe(undefined);
     // A shape whose fragments the table lacks fails every terminal.
     const broken = newBuilder(builderTable, { h: e }, { ...userShape, select: "select.missing", count: "count.missing", exists: "exists.missing" });
-    const errors = await Promise.all([broken.one(), broken.optional(), broken.all(), broken.count(), broken.exists()].map((p) => p.catch((x: Error) => x.message)));
+    const errors = await Promise.all([broken.one(), broken.optionalOne(), broken.all(), broken.count(), broken.exists()].map((p) => p.catch((x: Error) => x.message)));
     expect(errors).toEqual([
       "dql: the fragment table has no select.missing in query user.select",
       "dql: the fragment table has no select.missing in query user.select",
@@ -313,7 +313,7 @@ describe("the builder (§18)", () => {
       "dql: the fragment table has no count.missing in query user.count",
       "dql: the fragment table has no exists.missing in query user.exists",
     ]);
-    const it = broken.iterate()[Symbol.asyncIterator]();
+    const it = broken.iter()[Symbol.asyncIterator]();
     expect(await it.next().catch((x: Error) => x.message)).toBe("dql: the fragment table has no select.missing in query user.select");
   });
 

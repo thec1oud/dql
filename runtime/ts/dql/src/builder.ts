@@ -303,8 +303,8 @@ export class Builder<T, E> {
     return oneOf(this.from.h, this.rows(), this.shape.decode);
   }
 
-  /** optional returns the row, or undefined when there is none: TooManyRows for more than one (§19). */
-  async optional(): Promise<T | undefined> {
+  /** optionalOne returns the row, or undefined when there is none: TooManyRows for more than one (§19). */
+  async optionalOne(): Promise<T | undefined> {
     return optionalOf(this.from.h, this.rows(), this.shape.decode);
   }
 
@@ -313,8 +313,8 @@ export class Builder<T, E> {
     return allOf(this.from.h, this.rows(), this.shape.decode);
   }
 
-  /** iterate streams the rows, holding a connection until iteration ends (§25.1). */
-  iterate(): AsyncIterable<T> {
+  /** iter streams the rows, holding a connection until iteration ends (§25.1). */
+  iter(): AsyncIterable<T> {
     return iterateOf(this.from.h, () => this.rows(), this.shape.decode);
   }
 
