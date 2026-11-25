@@ -11,6 +11,8 @@ Hooks observe queries, transactions, pools and replicas (§24): pass them as `ho
 
 Large reads stream with `iterate(h, statement)`, an `AsyncIterable` that holds its connection until the loop ends (§25.1); `@dql/pg` reads them through `pg-cursor`, 256 rows at a time. Bulk writes split within the dialect's parameter limit in one transaction with `executeBulk` and `queryBulk` (§25.2).
 
+Tests of code that runs generated queries use the recording fake executor from `@dql/runtime/fake` (§26.3): `fake.on(query, ...args).returns(rows)` answers a query by name and arguments, `fake.executor(dialect, catalogs)` opens an executor on it, and `fake.verify()` fails on any call nothing answered.
+
 The targets are Node (current LTS), Bun and Deno. The time types of §8.8 are Temporal's: native where the runtime has it, `temporal-polyfill` otherwise.
 
 The workspace uses Bun: `bun.lock` is committed, `tsc` type checks and builds, and `bun test` runs the unit tests with 100% coverage. Node and Deno run the TypeScript conformance suite.
