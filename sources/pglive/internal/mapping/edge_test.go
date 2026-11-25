@@ -291,3 +291,24 @@ func TestCanonical(t *testing.T) {
 		t.Error("canonical changed its input")
 	}
 }
+
+// TestPredicateColumns records what a partial unique index's predicate
+// requires of its columns (§21.3).
+func TestPredicateColumns(t *testing.T) {
+	s := &introspect.Snapshot{
+		Schemas: []introspect.Schema{{Name: "s"}},
+		Relations: []introspect.Relation{{
+			Schema: "s", Name: "t", Kind: "r",
+			Columns: []introspect.Column{{Name: "a", Type: int4}, {Name: "gone", Type: int4}},
+			Indexes: []introspect.Index{{Name: "t_a_live", Unique: true, Predicate: "(gone IS NULL)", Keys: []introspect.IndexKey{{Column: "a"}}}},
+		}},
+	}
+	c, _, err := Map(s, Options{Catalog: "c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	u := c.GetNamespaces()[0].GetTables()[0].GetUniqueness()[0]
+	if strings.Join(u.GetPredicateNullColumns(), ",") != "gone" || len(u.GetPredicateNotTrueColumns()) != 0 {
+		t.Errorf("predicate columns %v %v", u.GetPredicateNullColumns(), u.GetPredicateNotTrueColumns())
+	}
+}

@@ -519,6 +519,7 @@ func (m *mapper) indexes(tbl *irv1.Table, schema, table string, list []format.In
 		}
 		if x.Where != "" {
 			u.Predicate = &irv1.NativeText{Native: x.Where}
+			pgsql.RecognizePredicate(u, x.Where)
 		}
 		ue := &exts{m: m}
 		ue.add(index)
