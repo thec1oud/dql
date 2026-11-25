@@ -94,7 +94,7 @@ func Profile() *irv1.CapabilityProfile {
 		},
 		Replication: &irv1.ReplicationQueries{Position: position, Lag: lag, Replayed: replayed},
 		StatementModes: []irv1.StatementMode{
-			irv1.StatementMode_STATEMENT_MODE_PREPARE, irv1.StatementMode_STATEMENT_MODE_DESCRIBE,
+			irv1.StatementMode_STATEMENT_MODE_PREPARE, irv1.StatementMode_STATEMENT_MODE_DESCRIBE, irv1.StatementMode_STATEMENT_MODE_SIMPLE,
 		},
 	}
 }

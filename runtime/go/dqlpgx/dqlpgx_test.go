@@ -444,6 +444,10 @@ func TestValues(t *testing.T) {
 		{"int4[]", []int32(nil), nil},
 		{"int4[]", []int32{1, 2}, []any{int64(1), int64(2)}},
 		{"int4[]", []int32{}, []any{}},
+		{"int4[]", []*int32{nil, dql.Ptr(int32(2))}, []any{nil, int64(2)}},
+		{"int4[]", []*int32{nil}, []any{nil}},
+		{"text[]", []string{"a,b", `"q"`, "x'); DROP TABLE item; --", "NULL", ""}, []any{"a,b", `"q"`, "x'); DROP TABLE item; --", "NULL", ""}},
+		{"text", `x'); DROP TABLE item; --\`, `x'); DROP TABLE item; --\`},
 		{"int8[]", [][]int64{}, []any{}},
 		{"int8[]", [][]int64{{1, 2}, {3, 4}}, []any{[]any{int64(1), int64(2)}, []any{int64(3), int64(4)}}},
 		{"date[]", []civil.Date{date}, []any{date}},
@@ -484,6 +488,46 @@ func TestValues(t *testing.T) {
 		}
 	}
 
+	// The simple protocol encodes each value by its declared type, and
+	// without one infers a type from the Go value, which a range, a
+	// composite or a multidimensional list does not give (§26.4).
+	sp, err := d.Open(ctx, dql.PoolConfig{DSN: database(t), Setup: []string{"SET TIME ZONE 'UTC'"}, Mode: dql.ModeSimple})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sp.Close()
+	sc, err := sp.Acquire(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sc.Release()
+	for _, declared := range []bool{true, false} {
+		for _, tc := range cases {
+			var types []string
+			if declared {
+				types = []string{declaredType(tc.typ)}
+			} else if strings.Contains(tc.typ, "range") || tc.typ == "point2" || tc.typ == "pair" || reflect.TypeOf(tc.arg).String() == "[][]int64" {
+				continue
+			}
+			rows, err := sc.Query(ctx, "SELECT $1::"+tc.typ, []any{tc.arg}, types)
+			if err != nil {
+				t.Errorf("simple %s %v: %v", tc.typ, tc.arg, err)
+				continue
+			}
+			var got any
+			for rows.Next() {
+				got = rows.Row()[0]
+			}
+			if err := rows.Err(); err != nil {
+				t.Errorf("simple %s %v: %v", tc.typ, tc.arg, err)
+			}
+			rows.Close()
+			if !equal(got, tc.want) {
+				t.Errorf("simple %s: got %#v, want %#v", tc.typ, got, tc.want)
+			}
+		}
+	}
+
 	// Values dql has no host type for stay as pgx decodes them.
 	for sql, want := range map[string]any{
 		"SELECT 'NaN'::numeric":                            pgtype.Numeric{NaN: true, Valid: true},
@@ -511,6 +555,21 @@ func TestValues(t *testing.T) {
 			t.Errorf("%s: got %#v, want %#v", sql, got, want)
 		}
 	}
+}
+
+// declaredType is the type the emitter declares for a value cast to typ:
+// a built-in's namespace.name and a user-defined type's, whose driver
+// registers it unqualified.
+func declaredType(typ string) string {
+	name, _, _ := strings.Cut(typ, "(")
+	if n, ok := strings.CutSuffix(name, "[]"); ok {
+		name = "_" + n
+	}
+	switch strings.TrimPrefix(name, "_") {
+	case "mood", "point2", "pair":
+		return "public." + name
+	}
+	return "pg_catalog." + name
 }
 
 func equal(a, b any) bool {
@@ -580,7 +639,7 @@ func TestDecode(t *testing.T) {
 func TestStatementModes(t *testing.T) {
 	ctx := context.Background()
 	dsn := database(t)
-	for _, m := range []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe} {
+	for _, m := range []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple} {
 		e, err := dql.New(ctx, New("mood"), dialect, dql.Config{
 			Sources:  map[string]dql.SourceConfig{"main": {Primary: dql.ConnConfig{DSN: dsn, MaxConns: 2}, StatementMode: m}},
 			Catalogs: map[string]string{"shop": "main"},
@@ -602,5 +661,53 @@ func TestStatementModes(t *testing.T) {
 			}
 		}
 		e.Close()
+	}
+}
+
+func TestSimpleArgs(t *testing.T) {
+	m := pgtype.NewMap()
+	type mood string
+	date := civil.Date{Year: 2024, Month: 1, Day: 2}
+	for _, c := range []struct {
+		args  []any
+		types []string
+		want  string
+	}{
+		{[]any{[]any{int64(1), "x"}}, nil, `[]interface {}{1, "x"}`},
+		{[]any{[]mood{"a"}, []bool{true}}, []string{"", "nope.nope"}, `[]string{"a"}, []bool{true}`},
+		{[]any{date, nil}, []string{"pg_catalog.date", "pg_catalog.int4"}, `"2024-01-02", interface {}(nil)`},
+		{[]any{(*civil.Date)(nil)}, []string{"pg_catalog.date"}, `interface {}(nil)`},
+	} {
+		got, err := simpleArgs(m, c.args, c.types)
+		if s := fmt.Sprintf("%#v", got); err != nil || s != "[]interface {}{"+c.want+"}" {
+			t.Errorf("%v: %s %v", c.args, s, err)
+		}
+	}
+	if _, err := simpleArgs(m, []any{date}, []string{"pg_catalog.point"}); err == nil {
+		t.Error("encoded a date as a point")
+	}
+}
+
+func TestSimpleErrors(t *testing.T) {
+	ctx := context.Background()
+	p, err := New().Open(ctx, dql.PoolConfig{DSN: database(t), Mode: dql.ModeSimple})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+	c, err := p.Acquire(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Release()
+	date := []any{civil.Date{Year: 2024, Month: 1, Day: 2}}
+	if _, err := c.Query(ctx, "SELECT $1", date, []string{"pg_catalog.point"}); err == nil {
+		t.Error("query")
+	}
+	if _, err := c.Exec(ctx, "SELECT $1", date, []string{"pg_catalog.point"}); err == nil {
+		t.Error("exec")
+	}
+	if n, err := c.Exec(ctx, "SELECT $1::date", date, []string{"pg_catalog.date"}); n != 1 || err != nil {
+		t.Error(n, err)
 	}
 }

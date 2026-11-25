@@ -10,11 +10,13 @@ import (
 	"testing"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/thec1oud/dql/runtime/go/dql"
 )
 
 // Each way a step can go wrong is reported, and nothing else is.
 func TestRunProblems(t *testing.T) {
-	target := open(t, "shop", false, 0)
+	target := open(t, "shop", false, 0, dql.ModePrepare)
 	ctx := context.Background()
 	setup := `
 - op: tenants.insert
@@ -218,7 +220,7 @@ func TestDatabase(t *testing.T) {
 	if _, _, err := Database(ctx, "postgres://nobody@127.0.0.1:1/x", ddl); err == nil {
 		t.Error("no server")
 	}
-	if _, _, err := Schemas["shop"].Open(ctx, "postgres://%zz", []string{"postgres://%zz"}, 0); err == nil {
+	if _, _, err := Schemas["shop"].Open(ctx, "postgres://%zz", []string{"postgres://%zz"}, 0, dql.ModePrepare); err == nil {
 		t.Error("bad DSN opened")
 	}
 }

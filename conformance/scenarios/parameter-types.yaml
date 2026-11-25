@@ -1,0 +1,25 @@
+scenario: parameter-types
+schema: shop
+# Parameters whose database type a Go value alone does not give, written
+# and read back in each statement mode (§26.4): an enum, a list and an
+# empty list.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: x, status: published, labels: [a, "b,c"] }
+    save: post
+    expect:
+      row: { status: published, labels: [a, "b,c"] }
+  - op: posts.patch
+    scope: { tenant_id: $acme.id }
+    key: { id: $post.id }
+    input: { labels: [] }
+    expect:
+      row: { labels: [] }

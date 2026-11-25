@@ -20,8 +20,9 @@ var root = filepath.Join("..", "..", "..")
 // database's copy on the server of DQL_TEST_POSTGRES_REPLICA_URL, a
 // streaming replica of DQL_TEST_POSTGRES_URL's, as its replica when replica
 // is set, and at most maxConns connections to the primary, 0 meaning the
-// schema's default. Without that server, a test that needs it is skipped.
-func open(t *testing.T, name string, replica bool, maxConns int) Target {
+// schema's default, sending statements in mode. Without that server, a
+// test that needs it is skipped.
+func open(t *testing.T, name string, replica bool, maxConns int, mode dql.StatementMode) Target {
 	t.Helper()
 	ctx := context.Background()
 	base := os.Getenv("DQL_TEST_POSTGRES_URL")
@@ -47,7 +48,7 @@ func open(t *testing.T, name string, replica bool, maxConns int) Target {
 		replicas = append(replicas, replicaOf(t, dsn, replicaBase))
 	}
 	rec := &Recorder{}
-	db, exec, err := s.Open(ctx, dsn, replicas, maxConns, dql.WithHooks(rec.Hooks()))
+	db, exec, err := s.Open(ctx, dsn, replicas, maxConns, mode, dql.WithHooks(rec.Hooks()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +101,8 @@ func query(ctx context.Context, dsn, sql string, dest any) error {
 	return c.QueryRow(ctx, sql).Scan(dest)
 }
 
-// Every scenario passes on Postgres for Go (guide M4).
+// Every scenario passes on Postgres for Go (guide M4), in each statement
+// mode (§26.4).
 func TestScenarios(t *testing.T) {
 	scs, err := Load(filepath.Join("..", "..", "scenarios"))
 	if err != nil {
@@ -109,14 +111,16 @@ func TestScenarios(t *testing.T) {
 	if len(scs) == 0 {
 		t.Fatal("no scenarios")
 	}
-	for _, sc := range scs {
-		t.Run(sc.Name, func(t *testing.T) {
-			if _, ok := Schemas[sc.Schema]; !ok {
-				t.Fatalf("%s: no schema %s", sc.File, sc.Schema)
-			}
-			for _, p := range Run(context.Background(), sc, open(t, sc.Schema, sc.Replica, sc.MaxConns)) {
-				t.Error(p)
-			}
-		})
+	for _, mode := range []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple} {
+		for _, sc := range scs {
+			t.Run(mode.String()+"/"+sc.Name, func(t *testing.T) {
+				if _, ok := Schemas[sc.Schema]; !ok {
+					t.Fatalf("%s: no schema %s", sc.File, sc.Schema)
+				}
+				for _, p := range Run(context.Background(), sc, open(t, sc.Schema, sc.Replica, sc.MaxConns, mode)) {
+					t.Error(p)
+				}
+			})
+		}
 	}
 }

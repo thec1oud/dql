@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/netip"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,7 +53,7 @@ func encode(v any) any {
 	case dql.Bits:
 		return pgtype.Bits{Bytes: x.Bytes(), Len: int32(x.Len()), Valid: true}
 	case uuid.UUID:
-		return [16]byte(x)
+		return pgtype.UUID{Bytes: x, Valid: true}
 	case netip.Addr:
 		return netip.PrefixFrom(x, x.BitLen())
 	case dql.Row:
@@ -139,4 +140,116 @@ func encodeBound(b reflect.Value) (pgtype.BoundType, any) {
 		return pgtype.Inclusive, encode(b.FieldByName("Value").Interface())
 	}
 	return pgtype.Exclusive, encode(b.FieldByName("Value").Interface())
+}
+
+// simpleArgs encodes arguments for the simple protocol, which writes each
+// value into the statement as a literal, so the server never says what
+// type a parameter has (§26.4). A Go scalar pgx writes as it is; any other
+// value whose declared type m knows is encoded as that type's text, which
+// the server reads as the parameter's type; the rest are given Go types
+// pgx can infer a database type from (inferable).
+func simpleArgs(m *pgtype.Map, args []any, types []string) ([]any, error) {
+	out := make([]any, len(args))
+	for i, a := range args {
+		v := encode(a)
+		var t *pgtype.Type
+		if i < len(types) && !scalar(v) {
+			t = typeFor(m, types[i])
+		}
+		if t == nil {
+			out[i] = inferable(v)
+			continue
+		}
+		b, err := m.Encode(t.OID, pgtype.TextFormatCode, v, nil)
+		if err != nil {
+			return nil, err
+		}
+		if b != nil {
+			out[i] = string(b)
+		}
+	}
+	return out, nil
+}
+
+// scalar reports whether pgx writes v into a simple statement as it is.
+func scalar(v any) bool {
+	switch v.(type) {
+	case nil, string, []byte, bool, int64, int32, int16, int8, uint32, uint16, uint8, float64, float32:
+		return true
+	}
+	return false
+}
+
+// typeFor returns the type m registers under name, written
+// namespace.name, or under its name alone, as pgx registers the built-in
+// types and a type the driver was given unqualified; nil when m has
+// neither.
+func typeFor(m *pgtype.Map, name string) *pgtype.Type {
+	if name == "" {
+		return nil
+	}
+	if t, ok := m.TypeForName(name); ok {
+		return t
+	}
+	if i := strings.LastIndexByte(name, '.'); i >= 0 {
+		if t, ok := m.TypeForName(name[i+1:]); ok {
+			return t
+		}
+	}
+	return nil
+}
+
+// inferable returns v in a form pgx infers a database type from: a
+// one-dimensional list as a slice of its elements' type, of pointers when
+// an element is NULL, and a named scalar type as its underlying type.
+// A list with no element to go by is a text list, whose literal the
+// server reads as the parameter's type.
+func inferable(v any) any {
+	elems, ok := v.([]any)
+	if !ok {
+		return v
+	}
+	var t reflect.Type
+	null := false
+	for _, e := range elems {
+		if e == nil {
+			null = true
+		} else if t == nil {
+			t = underlying(reflect.TypeOf(e))
+		}
+	}
+	if t == nil {
+		t = reflect.TypeFor[string]()
+	}
+	et := t
+	if null {
+		et = reflect.PointerTo(t)
+	}
+	out := reflect.MakeSlice(reflect.SliceOf(et), len(elems), len(elems))
+	for i, e := range elems {
+		if e == nil {
+			continue
+		}
+		x := reflect.ValueOf(e)
+		if !x.CanConvert(t) {
+			return v
+		}
+		x = x.Convert(t)
+		if null {
+			p := reflect.New(t)
+			p.Elem().Set(x)
+			x = p
+		}
+		out.Index(i).Set(x)
+	}
+	return out.Interface()
+}
+
+// underlying returns string for a named string type, such as a
+// generated enum, which pgx has no encoder for, and t otherwise.
+func underlying(t reflect.Type) reflect.Type {
+	if t.Kind() == reflect.String {
+		return reflect.TypeFor[string]()
+	}
+	return t
 }
