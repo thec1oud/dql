@@ -177,3 +177,21 @@ func TestVersioned(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestExecByKey(t *testing.T) {
+	ctx := context.Background()
+	d := &fakeDriver{}
+	e := newExec(t, d)
+	d.handle = func(string, []any) ([]Row, int64, error) { return nil, 1, nil }
+	if err := ExecByKey(ctx, e, stmt("DELETE")); err != nil {
+		t.Error(err)
+	}
+	d.handle = rows()
+	var nf *NotFound
+	if err := ExecByKey(ctx, e, Statement{Query: "post.delete", Catalog: "shop", SQL: "DELETE"}); !errors.As(err, &nf) || nf.Query != "post.delete" {
+		t.Error(err)
+	}
+	if err := ExecByKey(ctx, e, stmt("FAIL 23505")); ClassOf(err) != ClassUniqueViolation {
+		t.Error(err)
+	}
+}

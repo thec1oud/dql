@@ -934,8 +934,7 @@ func (s tagsWrites) Delete(ctx context.Context, k TagKey) error {
 	if err != nil {
 		return err
 	}
-	_, err = dql.Exec(ctx, s.w, st)
-	return err
+	return dql.ExecByKey(ctx, s.w, st)
 }
 
 // DeleteWhere runs tag.delete_where (§20.1).
