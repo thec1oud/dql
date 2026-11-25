@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test } from "bun:test";
 import {
   Decimal,
   DigitsCheck,
@@ -185,7 +185,7 @@ describe("checks", () => {
 
 describe("collections", () => {
   test("foldAscii", () => {
-    expect(foldAscii("ÀBC-Ünï-XyZ")).toBe("Àbc-Ünï-xyz");
+    expect(foldAscii("ÀBC-Ünï-XyZ") as string).toBe("Àbc-Ünï-xyz");
   });
 
   test("UnmatchedKeyError", () => {
