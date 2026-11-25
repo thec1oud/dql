@@ -41,10 +41,12 @@ type Pool interface {
 
 // Conn is one connection, used by one goroutine at a time.
 type Conn interface {
-	// Query runs a statement that returns rows.
-	Query(ctx context.Context, sql string, args []any) (Rows, error)
+	// Query runs a statement that returns rows. types holds the database
+	// type of each argument, or "" where it is not known; it is nil when
+	// none is (Statement.Types).
+	Query(ctx context.Context, sql string, args []any, types []string) (Rows, error)
 	// Exec runs a statement and returns how many rows it affected.
-	Exec(ctx context.Context, sql string, args []any) (int64, error)
+	Exec(ctx context.Context, sql string, args []any, types []string) (int64, error)
 	Begin(ctx context.Context, opts TxOptions) error
 	Commit(ctx context.Context) error
 	Rollback(ctx context.Context) error

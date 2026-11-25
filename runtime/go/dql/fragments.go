@@ -52,6 +52,9 @@ type Arg struct {
 	Value any
 	// The value is a sensitive column's, which hooks redact (§24).
 	Sensitive bool
+	// The value's database type, as the dialect names it, or "" when it is
+	// not known; see Statement.Types.
+	Type string
 }
 
 // List is nodes joined by a separator, such as a column list.
@@ -69,11 +72,13 @@ func (List) node()  {}
 // is an optional field the call does not set.
 type Args map[string]any
 
-// Assembled is a statement's SQL with its arguments in placeholder order.
+// Assembled is a statement's SQL with its arguments, and their database
+// types, in placeholder order.
 type Assembled struct {
 	SQL       string
 	Args      []any
 	Sensitive []bool
+	Types     []string
 }
 
 // errAbsent marks a fragment that uses a parameter the call left out.
@@ -81,11 +86,11 @@ var errAbsent = errors.New("absent")
 
 // Assemble joins plan's parts, in order with nothing between them, filling
 // holes from args. sensitive names the named parameters that hold
-// sensitive values. A fragment the table lacks, or a parameter left out
+// sensitive values, and types gives their database types. A fragment the table lacks, or a parameter left out
 // where nothing can stand in for it, is an error: generated code only
 // builds plans the table anticipates (§16.2).
-func (t *Fragments) Assemble(plan []Node, args Args, sensitive map[string]bool) (Assembled, error) {
-	a := assembler{t: t, args: args, sensitive: sensitive}
+func (t *Fragments) Assemble(plan []Node, args Args, sensitive map[string]bool, types map[string]string) (Assembled, error) {
+	a := assembler{t: t, args: args, sensitive: sensitive, types: types}
 	for _, n := range plan {
 		if err := a.node(n); err != nil {
 			if errors.Is(err, errAbsent) {
@@ -94,16 +99,18 @@ func (t *Fragments) Assemble(plan []Node, args Args, sensitive map[string]bool) 
 			return Assembled{}, err
 		}
 	}
-	return Assembled{SQL: a.sql.String(), Args: a.out, Sensitive: a.sens}, nil
+	return Assembled{SQL: a.sql.String(), Args: a.out, Sensitive: a.sens, Types: a.typ}, nil
 }
 
 type assembler struct {
 	t         *Fragments
 	args      Args
 	sensitive map[string]bool
+	types     map[string]string
 	sql       strings.Builder
 	out       []any
 	sens      []bool
+	typ       []string
 }
 
 // mark and reset let a list drop an item that renders partly before
@@ -116,7 +123,7 @@ func (a *assembler) reset(m mark) {
 	s := a.sql.String()[:m.sql]
 	a.sql.Reset()
 	a.sql.WriteString(s)
-	a.out, a.sens = a.out[:m.args], a.sens[:m.args]
+	a.out, a.sens, a.typ = a.out[:m.args], a.sens[:m.args], a.typ[:m.args]
 }
 
 func (a *assembler) node(n Node) error {
@@ -131,18 +138,19 @@ func (a *assembler) node(n Node) error {
 		if e, ok := v.(expression); ok {
 			return a.node(e.node)
 		}
-		a.arg(v, a.sensitive[string(n)])
+		a.arg(v, a.sensitive[string(n)], a.types[string(n)])
 	case Arg:
-		a.arg(n.Value, n.Sensitive)
+		a.arg(n.Value, n.Sensitive, n.Type)
 	case List:
 		return a.list(n)
 	}
 	return nil
 }
 
-func (a *assembler) arg(v any, sensitive bool) {
+func (a *assembler) arg(v any, sensitive bool, typ string) {
 	a.out = append(a.out, v)
 	a.sens = append(a.sens, sensitive)
+	a.typ = append(a.typ, typ)
 	switch a.t.Placeholder {
 	case Question:
 		a.sql.WriteByte('?')
@@ -237,16 +245,19 @@ type Query struct {
 	Consistency Consistency
 	// The named parameters that hold sensitive values (§24).
 	Sensitive map[string]bool
+	// The database types of the named parameters, as the dialect names
+	// them; a list parameter's is its array type. See Statement.Types.
+	Types map[string]string
 }
 
 // Statement assembles q with args into the statement the executor runs.
 func (q *Query) Statement(t *Fragments, args Args) (Statement, error) {
-	a, err := t.Assemble(q.Plan, args, q.Sensitive)
+	a, err := t.Assemble(q.Plan, args, q.Sensitive, q.Types)
 	if err != nil {
 		return Statement{}, fmt.Errorf("%w in query %s", err, q.Name)
 	}
 	return Statement{
 		Query: q.Name, Catalog: q.Catalog, SQL: a.SQL, Args: a.Args, Writes: q.Writes, AtMostOne: q.AtMostOne,
-		Consistency: q.Consistency, Kind: q.Kind, Sensitive: a.Sensitive,
+		Consistency: q.Consistency, Kind: q.Kind, Sensitive: a.Sensitive, Types: a.Types,
 	}, nil
 }

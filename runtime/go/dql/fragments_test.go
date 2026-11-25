@@ -52,48 +52,49 @@ func TestAssemble(t *testing.T) {
 		want  string
 		vals  string
 		sens  string
+		types string
 		error string
 	}{
 		{name: "insert", t: table, plan: insert, args: Args{"email": "a@b.c", "name": "A"},
-			want: `INSERT INTO "app"."users" AS u ("email", "name") VALUES ($1, $2) RETURNING u."id"`, vals: "[a@b.c A]", sens: "[true false]"},
+			want: `INSERT INTO "app"."users" AS u ("email", "name") VALUES ($1, $2) RETURNING u."id"`, vals: "[a@b.c A]", sens: "[true false]", types: `["text" ""]`},
 		{name: "insert default", t: table, plan: insert, args: Args{"name": "A"},
-			want: `INSERT INTO "app"."users" AS u ("email", "name") VALUES (DEFAULT, $1) RETURNING u."id"`, vals: "[A]", sens: "[false]"},
+			want: `INSERT INTO "app"."users" AS u ("email", "name") VALUES (DEFAULT, $1) RETURNING u."id"`, vals: "[A]", sens: "[false]", types: `[""]`},
 		{name: "update", t: table, plan: update, args: Args{"email": "a@b.c", "name": nil, "key.id": 7},
-			want: `UPDATE "app"."users" AS u SET "email" = $1, "name" = $2, "n" = $3 = $4 WHERE u."id" = $5`, vals: "[a@b.c <nil> <nil> a@b.c 7]", sens: "[true false false true false]"},
+			want: `UPDATE "app"."users" AS u SET "email" = $1, "name" = $2, "n" = $3 = $4 WHERE u."id" = $5`, vals: "[a@b.c <nil> <nil> a@b.c 7]", sens: "[true false false true false]", types: `["text" "" "" "text" "int8"]`},
 		{name: "update drops", t: table, plan: update, args: Args{"name": "A", "key.id": 7},
-			want: `UPDATE "app"."users" AS u SET "name" = $1 WHERE u."id" = $2`, vals: "[A 7]", sens: "[false false]"},
+			want: `UPDATE "app"."users" AS u SET "name" = $1 WHERE u."id" = $2`, vals: "[A 7]", sens: "[false false]", types: `["" "int8"]`},
 		{name: "question", t: &Fragments{Placeholder: Question, Templates: table.Templates}, plan: update, args: Args{"email": "e", "key.id": 7},
-			want: `UPDATE "app"."users" AS u SET "email" = ? WHERE u."id" = ?`, vals: "[e 7]", sens: "[true false]"},
-		{name: "at", t: &Fragments{Placeholder: AtNumbered, Templates: table.Templates}, plan: []Node{Use{Fragment: "select.user"}, Use{Fragment: "clause.limit", Holes: map[string]Node{"0": Arg{Value: 20, Sensitive: true}}}},
-			want: `SELECT u."id" FROM "app"."users" u LIMIT @p1`, vals: "[20]", sens: "[true]"},
+			want: `UPDATE "app"."users" AS u SET "email" = ? WHERE u."id" = ?`, vals: "[e 7]", sens: "[true false]", types: `["text" "int8"]`},
+		{name: "at", t: &Fragments{Placeholder: AtNumbered, Templates: table.Templates}, plan: []Node{Use{Fragment: "select.user"}, Use{Fragment: "clause.limit", Holes: map[string]Node{"0": Arg{Value: 20, Sensitive: true, Type: "int8"}}}},
+			want: `SELECT u."id" FROM "app"."users" u LIMIT @p1`, vals: "[20]", sens: "[true]", types: `["int8"]`},
 		{name: "braces", t: table, plan: []Node{Use{Fragment: "op.json", Holes: map[string]Node{"0": Arg{Value: 1}, "1": Arg{Value: 2}}}},
-			want: `$1 @> '{"a": 1}' AND '{}' <> $2 AND '{x' = '{X}'`, vals: "[1 2]", sens: "[false false]"},
-		{name: "unfilled hole", t: table, plan: []Node{Use{Fragment: "wrap.default_hole"}}, want: "xy", vals: "[]", sens: "[]"},
+			want: `$1 @> '{"a": 1}' AND '{}' <> $2 AND '{x' = '{X}'`, vals: "[1 2]", sens: "[false false]", types: `["" ""]`},
+		{name: "unfilled hole", t: table, plan: []Node{Use{Fragment: "wrap.default_hole"}}, want: "xy", vals: "[]", sens: "[]", types: "[]"},
 		{name: "absent key", t: table, plan: update, args: Args{"name": "A"}, error: "dql: parameter key.id is left out: absent"},
 		{name: "no fragment", t: table, plan: []Node{Use{Fragment: "nope"}}, error: "dql: the fragment table has no nope"},
 		{name: "no fragment in list", t: table, plan: []Node{List{Items: []Node{Use{Fragment: "nope"}}}}, error: "dql: the fragment table has no nope"},
 		{name: "no default", t: &Fragments{Templates: map[string]string{}}, plan: []Node{List{Items: []Node{Param("x")}}}, error: "dql: the fragment table has no value.default"},
 	} {
-		a, err := c.t.Assemble(c.plan, c.args, map[string]bool{"email": true})
+		a, err := c.t.Assemble(c.plan, c.args, map[string]bool{"email": true}, map[string]string{"email": "text", "key.id": "int8"})
 		if c.error != "" {
 			if err == nil || err.Error() != c.error {
 				t.Errorf("%s: %v", c.name, err)
 			}
 			continue
 		}
-		if err != nil || a.SQL != c.want || fmt.Sprint(a.Args) != c.vals || fmt.Sprint(a.Sensitive) != c.sens {
-			t.Errorf("%s:\n%s\n%v %v %v", c.name, a.SQL, a.Args, a.Sensitive, err)
+		if err != nil || a.SQL != c.want || fmt.Sprint(a.Args) != c.vals || fmt.Sprint(a.Sensitive) != c.sens || fmt.Sprintf("%q", a.Types) != c.types {
+			t.Errorf("%s:\n%s\n%v %v %q %v", c.name, a.SQL, a.Args, a.Sensitive, a.Types, err)
 		}
 	}
 }
 
 func TestQueryStatement(t *testing.T) {
 	q := &Query{
-		Name: "user.get", Catalog: "shop", Kind: "select", AtMostOne: true, Consistency: Any, Sensitive: map[string]bool{"key.id": true},
+		Name: "user.get", Catalog: "shop", Kind: "select", AtMostOne: true, Consistency: Any, Sensitive: map[string]bool{"key.id": true}, Types: map[string]string{"key.id": "int8"},
 		Plan: []Node{Use{Fragment: "select.user"}, Use{Fragment: "clause.where", Holes: map[string]Node{"0": eq("col.users.id", Param("key.id"))}}},
 	}
 	s, err := q.Statement(table, Args{"key.id": 7})
-	if err != nil || s.SQL != `SELECT u."id" FROM "app"."users" u WHERE u."id" = $1` || fmt.Sprint(s.Args, s.Sensitive) != "[7] [true]" ||
+	if err != nil || s.SQL != `SELECT u."id" FROM "app"."users" u WHERE u."id" = $1` || fmt.Sprint(s.Args, s.Sensitive, s.Types) != "[7] [true] [int8]" ||
 		s.Query != "user.get" || s.Catalog != "shop" || s.Kind != "select" || !s.AtMostOne || s.Consistency != Any || s.Writes {
 		t.Errorf("%+v %v", s, err)
 	}

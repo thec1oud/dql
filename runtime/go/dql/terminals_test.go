@@ -76,6 +76,28 @@ func TestTerminals(t *testing.T) {
 
 func second[T any](_ T, err error) error { return err }
 
+// TestTypes checks that each terminal hands the driver the statement's
+// argument types.
+func TestTypes(t *testing.T) {
+	ctx := context.Background()
+	d := &fakeDriver{handle: rows(Row{int64(1)})}
+	e := newExec(t, d)
+	s := stmt("SELECT")
+	s.Args, s.Types = []any{int64(1)}, []string{"int8"}
+	if _, err := Fetch(ctx, e, s); err != nil {
+		t.Fatal(err)
+	}
+	for range Iter(ctx, e, s) {
+	}
+	s.Writes = true
+	if _, err := Exec(ctx, e, s); err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(d.types) != "[[int8] [int8] [int8]]" {
+		t.Error(d.types)
+	}
+}
+
 func TestIterOf(t *testing.T) {
 	ctx := context.Background()
 	d := &fakeDriver{handle: rows(Row{int64(1)}, Row{int64(2)}, Row{"x"})}

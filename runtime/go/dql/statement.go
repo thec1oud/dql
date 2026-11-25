@@ -31,6 +31,11 @@ type Statement struct {
 	Catalog string
 	SQL     string
 	Args    []any
+	// The database type of each argument, as the dialect names it, such as
+	// pg_catalog.int4 or app._mood, or "" where it is not known, as for
+	// raw SQL. A driver that sends values without the server describing the
+	// statement first encodes each by its type (§26.4).
+	Types []string
 	// The statement writes, or calls a volatile function (§22.2).
 	Writes bool
 	// The core proved the statement returns at most one row, so One and
@@ -129,7 +134,7 @@ func fetch(ctx context.Context, h Reader, s *Statement, limit int) (out []Row, e
 	}
 	defer func() { done(err) }()
 	src, _ := e.sourceOf(s)
-	rows, err := c.Query(withQuery(ctx, s.Query), s.SQL, s.Args)
+	rows, err := c.Query(withQuery(ctx, s.Query), s.SQL, s.Args, s.Types)
 	if err != nil {
 		return nil, e.translate(err, s.Catalog, s.Query, src)
 	}
@@ -189,7 +194,7 @@ func Exec(ctx context.Context, h Writer, s Statement) (n int64, err error) {
 		return 0, err
 	}
 	defer func() { done(err) }()
-	n, err = c.Exec(withQuery(ctx, s.Query), s.SQL, s.Args)
+	n, err = c.Exec(withQuery(ctx, s.Query), s.SQL, s.Args, s.Types)
 	if err != nil {
 		src, _ := e.sourceOf(&s)
 		return 0, e.translate(err, s.Catalog, s.Query, src)

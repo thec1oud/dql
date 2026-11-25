@@ -146,7 +146,7 @@ func (p *pool) Close() { p.p.Close() }
 
 type conn struct{ c *pgxpool.Conn }
 
-func (c *conn) Query(ctx context.Context, sql string, args []any) (dql.Rows, error) {
+func (c *conn) Query(ctx context.Context, sql string, args []any, _ []string) (dql.Rows, error) {
 	r, err := c.c.Query(ctx, sql, encodeArgs(args)...)
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (c *conn) Query(ctx context.Context, sql string, args []any) (dql.Rows, err
 	return &rows{r: r, m: c.c.Conn().TypeMap()}, nil
 }
 
-func (c *conn) Exec(ctx context.Context, sql string, args []any) (int64, error) {
+func (c *conn) Exec(ctx context.Context, sql string, args []any, _ []string) (int64, error) {
 	tag, err := c.c.Exec(ctx, sql, encodeArgs(args)...)
 	return tag.RowsAffected(), err
 }
