@@ -5,10 +5,11 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Keyed } from "@dql/runtime";
+import { type Keyed, type ValidationIssue, issuesAt } from "@dql/runtime";
+import { dqlSlugTextCheck } from "./dql-checks.dql.ts";
 import type { SlugText } from "./dql-types.dql.ts";
-import type { PostDraft, PostFull, PostKey, PostLink } from "./post.dql.ts";
-import type { PostTagChangeForTag, PostTagDraftForTag, PostTagFull } from "./post_tag.dql.ts";
+import { type PostDraft, type PostFull, type PostKey, type PostLink, validatePostDraft, validatePostLink } from "./post.dql.ts";
+import { type PostTagChangeForTag, type PostTagDraftForTag, type PostTagFull, validatePostTagChangeForTag, validatePostTagDraftForTag } from "./post_tag.dql.ts";
 
 /** TagDraft is the shape tag.draft.flat of shop.app.tags. */
 export interface TagDraft {
@@ -73,6 +74,132 @@ export type TagPostsChange =
 export type TagRef =
   | { kind: "link"; key: TagKey }
   | { kind: "create"; draft: TagDraft };
+
+/**
+ * validateTagDraft checks d against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTagDraft(d: TagDraft): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  dqlSlugTextCheck.check(v, "tag.draft.flat", "name", d.name);
+  return v;
+}
+
+/**
+ * validateTagDraftNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTagDraftNested(n: TagDraftNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  dqlSlugTextCheck.check(v, "tag.draft.nested", "name", n.name);
+  if (n.postTags !== undefined) {
+    for (const [i, x] of n.postTags.entries()) {
+      v.push(...issuesAt(validatePostTagDraftForTag(x), "post_tags[" + i + "]"));
+    }
+  }
+  if (n.posts !== undefined) {
+    for (const [i, x] of n.posts.entries()) {
+      v.push(...issuesAt(validatePostLink(x), "posts[" + i + "]"));
+    }
+  }
+  return v;
+}
+
+/**
+ * validateTagDraftNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTagDraftNests(n: TagDraftNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.postTags !== undefined) {
+    for (const [i, x] of n.postTags.entries()) {
+      v.push(...issuesAt(validatePostTagDraftForTag(x), "post_tags[" + i + "]"));
+    }
+  }
+  if (n.posts !== undefined) {
+    for (const [i, x] of n.posts.entries()) {
+      v.push(...issuesAt(validatePostLink(x), "posts[" + i + "]"));
+    }
+  }
+  return v;
+}
+
+/**
+ * validateTagPartial checks p against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTagPartial(p: TagPartial): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (p.name !== undefined) {
+    dqlSlugTextCheck.check(v, "tag.partial.flat", "name", p.name);
+  }
+  return v;
+}
+
+/**
+ * validateTagPartialNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTagPartialNested(n: TagPartialNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.name !== undefined) {
+    dqlSlugTextCheck.check(v, "tag.partial.nested", "name", n.name);
+  }
+  if (n.postTags !== undefined) {
+    for (const [i, x] of n.postTags.entries()) {
+      v.push(...issuesAt(validatePostTagChangeForTag(x), "post_tags[" + i + "]"));
+    }
+  }
+  if (n.posts !== undefined) {
+    for (const [i, x] of n.posts.entries()) {
+      v.push(...issuesAt(validateTagPostsChange(x), "posts[" + i + "]"));
+    }
+  }
+  return v;
+}
+
+/**
+ * validateTagPartialNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTagPartialNests(n: TagPartialNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.postTags !== undefined) {
+    for (const [i, x] of n.postTags.entries()) {
+      v.push(...issuesAt(validatePostTagChangeForTag(x), "post_tags[" + i + "]"));
+    }
+  }
+  if (n.posts !== undefined) {
+    for (const [i, x] of n.posts.entries()) {
+      v.push(...issuesAt(validateTagPostsChange(x), "posts[" + i + "]"));
+    }
+  }
+  return v;
+}
+
+/** validateTagLink checks the Draft l creates or the Partial it updates (§10.5). */
+export function validateTagLink(l: TagLink): ValidationIssue[] {
+  if (l.kind === "create") return validateTagDraft(l.draft);
+  return [];
+}
+
+/** validateTagPostsChange checks the Draft c creates or the Partial it updates (§10.5). */
+export function validateTagPostsChange(c: TagPostsChange): ValidationIssue[] {
+  if (c.kind === "create") return validatePostDraft(c.draft);
+  return [];
+}
+
+/** validateTagRef checks the Draft r creates or the Partial it updates (§10.5). */
+export function validateTagRef(r: TagRef): ValidationIssue[] {
+  if (r.kind === "create") return validateTagDraft(r.draft);
+  return [];
+}
 
 /** TagDraft converts TagDraft values to other shapes (§14.9). */
 export const TagDraft = {

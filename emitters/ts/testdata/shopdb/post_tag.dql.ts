@@ -5,9 +5,9 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Keyed } from "@dql/runtime";
-import type { PostFull, PostPartial, PostRef } from "./post.dql.ts";
-import type { TagFull, TagPartial, TagRef } from "./tag.dql.ts";
+import { type Keyed, type ValidationIssue, issuesAt } from "@dql/runtime";
+import { type PostFull, type PostPartial, type PostRef, validatePostPartial, validatePostRef } from "./post.dql.ts";
+import { type TagFull, type TagPartial, type TagRef, validateTagPartial, validateTagRef } from "./tag.dql.ts";
 
 /** PostTagDraft is the shape post_tag.draft.flat of shop.app.post_tags. */
 export interface PostTagDraft {
@@ -103,6 +103,156 @@ export type PostTagPostChange =
 /** PostTagTagChange holds one change to a related shop.app.tags: update (§14.5, §14.6). */
 export type PostTagTagChange =
   | { kind: "update"; partial: TagPartial };
+
+/**
+ * validatePostTagDraft checks d against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagDraft(d: PostTagDraft): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validatePostTagDraftForPost checks p against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagDraftForPost(p: PostTagDraftForPost): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validatePostTagDraftForTag checks t against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagDraftForTag(t: PostTagDraftForTag): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validatePostTagDraftNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagDraftNested(n: PostTagDraftNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.post !== undefined) {
+    v.push(...issuesAt(validatePostRef(n.post), "post"));
+  }
+  if (n.tag !== undefined) {
+    v.push(...issuesAt(validateTagRef(n.tag), "tag"));
+  }
+  return v;
+}
+
+/**
+ * validatePostTagDraftNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagDraftNests(n: PostTagDraftNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.post !== undefined) {
+    v.push(...issuesAt(validatePostRef(n.post), "post"));
+  }
+  if (n.tag !== undefined) {
+    v.push(...issuesAt(validateTagRef(n.tag), "tag"));
+  }
+  return v;
+}
+
+/**
+ * validatePostTagPartial checks p against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagPartial(p: PostTagPartial): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validatePostTagPartialForPost checks p against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagPartialForPost(p: PostTagPartialForPost): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validatePostTagPartialForTag checks t against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagPartialForTag(t: PostTagPartialForTag): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validatePostTagPartialNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagPartialNested(n: PostTagPartialNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.post !== undefined) {
+    v.push(...issuesAt(validatePostTagPostChange(n.post), "post"));
+  }
+  if (n.tag !== undefined) {
+    v.push(...issuesAt(validatePostTagTagChange(n.tag), "tag"));
+  }
+  return v;
+}
+
+/**
+ * validatePostTagPartialNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostTagPartialNests(n: PostTagPartialNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.post !== undefined) {
+    v.push(...issuesAt(validatePostTagPostChange(n.post), "post"));
+  }
+  if (n.tag !== undefined) {
+    v.push(...issuesAt(validatePostTagTagChange(n.tag), "tag"));
+  }
+  return v;
+}
+
+/** validatePostTagChangeForPost checks the Draft p creates or the Partial it updates (§10.5). */
+export function validatePostTagChangeForPost(p: PostTagChangeForPost): ValidationIssue[] {
+  if (p.kind === "create") return validatePostTagDraftForPost(p.draft);
+  if (p.kind === "update") return validatePostTagPartialForPost(p.partial);
+  return [];
+}
+
+/** validatePostTagChangeForTag checks the Draft t creates or the Partial it updates (§10.5). */
+export function validatePostTagChangeForTag(t: PostTagChangeForTag): ValidationIssue[] {
+  if (t.kind === "create") return validatePostTagDraftForTag(t.draft);
+  if (t.kind === "update") return validatePostTagPartialForTag(t.partial);
+  return [];
+}
+
+/** validatePostTagPostChange checks the Draft c creates or the Partial it updates (§10.5). */
+export function validatePostTagPostChange(c: PostTagPostChange): ValidationIssue[] {
+  if (c.kind === "update") return validatePostPartial(c.partial);
+  return [];
+}
+
+/** validatePostTagTagChange checks the Draft c creates or the Partial it updates (§10.5). */
+export function validatePostTagTagChange(c: PostTagTagChange): ValidationIssue[] {
+  if (c.kind === "update") return validateTagPartial(c.partial);
+  return [];
+}
 
 /** PostTagDraft converts PostTagDraft values to other shapes (§14.9). */
 export const PostTagDraft = {

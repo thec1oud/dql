@@ -69,6 +69,7 @@ func (g *generator) domain(f *file, q *irv1.QualifiedName, d *irv1.Domain) {
 	base = parenthesize(base)
 	f.printf("/** %s is the domain %s. */\n", name, displayName(q))
 	f.printf("export type %s = %s & { readonly __domain: %s };\n\n", name, base, strconv.Quote(displayName(q)))
+	g.domainParse(f, q, d)
 }
 
 // composite generates an interface of the attributes in their order (§8.5).

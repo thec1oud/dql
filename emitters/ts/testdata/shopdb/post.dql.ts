@@ -5,11 +5,12 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Keyed, Temporal } from "@dql/runtime";
+import { type Keyed, type Temporal, type ValidationIssue, issuesAt } from "@dql/runtime";
+import { dqlPostsTitleCheck } from "./dql-checks.dql.ts";
 import type { MoneyAmount, PostStatus } from "./dql-types.dql.ts";
-import type { PostTagChangeForPost, PostTagDraftForPost, PostTagFull } from "./post_tag.dql.ts";
-import type { TagDraft, TagFull, TagKey, TagLink } from "./tag.dql.ts";
-import type { UserDraft, UserFull, UserKey, UserPartial, UserRef } from "./user.dql.ts";
+import { type PostTagChangeForPost, type PostTagDraftForPost, type PostTagFull, validatePostTagChangeForPost, validatePostTagDraftForPost } from "./post_tag.dql.ts";
+import { type TagDraft, type TagFull, type TagKey, type TagLink, validateTagDraft, validateTagLink } from "./tag.dql.ts";
+import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserRef, validateUserDraft, validateUserPartial, validateUserRef } from "./user.dql.ts";
 
 /** PostDraft is the shape post.draft.flat of shop.app.posts. */
 export interface PostDraft {
@@ -180,6 +181,232 @@ export type PostTagsChange =
   | { kind: "link"; key: TagKey }
   | { kind: "create"; draft: TagDraft }
   | { kind: "unlink"; key: TagKey };
+
+/**
+ * validatePostDraft checks d against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostDraft(d: PostDraft): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  dqlPostsTitleCheck.check(v, "post.draft.flat", "title", d.title);
+  return v;
+}
+
+/**
+ * validatePostDraftForAuthor checks a against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostDraftForAuthor(a: PostDraftForAuthor): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  dqlPostsTitleCheck.check(v, "post.draft.flat.for.author", "title", a.title);
+  return v;
+}
+
+/**
+ * validatePostDraftForEditor checks e against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostDraftForEditor(e: PostDraftForEditor): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  dqlPostsTitleCheck.check(v, "post.draft.flat.for.editor", "title", e.title);
+  return v;
+}
+
+/**
+ * validatePostDraftNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostDraftNested(n: PostDraftNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  dqlPostsTitleCheck.check(v, "post.draft.nested", "title", n.title);
+  if (n.author !== undefined) {
+    v.push(...issuesAt(validateUserRef(n.author), "author"));
+  }
+  if (n.editor !== undefined) {
+    v.push(...issuesAt(validateUserRef(n.editor), "editor"));
+  }
+  if (n.postTags !== undefined) {
+    for (const [i, x] of n.postTags.entries()) {
+      v.push(...issuesAt(validatePostTagDraftForPost(x), "post_tags[" + i + "]"));
+    }
+  }
+  if (n.tags !== undefined) {
+    for (const [i, x] of n.tags.entries()) {
+      v.push(...issuesAt(validateTagLink(x), "tags[" + i + "]"));
+    }
+  }
+  return v;
+}
+
+/**
+ * validatePostDraftNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostDraftNests(n: PostDraftNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.author !== undefined) {
+    v.push(...issuesAt(validateUserRef(n.author), "author"));
+  }
+  if (n.editor !== undefined) {
+    v.push(...issuesAt(validateUserRef(n.editor), "editor"));
+  }
+  if (n.postTags !== undefined) {
+    for (const [i, x] of n.postTags.entries()) {
+      v.push(...issuesAt(validatePostTagDraftForPost(x), "post_tags[" + i + "]"));
+    }
+  }
+  if (n.tags !== undefined) {
+    for (const [i, x] of n.tags.entries()) {
+      v.push(...issuesAt(validateTagLink(x), "tags[" + i + "]"));
+    }
+  }
+  return v;
+}
+
+/**
+ * validatePostPartial checks p against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostPartial(p: PostPartial): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (p.title !== undefined) {
+    dqlPostsTitleCheck.check(v, "post.partial.flat", "title", p.title);
+  }
+  return v;
+}
+
+/**
+ * validatePostPartialForAuthor checks a against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostPartialForAuthor(a: PostPartialForAuthor): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (a.title !== undefined) {
+    dqlPostsTitleCheck.check(v, "post.partial.flat.for.author", "title", a.title);
+  }
+  return v;
+}
+
+/**
+ * validatePostPartialForEditor checks e against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostPartialForEditor(e: PostPartialForEditor): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (e.title !== undefined) {
+    dqlPostsTitleCheck.check(v, "post.partial.flat.for.editor", "title", e.title);
+  }
+  return v;
+}
+
+/**
+ * validatePostPartialNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostPartialNested(n: PostPartialNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.title !== undefined) {
+    dqlPostsTitleCheck.check(v, "post.partial.nested", "title", n.title);
+  }
+  if (n.author !== undefined) {
+    v.push(...issuesAt(validatePostAuthorChange(n.author), "author"));
+  }
+  if (n.editor !== undefined) {
+    v.push(...issuesAt(validatePostEditorChange(n.editor), "editor"));
+  }
+  if (n.postTags !== undefined) {
+    for (const [i, x] of n.postTags.entries()) {
+      v.push(...issuesAt(validatePostTagChangeForPost(x), "post_tags[" + i + "]"));
+    }
+  }
+  if (n.tags !== undefined) {
+    for (const [i, x] of n.tags.entries()) {
+      v.push(...issuesAt(validatePostTagsChange(x), "tags[" + i + "]"));
+    }
+  }
+  return v;
+}
+
+/**
+ * validatePostPartialNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validatePostPartialNests(n: PostPartialNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.author !== undefined) {
+    v.push(...issuesAt(validatePostAuthorChange(n.author), "author"));
+  }
+  if (n.editor !== undefined) {
+    v.push(...issuesAt(validatePostEditorChange(n.editor), "editor"));
+  }
+  if (n.postTags !== undefined) {
+    for (const [i, x] of n.postTags.entries()) {
+      v.push(...issuesAt(validatePostTagChangeForPost(x), "post_tags[" + i + "]"));
+    }
+  }
+  if (n.tags !== undefined) {
+    for (const [i, x] of n.tags.entries()) {
+      v.push(...issuesAt(validatePostTagsChange(x), "tags[" + i + "]"));
+    }
+  }
+  return v;
+}
+
+/** validatePostAuthorChange checks the Draft c creates or the Partial it updates (§10.5). */
+export function validatePostAuthorChange(c: PostAuthorChange): ValidationIssue[] {
+  if (c.kind === "create") return validateUserDraft(c.draft);
+  if (c.kind === "update") return validateUserPartial(c.partial);
+  return [];
+}
+
+/** validatePostChangeForAuthor checks the Draft a creates or the Partial it updates (§10.5). */
+export function validatePostChangeForAuthor(a: PostChangeForAuthor): ValidationIssue[] {
+  if (a.kind === "create") return validatePostDraftForAuthor(a.draft);
+  if (a.kind === "update") return validatePostPartialForAuthor(a.partial);
+  return [];
+}
+
+/** validatePostChangeForEditor checks the Draft e creates or the Partial it updates (§10.5). */
+export function validatePostChangeForEditor(e: PostChangeForEditor): ValidationIssue[] {
+  if (e.kind === "create") return validatePostDraftForEditor(e.draft);
+  if (e.kind === "update") return validatePostPartialForEditor(e.partial);
+  return [];
+}
+
+/** validatePostEditorChange checks the Draft c creates or the Partial it updates (§10.5). */
+export function validatePostEditorChange(c: PostEditorChange): ValidationIssue[] {
+  if (c.kind === "create") return validateUserDraft(c.draft);
+  if (c.kind === "update") return validateUserPartial(c.partial);
+  return [];
+}
+
+/** validatePostLink checks the Draft l creates or the Partial it updates (§10.5). */
+export function validatePostLink(l: PostLink): ValidationIssue[] {
+  if (l.kind === "create") return validatePostDraft(l.draft);
+  return [];
+}
+
+/** validatePostRef checks the Draft r creates or the Partial it updates (§10.5). */
+export function validatePostRef(r: PostRef): ValidationIssue[] {
+  if (r.kind === "create") return validatePostDraft(r.draft);
+  return [];
+}
+
+/** validatePostTagsChange checks the Draft c creates or the Partial it updates (§10.5). */
+export function validatePostTagsChange(c: PostTagsChange): ValidationIssue[] {
+  if (c.kind === "create") return validateTagDraft(c.draft);
+  return [];
+}
 
 /** PostDraft converts PostDraft values to other shapes (§14.9). */
 export const PostDraft = {

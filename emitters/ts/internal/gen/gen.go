@@ -74,6 +74,7 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 	g.version()
 	g.types()
 	g.shapes()
+	g.validators()
 	g.conversions()
 	g.companions()
 	g.merges()
@@ -103,6 +104,12 @@ type generator struct {
 	// reported holds each diagnostic's code, target and message, so that a
 	// column every shape of an entity holds reports its type once.
 	reported map[string]bool
+	// checkFile is dql-checks.dql.ts, and checks names each constraint's
+	// check by its qualified name, "" for one that cannot be checked;
+	// checkNames are the names taken.
+	checkFile  *file
+	checks     map[string]string
+	checkNames map[string]bool
 }
 
 // decl is a module-level name: what declares it, for diagnostics, and the
@@ -123,8 +130,12 @@ func keyOf(q *irv1.QualifiedName) key {
 // named is an enum, domain or composite type a type can reference.
 type named struct {
 	words []string
-	// base is a domain's base type, which merges compare by (§8.9).
-	base *irv1.Type
+	// base is a domain's base type, which merges compare by (§8.9), and q
+	// and constraints its name and constraints, which validators check
+	// (§10.5).
+	base        *irv1.Type
+	q           *irv1.QualifiedName
+	constraints []*irv1.Constraint
 }
 
 // reserved are the names generated code takes from the runtime and from
@@ -139,7 +150,7 @@ var reserved = []string{
 }
 
 func newGenerator(b *irv1.Bundle, o Options) *generator {
-	g := &generator{b: b, o: o, named: map[key]named{}, decls: map[string]decl{}}
+	g := &generator{b: b, o: o, named: map[key]named{}, decls: map[string]decl{}, checks: map[string]string{}, checkNames: map[string]bool{}}
 	for _, r := range reserved {
 		what := "the TypeScript global " + r
 		if slices.Contains(runtimeNames, r) {
@@ -152,7 +163,7 @@ func newGenerator(b *irv1.Bundle, o Options) *generator {
 			g.named[keyOf(q(e.GetName().GetStored()))] = named{words: e.GetHostName().GetWords()}
 		}
 		for _, d := range ns.GetDomains() {
-			g.named[keyOf(q(d.GetName().GetStored()))] = named{words: d.GetHostName().GetWords(), base: d.GetBase()}
+			g.named[keyOf(q(d.GetName().GetStored()))] = named{words: d.GetHostName().GetWords(), base: d.GetBase(), q: q(d.GetName().GetStored()), constraints: d.GetConstraints()}
 		}
 		for _, c := range ns.GetComposites() {
 			g.named[keyOf(q(c.GetName().GetStored()))] = named{words: c.GetHostName().GetWords()}
@@ -222,6 +233,9 @@ type file struct {
 	// sideEffects are modules f imports only to run them.
 	sideEffects map[string]bool
 	body        bytes.Buffer
+	// internal leaves the file out of the index: its names are for the
+	// package's own modules.
+	internal bool
 }
 
 func (g *generator) newFile(name string) *file {
@@ -351,7 +365,9 @@ func (g *generator) index() {
 	f := &file{name: Index, runtime: map[string]bool{}, modules: map[string]map[string]bool{}, sideEffects: map[string]bool{}}
 	names := make([]string, 0, len(g.files))
 	for _, o := range g.files {
-		names = append(names, o.name)
+		if !o.internal {
+			names = append(names, o.name)
+		}
 	}
 	slices.Sort(names)
 	for _, n := range names {
