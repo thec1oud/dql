@@ -16,7 +16,9 @@
 // sleeps in an injected delay, so that each infrastructure error is the
 // server's or the driver's own (§23.1). An operation step runs its steps as
 // one operation, in which a pair-form transaction left open is rolled back
-// and reported (§22.3).
+// and reported (§22.3). A step of op sql runs its dialect's statements on
+// the database, as a scenario that puts a value the schema's assertions
+// rule out in place does (§13).
 package harness
 
 import (
@@ -116,6 +118,9 @@ type Step struct {
 	// transaction, runs Steps on it and ends it as End says: commit,
 	// rollback, or, when empty, not at all, leaving it open.
 	End string `yaml:"end"`
+
+	// SQL holds a sql step's statements by dialect.
+	SQL map[string]string `yaml:"sql"`
 }
 
 // Filter is a predicate of a select step: the column's operator Op, as eq
@@ -161,7 +166,8 @@ type Assign struct {
 // change type's constructors, as shopdb.PostAuthorLink, and opt.Some for
 // each optional nest's type, as opt.Some[shopdb.PostAuthorChange]), and how
 // to make the database at dsn fail or stall its next writes, and to end
-// every other connection to it. Shapes
+// every other connection to it. Dialect names the dialect of its DDL and of
+// sql steps, and Exec runs statements on the database at dsn. Shapes
 // holds its read shapes, and Selects the Select that reads each, by the
 // shape's name, instantiated for it, as
 // shopdb.Select[shopdb.TenantFull, shopdb.TenantsTable]. Open opens the
@@ -170,6 +176,8 @@ type Assign struct {
 // and Replay pauses or resumes the replay of the replica at dsn.
 type Schema struct {
 	DDL       []string
+	Dialect   string
+	Exec      func(ctx context.Context, dsn, sql string) error
 	Open      func(ctx context.Context, dsn string, replicas []string, maxConns int, opts ...dql.Option) (db any, exec *dql.Executor, err error)
 	Replay    func(ctx context.Context, dsn string, pause bool) error
 	Tables    map[string]any
@@ -221,6 +229,8 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 	r := &runner{ctx: ctx, db: reflect.ValueOf(t.DB), tables: s.Tables, saved: map[string]any{}, events: t.Events,
 		inject:    func(in Inject) error { return s.Inject(ctx, t.DSN, in) },
 		terminate: func() error { return s.Terminate(ctx, t.DSN) },
+		exec:      func(sql string) error { return s.Exec(ctx, t.DSN, sql) },
+		dialect:   s.Dialect,
 		operation: func(ctx context.Context) (context.Context, func()) { return t.Exec.Operation(ctx) },
 		replay:    func(pause bool) error { return s.Replay(ctx, t.ReplicaDSN, pause) },
 		base:      ctx,
@@ -253,6 +263,9 @@ type runner struct {
 	saved     map[string]any
 	inject    func(Inject) error
 	terminate func() error
+	// exec runs a sql step's statements, those of dialect.
+	exec    func(sql string) error
+	dialect string
 	// operation begins an operation on ctx and returns the function that
 	// ends it.
 	operation func(ctx context.Context) (context.Context, func())
@@ -358,6 +371,14 @@ func (r *runner) control(st Step) ([]string, bool) {
 			return []string{err.Error()}, true
 		}
 		r.paused = pause
+	case "sql":
+		sql, ok := st.SQL[r.dialect]
+		if !ok {
+			return []string{"no sql for " + r.dialect}, true
+		}
+		if err := r.exec(sql); err != nil {
+			return []string{err.Error()}, true
+		}
 	case "sleep":
 		d, err := time.ParseDuration(st.Duration)
 		if err != nil {
@@ -1079,7 +1100,8 @@ func normalize(v any) any {
 // none (no row), value, count (how many rows), statements (how many queries
 // the step ran), events (the hook events it fired, in order), and error
 // (class, constraint, kind, field, misuse, for the runtime's errors of
-// misuse, and hides, a value the error's text must not show).
+// misuse, a decode error's shape, reason and assertion, and hides, a value
+// the error's text must not show).
 func (r *runner) compare(st Step, result any, err error) []string {
 	want, ok := st.Expect["error"]
 	if err != nil {
@@ -1229,6 +1251,10 @@ func (r *runner) compareError(want any, err error) []string {
 	var vs dql.ValidationErrors
 	if errors.As(err, &vs) {
 		got["kind"], got["field"] = string(vs[0].Kind), vs[0].Field
+	}
+	var de *dql.DecodeError
+	if errors.As(err, &de) {
+		got["shape"], got["field"], got["reason"], got["assertion"] = de.Shape, de.Field, string(de.Reason), de.Assertion
 	}
 	w, ok := want.(map[string]any)
 	if !ok {
