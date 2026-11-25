@@ -322,6 +322,7 @@ func uniqueIndex(x introspect.Index) *irv1.Uniqueness {
 	}
 	if x.Predicate != "" {
 		u.Predicate = &irv1.NativeText{Native: x.Predicate}
+		pgsql.RecognizePredicate(u, x.Predicate)
 	}
 	return u
 }

@@ -135,3 +135,16 @@ func TestUnwrap(t *testing.T) {
 		}
 	}
 }
+
+// TestPredicateColumns records what a partial unique index's predicate
+// requires of its columns (§21.3).
+func TestPredicateColumns(t *testing.T) {
+	s := snapshot(t, `{"app.t": {"kind": "table", "table": {"schema": "app", "name": "t",
+		"columns": [{"name": "a", "type": "integer"}, {"name": "gone", "type": "timestamp with time zone"}, {"name": "off", "type": "boolean"}],
+		"indexes": [{"name": "t_a_live", "unique": true, "method": "btree", "columns": "(a)", "where": "((gone IS NULL) AND (NOT off))"}]}}}`)
+	c, _ := mapped(t, s, Options{})
+	u := c.GetNamespaces()[0].GetTables()[0].GetUniqueness()[0]
+	if strings.Join(u.GetPredicateNullColumns(), ",") != "gone" || strings.Join(u.GetPredicateNotTrueColumns(), ",") != "off" {
+		t.Errorf("predicate columns %v %v", u.GetPredicateNullColumns(), u.GetPredicateNotTrueColumns())
+	}
+}
