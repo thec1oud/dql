@@ -21,7 +21,7 @@ import {
   weakRaw,
   type Weak,
 } from "../src/index.js";
-import { chooseTemporal } from "../src/temporal.js";
+import { chooseTemporal, loadPolyfill } from "../src/temporal.js";
 
 describe("version", () => {
   test("the implemented versions pass", () => {
@@ -55,6 +55,11 @@ describe("Temporal", () => {
     expect(await chooseTemporal(native, () => Promise.reject(new Error("loaded")))).toBe(native);
     const poly = { name: "polyfill" };
     expect(await chooseTemporal<object>(undefined, () => Promise.resolve(poly))).toBe(poly);
+  });
+
+  test("the polyfill loads", async () => {
+    const P = await loadPolyfill();
+    expect(P.PlainDate.from("2020-02-29").dayOfWeek).toBe(6);
   });
 });
 

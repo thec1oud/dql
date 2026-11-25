@@ -9,8 +9,13 @@ import type { Temporal as Polyfill } from "temporal-polyfill";
  */
 export const Temporal: typeof Polyfill = await chooseTemporal(
   (globalThis as { Temporal?: typeof Polyfill }).Temporal,
-  async () => (await import("temporal-polyfill")).Temporal,
+  loadPolyfill,
 );
+
+/** loadPolyfill imports temporal-polyfill's Temporal. */
+export async function loadPolyfill(): Promise<typeof Polyfill> {
+  return (await import("temporal-polyfill")).Temporal;
+}
 
 /** chooseTemporal returns native when it is present, else what load gives. */
 export async function chooseTemporal<T>(native: T | undefined, load: () => Promise<T>): Promise<T> {
