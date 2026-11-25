@@ -1,0 +1,25 @@
+{
+  "name": "dql-runtime-ts",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "dql"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "typecheck": "tsc -p dql/tsconfig.test.json",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "test:bun": "bun --bun vitest run",
+    "test:deno": "deno run -A node_modules/vitest/vitest.mjs run"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@vitest/coverage-v8": "5.1.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@dql/runtime",
+  "version": "0.1.0",
+  "description": "The dql runtime for TypeScript: values, errors, validation and execution for generated code",
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "temporal-polyfill": "1.0.8"
+  }
+}
