@@ -247,7 +247,7 @@ func TestErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = c.Exec(ctx, "INSERT INTO item (id, name) VALUES (1, NULL)", nil)
+	_, err = c.Exec(ctx, "INSERT INTO item (id, name) VALUES (1, NULL)", nil, nil)
 	n, ok := d.Native(err)
 	if !ok || n.Code != "23502" || n.Schema != "public" || n.Table != "item" || n.Column != "name" || d.Broken(err) {
 		t.Fatalf("%+v %v", n, err)
@@ -258,7 +258,7 @@ func TestErrors(t *testing.T) {
 
 	// A terminated backend reports 57P01, and then the connection is broken.
 	var pid int64
-	rows, _ := c.Query(ctx, "SELECT pg_backend_pid()", nil)
+	rows, _ := c.Query(ctx, "SELECT pg_backend_pid()", nil, nil)
 	for rows.Next() {
 		pid = rows.Row()[0].(int64)
 	}
@@ -266,11 +266,11 @@ func TestErrors(t *testing.T) {
 	admin, _ := pgx.Connect(ctx, dsn)
 	defer admin.Close(ctx)
 	admin.Exec(ctx, "SELECT pg_terminate_backend($1)", pid)
-	_, err = c.Exec(ctx, "SELECT 1", nil)
+	_, err = c.Exec(ctx, "SELECT 1", nil, nil)
 	if n, _ := d.Native(err); n.Code != "57P01" && !d.Broken(err) {
 		t.Fatalf("terminated: %v", err)
 	}
-	_, err = c.Exec(ctx, "SELECT 1", nil)
+	_, err = c.Exec(ctx, "SELECT 1", nil, nil)
 	if !d.Broken(err) {
 		t.Fatalf("closed: %v", err)
 	}
@@ -297,7 +297,7 @@ func TestErrors(t *testing.T) {
 	defer c.Release()
 	c.(*conn).c.Conn().Close(ctx)
 	for _, f := range []func() error{
-		func() error { _, err := c.Query(ctx, "SELECT 1", nil); return err },
+		func() error { _, err := c.Query(ctx, "SELECT 1", nil, nil); return err },
 		func() error { return c.Begin(ctx, dql.TxOptions{}) },
 		func() error { return c.Commit(ctx) },
 		func() error { return c.Savepoint(ctx, "s") },
@@ -320,12 +320,12 @@ func TestStatements(t *testing.T) {
 	defer c.Release()
 	run := func(sql string) {
 		t.Helper()
-		if _, err := c.Exec(ctx, sql, nil); err != nil {
+		if _, err := c.Exec(ctx, sql, nil, nil); err != nil {
 			t.Fatalf("%s: %v", sql, err)
 		}
 	}
 	count := func() int64 {
-		rows, err := c.Query(ctx, "SELECT count(*) FROM item", nil)
+		rows, err := c.Query(ctx, "SELECT count(*) FROM item", nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -356,16 +356,16 @@ func TestStatements(t *testing.T) {
 	if n := count(); n != 0 {
 		t.Fatal(n)
 	}
-	n, err := c.Exec(ctx, "INSERT INTO item (id, name) VALUES ($1, $2), ($3, $4)", []any{int64(1), "a", int64(2), "b"})
+	n, err := c.Exec(ctx, "INSERT INTO item (id, name) VALUES ($1, $2), ($3, $4)", []any{int64(1), "a", int64(2), "b"}, nil)
 	if err != nil || n != 2 {
 		t.Fatal(n, err)
 	}
-	if _, err := c.Query(ctx, "SELECT nonsense", nil); err == nil {
+	if _, err := c.Query(ctx, "SELECT nonsense", nil, nil); err == nil {
 		t.Error("bad query ran")
 	}
 
 	// A value that does not decode stops the rows with its error.
-	r, err := c.Query(ctx, "SELECT 1::int4 AS n UNION ALL SELECT 2", nil)
+	r, err := c.Query(ctx, "SELECT 1::int4 AS n UNION ALL SELECT 2", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -466,7 +466,7 @@ func TestValues(t *testing.T) {
 		{"pair", dql.Row{dql.Row{int32(1), nil}, mood("sad"), json.RawMessage(`[1]`)}, dql.Row{dql.Row{int64(1), nil}, "sad", json.RawMessage(`[1]`)}},
 	}
 	for _, tc := range cases {
-		rows, err := c.Query(ctx, "SELECT $1::"+tc.typ, []any{tc.arg})
+		rows, err := c.Query(ctx, "SELECT $1::"+tc.typ, []any{tc.arg}, nil)
 		if err != nil {
 			t.Errorf("%s %v: %v", tc.typ, tc.arg, err)
 			continue
@@ -496,7 +496,7 @@ func TestValues(t *testing.T) {
 		"SELECT '{[1,2)}'::floatmultirange":                nil,
 		"SELECT '(1,2)'::point":                            pgtype.Point{P: pgtype.Vec2{X: 1, Y: 2}, Valid: true},
 	} {
-		rows, err := c.Query(ctx, sql, nil)
+		rows, err := c.Query(ctx, sql, nil, nil)
 		if err != nil {
 			t.Fatalf("%s: %v", sql, err)
 		}

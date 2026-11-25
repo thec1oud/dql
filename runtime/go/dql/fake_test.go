@@ -23,6 +23,8 @@ type fakeDriver struct {
 	// rollback to, release, acquire, or rows (after the rows are read);
 	// "acquire <dsn>" fails acquiring from one server.
 	fail map[string]error
+	// types are the argument types of each statement run, in order.
+	types [][]string
 }
 
 type fakeNative struct{ n NativeError }
@@ -35,6 +37,12 @@ func (d *fakeDriver) record(format string, args ...any) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.log = append(d.log, fmt.Sprintf(format, args...))
+}
+
+func (d *fakeDriver) recordTypes(types []string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.types = append(d.types, types)
 }
 
 func (d *fakeDriver) failure(op string) error {
@@ -126,8 +134,9 @@ func (c *fakeConn) op(name string, detail ...string) error {
 	return c.p.d.failure(name)
 }
 
-func (c *fakeConn) Query(_ context.Context, sql string, args []any) (Rows, error) {
+func (c *fakeConn) Query(_ context.Context, sql string, args []any, types []string) (Rows, error) {
 	c.p.d.record("%s query %s %v", c.id, sql, args)
+	c.p.d.recordTypes(types)
 	rows, _, err := c.p.d.answer(c.p.cfg.DSN, sql, args)
 	if err != nil {
 		return nil, err
@@ -135,8 +144,9 @@ func (c *fakeConn) Query(_ context.Context, sql string, args []any) (Rows, error
 	return &fakeRows{rows: rows, err: c.p.d.failure("rows")}, nil
 }
 
-func (c *fakeConn) Exec(_ context.Context, sql string, args []any) (int64, error) {
+func (c *fakeConn) Exec(_ context.Context, sql string, args []any, types []string) (int64, error) {
 	c.p.d.record("%s exec %s %v", c.id, sql, args)
+	c.p.d.recordTypes(types)
 	_, n, err := c.p.d.answer(c.p.cfg.DSN, sql, args)
 	return n, err
 }

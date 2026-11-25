@@ -192,7 +192,7 @@ func (c *conn) call(ctx context.Context, sql string, args []any) (*Expectation, 
 	return c.f.answer(Call{Query: dql.QueryName(ctx), SQL: sql, Args: args, InTx: c.inTx})
 }
 
-func (c *conn) Query(ctx context.Context, sql string, args []any) (dql.Rows, error) {
+func (c *conn) Query(ctx context.Context, sql string, args []any, _ []string) (dql.Rows, error) {
 	x, err := c.call(ctx, sql, args)
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (c *conn) Query(ctx context.Context, sql string, args []any) (dql.Rows, err
 	return &rows{rows: x.rows}, nil
 }
 
-func (c *conn) Exec(ctx context.Context, sql string, args []any) (int64, error) {
+func (c *conn) Exec(ctx context.Context, sql string, args []any, _ []string) (int64, error) {
 	x, err := c.call(ctx, sql, args)
 	if err != nil {
 		return 0, err

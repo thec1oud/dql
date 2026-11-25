@@ -191,7 +191,7 @@ func TestBuilderHelpers(t *testing.T) {
 		{Related[userE]("rel.users.posts", title, title).Node(), `EXISTS (SELECT 1 FROM "app"."posts" p WHERE p."author_id" = u."id" AND p."title" = $1 AND p."title" = $2)`},
 		{Ordered[userE]("order.desc", "col.users.id").node, `u."id" DESC`},
 	} {
-		a, err := table.Assemble([]Node{c.n}, nil, nil)
+		a, err := table.Assemble([]Node{c.n}, nil, nil, nil)
 		if err != nil || a.SQL != c.want {
 			t.Errorf("%v\n got %s\nwant %s", err, a.SQL, c.want)
 		}

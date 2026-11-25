@@ -136,7 +136,7 @@ func (e *Executor) lag(ctx context.Context, r *replica) (time.Duration, bool) {
 
 // queryOne returns the first value of the first row of a statement.
 func queryOne(ctx context.Context, c Conn, sql string, args []any) (any, error) {
-	rows, err := c.Query(ctx, sql, args)
+	rows, err := c.Query(ctx, sql, args, nil)
 	if err != nil {
 		return nil, err
 	}
