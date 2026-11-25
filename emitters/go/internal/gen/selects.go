@@ -25,6 +25,7 @@ func (g *generator) selects(es []*entity) {
 	}
 	f := g.newFile("dql-select")
 	dql := f.use(pkgDQL, "dql")
+	softDelete := slices.ContainsFunc(es, func(e *entity) bool { return e.softDelete != nil })
 	ctx := f.use("context", "context")
 	g.declare("Select", "the function Select", nil)
 	g.declare("Builder", "the type Builder", nil)
@@ -79,6 +80,16 @@ func (b Builder[T, E]) Consistency(c %[1]s.Consistency) Builder[T, E] {
 		if g.fragmentIDs[m.fragment] {
 			f.printf("// %s %s.\nfunc (b Builder[T, E]) %s() Builder[T, E] { return Builder[T, E]{b.b.%s()} }\n\n", m.name, m.doc, m.name, m.name)
 		}
+	}
+	if softDelete {
+		f.printf(`// WithDeleted keeps soft-deleted rows too (§21.3).
+func (b Builder[T, E]) WithDeleted() Builder[T, E] { return Builder[T, E]{b.b.WithDeleted()} }
+
+// OnlyDeleted keeps only soft-deleted rows; a table without soft delete has
+// none (§21.3).
+func (b Builder[T, E]) OnlyDeleted() Builder[T, E] { return Builder[T, E]{b.b.OnlyDeleted()} }
+
+`)
 	}
 	f.printf(`// One returns the one row: NotFound for none and TooManyRows for more (§19).
 func (b Builder[T, E]) One(ctx %[2]s.Context) (T, error) { return b.b.One(ctx) }
@@ -176,6 +187,13 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 		return true
 	}
 	pred := fmt.Sprintf("%s.Pred[%s]", dql, typ)
+	if c := e.softDelete; c != nil {
+		test := fmt.Sprintf("%s.Compare[%s](%q, %q)", dql, typ, "op.is_null", e.colFragment(c.GetName().GetStored()))
+		if c.GetType().GetBool() != nil {
+			test = fmt.Sprintf("%s.Compare[%s](%q, %q, %s.Use{Fragment: %q})", dql, typ, "op.is_distinct_from", e.colFragment(c.GetName().GetStored()), dql, "value.true")
+		}
+		fmt.Fprintf(&decls, "// visible holds for the rows of %s that are not soft-deleted (§21.3).\nfunc (%s) visible() %s { return %s }\n\n", displayName(e.q), typ, pred, test)
+	}
 	for _, c := range e.t.GetColumns() {
 		frag := e.colFragment(c.GetName().GetStored())
 		if !g.fragmentIDs[frag] {
@@ -222,20 +240,28 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 			continue
 		}
 		other := fmt.Sprintf("%s.Pred[%s]", dql, target.tableType())
-		fmt.Fprintf(&decls, `// %[1]s is relation %[2]s in builder reads (§18.2).
+		// Related rows that are soft-deleted are left out (§21.3).
+		ps, not := "ps...", ""
+		doc := ""
+		if target.softDelete != nil {
+			ps = fmt.Sprintf("append([]%s{%s{}.visible()}, ps...)...", other, target.tableType())
+			not = fmt.Sprintf("%s{}.visible(), ", target.tableType())
+			doc = "\n//\n// Soft-deleted related rows are left out (§21.3)."
+		}
+		fmt.Fprintf(&decls, `// %[1]s is relation %[2]s in builder reads (§18.2).%[8]s
 type %[1]s struct{}
 
 // Any holds where a related row exists that every predicate holds for.
-func (%[1]s) Any(ps ...%[3]s) %[4]s { return %[5]s.Related[%[6]s](%[7]q, ps...) }
+func (%[1]s) Any(ps ...%[3]s) %[4]s { return %[5]s.Related[%[6]s](%[7]q, %[9]s) }
 
 // None holds where no related row exists that every predicate holds for.
-func (%[1]s) None(ps ...%[3]s) %[4]s { return %[5]s.Not(%[5]s.Related[%[6]s](%[7]q, ps...)) }
+func (%[1]s) None(ps ...%[3]s) %[4]s { return %[5]s.Not(%[5]s.Related[%[6]s](%[7]q, %[9]s)) }
 
 // All holds where p does not fail for any related row; it holds where
 // there are none.
-func (%[1]s) All(p %[3]s) %[4]s { return %[5]s.Not(%[5]s.Related[%[6]s](%[7]q, %[5]s.Not(p))) }
+func (%[1]s) All(p %[3]s) %[4]s { return %[5]s.Not(%[5]s.Related[%[6]s](%[7]q, %[10]s%[5]s.Not(p))) }
 
-`, handle, r.GetName().GetStored(), other, pred, dql, typ, frag)
+`, handle, r.GetName().GetStored(), other, pred, dql, typ, frag, doc, ps, not)
 	}
 	f.printf("// %s is table %s in builder reads (§18.2): its columns and relations\n// make predicates and order keys on its rows.\ntype %s struct {\n%s}\n\n", typ, displayName(e.q), typ, strings.Join(fields, ""))
 	f.printf("// %s is table %s in builder reads (§18.2).\nvar %s %s\n\n", e.plural, displayName(e.q), e.plural, typ)
@@ -347,7 +373,8 @@ func (g *generator) operands(f *file, e *entity, c *irv1.Column, op string) (str
 }
 
 // sources generates the method that makes each of e's read stores a source
-// of Select: a scoped store's reads are filtered by its scope (§21.1).
+// of Select: a scoped store's reads are filtered by its scope (§21.1), and a
+// soft-delete entity's leave out deleted rows unless they ask (§21.3).
 func (g *generator) sources(e *entity) {
 	f := e.f
 	dql := f.use(pkgDQL, "dql")
@@ -360,12 +387,15 @@ func (g *generator) sources(e *entity) {
 		preds = append(preds, fmt.Sprintf("%s.Compare[%s](%q, %q, %s.Arg{Value: s.scope.%s%s}).Node()",
 			dql, e.tableType(), "op.eq", e.colFragment(fld.GetColumn()), dql, g.fieldName(e.scope, fld.GetColumn()), sensitive))
 	}
-	scope := ""
+	scope, visible := "", ""
 	if len(preds) > 0 {
 		scope = fmt.Sprintf(", Scope: []%s.Node{%s}", dql, strings.Join(preds, ", "))
 	}
-	f.printf("func (s %sReads) from(%s) %s.From { return %s.From{H: s.h%s} }\n\n", e.lower(), e.tableType(), dql, dql, scope)
+	if e.softDelete != nil {
+		visible = fmt.Sprintf(", Visible: %s{}.visible().Node()", e.tableType())
+	}
+	f.printf("func (s %sReads) from(%s) %s.From { return %s.From{H: s.h%s%s} }\n\n", e.lower(), e.tableType(), dql, dql, scope, visible)
 	if e.scope != nil {
-		f.printf("func (u %sUnscopedReads) from(%s) %s.From { return %s.From{H: u.h} }\n\n", e.lower(), e.tableType(), dql, dql)
+		f.printf("func (u %sUnscopedReads) from(%s) %s.From { return %s.From{H: u.h%s} }\n\n", e.lower(), e.tableType(), dql, dql, visible)
 	}
 }

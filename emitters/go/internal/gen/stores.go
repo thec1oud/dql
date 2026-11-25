@@ -69,8 +69,10 @@ type entity struct {
 	versioned bool
 	// sensitive holds the entity's sensitive columns (§24).
 	sensitive map[string]bool
-	entries   map[string]entry
-	order     []entry
+	// softDelete is the entity's soft-delete column, if any (§21.3).
+	softDelete *irv1.Column
+	entries    map[string]entry
+	order      []entry
 }
 
 func (e *entity) writes() bool {
@@ -91,6 +93,11 @@ func (g *generator) entities() []*entity {
 			e.draft, e.part = preset(irv1.Preset_PRESET_DRAFT, irv1.Form_FORM_FLAT), preset(irv1.Preset_PRESET_PARTIAL, irv1.Form_FORM_FLAT)
 			for _, fld := range e.key.GetFields() {
 				e.versioned = e.versioned || fld.GetRole() == irv1.FieldRole_FIELD_ROLE_EXPECTED_VERSION
+			}
+			for _, c := range t.GetColumns() {
+				if slices.ContainsFunc(c.GetAnnotations(), func(a *irv1.Annotation) bool { return a.GetKey() == "core.soft-delete" }) {
+					e.softDelete = c
+				}
 			}
 			byTable[keyOf(e.q)] = e
 			out = append(out, e)
