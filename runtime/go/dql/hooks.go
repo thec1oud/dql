@@ -155,7 +155,7 @@ func (e *Executor) startQuery(ctx context.Context, f *frame, s *Statement) (cont
 		return ctx, q
 	}
 	q.ev = QueryEvent{Query: s.Query, Kind: s.Kind, Catalog: s.Catalog, Consistency: s.Consistency, Attempt: 1, SQL: s.SQL}
-	if src := e.catalogs[s.Catalog]; src != nil {
+	if src, err := e.sourceOf(s); err == nil {
 		q.ev.Source = src.name
 	}
 	if q.ev.Consistency.level == unset {

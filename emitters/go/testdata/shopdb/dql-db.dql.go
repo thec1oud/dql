@@ -39,6 +39,11 @@ func newDB(exec *dql.Executor) DB {
 	}
 }
 
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (d DB) Raw(source string) dql.RawWriter { return dql.RawWrite(d.exec, source) }
+
 func (d DB) executor() *dql.Executor { return d.exec }
 
 // Write runs fn in a write transaction, which commits when fn returns nil
@@ -95,6 +100,11 @@ func newWriteTx(tx *dql.WriteTx) WriteTx {
 	}
 }
 
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (w WriteTx) Raw(source string) dql.RawWriter { return dql.RawWrite(w.tx, source) }
+
 // Commit commits the transaction a Begin call began.
 func (w WriteTx) Commit(ctx context.Context) error { return w.tx.Commit(ctx) }
 
@@ -127,6 +137,11 @@ func newReadTx(tx *dql.ReadTx) ReadTx {
 		Tenants:        tenantsReads{tx},
 	}
 }
+
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (r ReadTx) Raw(source string) dql.RawReader { return dql.Raw(r.tx, source) }
 
 // Commit commits the transaction a Begin call began.
 func (r ReadTx) Commit(ctx context.Context) error { return r.tx.Commit(ctx) }
@@ -166,6 +181,11 @@ func newUserScoped(exec *dql.Executor, s UserScope) UserScoped {
 		Queries:        userScopedQueries{exec, exec, s},
 	}
 }
+
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (u UserScoped) Raw(source string) dql.RawWriter { return dql.RawWrite(u.exec, source) }
 
 func (u UserScoped) executor() *dql.Executor { return u.exec }
 
@@ -229,6 +249,11 @@ func newUserScopedWriteTx(tx *dql.WriteTx, s UserScope) UserScopedWriteTx {
 	}
 }
 
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (u UserScopedWriteTx) Raw(source string) dql.RawWriter { return dql.RawWrite(u.tx, source) }
+
 // Commit commits the transaction a Begin call began.
 func (u UserScopedWriteTx) Commit(ctx context.Context) error { return u.tx.Commit(ctx) }
 
@@ -268,6 +293,11 @@ func newUserScopedReadTx(tx *dql.ReadTx, s UserScope) UserScopedReadTx {
 	}
 }
 
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (u UserScopedReadTx) Raw(source string) dql.RawReader { return dql.Raw(u.tx, source) }
+
 // Commit commits the transaction a Begin call began.
 func (u UserScopedReadTx) Commit(ctx context.Context) error { return u.tx.Commit(ctx) }
 
@@ -305,6 +335,11 @@ func newUnscopedDB(exec *dql.Executor) UnscopedDB {
 		Queries:        unscopedQueries{exec, exec},
 	}
 }
+
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (u UnscopedDB) Raw(source string) dql.RawWriter { return dql.RawWrite(u.exec, source) }
 
 func (u UnscopedDB) executor() *dql.Executor { return u.exec }
 
@@ -367,6 +402,11 @@ func newUnscopedWriteTx(tx *dql.WriteTx) UnscopedWriteTx {
 	}
 }
 
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (u UnscopedWriteTx) Raw(source string) dql.RawWriter { return dql.RawWrite(u.tx, source) }
+
 // Commit commits the transaction a Begin call began.
 func (u UnscopedWriteTx) Commit(ctx context.Context) error { return u.tx.Commit(ctx) }
 
@@ -404,6 +444,11 @@ func newUnscopedReadTx(tx *dql.ReadTx) UnscopedReadTx {
 		Queries:        unscopedQueries{tx, nil},
 	}
 }
+
+// Raw runs SQL text on the source named source: on its primary, or in
+// the transaction there that the handle or the context holds, with the
+// driver's values undecoded (§17, §22.1).
+func (u UnscopedReadTx) Raw(source string) dql.RawReader { return dql.Raw(u.tx, source) }
 
 // Commit commits the transaction a Begin call began.
 func (u UnscopedReadTx) Commit(ctx context.Context) error { return u.tx.Commit(ctx) }

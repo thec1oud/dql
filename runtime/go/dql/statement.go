@@ -45,6 +45,10 @@ type Statement struct {
 	Kind      string
 	Sensitive []bool
 	NoLog     bool
+
+	// source names the source a raw statement runs on in place of the
+	// catalog's (§22.1).
+	source string
 }
 
 // connFor returns the connection a statement runs on, and whether it is a
@@ -54,7 +58,7 @@ type Statement struct {
 // its error: it releases a pooled connection, after recording a write's
 // position in the context's session.
 func connFor(ctx context.Context, e *Executor, f *frame, s *Statement, writes bool) (c Conn, replica bool, done func(error), err error) {
-	src, err := e.source(s.Catalog)
+	src, err := e.sourceOf(s)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -124,7 +128,7 @@ func fetch(ctx context.Context, h Reader, s *Statement, limit int) (out []Row, e
 		return nil, err
 	}
 	defer func() { done(err) }()
-	src := e.catalogs[s.Catalog]
+	src, _ := e.sourceOf(s)
 	rows, err := c.Query(withQuery(ctx, s.Query), s.SQL, s.Args)
 	if err != nil {
 		return nil, e.translate(err, s.Catalog, s.Query, src)
@@ -187,7 +191,8 @@ func Exec(ctx context.Context, h Writer, s Statement) (n int64, err error) {
 	defer func() { done(err) }()
 	n, err = c.Exec(withQuery(ctx, s.Query), s.SQL, s.Args)
 	if err != nil {
-		return 0, e.translate(err, s.Catalog, s.Query, e.catalogs[s.Catalog])
+		src, _ := e.sourceOf(&s)
+		return 0, e.translate(err, s.Catalog, s.Query, src)
 	}
 	return n, nil
 }
