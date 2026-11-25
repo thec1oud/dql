@@ -3,8 +3,9 @@
 import { ambient } from "./context.js";
 import type { Row } from "./decode.js";
 import type { Conn, Sent } from "./driver.js";
-import { NotFound, TooManyRows } from "./errors.js";
+import { NotFound, TooManyRows, classOf } from "./errors.js";
 import { type Executor, type Frame, type Reader, type SourcePool, type Writer, UsageError, bind } from "./executor.js";
+import { type QueryEvent, noLog, params } from "./hooks.js";
 import { Consistency } from "./routing.js";
 
 /** rawSource is the key of the source a raw statement names in place of its catalog's (§22.1). */
@@ -51,10 +52,82 @@ interface Bound {
   readonly src: SourcePool;
 }
 
-/** bound returns h's executor, the frame a statement on h runs in, h's transaction's else the context's, and the statement's source. */
-function bound(h: Reader, s: Statement): Bound {
-  const { executor: e, frame } = h[bind]();
-  return { e, f: frame ?? ambient().frame, src: e.sourceOf(s.catalog, s[rawSource]) };
+/**
+ * observed runs a statement on h, firing the query hooks around it unless the
+ * statement opts out (§24): fn runs on the statement's connection, and count
+ * says how many rows its result holds.
+ */
+function observed<T>(h: Reader, s: Statement, writes: boolean, count: (r: T) => number, fn: (b: Bound, c: Conn) => Promise<T>): Promise<T> {
+  return noLog(s.noLog, async () => {
+    const { executor: e, frame } = h[bind]();
+    const f = frame ?? ambient().frame;
+    const run = async (onConn: (replica: boolean) => void): Promise<T> => {
+      const b: Bound = { e, f, src: e.sourceOf(s.catalog, s[rawSource]) };
+      return withConn(b, s, writes, (c, replica) => {
+        onConn(replica);
+        return fn(b, c);
+      });
+    };
+    const hooks = e.hooks;
+    if (hooks.off) {
+      return run(() => {});
+    }
+    let consistency = s.consistency ?? e.consistency;
+    if (f !== undefined && f.root.options.readOnly && f.root.consistency !== undefined) {
+      consistency = f.root.consistency;
+    }
+    if (writes || (f !== undefined && !f.root.options.readOnly)) {
+      consistency = Consistency.primary;
+    }
+    let source = "";
+    try {
+      source = e.sourceOf(s.catalog, s[rawSource]).name;
+    } catch {
+      // run fails with the same error.
+    }
+    const ev: QueryEvent = {
+      query: s.query,
+      dialect: e.dialect.name,
+      kind: s.kind ?? "",
+      catalog: s.catalog,
+      source,
+      replica: false,
+      consistency,
+      attempt: f?.root.attempt ?? 1,
+      sql: s.sql,
+      duration: 0,
+      rows: 0,
+    };
+    const ps = hooks.wantsParams ? params(s.args ?? [], s.sensitive) : undefined;
+    const start = performance.now();
+    const states = hooks.queryStart(ev, ps);
+    let replica = false;
+    let rows = 0;
+    let error: unknown;
+    try {
+      const r = await hooks.activate(states, () =>
+        run((onReplica) => {
+          replica = onReplica;
+        }),
+      );
+      rows = count(r);
+      return r;
+    } catch (err) {
+      error = err;
+      throw err;
+    } finally {
+      const cls = error === undefined ? undefined : classOf(error);
+      const end: QueryEvent = {
+        ...ev,
+        replica,
+        rows,
+        duration: performance.now() - start,
+        ...(error === undefined ? {} : { error }),
+        ...(cls === undefined ? {} : { class: cls }),
+      };
+      hooks.queryEnd(end, ps, states);
+    }
+  });
 }
 
 /**
@@ -64,7 +137,7 @@ function bound(h: Reader, s: Statement): Bound {
  * write's position is recorded in the context's session. A statement whose
  * context has already aborted fails without running.
  */
-async function withConn<T>(b: Bound, s: Statement, writes: boolean, fn: (c: Conn) => Promise<T>): Promise<T> {
+async function withConn<T>(b: Bound, s: Statement, writes: boolean, fn: (c: Conn, replica: boolean) => Promise<T>): Promise<T> {
   const signal = ambient().signal;
   if (signal?.aborted) {
     throw b.e.translate(signal.reason, s.catalog, s.query, b.src);
@@ -73,19 +146,20 @@ async function withConn<T>(b: Bound, s: Statement, writes: boolean, fn: (c: Conn
     if (writes && b.f.root.options.readOnly) {
       throw new UsageError("read_only");
     }
-    return fn(await b.f.conn(b.src, s.query));
+    const c = await b.f.conn(b.src, s.query);
+    return fn(c, b.f.root.onReplica(b.src));
   }
   if (!writes) {
-    const [c] = await b.e.route(b.src, s.consistency, false, s.query);
+    const [c, replica] = await b.e.route(b.src, s.consistency, false, s.query);
     try {
-      return await fn(c);
+      return await fn(c, replica);
     } finally {
       c.release();
     }
   }
   const c = await b.e.conn(b.src, false, s.query);
   try {
-    const result = await fn(c);
+    const result = await fn(c, false);
     await b.e.recordWrite(ambient().session, b.src, c);
     return result;
   } finally {
@@ -106,9 +180,8 @@ function sent(s: Statement): Sent {
 }
 
 /** fetchRows reads at most limit rows, or every row for a negative limit. */
-async function fetchRows(h: Reader, s: Statement, limit: number): Promise<Row[]> {
-  const b = bound(h, s);
-  return withConn(b, s, s.writes ?? false, async (c) => {
+function fetchRows(h: Reader, s: Statement, limit: number): Promise<Row[]> {
+  return observed(h, s, s.writes ?? false, (r) => r.length, async (b, c) => {
     try {
       const rows = await c.query(sent(s));
       try {
@@ -155,8 +228,7 @@ export async function queryOptional(h: Reader, s: Statement): Promise<Row | unde
 
 /** execute runs s, which writes, and returns how many rows it affected. */
 export function execute(h: Writer, s: Statement): Promise<number> {
-  const b = bound(h, s);
-  return withConn(b, s, true, async (c) => {
+  return observed(h, s, true, (n) => n, async (b, c) => {
     try {
       return await c.exec(sent(s));
     } catch (err) {

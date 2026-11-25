@@ -113,3 +113,16 @@ export {
 } from "./executor.js";
 export { Consistency, type Replication, Session, currentSession, withSession } from "./routing.js";
 export { RAW_QUERY, RawReader, RawWriter, type Statement, execute, queryAll, queryOne, queryOptional, raw, rawWrite } from "./statement.js";
+export {
+  type Hooks,
+  Leaked,
+  type PoolWaitEvent,
+  type QueryEvent,
+  Redacted,
+  RedactedValue,
+  type RotationEvent,
+  type TxEvent,
+  type TxOutcome,
+  formatDuration,
+} from "./hooks.js";
+export { type LogOptions, type Logger, logHooks } from "./log.js";

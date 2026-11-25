@@ -3,7 +3,8 @@
 import { ambient, within } from "./context.js";
 import type { BeginOptions, Conn, Driver, Isolation, Pool, Rows, Sent, StatementMode } from "./driver.js";
 import { ConnectionError, PoolExhausted, ReplicaUnavailable } from "./errors.js";
-import { DEFAULT_RETRY, type RetryPolicy, backoff, retried, retryable, wait } from "./retry.js";
+import { HookSet, type Hooks, Leaked, type TxEvent } from "./hooks.js";
+import { DEFAULT_RETRY, type RetryPolicy, backoff, fits, retried, retryable, wait } from "./retry.js";
 import { Consistency, type Replication, type Session } from "./routing.js";
 import { type ErrorMap, Translator } from "./translate.js";
 
@@ -67,6 +68,8 @@ export interface ExecutorOptions {
   readonly random?: () => number;
   /** How often, in milliseconds, the tracker polls each replica's lag (§22.5). The default is 500. */
   readonly trackInterval?: number;
+  /** Observe queries, transactions, pools and replicas (§24); each event reaches every one in order. */
+  readonly hooks?: readonly Hooks[];
 }
 
 /** Propagation is how a new transaction relates to the one the context carries (§22.3). */
@@ -280,7 +283,10 @@ export class Executor implements Writer {
   private readonly independentDepth: number;
   /** @internal */
   readonly random: () => number;
-  private readonly consistency: Consistency;
+  /** @internal */
+  readonly consistency: Consistency;
+  /** @internal */
+  readonly hooks: HookSet;
   private readonly trackInterval: number;
   /** The tracker's next poll, and the poll running, if any. */
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -301,6 +307,7 @@ export class Executor implements Writer {
     this.random = options.random ?? Math.random;
     this.consistency = config.consistency ?? Consistency.primary;
     this.trackInterval = options.trackInterval ?? 500;
+    this.hooks = new HookSet(options.hooks ?? []);
   }
 
   /**
@@ -398,11 +405,31 @@ export class Executor implements Writer {
   /** @internal poll updates every replica's lag and rotation. */
   async poll(): Promise<void> {
     for (const s of this.sources) {
-      for (const r of s.replicas) {
+      for (const [i, r] of s.replicas.entries()) {
         const lag = await this.lag(r);
         r.lag = lag ?? 0;
-        r.in = lag !== undefined && lag <= s.maxLag;
+        this.rotate(s, i, lag !== undefined && lag <= s.maxLag);
       }
+    }
+  }
+
+  /** rotate puts a replica in or out of rotation, reporting a change. */
+  private rotate(s: SourcePool, i: number, into: boolean): void {
+    const r = s.replicas[i] as Replica;
+    if (r.in === into) {
+      return;
+    }
+    r.in = into;
+    this.hooks.rotation({ source: s.name, replica: i, lag: r.lag, in: into });
+  }
+
+  /** acquire takes a connection from a pool of s, reporting the wait. */
+  private async acquire(s: SourcePool, p: Pool, replica: boolean, signal: AbortSignal | undefined): Promise<Conn> {
+    const start = performance.now();
+    try {
+      return await p.acquire(signal);
+    } finally {
+      this.hooks.poolWait({ source: s.name, replica, wait: performance.now() - start });
     }
   }
 
@@ -475,15 +502,16 @@ export class Executor implements Writer {
     const start = ++s.next;
     const signal = ambient().signal;
     for (let k = 0; k < s.replicas.length; k++) {
-      const r = s.replicas[(start + k) % s.replicas.length] as Replica;
+      const i = (start + k) % s.replicas.length;
+      const r = s.replicas[i] as Replica;
       if (!r.in || (c.level === "bounded" && r.lag > c.bound)) {
         continue;
       }
       let conn: Conn;
       try {
-        conn = await r.pool.acquire(signal);
+        conn = await this.acquire(s, r.pool, true, signal);
       } catch {
-        r.in = false;
+        this.rotate(s, i, false);
         continue;
       }
       if (positions.length === 0) {
@@ -494,7 +522,7 @@ export class Executor implements Writer {
           return conn;
         }
       } catch {
-        r.in = false;
+        this.rotate(s, i, false);
       }
       conn.release();
     }
@@ -554,7 +582,7 @@ export class Executor implements Writer {
     if (independent) {
       const timer = AbortSignal.timeout(this.independentTimeout);
       try {
-        return await s.pool.acquire(signal === undefined ? timer : AbortSignal.any([signal, timer]));
+        return await this.acquire(s, s.pool, false, signal === undefined ? timer : AbortSignal.any([signal, timer]));
       } catch (err) {
         if (timer.aborted && !signal?.aborted) {
           throw new PoolExhausted(s.name, { dialect: this.dialect.name, query: q });
@@ -570,7 +598,7 @@ export class Executor implements Writer {
     }
     let c: Conn;
     try {
-      c = await s.pool.acquire(signal);
+      c = await this.acquire(s, s.pool, false, signal);
     } catch (err) {
       general?.give();
       throw this.translate(err, "", q, s);
@@ -620,7 +648,10 @@ export class Executor implements Writer {
       return await within({ operation: roots }, fn);
     } finally {
       for (const r of roots) {
-        await r.end(false).catch(() => {});
+        if (!r.done) {
+          this.hooks.tx("txLeaked", { ...r.event(), duration: performance.now() - r.started }, r.states);
+          await r.end(false, new Leaked()).catch(() => {});
+        }
       }
     }
   }
@@ -648,11 +679,11 @@ export class Executor implements Writer {
         if (depth > this.independentDepth) {
           throw new UsageError("independent_depth");
         }
-        return [this.newRoot(readOnly, c, depth), true];
+        return [this.newRoot(readOnly, c, depth, 1), true];
       }
     }
     if (enclosing === undefined) {
-      return [this.newRoot(readOnly, c, 0), true];
+      return [this.newRoot(readOnly, c, 0, 1), true];
     }
     if (!readOnly && enclosing.root.options.readOnly) {
       throw new UsageError("read_only");
@@ -660,12 +691,18 @@ export class Executor implements Writer {
     return [enclosing, false];
   }
 
-  /** newRoot begins a root transaction, tracking it in the context's operation. */
-  private newRoot(readOnly: boolean, c: TxOptions, independent: number): Frame {
+  /** newRoot begins a root transaction, firing the begin hooks and tracking it in the context's operation. */
+  private newRoot(readOnly: boolean, c: TxOptions, independent: number, attempt: number): Frame {
     const options: BeginOptions = c.isolation === undefined ? { readOnly } : { readOnly, isolation: c.isolation };
-    const r = new Root(this, options, independent, c.consistency, ambient().session);
+    const r = new Root(this, options, independent, c.consistency, ambient().session, c.propagation ?? "join", attempt);
+    r.states = this.hooks.txBegin(r.event());
     ambient().operation?.add(r);
-    return new Frame(r, undefined, "");
+    return new Frame(r, undefined, "", r.states);
+  }
+
+  /** inFrame runs fn in f, with the states of its begin hooks active. */
+  private inFrame<T>(f: Frame, fn: (f: Frame) => T | Promise<T>): Promise<T> {
+    return within({ frame: f }, () => this.hooks.activate(f.states, async () => fn(f)));
   }
 
   /** run runs a closure transaction. */
@@ -675,15 +712,28 @@ export class Executor implements Writer {
       if (!readOnly && enclosing.root.options.readOnly) {
         throw new UsageError("read_only");
       }
-      const f = new Frame(enclosing.root, enclosing, `dql_${++savepoints.count}`);
+      const ev: TxEvent = { ...enclosing.root.event(), propagation: "nested", readOnly, savepoint: true };
+      const f = new Frame(enclosing.root, enclosing, `dql_${++savepoints.count}`, this.hooks.txBegin(ev));
+      const start = performance.now();
+      const end = (error: unknown) => {
+        const failed = error !== undefined;
+        this.hooks.tx("txEnd", { ...ev, duration: performance.now() - start, outcome: failed ? "rollback" : "commit", ...(failed ? { error } : {}) }, f.states);
+      };
       let result: T;
       try {
-        result = await within({ frame: f }, () => fn(f));
+        result = await this.inFrame(f, fn);
       } catch (err) {
         await f.endSavepoint(false).catch(() => {});
+        end(err);
         throw err;
       }
-      await f.endSavepoint(true);
+      try {
+        await f.endSavepoint(true);
+      } catch (err) {
+        end(err);
+        throw err;
+      }
+      end(undefined);
       return result;
     }
     let [f, owns] = this.begin(readOnly, c);
@@ -694,17 +744,25 @@ export class Executor implements Writer {
     for (let attempt = 1; ; attempt++) {
       let failure: unknown;
       try {
-        const result = await within({ frame: f }, () => fn(f));
+        const result = await this.inFrame(f, fn);
         await f.root.end(true);
         return result;
       } catch (err) {
         failure = err;
-        await f.root.end(false);
+        await f.root.end(false, err).catch(() => {});
       }
-      if (!retryable(failure) || attempt >= policy.attempts || !(await wait(backoff(policy, attempt, this.random)))) {
+      if (!retryable(failure) || attempt >= policy.attempts) {
         throw retried(failure, attempt);
       }
-      f = this.newRoot(readOnly, c, f.root.independent);
+      const delay = backoff(policy, attempt, this.random);
+      if (!fits(delay)) {
+        throw retried(failure, attempt);
+      }
+      this.hooks.tx("txRetry", { ...f.root.event(), duration: performance.now() - f.root.started, error: failure, delay }, f.root.states);
+      if (!(await wait(delay))) {
+        throw retried(failure, attempt);
+      }
+      f = this.newRoot(readOnly, c, f.root.independent, attempt + 1);
     }
   }
 }
@@ -722,7 +780,13 @@ export class Root {
   private readonly opening = new Map<SourcePool, Promise<Conn>>();
   /** The connections that began, in the order they did. */
   private readonly began: [SourcePool, Conn][] = [];
+  /** The sources whose connection is a replica's. */
+  private readonly replicas = new Set<SourcePool>();
   done = false;
+  /** When it began, for hooks. */
+  readonly started = performance.now();
+  /** The states its begin hooks returned. */
+  states: readonly unknown[] = [];
 
   constructor(
     readonly executor: Executor,
@@ -733,7 +797,22 @@ export class Root {
     readonly consistency: Consistency | undefined,
     /** Records the positions of the root's commits. */
     readonly session: Session | undefined,
+    /** For hooks: how it began. */
+    readonly propagation: Propagation,
+    /** For hooks: its closure's run, from 1. */
+    readonly attempt: number,
   ) {}
+
+  /** event returns the root's transaction event. */
+  event(): TxEvent {
+    const o = this.options;
+    return { propagation: this.propagation, ...(o.isolation === undefined ? {} : { isolation: o.isolation }), readOnly: o.readOnly, savepoint: false, attempt: this.attempt };
+  }
+
+  /** onReplica reports whether the root's connection to s is a replica's. */
+  onReplica(s: SourcePool): boolean {
+    return this.replicas.has(s);
+  }
 
   /** conn returns the root's connection to s, beginning the transaction there on first use. */
   conn(s: SourcePool, q: string): Promise<Conn> {
@@ -748,7 +827,7 @@ export class Root {
 
   private async open(s: SourcePool, q: string): Promise<Conn> {
     const e = this.executor;
-    const c = this.options.readOnly ? (await e.route(s, this.consistency, this.independent > 0, q))[0] : await e.conn(s, this.independent > 0, q);
+    const [c, replica] = this.options.readOnly ? await e.route(s, this.consistency, this.independent > 0, q) : [await e.conn(s, this.independent > 0, q), false];
     try {
       await c.begin(this.options, ambient().signal);
     } catch (err) {
@@ -762,14 +841,18 @@ export class Root {
       throw new UsageError("done");
     }
     this.began.push([s, c]);
+    if (replica) {
+      this.replicas.add(s);
+    }
     return c;
   }
 
   /**
    * end commits or rolls back every connection of the root and releases
-   * them. Commit stops at the first failure and rolls back the rest.
+   * them. Commit stops at the first failure and rolls back the rest. cause
+   * is why it rolls back, for the end hooks.
    */
-  async end(commit: boolean): Promise<void> {
+  async end(commit: boolean, cause?: unknown): Promise<void> {
     if (this.done) {
       return;
     }
@@ -795,6 +878,13 @@ export class Root {
       }
       c.release();
     }
+    const error = failed ? first : cause;
+    const ok = commit && !failed;
+    this.executor.hooks.tx(
+      "txEnd",
+      { ...this.event(), duration: performance.now() - this.started, outcome: ok ? "commit" : "rollback", ...(error === undefined ? {} : { error }) },
+      this.states,
+    );
     if (failed) {
       throw first;
     }
@@ -810,6 +900,8 @@ export class Frame {
     readonly root: Root,
     readonly parent: Frame | undefined,
     readonly savepoint: string,
+    /** The states the frame's begin hooks returned, which its closure runs in. */
+    readonly states: readonly unknown[],
   ) {}
 
   /** conn returns the frame's connection to s, beginning the root's transaction on s and making the frame's savepoints there on first use. */
@@ -894,7 +986,8 @@ abstract class TxHandle implements Reader {
 
   /** run runs fn with the transaction in its context, so generated code called with the executor inside fn joins it. */
   run<T>(fn: () => T): T {
-    return within({ frame: this.frame }, fn);
+    const e = this.frame.root.executor;
+    return within({ frame: this.frame }, () => e.hooks.activate(this.frame.states, fn));
   }
 }
 
