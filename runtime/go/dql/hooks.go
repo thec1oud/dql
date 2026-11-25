@@ -43,6 +43,8 @@ func WithHooks(h Hooks) Option {
 // QueryEvent is a query's start or end (§24).
 type QueryEvent struct {
 	Query string
+	// The dialect the query runs on, such as postgres.
+	Dialect string
 	// Such as select, insert or get, as generated code names it.
 	Kind    string
 	Catalog string
@@ -154,7 +156,7 @@ func (e *Executor) startQuery(ctx context.Context, f *frame, s *Statement) (cont
 	if q.off {
 		return ctx, q
 	}
-	q.ev = QueryEvent{Query: s.Query, Kind: s.Kind, Catalog: s.Catalog, Consistency: s.Consistency, Attempt: 1, SQL: s.SQL}
+	q.ev = QueryEvent{Query: s.Query, Dialect: e.dialect.Name, Kind: s.Kind, Catalog: s.Catalog, Consistency: s.Consistency, Attempt: 1, SQL: s.SQL}
 	if src, err := e.sourceOf(s); err == nil {
 		q.ev.Source = src.name
 	}
