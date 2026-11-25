@@ -126,3 +126,4 @@ export {
   formatDuration,
 } from "./hooks.js";
 export { type LogOptions, type Logger, logHooks } from "./log.js";
+export { type Bulk, atomic, executeBulk, iterate, queryBulk } from "./large.js";

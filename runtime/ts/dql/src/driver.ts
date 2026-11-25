@@ -58,6 +58,8 @@ export interface Sent {
   /** The database type of each argument, or "" where it is not known; absent when none is (Statement.types). */
   readonly types?: readonly string[];
   readonly signal?: AbortSignal;
+  /** The caller reads the rows one at a time as they arrive (§25.1), so a driver should not hold them all in memory. */
+  readonly stream?: boolean;
 }
 
 /** Conn is one connection, which runs one statement at a time. */

@@ -17,6 +17,10 @@ import {
   withSession,
   withSignal,
   withTimeout,
+  iterate,
+  queryBulk,
+  executeBulk,
+  type Bulk,
 } from "@dql/runtime";
 import pg from "pg";
 import { CommitRolledBack, PgDriver, encode, literal } from "../src/index.js";
@@ -320,6 +324,73 @@ describe("statements and transactions", () => {
     // An already-aborted wait fails at once.
     const gone = await e.beginRead({ propagation: "independent" }).then((r) => withSignal(AbortSignal.abort(), () => queryAll(r, q("SELECT 1")))).catch((x) => x);
     expect(classOf(gone)).toBe("Canceled");
+  });
+});
+
+describe("large results and inputs (§25)", () => {
+  const values = async (it: AsyncIterable<Row>): Promise<(readonly unknown[])[]> => {
+    const out: (readonly unknown[])[] = [];
+    for await (const r of it) {
+      out.push(r.values);
+    }
+    return out;
+  };
+
+  test("streams read batches through a cursor", async () => {
+    const e = await open("prepare", 1);
+    const all = await values(iterate(e, q("SELECT g, 'happy'::mood, ARRAY['sad']::mood[] FROM generate_series(1, $1::int4) g", [600])));
+    expect(all.length).toBe(600);
+    expect(all[599]).toEqual([600, "happy", ["sad"]]);
+    // A batch that ends exactly at the end of the rows.
+    expect((await values(iterate(e, q("SELECT g FROM generate_series(1, 256) g")))).length).toBe(256);
+    // Breaking out closes the cursor; the one connection serves the next statement.
+    for await (const r of iterate(e, q("SELECT g FROM generate_series(1, 1000) g"))) {
+      expect(r.values).toEqual([1]);
+      break;
+    }
+    expect((await queryOne(e, q("SELECT 2"))).values).toEqual([2]);
+    // In a transaction, the stream sees its writes.
+    await e.write(async (tx) => {
+      await rawWrite(tx, "main").exec("INSERT INTO item (id, name) VALUES (500, 'streamed')");
+      expect(await values(iterate(tx, q("SELECT name FROM item WHERE id = 500")))).toEqual([["streamed"]]);
+      throw new Error("undo");
+    }).catch(() => {});
+  });
+
+  test("a stream that fails discards its connection", async () => {
+    const e = await open("describe", 1);
+    const failed = await values(iterate(e, q("SELECT 1 / (300 - g) FROM generate_series(1, 600) g"))).catch((x) => x);
+    expect([classOf(failed), failed.origin.code]).toEqual(["DatabaseError", "22012"]);
+    expect((await queryOne(e, q("SELECT 3"))).values).toEqual([3]);
+    // A canceled stream reaches the server.
+    const ac = new AbortController();
+    const canceled = withSignal(ac.signal, () =>
+      values(iterate(e, q("SELECT g, CASE WHEN g = 300 THEN pg_sleep(5) END FROM generate_series(1, 600) g"))),
+    ).catch((x) => x);
+    setTimeout(() => ac.abort(), 100);
+    expect(classOf(await canceled)).toBe("Canceled");
+    expect((await queryOne(e, q("SELECT 4"))).values).toEqual([4]);
+  });
+
+  test("a list is one parameter, and bulk writes split", async () => {
+    const e = await open();
+    const ids = Array.from({ length: 100_000 }, (_, i) => BigInt(i));
+    const counted = await queryOne(e, { ...q("SELECT count(*) FROM generate_series(0, 200000) g WHERE g = ANY($1)", [ids]), types: ["pg_catalog._int8"] });
+    expect(counted.values).toEqual([100_000n]);
+    const limited = await Executor.open(new PgDriver(), { ...dialect, maxParams: 4 }, { sources: { main: { primary: { dsn: url } } }, catalogs: { shop: "main" } });
+    executors.push(limited);
+    const bulk: Bulk = {
+      rows: 5,
+      paramsPerRow: 2,
+      statement: (from, to) => {
+        const rows = Array.from({ length: to - from }, (_, i) => `($${2 * i + 1}::int8, $${2 * i + 2})`).join(", ");
+        const args = Array.from({ length: to - from }, (_, i) => [BigInt(1000 + from + i), `bulk ${from + i}`]).flat();
+        return { ...q(`INSERT INTO item (id, name) VALUES ${rows} RETURNING id`, args), writes: true };
+      },
+    };
+    expect((await queryBulk(limited, bulk)).map((r) => r.values[0])).toEqual([1000n, 1001n, 1002n, 1003n, 1004n]);
+    const removal = (from: number, to: number) => q(`DELETE FROM item WHERE id >= ${1000 + from} AND id < ${1000 + to}`);
+    expect(await executeBulk(limited, { ...bulk, statement: removal })).toBe(5);
   });
 });
 

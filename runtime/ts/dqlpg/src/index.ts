@@ -12,6 +12,7 @@
 import { createHash } from "node:crypto";
 import { type BeginOptions, type Conn, type Driver, type NativeError, type Pool, type PoolConfig, Row, type Rows, type Sent, type StatementMode } from "@dql/runtime";
 import pg from "pg";
+import Cursor from "pg-cursor";
 import { encodeArgs } from "./args.js";
 import { CATALOG_QUERY, type CatalogRow, Types } from "./values.js";
 
@@ -82,6 +83,14 @@ export class PgDriver implements Driver {
   }
 }
 
+/** learn asks the catalog, on c, about the types of oids, and of the types they name, until types knows them all. */
+async function learn(types: Types, c: pg.ClientBase, oids: number[]): Promise<void> {
+  for (let ask = oids; ask.length > 0; ask = types.missing(ask)) {
+    const r = await c.query<CatalogRow>(CATALOG_QUERY, [ask]);
+    types.learn(ask, r.rows);
+  }
+}
+
 /** PgPool is a pool of one server, with the types its connections have seen. */
 class PgPool implements Pool {
   readonly types = new Types();
@@ -96,6 +105,18 @@ class PgPool implements Pool {
   ) {
     // An idle connection's error must not crash the process; the pool drops it.
     pool.on("error", ignore);
+  }
+
+  /** learnAside learns the types of oids on a connection of its own, for a stream that holds its connection. A type only the stream's transaction can see yet stays unknown. */
+  async learnAside(oids: number[]): Promise<void> {
+    const c = new pg.Client(this.config);
+    c.on("error", ignore);
+    try {
+      await c.connect();
+      await learn(this.types, c, oids);
+    } finally {
+      await c.end().catch(ignore);
+    }
   }
 
   /** acquire waits for a connection until signal aborts, and runs the setup statements on a new one. */
@@ -160,6 +181,74 @@ class PgRows implements Rows {
   async close(): Promise<void> {}
 }
 
+/** BATCH is how many rows a stream fetches at a time. */
+const BATCH = 256;
+
+/**
+ * PgStream reads a statement's rows through a cursor, a batch at a time, so a
+ * stream holds one batch in memory (§25.1). It decodes each batch as it
+ * arrives; the connection is busy until the stream closes, so the types a
+ * batch needs are learned on a connection of their own.
+ */
+class PgStream implements Rows {
+  private batch: Row[] = [];
+  private i = 0;
+  private ended = false;
+  private failed = false;
+
+  constructor(
+    private readonly conn: PgConn,
+    private readonly pool: PgPool,
+    private readonly cursor: Cursor<string[]>,
+    private readonly signal: AbortSignal | undefined,
+  ) {}
+
+  async next(): Promise<Row | undefined> {
+    while (this.i >= this.batch.length) {
+      if (this.ended) {
+        return undefined;
+      }
+      await this.fetch();
+    }
+    return this.batch[this.i++];
+  }
+
+  /** fetch reads and decodes the next batch. */
+  private async fetch(): Promise<void> {
+    let rows: string[][];
+    let fields: { dataTypeID: number }[];
+    try {
+      [rows, fields] = await this.conn.cancelable(
+        this.signal,
+        () =>
+          new Promise<[string[][], { dataTypeID: number }[]]>((resolve, reject) => {
+            this.cursor.read(BATCH, (err, rs, result) => (err === undefined || err === null ? resolve([rs, result.fields]) : reject(err)));
+          }),
+      );
+    } catch (e) {
+      this.failed = true;
+      this.conn.discard();
+      throw e;
+    }
+    this.ended = rows.length < BATCH;
+    const oids = fields.map((f) => f.dataTypeID);
+    const missing = this.pool.types.missing(oids);
+    if (missing.length > 0) {
+      await this.pool.learnAside(missing);
+    }
+    const types = this.pool.types;
+    this.batch = rows.map((row) => new Row(row.map((v, i) => types.decode(oids[i] as number, v))));
+    this.i = 0;
+  }
+
+  /** close closes the cursor, unless it failed: then the connection is discarded on release. */
+  async close(): Promise<void> {
+    if (!this.failed) {
+      await this.cursor.close();
+    }
+  }
+}
+
 /** PgConn is one connection. */
 class PgConn implements Conn {
   /** Set while a transaction is open on the connection, and when it broke, so release discards it. */
@@ -171,7 +260,7 @@ class PgConn implements Conn {
   ) {}
 
   /** run runs one statement, canceling it on the server when signal aborts. */
-  private async run(s: Sent): Promise<pg.QueryArrayResult<string[]>> {
+  private run(s: Sent): Promise<pg.QueryArrayResult<string[]>> {
     const config: pg.QueryArrayConfig = {
       text: s.sql,
       values: encodeArgs(s.args, s.types),
@@ -179,11 +268,15 @@ class PgConn implements Conn {
       types: raw,
       ...(this.pool.c.mode === "prepare" ? { name: statementName(s.sql) } : {}),
     };
-    const signal = s.signal;
+    return this.cancelable(s.signal, () => this.client.query<string[]>(config));
+  }
+
+  /** cancelable runs fn, a step of a statement, canceling the statement on the server when signal aborts. A failure the server did not send leaves the connection to be discarded. */
+  async cancelable<T>(signal: AbortSignal | undefined, fn: () => Promise<T>): Promise<T> {
     const cancel = () => void this.cancel();
     signal?.addEventListener("abort", cancel, { once: true });
     try {
-      return await this.client.query<string[]>(config);
+      return await fn();
     } catch (e) {
       if (!(e instanceof pg.DatabaseError)) {
         this.dirty = true;
@@ -192,6 +285,11 @@ class PgConn implements Conn {
     } finally {
       signal?.removeEventListener("abort", cancel);
     }
+  }
+
+  /** discard marks the connection to be discarded on release. */
+  discard(): void {
+    this.dirty = true;
   }
 
   /** cancel asks the server, on a connection of its own, to cancel the statement this connection runs. */
@@ -209,6 +307,10 @@ class PgConn implements Conn {
   }
 
   async query(s: Sent): Promise<Rows> {
+    if (s.stream === true) {
+      const cursor = this.client.query(new Cursor<string[]>(s.sql, encodeArgs(s.args, s.types) as unknown[], { rowMode: "array", types: raw }));
+      return new PgStream(this, this.pool, cursor, s.signal);
+    }
     const r = await this.run(s);
     const oids = r.fields.map((f) => f.dataTypeID);
     const missing = this.pool.types.missing(oids);
@@ -219,13 +321,9 @@ class PgConn implements Conn {
     return new PgRows(r.rows.map((row) => new Row(row.map((v, i) => types.decode(oids[i] as number, v)))));
   }
 
-  /** learn asks the catalog about the types of oids, and of the types they name, until it knows them all. */
-  private async learn(oids: number[]): Promise<void> {
-    const types = this.pool.types;
-    for (let ask = oids; ask.length > 0; ask = types.missing(ask)) {
-      const r = await this.client.query<CatalogRow>(CATALOG_QUERY, [ask]);
-      types.learn(ask, r.rows);
-    }
+  /** learn asks the catalog about the types of oids on this connection. */
+  private learn(oids: number[]): Promise<void> {
+    return learn(this.pool.types, this.client, oids);
   }
 
   async exec(s: Sent): Promise<number> {
