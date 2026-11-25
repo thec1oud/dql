@@ -890,7 +890,11 @@ func (r *runner) transact(st Step) ([]string, error) {
 
 func (r *runner) transaction(st Step) ([]string, error) {
 	mark := r.events.mark()
-	m, ok := member(r.db, st.Op)
+	h, problems := r.handle(st)
+	if problems != nil {
+		return problems, nil
+	}
+	m, ok := member(h, st.Op)
 	if !ok && st.Op != "retry" {
 		return []string{"no transaction " + st.Op}, nil
 	}
@@ -953,6 +957,13 @@ func (r *runner) transaction(st Step) ([]string, error) {
 	} else {
 		fn := reflect.MakeFunc(m.Type().In(1), func(in []reflect.Value) []reflect.Value {
 			out := reflect.New(reflect.TypeFor[error]()).Elem()
+			if st.Scope != nil {
+				// A scoped handle's transaction runs its steps, so they
+				// show the scope it inherits (§22.3).
+				db := r.db
+				r.db = in[1]
+				defer func() { r.db = db }()
+			}
 			if err := body(in[0].Interface().(context.Context)); err != nil {
 				out.Set(reflect.ValueOf(err))
 			}
@@ -964,7 +975,7 @@ func (r *runner) transaction(st Step) ([]string, error) {
 	if errors.Is(err, errRollback) {
 		err = nil
 	}
-	problems := inner
+	problems = inner
 	expect := maps.Clone(st.Expect)
 	if w, ok := expect["attempts"]; ok {
 		if normalize(w) != float64(runs) {

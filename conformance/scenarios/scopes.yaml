@@ -27,3 +27,18 @@ steps:
     input: { email: a@acme.com, password_hash: x }
     expect:
       row: { tenant_id: $globex.id }
+  # A transaction begun from a scoped handle inherits its scope (§22.3):
+  # its writes take the scope's tenant, and its reads see only that
+  # tenant's rows, its own uncommitted one among them.
+  - op: write
+    scope: { tenant_id: $acme.id }
+    steps:
+      - op: users.insert
+        input: { email: b@acme.com, password_hash: x }
+        expect:
+          row: { tenant_id: $acme.id }
+      - op: users.count
+        expect: { value: 2 }
+  - op: users.count
+    scope: { tenant_id: $globex.id }
+    expect: { value: 1 }

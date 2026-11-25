@@ -556,6 +556,22 @@ func TestRetry(t *testing.T) {
 	if runs != 1 || ClassOf(err) != ClassSerializationFailure {
 		t.Errorf("deadline: %d %v", runs, err)
 	}
+	// Config sets the default policy; a closure overrides it.
+	c := Config{Sources: map[string]SourceConfig{"main": {Primary: ConnConfig{DSN: "x", MaxConns: 1}}},
+		Catalogs: map[string]string{"shop": "main"}, Retry: RetryPolicy{Attempts: 1}}
+	once, err := New(ctx, &fakeDriver{handle: rows(Row{int64(1)})}, pg, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer once.Close()
+	runs = 0
+	if err := once.Write(ctx, failing("40001")); runs != 1 || ClassOf(err) != ClassSerializationFailure {
+		t.Errorf("configured: %d %v", runs, err)
+	}
+	runs = 0
+	if err := once.Write(ctx, failing("40001", ""), WithRetry(RetryPolicy{Attempts: 2, Initial: time.Microsecond, Max: time.Microsecond})); err != nil || runs != 2 {
+		t.Errorf("overridden: %d %v", runs, err)
+	}
 }
 
 func TestBackoff(t *testing.T) {
