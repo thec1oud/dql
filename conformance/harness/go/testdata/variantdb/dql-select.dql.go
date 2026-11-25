@@ -44,7 +44,7 @@ func (b Builder[T, E]) Limit(n int64) Builder[T, E] { return Builder[T, E]{b.b.L
 // Offset skips the first n rows.
 func (b Builder[T, E]) Offset(n int64) Builder[T, E] { return Builder[T, E]{b.b.Offset(n)} }
 
-// NoLog turns query events off for this read (§24).
+// NoLog turns this read's events off, its pool wait included (§24).
 func (b Builder[T, E]) NoLog() Builder[T, E] { return Builder[T, E]{b.b.NoLog()} }
 
 // Consistency sets how fresh the read must be (§22.5).

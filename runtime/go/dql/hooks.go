@@ -153,6 +153,10 @@ type queryRun struct {
 // startQuery fires the query start hooks, unless the statement opts out.
 func (e *Executor) startQuery(ctx context.Context, f *frame, s *Statement) (context.Context, *queryRun) {
 	q := &queryRun{e: e, start: time.Now(), off: s.NoLog || len(e.hooks) == 0}
+	if s.NoLog {
+		// The call's other events, its pool wait among them, are off too.
+		ctx = context.WithValue(ctx, noLogKey{}, true)
+	}
 	if q.off {
 		return ctx, q
 	}
@@ -185,6 +189,9 @@ func (e *Executor) startQuery(ctx context.Context, f *frame, s *Statement) (cont
 	q.ctx = ctx
 	return ctx, q
 }
+
+// noLogKey marks the context of a call that opts out of events (§24).
+type noLogKey struct{}
 
 // params returns s's arguments with the sensitive ones redacted.
 func params(s *Statement) []any {
@@ -247,7 +254,7 @@ func txLeaked(h Hooks) func(context.Context, TxEvent) { return h.TxLeaked }
 func (e *Executor) acquire(ctx context.Context, s *sourcePool, p Pool, replica bool) (Conn, error) {
 	start := time.Now()
 	c, err := p.Acquire(ctx)
-	if len(e.hooks) > 0 {
+	if len(e.hooks) > 0 && ctx.Value(noLogKey{}) == nil {
 		ev := PoolWaitEvent{Source: s.name, Replica: replica, Wait: time.Since(start)}
 		for _, h := range e.hooks {
 			if h.PoolWait != nil {

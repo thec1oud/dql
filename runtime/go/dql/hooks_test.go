@@ -99,7 +99,8 @@ end q replica false rows 1 class  err false params [[redacted] 7] ctx q`
 	}
 	s.NoLog = true
 	Fetch(ctx, e, s)
-	if got := rec.take(); !strings.HasSuffix(got, "end q replica false rows 0 class UniqueViolation err true params [] ctx q\nwait main replica false") ||
+	// The call that opts out reports nothing, not even its pool wait.
+	if got := rec.take(); !strings.HasSuffix(got, "end q replica false rows 0 class UniqueViolation err true params [] ctx q") ||
 		!strings.Contains(got, "start q  shop/main primary") {
 		t.Errorf("events %s", got)
 	}

@@ -200,7 +200,7 @@ func (b Builder[T, E]) OnlyDeleted() Builder[T, E] {
 	return b
 }
 
-// NoLog turns query events off for this read (§24).
+// NoLog turns this read's events off, its pool wait included (§24).
 func (b Builder[T, E]) NoLog() Builder[T, E] {
 	b.noLog = true
 	return b
