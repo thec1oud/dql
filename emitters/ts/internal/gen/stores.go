@@ -25,7 +25,7 @@ var verbs = []string{"get", "find", "count", "exists", "insert", "insert_or_igno
 // generated are the operations the stores generate methods for. The core
 // derives the others for every entity too; they are left out without a
 // warning.
-var generated = map[string]bool{"get": true, "find": true, "count": true, "exists": true, "insert": true, "insert_or_ignore": true, "upsert": true, "patch": true, "delete": true, "hard_delete": true}
+var generated = map[string]bool{"get": true, "find": true, "count": true, "exists": true, "insert": true, "insert_or_ignore": true, "upsert": true, "upsert_set": true, "patch": true, "update_where": true, "delete": true, "delete_where": true, "hard_delete": true, "hard_delete_where": true}
 
 // reads are the operations a read handle has (§22.2).
 var reads = map[string]bool{"get": true, "find": true, "count": true, "exists": true}
@@ -314,8 +314,12 @@ func (g *generator) use(f *file, u *irv1.FragmentUse, at *irv1.QualifiedName) st
 	return fmt.Sprintf("%s(%s, { %s })", use, jsString(u.GetFragment()), strings.Join(holes, ", "))
 }
 
-// param is one parameter of a store method.
-type param struct{ name, typ string }
+// param is one parameter of a store method; rest gathers the remaining
+// arguments, as ...as.
+type param struct {
+	name, typ string
+	rest      bool
+}
 
 // signature is one store method: its name, parameters and result.
 type signature struct {
@@ -324,6 +328,8 @@ type signature struct {
 	// result is what the method's promise resolves to.
 	result string
 	x      entry
+	// many: insertMany, which runs the insert entry for each Draft.
+	many bool
 }
 
 // list spells the parameters, the scope's first when scope is not "".
@@ -333,6 +339,10 @@ func (s signature) list(scope string) string {
 		ps = append(ps, "scope: "+scope)
 	}
 	for _, p := range s.params {
+		if p.rest {
+			ps = append(ps, "..."+p.name+": "+p.typ)
+			continue
+		}
 		ps = append(ps, p.name+": "+p.typ)
 	}
 	return strings.Join(ps, ", ")
@@ -342,6 +352,10 @@ func (s signature) list(scope string) string {
 func (s signature) args() string {
 	var names []string
 	for _, p := range s.params {
+		if p.rest {
+			names = append(names, "..."+p.name)
+			continue
+		}
 		names = append(names, p.name)
 	}
 	return strings.Join(names, ", ")
@@ -349,7 +363,7 @@ func (s signature) args() string {
 
 // locals are the names a method body binds or takes from the runtime, which
 // a parameter named after a column must not take.
-var locals = map[string]bool{"k": true, "d": true, "p": true, "args": true, "found": true, "set": true, "scope": true, "fragments": true}
+var locals = map[string]bool{"k": true, "d": true, "p": true, "ds": true, "as": true, "q": true, "where": true, "rows": true, "args": true, "found": true, "set": true, "scope": true, "fragments": true}
 
 // keyParam is the parameter of a key column a lookup by another key takes.
 func keyParam(c *irv1.Column) string {
@@ -361,33 +375,45 @@ func keyParam(c *irv1.Column) string {
 }
 
 // runtimeFuncs are the runtime's functions a store method calls.
-var runtimeFuncs = map[string]bool{"count": true, "execByKey": true, "exists": true, "oneOf": true, "optionalOf": true, "statementOf": true, "throwIfIssues": true, "versionedExec": true, "versionedOne": true}
+var runtimeFuncs = map[string]bool{"assign": true, "count": true, "execByKey": true, "execute": true, "exists": true, "filtered": true, "insertMany": true, "oneOf": true, "optionalOf": true, "statementOf": true, "throwIfIssues": true, "versionedExec": true, "versionedOne": true}
 
 // signatures returns the entity's store methods, reads first, with their
 // types imported into f.
 func (g *generator) signatures(f *file, e *entity) []signature {
 	full := g.ref(f, TypeName(e.full.GetHostName().GetWords()), false)
+	draft := g.ref(f, TypeName(e.draft.GetHostName().GetWords()), false)
+	tbl := g.ref(f, e.tableType(), false)
+	values := param{"as", f.rt("Assignment", false) + "<" + tbl + ">[]", true}
+	updates := param{"as", f.rt("Update", false) + "<" + tbl + ">[]", true}
+	where := param{"where", f.rt("Pred", false) + "<" + tbl + ">", false}
 	var out []signature
 	for _, x := range e.order {
 		s := signature{name: x.method(), x: x}
 		switch {
 		case byKey[x.verb] && x.by == nil:
-			s.params = []param{{"k", g.ref(f, TypeName(e.key.GetHostName().GetWords()), false)}}
+			s.params = []param{{name: "k", typ: g.ref(f, TypeName(e.key.GetHostName().GetWords()), false)}}
 		case x.verb == "get" || x.verb == "find":
 			for _, p := range x.q.GetParams() {
 				if c, ok := strings.CutPrefix(p.GetName(), "key."); ok {
-					s.params = append(s.params, param{keyParam(column(e.t, c)), g.tsType(f, p.GetType(), e.q, "parameter "+p.GetName())})
+					s.params = append(s.params, param{name: keyParam(column(e.t, c)), typ: g.tsType(f, p.GetType(), e.q, "parameter "+p.GetName())})
 				}
 			}
 		}
+		part := func() param { return param{"p", g.ref(f, TypeName(e.part.GetHostName().GetWords()), false), false} }
 		switch x.verb {
 		case "insert", "insert_or_ignore", "upsert":
-			s.params = []param{{"d", g.ref(f, TypeName(e.draft.GetHostName().GetWords()), false)}}
+			s.params = []param{{"d", draft, false}, values}
+		case "upsert_set":
+			s.params = []param{{"d", draft, false}, part(), updates}
 		case "patch":
-			s.params = append(s.params, param{"p", g.ref(f, TypeName(e.part.GetHostName().GetWords()), false)})
+			s.params = append(s.params, part(), updates)
+		case "update_where":
+			s.params = []param{where, part(), updates}
+		case "delete_where", "hard_delete_where":
+			s.params = []param{where}
 		}
 		switch x.verb {
-		case "get", "insert", "upsert", "patch":
+		case "get", "insert", "upsert", "upsert_set", "patch":
 			s.result = full
 		case "find", "insert_or_ignore":
 			s.result = full + " | undefined"
@@ -395,10 +421,15 @@ func (g *generator) signatures(f *file, e *entity) []signature {
 			s.result = "bigint"
 		case "exists":
 			s.result = "boolean"
+		case "update_where", "delete_where", "hard_delete_where":
+			s.result = "number"
 		default:
 			s.result = "void"
 		}
 		out = append(out, s)
+		if x.verb == "insert" {
+			out = append(out, signature{name: "insertMany", params: []param{{"ds", "readonly " + draft + "[]", false}, values}, result: full + "[]", x: x, many: true})
+		}
 	}
 	return out
 }
@@ -498,7 +529,11 @@ func (g *generator) methods(f *file, e *entity, sigs []signature, write bool) {
 		if reads[s.x.verb] == write {
 			continue
 		}
-		f.printf("\n  /** %s runs %s (§%s). */\n  async %s(%s): Promise<%s> {\n", s.name, s.x.q.GetName().GetStored(), section(s.x.verb), s.name, s.list(""), s.result)
+		doc := ""
+		if s.many {
+			doc = " for each draft, in one transaction"
+		}
+		f.printf("\n  /** %s runs %s%s (§%s). */\n  async %s(%s): Promise<%s> {\n", s.name, s.x.q.GetName().GetStored(), doc, section(s.x.verb), s.name, s.list(""), s.result)
 		g.methodBody(f, e, s)
 		f.printf("  }\n")
 	}
@@ -535,10 +570,14 @@ func section(verb string) string {
 func (g *generator) methodBody(f *file, e *entity, s signature) {
 	x := s.x
 	rt := func(name string) string { return f.rt(name, true) }
+	if s.many {
+		g.insertMany(f, e, s)
+		return
+	}
 	payload, pv := e.draft, "d"
 	switch x.verb {
-	case "insert", "insert_or_ignore", "upsert":
-	case "patch":
+	case "insert", "insert_or_ignore", "upsert", "upsert_set":
+	case "patch", "update_where":
 		payload, pv = e.part, "p"
 	default:
 		payload = nil
@@ -546,26 +585,46 @@ func (g *generator) methodBody(f *file, e *entity, s signature) {
 	if payload != nil {
 		f.printf("    %s(%s(%s));\n", rt("throwIfIssues"), g.ref(f, validatorName(payload.GetHostName().GetWords()), true), pv)
 	}
+	if x.verb == "upsert_set" {
+		f.printf("    %s(%s(p));\n", rt("throwIfIssues"), g.ref(f, validatorName(e.part.GetHostName().GetWords()), true))
+	}
 	get, fallback := e.entries[e.entryName("get")]
 	fallback = fallback && x.verb == "patch" && !e.versioned
-	lit, conds := g.args(f, e, x, payload, pv, fallback)
+	// An unversioned updateWhere with nothing set has nothing to write.
+	empty := x.verb == "update_where" && !e.versioned
+	lit, conds := g.args(f, e, x, payload, pv, fallback || empty)
 	st := rt("statementOf")
 	frag := g.ref(f, "fragments", true)
+	q := x.v
+	if strings.HasSuffix(x.verb, "_where") {
+		f.printf("    const q = %s(%s, where);\n", rt("filtered"), x.v)
+		q = "q"
+	}
 	var statement string
-	if len(conds) == 0 && payload == nil {
-		statement = fmt.Sprintf("%s(%s, %s, %s)", st, x.v, frag, lit)
+	if payload == nil {
+		statement = fmt.Sprintf("%s(%s, %s, %s)", st, q, frag, lit)
 	} else {
 		f.printf("    const args: %s = %s;\n", f.rt("Args", false), lit)
-		if fallback {
+		if fallback || empty {
 			f.printf("    let set = false;\n")
 		}
 		for _, c := range conds {
 			f.printf("%s", c)
 		}
-		if fallback {
-			f.printf("    if (!set) {\n      // Nothing to change: the row as it is.\n      return this.%s(k);\n    }\n", get.method())
+		if x.verb == "upsert_set" {
+			// The Draft's assignments are its fields; the call's go to the
+			// update side, whose parameters are named set.<column> (§14.7).
+			f.printf("    %s(%s, %s, args, as, \"set.\");\n", rt("assign"), q, jsString(g.dotted(e.part.GetId())))
+		} else {
+			f.printf("    %s(%s, %s, args, as);\n", rt("assign"), q, jsString(g.dotted(payload.GetId())))
 		}
-		statement = fmt.Sprintf("%s(%s, %s, args)", st, x.v, frag)
+		switch {
+		case fallback:
+			f.printf("    if (!set && as.length === 0) {\n      // Nothing to change: the row as it is.\n      return this.%s(k);\n    }\n", get.method())
+		case empty:
+			f.printf("    if (!set && as.length === 0) {\n      // Nothing to change.\n      return 0;\n    }\n")
+		}
+		statement = fmt.Sprintf("%s(%s, %s, args)", st, q, frag)
 	}
 	decode := g.ref(f, "decode"+TypeName(e.full.GetHostName().GetWords()), true)
 	versioned := e.versioned && (x.verb == "patch" || x.verb == "delete" || x.verb == "hard_delete")
@@ -585,7 +644,7 @@ func (g *generator) methodBody(f *file, e *entity, s signature) {
 		f.printf("    return %s(this.w, %s, found);\n", rt("versionedExec"), statement)
 	case x.verb == "get":
 		f.printf("    return %s(this.h, %s, %s);\n", rt("oneOf"), statement, decode)
-	case x.verb == "insert" || x.verb == "upsert" || x.verb == "patch":
+	case x.verb == "insert" || x.verb == "upsert" || x.verb == "upsert_set" || x.verb == "patch":
 		f.printf("    return %s(this.w, %s, %s);\n", rt("oneOf"), statement, decode)
 	case x.verb == "find":
 		f.printf("    return %s(this.h, %s, %s);\n", rt("optionalOf"), statement, decode)
@@ -595,11 +654,29 @@ func (g *generator) methodBody(f *file, e *entity, s signature) {
 		f.printf("    return %s(this.h, %s);\n", rt("count"), statement)
 	case x.verb == "exists":
 		f.printf("    return %s(this.h, %s);\n", rt("exists"), statement)
+	case q == "q":
+		f.printf("    return %s(this.w, %s);\n", rt("execute"), statement)
 	default:
 		// Delete and hardDelete by key: a key that matches no row is
 		// NotFound, as for get and patch (§19).
 		f.printf("    return %s(this.w, %s);\n", rt("execByKey"), statement)
 	}
+}
+
+// insertMany writes insertMany: it validates every draft before writing
+// any (§20.3), then inserts them with the insert entry's row repeated.
+func (g *generator) insertMany(f *file, e *entity, s signature) {
+	validate := g.ref(f, validatorName(e.draft.GetHostName().GetWords()), true)
+	f.printf("    for (const d of ds) {\n      %s(%s(d));\n    }\n", f.rt("throwIfIssues", true), validate)
+	lit, conds := g.args(f, e, s.x, e.draft, "d", false)
+	args := f.rt("Args", false)
+	f.printf("    const rows: %s[] = [];\n    for (const d of ds) {\n      const args: %s = %s;\n", args, args, lit)
+	for _, c := range conds {
+		f.printf("%s", strings.ReplaceAll("  "+strings.TrimSuffix(c, "\n"), "\n", "\n  ")+"\n")
+	}
+	f.printf("      %s(%s, %s, args, as);\n      rows.push(args);\n    }\n", f.rt("assign", true), s.x.v, jsString(g.dotted(e.draft.GetId())))
+	f.printf("    return %s(this.w, %s, %s, rows, %s);\n", f.rt("insertMany", true), g.ref(f, "fragments", true), s.x.v,
+		g.ref(f, "decode"+TypeName(e.full.GetHostName().GetWords()), true))
 }
 
 // args returns the parameters of x as an object literal of Args, and the
@@ -614,6 +691,9 @@ func (g *generator) args(f *file, e *entity, x entry, payload *irv1.Shape, pv st
 			lit = append(lit, jsString(name)+": k."+g.memberOf(e.key, paramColumn(name)))
 		case strings.HasPrefix(name, "key."):
 			lit = append(lit, jsString(name)+": "+keyParam(column(e.t, paramColumn(name))))
+		case x.verb == "upsert_set" && strings.HasPrefix(name, "set.") && shapeField(e.part, name[len("set."):]) != nil:
+			col := name[len("set."):]
+			conds = append(conds, fmt.Sprintf("    if (p.%[1]s !== undefined) {\n      args[%[2]s] = p.%[1]s;\n    }\n", g.memberOf(e.part, col), jsString(name)))
 		case payload != nil && shapeField(payload, name) != nil:
 			v := pv + "." + g.memberOf(payload, name)
 			if !isOptional(shapeField(payload, name)) {

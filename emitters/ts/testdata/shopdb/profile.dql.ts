@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type ValidationIssue, allRows, arg, asInstanceOf, asInt64, asString, compare, issuesAt, nest, not, ordered, related } from "@dql/runtime";
+import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type Update, type ValidationIssue, allRows, arg, asInstanceOf, asInt64, asString, compare, issuesAt, nest, not, ordered, related, set } from "@dql/runtime";
 import { type UserFull, type UserPartial, type UserRef, type UsersTable, decodeUserFull, redactUserPartial, redactUserRef, validateUserPartial, validateUserRef } from "./user.dql.ts";
 
 /** ProfileDraft is the shape profile.draft.flat of shop.app.profiles. */
@@ -483,6 +483,10 @@ export const profiles = {
     desc(): Order<ProfilesTable> {
       return ordered<ProfilesTable>("order.desc", "col.profiles.user_id");
     },
+    /** set assigns DEFAULT to user_id on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<ProfilesTable> {
+      return set<ProfilesTable>("user_id", e);
+    },
   },
   /** bio is column bio in builder reads (§9.4). */
   bio: {
@@ -562,6 +566,10 @@ export const profiles = {
     desc(): Order<ProfilesTable> {
       return ordered<ProfilesTable>("order.desc", "col.profiles.bio");
     },
+    /** set assigns DEFAULT to bio on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<ProfilesTable> {
+      return set<ProfilesTable>("bio", e);
+    },
   },
   /** birthday is column birthday in builder reads (§9.4). */
   birthday: {
@@ -621,6 +629,10 @@ export const profiles = {
     desc(): Order<ProfilesTable> {
       return ordered<ProfilesTable>("order.desc", "col.profiles.birthday");
     },
+    /** set assigns now or DEFAULT to birthday on a write, in place of a value (§20.2). */
+    set(e: Expr): Assignment<ProfilesTable> {
+      return set<ProfilesTable>("birthday", e);
+    },
   },
   /** user is relation user in builder reads (§18.2). */
   user: {
@@ -650,9 +662,13 @@ export interface ProfilesReadStore {
 
 /** ProfilesStore reads and writes shop.app.profiles (§26.3). */
 export interface ProfilesStore extends ProfilesReadStore {
-  insert(d: ProfileDraft): Promise<ProfileFull>;
-  insertOrIgnore(d: ProfileDraft): Promise<ProfileFull | undefined>;
-  upsert(d: ProfileDraft): Promise<ProfileFull>;
-  patch(k: ProfileKey, p: ProfilePartial): Promise<ProfileFull>;
+  insert(d: ProfileDraft, ...as: Assignment<ProfilesTable>[]): Promise<ProfileFull>;
+  insertMany(ds: readonly ProfileDraft[], ...as: Assignment<ProfilesTable>[]): Promise<ProfileFull[]>;
+  insertOrIgnore(d: ProfileDraft, ...as: Assignment<ProfilesTable>[]): Promise<ProfileFull | undefined>;
+  upsert(d: ProfileDraft, ...as: Assignment<ProfilesTable>[]): Promise<ProfileFull>;
+  upsertSet(d: ProfileDraft, p: ProfilePartial, ...as: Update<ProfilesTable>[]): Promise<ProfileFull>;
+  patch(k: ProfileKey, p: ProfilePartial, ...as: Update<ProfilesTable>[]): Promise<ProfileFull>;
+  updateWhere(where: Pred<ProfilesTable>, p: ProfilePartial, ...as: Update<ProfilesTable>[]): Promise<number>;
   delete(k: ProfileKey): Promise<void>;
+  deleteWhere(where: Pred<ProfilesTable>): Promise<number>;
 }

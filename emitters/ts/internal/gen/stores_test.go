@@ -223,7 +223,7 @@ func TestWritesWithoutLookups(t *testing.T) {
 		"    const args: Args = { \"key.user_id\": k.userId };\n    if (p.bio !== undefined) {\n      args[\"bio\"] = p.bio;\n    }\n",
 	)
 	stores := files["dql-stores.dql.ts"]
-	if profiles := stores[strings.Index(stores, "export class ProfilesWrites"):]; strings.Contains(profiles[:strings.Index(profiles, "\n}\n")], "let set = false;") {
+	if profiles := stores[strings.Index(stores, "export class ProfilesWrites"):]; strings.Contains(profiles[:strings.Index(profiles, "\n}\n")], "return this.get(k);") {
 		t.Error("empty Partial short-cut without get")
 	}
 	typecheck(t, files)

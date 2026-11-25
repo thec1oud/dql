@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, type ValidationIssue, allRows, arg, asInt64, compare, issuesAt, not, ordered, related } from "@dql/runtime";
+import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, type Update, type ValidationIssue, allRows, arg, asInt64, compare, issuesAt, not, ordered, related, set } from "@dql/runtime";
 import { dqlSlugTextCheck } from "./dql-checks.dql.ts";
 import { dqlDecodeSlugText } from "./dql-decoders.dql.ts";
 import type { SlugText } from "./dql-types.dql.ts";
@@ -515,6 +515,10 @@ export const tags = {
     desc(): Order<TagsTable> {
       return ordered<TagsTable>("order.desc", "col.tags.name");
     },
+    /** set assigns DEFAULT to name on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<TagsTable> {
+      return set<TagsTable>("name", e);
+    },
   },
   /** postTags is relation post_tags in builder reads (§18.2). */
   postTags: {
@@ -561,11 +565,14 @@ export interface TagsReadStore {
 
 /** TagsStore reads and writes shop.app.tags (§26.3). */
 export interface TagsStore extends TagsReadStore {
-  insert(d: TagDraft): Promise<TagFull>;
-  insertOrIgnoreByName(d: TagDraft): Promise<TagFull | undefined>;
-  insertOrIgnore(d: TagDraft): Promise<TagFull | undefined>;
-  upsertByName(d: TagDraft): Promise<TagFull>;
-  upsert(d: TagDraft): Promise<TagFull>;
-  patch(k: TagKey, p: TagPartial): Promise<TagFull>;
+  insert(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull>;
+  insertMany(ds: readonly TagDraft[], ...as: Assignment<TagsTable>[]): Promise<TagFull[]>;
+  insertOrIgnoreByName(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull | undefined>;
+  insertOrIgnore(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull | undefined>;
+  upsertByName(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull>;
+  upsert(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull>;
+  patch(k: TagKey, p: TagPartial, ...as: Update<TagsTable>[]): Promise<TagFull>;
+  updateWhere(where: Pred<TagsTable>, p: TagPartial, ...as: Update<TagsTable>[]): Promise<number>;
   delete(k: TagKey): Promise<void>;
+  deleteWhere(where: Pred<TagsTable>): Promise<number>;
 }

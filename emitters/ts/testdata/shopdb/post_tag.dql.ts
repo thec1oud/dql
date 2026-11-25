@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, type ValidationIssue, allRows, arg, asInt64, compare, issuesAt, nest, not, ordered, related } from "@dql/runtime";
+import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, type Update, type ValidationIssue, allRows, arg, asInt64, compare, issuesAt, nest, not, ordered, related, set } from "@dql/runtime";
 import { type PostFull, type PostPartial, type PostRef, type PostsTable, decodePostFull, validatePostPartial, validatePostRef } from "./post.dql.ts";
 import { type TagFull, type TagPartial, type TagRef, type TagsTable, decodeTagFull, validateTagPartial, validateTagRef } from "./tag.dql.ts";
 
@@ -483,6 +483,10 @@ export const postTags = {
     desc(): Order<PostTagsTable> {
       return ordered<PostTagsTable>("order.desc", "col.post_tags.post_id");
     },
+    /** set assigns DEFAULT to post_id on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostTagsTable> {
+      return set<PostTagsTable>("post_id", e);
+    },
   },
   /** tagId is column tag_id in builder reads (§9.4). */
   tagId: {
@@ -534,6 +538,10 @@ export const postTags = {
     desc(): Order<PostTagsTable> {
       return ordered<PostTagsTable>("order.desc", "col.post_tags.tag_id");
     },
+    /** set assigns DEFAULT to tag_id on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostTagsTable> {
+      return set<PostTagsTable>("tag_id", e);
+    },
   },
   /** post is relation post in builder reads (§18.2). */
   post: {
@@ -578,8 +586,11 @@ export interface PostTagsReadStore {
 
 /** PostTagsStore reads and writes shop.app.post_tags (§26.3). */
 export interface PostTagsStore extends PostTagsReadStore {
-  insert(d: PostTagDraft): Promise<PostTagFull>;
-  insertOrIgnore(d: PostTagDraft): Promise<PostTagFull | undefined>;
-  upsert(d: PostTagDraft): Promise<PostTagFull>;
+  insert(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull>;
+  insertMany(ds: readonly PostTagDraft[], ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull[]>;
+  insertOrIgnore(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull | undefined>;
+  upsert(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull>;
+  upsertSet(d: PostTagDraft, p: PostTagPartial, ...as: Update<PostTagsTable>[]): Promise<PostTagFull>;
   delete(k: PostTagKey): Promise<void>;
+  deleteWhere(where: Pred<PostTagsTable>): Promise<number>;
 }

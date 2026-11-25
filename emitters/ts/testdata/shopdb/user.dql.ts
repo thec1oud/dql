@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type Uuid, type ValidationIssue, allRows, arg, asInstanceOf, asInt32, asInt64, asString, compare, issuesAt, nest, not, ordered, related } from "@dql/runtime";
+import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type Update, type Uuid, type ValidationIssue, allRows, arg, asInstanceOf, asInt32, asInt64, asString, compare, issuesAt, nest, not, ordered, related, set } from "@dql/runtime";
 import { dqlEmailAddressCheck } from "./dql-checks.dql.ts";
 import { dqlDecodeEmailAddress } from "./dql-decoders.dql.ts";
 import type { EmailAddress } from "./dql-types.dql.ts";
@@ -689,6 +689,10 @@ export const users = {
     desc(): Order<UsersTable> {
       return ordered<UsersTable>("order.desc", "col.users.email");
     },
+    /** set assigns DEFAULT to email on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<UsersTable> {
+      return set<UsersTable>("email", e);
+    },
   },
   /** displayName is column display_name in builder reads (§9.4). */
   displayName: {
@@ -768,6 +772,10 @@ export const users = {
     desc(): Order<UsersTable> {
       return ordered<UsersTable>("order.desc", "col.users.display_name");
     },
+    /** set assigns DEFAULT to display_name on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<UsersTable> {
+      return set<UsersTable>("display_name", e);
+    },
   },
   /** passwordHash is column password_hash in builder reads (§9.4). */
   passwordHash: {
@@ -839,6 +847,10 @@ export const users = {
     desc(): Order<UsersTable> {
       return ordered<UsersTable>("order.desc", "col.users.password_hash");
     },
+    /** set assigns DEFAULT to password_hash on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<UsersTable> {
+      return set<UsersTable>("password_hash", e);
+    },
   },
   /** createdAt is column created_at in builder reads (§9.4). */
   createdAt: {
@@ -889,6 +901,10 @@ export const users = {
     /** desc orders by created_at, descending. */
     desc(): Order<UsersTable> {
       return ordered<UsersTable>("order.desc", "col.users.created_at");
+    },
+    /** set assigns now or DEFAULT to created_at on a write, in place of a value (§20.2). */
+    set(e: Expr): Assignment<UsersTable> {
+      return set<UsersTable>("created_at", e);
     },
   },
   /** updatedAt is column updated_at in builder reads (§9.4). */
@@ -941,6 +957,10 @@ export const users = {
     desc(): Order<UsersTable> {
       return ordered<UsersTable>("order.desc", "col.users.updated_at");
     },
+    /** set assigns now or DEFAULT to updated_at on a write, in place of a value (§20.2). */
+    set(e: Expr): Assignment<UsersTable> {
+      return set<UsersTable>("updated_at", e);
+    },
   },
   /** version is column version in builder reads (§9.4). */
   version: {
@@ -991,6 +1011,10 @@ export const users = {
     /** desc orders by version, descending. */
     desc(): Order<UsersTable> {
       return ordered<UsersTable>("order.desc", "col.users.version");
+    },
+    /** set assigns DEFAULT to version on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<UsersTable> {
+      return set<UsersTable>("version", e);
     },
   },
   /** postsToAuthor is relation posts_to_author in builder reads (§18.2). */
@@ -1068,13 +1092,18 @@ export interface UsersReadStore {
 
 /** UsersStore reads and writes shop.app.users (§26.3). */
 export interface UsersStore extends UsersReadStore {
-  insert(d: UserDraft): Promise<UserFull>;
-  insertOrIgnore(d: UserDraft): Promise<UserFull | undefined>;
-  insertOrIgnoreByTenantIdAndEmail(d: UserDraft): Promise<UserFull | undefined>;
-  upsert(d: UserDraft): Promise<UserFull>;
-  upsertByTenantIdAndEmail(d: UserDraft): Promise<UserFull>;
-  patch(k: UserKey, p: UserPartial): Promise<UserFull>;
+  insert(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
+  insertMany(ds: readonly UserDraft[], ...as: Assignment<UsersTable>[]): Promise<UserFull[]>;
+  insertOrIgnore(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined>;
+  insertOrIgnoreByTenantIdAndEmail(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined>;
+  upsert(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
+  upsertByTenantIdAndEmail(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
+  upsertSet(d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
+  upsertSetByTenantIdAndEmail(d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
+  patch(k: UserKey, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
+  updateWhere(where: Pred<UsersTable>, p: UserPartial, ...as: Update<UsersTable>[]): Promise<number>;
   delete(k: UserKey): Promise<void>;
+  deleteWhere(where: Pred<UsersTable>): Promise<number>;
 }
 
 /** UsersUnscopedReadStore reads, across scopes, shop.app.users (§26.3). */
@@ -1090,11 +1119,16 @@ export interface UsersUnscopedReadStore {
 
 /** UsersUnscopedStore reads and writes, across scopes, shop.app.users (§26.3). */
 export interface UsersUnscopedStore extends UsersUnscopedReadStore {
-  insert(scope: UserScope, d: UserDraft): Promise<UserFull>;
-  insertOrIgnore(scope: UserScope, d: UserDraft): Promise<UserFull | undefined>;
-  insertOrIgnoreByTenantIdAndEmail(scope: UserScope, d: UserDraft): Promise<UserFull | undefined>;
-  upsert(scope: UserScope, d: UserDraft): Promise<UserFull>;
-  upsertByTenantIdAndEmail(scope: UserScope, d: UserDraft): Promise<UserFull>;
-  patch(scope: UserScope, k: UserKey, p: UserPartial): Promise<UserFull>;
+  insert(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
+  insertMany(scope: UserScope, ds: readonly UserDraft[], ...as: Assignment<UsersTable>[]): Promise<UserFull[]>;
+  insertOrIgnore(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined>;
+  insertOrIgnoreByTenantIdAndEmail(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined>;
+  upsert(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
+  upsertByTenantIdAndEmail(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
+  upsertSet(scope: UserScope, d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
+  upsertSetByTenantIdAndEmail(scope: UserScope, d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
+  patch(scope: UserScope, k: UserKey, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
+  updateWhere(scope: UserScope, where: Pred<UsersTable>, p: UserPartial, ...as: Update<UsersTable>[]): Promise<number>;
   delete(scope: UserScope, k: UserKey): Promise<void>;
+  deleteWhere(scope: UserScope, where: Pred<UsersTable>): Promise<number>;
 }

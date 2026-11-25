@@ -113,6 +113,7 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 					dir, c.GetName().GetStored(), dir, dir, f.rt("Order", false), typ, f.rt("ordered", true), typ, jsString("order."+dir), jsString(frag)))
 			}
 		}
+		methods = append(methods, g.assignments(f, e, c, frag)...)
 		members = append(members, fmt.Sprintf("  /** %s is column %s in builder reads (§9.4). */\n  %s: {\n%s  },\n", name, c.GetName().GetStored(), name, strings.Join(methods, "")))
 	}
 	for _, r := range e.t.GetRelations() {
@@ -158,6 +159,43 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 		typ, displayName(e.q), typ, jsString(displayName(e.q)))
 	f.printf("/** %s is table %s in builder reads (§18.2): its columns and relations make predicates and order keys on its rows. */\nexport const %s = {\n%s} as const;\n\n",
 		e.member, displayName(e.q), e.member, strings.Join(members, ""))
+}
+
+// assignments returns the methods of column c's handle that assign to it on
+// writes (§20.2): set for a column a Draft or Partial carries, and add and
+// sub for one a Partial carries that the value operators take.
+func (g *generator) assignments(f *file, e *entity, c *irv1.Column, frag string) []string {
+	col := c.GetName().GetStored()
+	carries := func(s *irv1.Shape) bool {
+		fld := shapeField(s, col)
+		return fld != nil && fld.GetValueKind() == irv1.ValueKind_VALUE_KIND_VALUE_OR_EXPRESSION
+	}
+	if !carries(e.draft) && !carries(e.part) || !e.writes() {
+		return nil
+	}
+	typ := e.tableType()
+	expr, what := f.rt("Expr", false)+`<"default">`, "DEFAULT"
+	switch t := c.GetType(); {
+	case t.GetInstant() != nil, t.GetInstantWithOffset() != nil, t.GetLocalDatetime() != nil, t.GetDate() != nil:
+		expr, what = f.rt("Expr", false), "now or DEFAULT"
+	}
+	out := []string{fmt.Sprintf("    /** set assigns %s to %s on a write, in place of a value (§20.2). */\n    set(e: %s): %s<%s> {\n      return %s<%s>(%s, e);\n    },\n",
+		what, col, expr, f.rt("Assignment", false), typ, f.rt("set", true), typ, jsString(col))}
+	if !carries(e.part) {
+		return out
+	}
+	for _, op := range c.GetOperators() {
+		name := op.GetName()
+		if (name != "add" && name != "sub") || !g.fragmentIDs["op."+name] {
+			continue
+		}
+		v := g.tsType(f, c.GetType(), e.q, "column "+col)
+		sign := map[string]string{"add": "+", "sub": "-"}[name]
+		out = append(out, fmt.Sprintf("    /** %s sets %s to %s %s v on an update (§20.2). */\n    %s(v: %s): %s<%s> {\n      return %s<%s>(%s, %s, %s, %s);\n    },\n",
+			name, col, col, sign, name, v, f.rt("Update", false), typ, f.rt("arith", true), typ, jsString("op."+name), jsString(col), jsString(frag),
+			argNode(f, "v", e.sensitive[col], g.dbType(c.GetType(), false))))
+	}
+	return out
 }
 
 // opMethod is the column handle method of an operator, as ilike or isNull.

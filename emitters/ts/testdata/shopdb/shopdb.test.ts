@@ -4,7 +4,7 @@
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { PgDriver } from "@dql/pg";
-import { Consistency, type Executor, classOf, isViolation, not, or, parseUuid } from "@dql/runtime";
+import { Consistency, DEFAULT, type Executor, type Pred, ValidationError, type ValidationIssue, classOf, isViolation, not, now, or, parseUuid } from "@dql/runtime";
 import {
   Db,
   type EmailAddress,
@@ -15,10 +15,14 @@ import {
   newExecutor,
   parseEmailAddress,
   parseSlugText,
+  PostFull,
+  type PostsTable,
   posts,
+  profiles,
   shapes,
   unscoped,
   users,
+  type UsersTable,
 } from "./index.dql.ts";
 
 const base = process.env["DQL_TEST_POSTGRES_URL"] ?? "";
@@ -237,4 +241,121 @@ test("queries", async () => {
   expect(await all.queries.renameUser({ tenantId: acme.id }, null, a.id, a.version)).toBe(0);
   const u = await all.read((tx: UnscopedDbReadTx) => tx.queries.getUserByEmail({ tenantId: acme.id }, parseEmailAddress("ann@acme.com")));
   expect([u.displayName, u.version]).toEqual(["Ann", a.version + 1]);
+});
+
+/** issues returns the validation issues p rejects with. */
+async function issues(p: Promise<unknown>): Promise<readonly ValidationIssue[]> {
+  const e = await p.catch((e: unknown) => e);
+  return e instanceof ValidationError ? e.issues : [];
+}
+
+test("filtered writes", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const other = await db.tenants.insert({ name: "other" });
+  const h = db.withScope({ tenantId: acme.id });
+  const o = db.withScope({ tenantId: other.id });
+  const email = parseEmailAddress;
+  const long = "a".repeat(321) as EmailAddress;
+
+  // insertMany inserts every draft, in order, or none of them.
+  const us = await h.users.insertMany([
+    { email: email("ann@acme.com"), passwordHash: "x" },
+    { email: email("bob@acme.com"), passwordHash: "x" },
+  ]);
+  expect(us.map((u) => u.email as string)).toEqual(["ann@acme.com", "bob@acme.com"]);
+  expect(us.every((u) => u.tenantId === acme.id)).toBe(true);
+  const dup = await h.users
+    .insertMany([
+      { email: email("cid@acme.com"), passwordHash: "x" },
+      { email: email("ann@acme.com"), passwordHash: "x" },
+    ])
+    .catch((e: unknown) => e);
+  expect(classOf(dup)).toBe("UniqueViolation");
+  expect(await failure(h.users.insertMany([{ email: email("dan@acme.com"), passwordHash: "x" }, { email: long, passwordHash: "x" }]))).toBe("ValidationErrors");
+  expect(await h.users.insertMany([])).toEqual([]);
+  expect(await h.users.count()).toBe(2n);
+  await o.users.insert({ email: email("ann@other.com"), passwordHash: "x" });
+  expect(await h.users.insertOrIgnoreByTenantIdAndEmail({ email: email("cid@acme.com"), passwordHash: "y" })).toBeDefined();
+
+  // updateWhere writes the rows the filter keeps, in scope, and bumps their
+  // versions.
+  const [ann] = us as [UserFull, UserFull];
+  expect(await h.users.updateWhere(users.email.startsWith("ann@"), { displayName: "Ann" })).toBe(1);
+  expect((await h.users.get({ id: ann.id, version: ann.version + 1 })).displayName).toBe("Ann");
+  const none = {} as Pred<UsersTable>;
+  expect(await failure(h.users.updateWhere(none, {}))).toBeUndefined(); // a usage error, outside the taxonomy
+  expect(await failure(h.users.updateWhere(users.allRows(), { email: long }))).toBe("ValidationErrors");
+  await h.profiles.insert({ userId: ann.id });
+  expect(await h.profiles.updateWhere(profiles.allRows(), {})).toBe(0);
+  expect(await h.profiles.updateWhere(profiles.allRows(), { bio: "hi" })).toBe(1);
+
+  // deleteWhere deletes in scope; allRows deletes every row of it.
+  expect(await h.users.deleteWhere(users.email.eq(email("cid@acme.com")))).toBe(1);
+  expect(await failure(h.users.deleteWhere(none))).toBeUndefined(); // a usage error, outside the taxonomy
+  await h.profiles.deleteWhere(profiles.allRows());
+  expect(await unscoped(h).users.deleteWhere({ tenantId: acme.id }, users.allRows())).toBe(2);
+  expect(await o.users.count()).toBe(1n);
+});
+
+test("expressions", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const h = db.withScope({ tenantId: acme.id });
+  const a = await h.users.insert({ email: parseEmailAddress("ann@acme.com"), passwordHash: "x" });
+  const b = await h.users.insert({ email: parseEmailAddress("bob@acme.com"), passwordHash: "x" });
+
+  // An expression travels on the operation, in place of a value.
+  let p = await h.posts.insert({ authorId: a.id, title: "Hello", status: "published" }, posts.publishedAt.set(now));
+  expect(p.publishedAt).not.toBeNull();
+  const ps = await h.posts.insertMany(
+    [
+      { authorId: a.id, title: "One", status: "published" },
+      { authorId: a.id, title: "Two", status: "published" },
+    ],
+    posts.publishedAt.set(now),
+  );
+  expect(ps.every((x) => x.publishedAt !== null)).toBe(true);
+  p = await h.posts.patch(PostFull.key(p), {}, posts.publishedAt.set(DEFAULT), posts.authorId.add(b.id - a.id));
+  expect([p.publishedAt, p.authorId]).toEqual([null, b.id]);
+  expect(await h.posts.updateWhere(posts.authorId.eq(b.id), {}, posts.authorId.sub(b.id - a.id))).toBe(1);
+  await h.profiles.insert({ userId: a.id, bio: "hi" });
+  expect(await h.profiles.updateWhere(profiles.allRows(), {}, profiles.bio.set(DEFAULT))).toBe(1);
+  expect((await h.profiles.get({ userId: a.id })).bio).toBeNull();
+  const u = await unscoped(h).users.patch({ tenantId: acme.id }, UserFull.key(a), {}, users.displayName.set(DEFAULT));
+  expect(u.version).toBe(a.version + 1);
+
+  // A field the payload sets too is field_set_twice; a column the write
+  // does not take is an error.
+  expect(await issues(h.posts.patch(PostFull.key(p), { title: "Hi" }, posts.title.set(DEFAULT)))).toEqual([
+    { shape: "post.partial.flat", field: "title", kind: "field_set_twice" },
+  ]);
+  expect(await failure(h.users.patch(UserFull.key(u), {}, users.createdAt.set(now)))).toBeUndefined(); // a usage error, outside the taxonomy
+  expect(await failure(h.posts.insertMany([{ authorId: a.id, title: "Three" }], posts.title.set(DEFAULT)))).toBe("ValidationErrors");
+});
+
+test("upsertSet", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const h = db.withScope({ tenantId: acme.id });
+
+  // The Partial replaces the default update side: on conflict only the
+  // fields it holds change.
+  const d = { email: parseEmailAddress("ann@acme.com"), passwordHash: "x" };
+  const a = await h.users.upsertSetByTenantIdAndEmail(d, {});
+  let got = await h.users.upsertSetByTenantIdAndEmail({ ...d, passwordHash: "y", displayName: "Draft" }, { displayName: "Ann" });
+  expect([got.id, got.displayName, got.version]).toEqual([a.id, "Ann", a.version + 1]);
+  // A Partial that sets nothing still returns the row.
+  got = await h.users.upsertSetByTenantIdAndEmail(d, {});
+  expect([got.id, got.displayName]).toEqual([a.id, "Ann"]);
+  const b = await h.users.insert({ email: parseEmailAddress("bob@acme.com"), passwordHash: "x" });
+
+  // Expressions go to the update side.
+  const p = await h.posts.insert({ authorId: a.id, title: "Hello", status: "published" });
+  const q = await h.posts.upsertSet({ id: p.id, authorId: a.id, title: "Other" }, {}, posts.authorId.add(b.id - a.id), posts.publishedAt.set(now));
+  expect([q.id, q.title, q.authorId]).toEqual([p.id, "Hello", b.id]);
+  expect(q.publishedAt).not.toBeNull();
+  expect((await issues(h.posts.upsertSet({ id: p.id, authorId: a.id, title: "Other" }, { publishedAt: null }, posts.publishedAt.set(now))))[0]?.kind).toBe("field_set_twice");
+  expect(await failure(h.users.upsertSet(d, { email: "a".repeat(321) as EmailAddress }))).toBe("ValidationErrors");
+  expect(await failure(h.users.upsertSet({ ...d, email: "a".repeat(321) as EmailAddress }, {}))).toBe("ValidationErrors");
 });

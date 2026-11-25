@@ -178,7 +178,7 @@ func (g *generator) fileQuery(f, impl *file, q *irv1.Query, groups []*scopeGroup
 		if p.GetList() {
 			t = "readonly " + parenthesize(t) + "[]"
 		}
-		fq.params = append(fq.params, param{v, t})
+		fq.params = append(fq.params, param{name: v, typ: t})
 		fq.args = append(fq.args, v)
 		types = append(types, jsString(g.dbType(p.GetType(), p.GetList())))
 	}
