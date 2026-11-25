@@ -36,3 +36,19 @@ steps:
     scope: { tenant_id: $acme.id }
     expect:
       value: true
+  # Writes by key report a key that matches no row as NotFound, as Get does
+  # (§19, §20.1), on unversioned entities too.
+  - op: tenants.insert
+    input: { name: brief }
+    save: brief
+  - op: tenants.delete
+    key: { id: $brief.id }
+  - op: tenants.delete
+    key: { id: $brief.id }
+    expect:
+      error: { class: NotFound }
+  - op: tenants.patch
+    key: { id: $brief.id }
+    input: { name: back }
+    expect:
+      error: { class: NotFound }

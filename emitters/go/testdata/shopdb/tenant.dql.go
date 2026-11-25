@@ -614,8 +614,7 @@ func (s tenantsWrites) Delete(ctx context.Context, k TenantKey) error {
 	if err != nil {
 		return err
 	}
-	_, err = dql.Exec(ctx, s.w, st)
-	return err
+	return dql.ExecByKey(ctx, s.w, st)
 }
 
 // DeleteWhere runs tenant.delete_where (§20.1).

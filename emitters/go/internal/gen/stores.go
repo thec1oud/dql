@@ -582,7 +582,9 @@ func (g *generator) methodBody(e *entity, s signature) {
 	case strings.HasSuffix(x.verb, "_where"):
 		f.printf("\treturn %s.Exec(ctx, s.w, st)\n", dql)
 	default:
-		f.printf("\t_, err = %s.Exec(ctx, s.w, st)\n\treturn err\n", dql)
+		// Delete and HardDelete by key: a key that matches no row is
+		// NotFound, as for Get and Patch (§19).
+		f.printf("\treturn %s.ExecByKey(ctx, s.w, st)\n", dql)
 	}
 }
 

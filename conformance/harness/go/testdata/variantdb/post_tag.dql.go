@@ -797,8 +797,7 @@ func (s postTagsWrites) Delete(ctx context.Context, k PostTagKey) error {
 	if err != nil {
 		return err
 	}
-	_, err = dql.Exec(ctx, s.w, st)
-	return err
+	return dql.ExecByKey(ctx, s.w, st)
 }
 
 // DeleteWhere runs post_tag.delete_where (§20.1).

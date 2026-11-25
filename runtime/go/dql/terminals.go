@@ -150,3 +150,16 @@ func VersionedExec(ctx context.Context, h Writer, write, exists Statement) error
 		return Missing(ctx, w, write.Query, exists)
 	})
 }
+
+// ExecByKey runs write, an unversioned write by key returning no rows, and
+// returns NotFound when it matched no row, as Get and Patch do for the same
+// key (§19, §20.1). On a soft-delete entity a row already deleted matches
+// nothing, so deleting it again is NotFound too (§21.3).
+func ExecByKey(ctx context.Context, h Writer, write Statement) error {
+	n, err := Exec(ctx, h, write)
+	if err != nil || n > 0 {
+		return err
+	}
+	e, _ := h.bind()
+	return &NotFound{Origin: Origin{Dialect: e.dialect.Name, Query: write.Query}}
+}

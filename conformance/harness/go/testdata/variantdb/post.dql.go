@@ -1556,8 +1556,7 @@ func (s postsWrites) Delete(ctx context.Context, k PostKey) error {
 	if err != nil {
 		return err
 	}
-	_, err = dql.Exec(ctx, s.w, st)
-	return err
+	return dql.ExecByKey(ctx, s.w, st)
 }
 
 // DeleteWhere runs post.delete_where (§20.1).
@@ -1579,8 +1578,7 @@ func (s postsWrites) HardDelete(ctx context.Context, k PostKey) error {
 	if err != nil {
 		return err
 	}
-	_, err = dql.Exec(ctx, s.w, st)
-	return err
+	return dql.ExecByKey(ctx, s.w, st)
 }
 
 // HardDeleteWhere runs post.hard_delete_where (§20.1).

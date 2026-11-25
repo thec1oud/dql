@@ -68,11 +68,11 @@ steps:
     deleted: only
     expect:
       rows: [{ title: gone }]
-  # A second delete finds no row it sees, so it changes nothing.
+  # A second delete finds no row it sees: the key is NotFound, as for Patch.
   - op: posts.delete
     key: { id: $gone.id }
     expect:
-      events: [{ query: post.delete, rows: 0 }]
+      error: { class: NotFound }
   # A soft-deleted row is not writable through Patch.
   - op: posts.patch
     key: { id: $gone.id }
@@ -88,6 +88,10 @@ steps:
     key: { post_id: $gone.id, tag_id: $db.id }
   - op: posts.hard_delete
     key: { id: $gone.id }
+  - op: posts.hard_delete
+    key: { id: $gone.id }
+    expect:
+      error: { class: NotFound }
   - op: select
     from: posts
     shape: post_full
