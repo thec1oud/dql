@@ -211,10 +211,12 @@ func replayPostgres(ctx context.Context, dsn string, pause bool) error {
 	return run(ctx, dsn, "SELECT pg_wal_replay_resume()")
 }
 
-// sqlstates are the codes Postgres raises for the retryable classes.
+// sqlstates are the codes Postgres raises for the classes a step injects:
+// the retryable ones, and a lock timeout for Retry(policy).Do.
 var sqlstates = map[string]string{
 	string(dql.ClassSerializationFailure): "40001",
 	string(dql.ClassDeadlock):             "40P01",
+	string(dql.ClassLockTimeout):          "55P03",
 }
 
 // injectPostgres sets the plan of conformance/schemas/postgres/inject.sql:
