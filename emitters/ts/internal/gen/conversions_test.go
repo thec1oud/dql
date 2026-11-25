@@ -215,7 +215,7 @@ func TestConversions(t *testing.T) {
 			// ignored.
 			// Named key, as Go names it (§14.9).
 			"  key(p: ItemPatch, k: ItemKey): ItemKey {\n    return {\n      ...k,\n      code: p.code,\n    };\n  },",
-			"import { DecodeError } from \"@dql/runtime\";",
+			"import { DecodeError, Decoder, type Row, asInt64, asString, nest } from \"@dql/runtime\";",
 		},
 	} {
 		for _, part := range parts {
@@ -269,7 +269,7 @@ func TestMerges(t *testing.T) {
 		"if (r.id === c.key.id && r.code === c.key.code && bytesEqual(r.blob, c.key.blob) && foldAscii(r.slug) === foldAscii(c.key.slug)) {",
 		"merged[j] = ItemPartial.applyTo(c.value, r);",
 		`if (!matched) throw new UnmatchedKeyError("shop.app.items", i);`,
-		`import { type Decimal, type Keyed, type Temporal, UnmatchedKeyError, type ValidationIssue, bytesEqual, foldAscii } from "@dql/runtime";`,
+		`import { Decimal, Decoder, type Keyed, type Row, Temporal, UnmatchedKeyError, type ValidationIssue, asBytes, asDate, asEnum, asFloat64, asInstanceOf, asInt64, asString, bytesEqual, foldAscii } from "@dql/runtime";`,
 	} {
 		if !strings.Contains(src, part) {
 			t.Errorf("item.dql.ts lacks %q:\n%s", part, src)

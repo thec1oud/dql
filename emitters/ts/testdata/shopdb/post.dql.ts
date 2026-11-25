@@ -5,12 +5,13 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Keyed, type Temporal, type ValidationIssue, issuesAt } from "@dql/runtime";
+import { Decoder, type Keyed, type Row, Temporal, type ValidationIssue, array, asEnum, asInstanceOf, asInt64, asString, issuesAt, nest, nullableElem } from "@dql/runtime";
 import { dqlPostsTitleCheck } from "./dql-checks.dql.ts";
-import type { MoneyAmount, PostStatus } from "./dql-types.dql.ts";
-import { type PostTagChangeForPost, type PostTagDraftForPost, type PostTagFull, validatePostTagChangeForPost, validatePostTagDraftForPost } from "./post_tag.dql.ts";
-import { type TagDraft, type TagFull, type TagKey, type TagLink, validateTagDraft, validateTagLink } from "./tag.dql.ts";
-import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserRef, validateUserDraft, validateUserPartial, validateUserRef } from "./user.dql.ts";
+import { dqlDecodeMoneyAmount } from "./dql-decoders.dql.ts";
+import { type MoneyAmount, PostStatus } from "./dql-types.dql.ts";
+import { type PostTagChangeForPost, type PostTagDraftForPost, type PostTagFull, decodePostTagFull, validatePostTagChangeForPost, validatePostTagDraftForPost } from "./post_tag.dql.ts";
+import { type TagDraft, type TagFull, type TagKey, type TagLink, decodeTagFull, validateTagDraft, validateTagLink } from "./tag.dql.ts";
+import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserRef, decodeUserFull, redactUserDraft, redactUserPartial, redactUserRef, validateUserDraft, validateUserPartial, validateUserRef } from "./user.dql.ts";
 
 /** PostDraft is the shape post.draft.flat of shop.app.posts. */
 export interface PostDraft {
@@ -406,6 +407,149 @@ export function validatePostRef(r: PostRef): ValidationIssue[] {
 export function validatePostTagsChange(c: PostTagsChange): ValidationIssue[] {
   if (c.kind === "create") return validateTagDraft(c.draft);
   return [];
+}
+
+/**
+ * decodePostFull decodes r, a row of post.full.flat.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePostFull(r: Row): PostFull {
+  const d = new Decoder("post.full.flat", r, 9);
+  return {
+    id: d.field(0, "id", "", asInt64),
+    authorId: d.field(1, "author_id", "", asInt64),
+    editorId: d.nullable(2, "editor_id", asInt64),
+    title: d.field(3, "title", "", asString),
+    slug: d.nullable(4, "slug", asString),
+    status: d.field(5, "status", "", asEnum(PostStatus)),
+    price: d.nullable(6, "price", dqlDecodeMoneyAmount),
+    labels: d.nullable(7, "labels", array(nullableElem(asString))),
+    publishedAt: d.nullable(8, "published_at", asInstanceOf(Temporal.Instant)),
+  };
+}
+
+/**
+ * decodePostFullNested decodes r, a row of post.full.nested.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePostFullNested(r: Row): PostFullNested {
+  const d = new Decoder("post.full.nested", r, 13);
+  return {
+    id: d.field(0, "id", "", asInt64),
+    authorId: d.field(1, "author_id", "", asInt64),
+    editorId: d.nullable(2, "editor_id", asInt64),
+    title: d.field(3, "title", "", asString),
+    slug: d.nullable(4, "slug", asString),
+    status: d.field(5, "status", "", asEnum(PostStatus)),
+    price: d.nullable(6, "price", dqlDecodeMoneyAmount),
+    labels: d.nullable(7, "labels", array(nullableElem(asString))),
+    publishedAt: d.nullable(8, "published_at", asInstanceOf(Temporal.Instant)),
+    author: d.field(9, "author", "", nest(decodeUserFull)),
+    editor: d.nullable(10, "editor", nest(decodeUserFull)),
+    postTags: d.many(11, "post_tags", decodePostTagFull),
+    tags: d.many(12, "tags", decodeTagFull),
+  };
+}
+
+/**
+ * decodePostFullNests decodes r, a row of post.full.nests.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePostFullNests(r: Row): PostFullNests {
+  const d = new Decoder("post.full.nests", r, 4);
+  return {
+    author: d.field(0, "author", "", nest(decodeUserFull)),
+    editor: d.nullable(1, "editor", nest(decodeUserFull)),
+    postTags: d.many(2, "post_tags", decodePostTagFull),
+    tags: d.many(3, "tags", decodeTagFull),
+  };
+}
+
+/**
+ * decodePostKey decodes r, a row of post.key.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePostKey(r: Row): PostKey {
+  const d = new Decoder("post.key", r, 1);
+  return {
+    id: d.field(0, "id", "", asInt64),
+  };
+}
+
+/**
+ * redactPostDraftNested returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactPostDraftNested(n: PostDraftNested): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.author === undefined ? {} : { author: redactUserRef(n.author) }),
+    ...(n.editor === undefined ? {} : { editor: redactUserRef(n.editor) }),
+  };
+}
+
+/**
+ * redactPostDraftNests returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactPostDraftNests(n: PostDraftNests): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.author === undefined ? {} : { author: redactUserRef(n.author) }),
+    ...(n.editor === undefined ? {} : { editor: redactUserRef(n.editor) }),
+  };
+}
+
+/**
+ * redactPostPartialNested returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactPostPartialNested(n: PostPartialNested): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.author === undefined ? {} : { author: redactPostAuthorChange(n.author) }),
+    ...(n.editor === undefined ? {} : { editor: redactPostEditorChange(n.editor) }),
+  };
+}
+
+/**
+ * redactPostPartialNests returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactPostPartialNests(n: PostPartialNests): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.author === undefined ? {} : { author: redactPostAuthorChange(n.author) }),
+    ...(n.editor === undefined ? {} : { editor: redactPostEditorChange(n.editor) }),
+  };
+}
+
+/**
+ * redactPostAuthorChange returns c with the key and payload it holds
+ * redacted, for logging hooks to print (§7.5).
+ */
+export function redactPostAuthorChange(c: PostAuthorChange): Record<string, unknown> {
+  if (c.kind === "create") return { ...c, draft: redactUserDraft(c.draft) };
+  if (c.kind === "update") return { ...c, partial: redactUserPartial(c.partial) };
+  return { ...c };
+}
+
+/**
+ * redactPostEditorChange returns c with the key and payload it holds
+ * redacted, for logging hooks to print (§7.5).
+ */
+export function redactPostEditorChange(c: PostEditorChange): Record<string, unknown> {
+  if (c.kind === "create") return { ...c, draft: redactUserDraft(c.draft) };
+  if (c.kind === "update") return { ...c, partial: redactUserPartial(c.partial) };
+  return { ...c };
 }
 
 /** PostDraft converts PostDraft values to other shapes (§14.9). */

@@ -5,8 +5,8 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Keyed, Uuid, ValidationIssue } from "@dql/runtime";
-import type { UserFull } from "./user.dql.ts";
+import { Decoder, type Keyed, type Row, type Uuid, type ValidationIssue, asString } from "@dql/runtime";
+import { type UserFull, decodeUserFull } from "./user.dql.ts";
 
 /** TenantDraft is the shape tenant.draft.flat of shop.app.tenants. */
 export interface TenantDraft {
@@ -112,6 +112,61 @@ export function validateTenantPartialNested(n: TenantPartialNested): ValidationI
 export function validateTenantPartialNests(n: TenantPartialNests): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   return v;
+}
+
+/**
+ * decodeTenantFull decodes r, a row of tenant.full.flat.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeTenantFull(r: Row): TenantFull {
+  const d = new Decoder("tenant.full.flat", r, 2);
+  return {
+    id: d.field(0, "id", "", asString<Uuid>),
+    name: d.field(1, "name", "", asString),
+  };
+}
+
+/**
+ * decodeTenantFullNested decodes r, a row of tenant.full.nested.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeTenantFullNested(r: Row): TenantFullNested {
+  const d = new Decoder("tenant.full.nested", r, 3);
+  return {
+    id: d.field(0, "id", "", asString<Uuid>),
+    name: d.field(1, "name", "", asString),
+    users: d.many(2, "users", decodeUserFull),
+  };
+}
+
+/**
+ * decodeTenantFullNests decodes r, a row of tenant.full.nests.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeTenantFullNests(r: Row): TenantFullNests {
+  const d = new Decoder("tenant.full.nests", r, 1);
+  return {
+    users: d.many(0, "users", decodeUserFull),
+  };
+}
+
+/**
+ * decodeTenantKey decodes r, a row of tenant.key.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeTenantKey(r: Row): TenantKey {
+  const d = new Decoder("tenant.key", r, 1);
+  return {
+    id: d.field(0, "id", "", asString<Uuid>),
+  };
 }
 
 /** TenantDraft converts TenantDraft values to other shapes (§14.9). */

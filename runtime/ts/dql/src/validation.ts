@@ -142,7 +142,8 @@ export function issuesAt(issues: readonly ValidationIssue[], prefix: string): Va
   }));
 }
 
-function join(prefix: string, path: string): string {
+/** join joins a path to its prefix, as ValidationIssue and DecodeError paths are written. */
+export function join(prefix: string, path: string): string {
   if (prefix === "") {
     return path;
   }
