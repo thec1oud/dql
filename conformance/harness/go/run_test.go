@@ -92,6 +92,15 @@ func TestRunProblems(t *testing.T) {
 		{"- op: tenants.count\n  deadline: x\n", []string{`deadline: time: invalid duration "x"`}},
 		{"- op: tenants.count\n  cancel: x\n", []string{`cancel: time: invalid duration "x"`}},
 		{"- op: tenants.count\n  terminate: x\n", []string{`terminate: time: invalid duration "x"`}},
+		{"- op: convert\n  from: nope\n", []string{"no shape type nope"}},
+		{"- op: convert\n  from: tenant_full\n  input: { name: 1 }\n", []string{"input: "}},
+		{"- op: convert\n  from: tenant_full\n  call: key\n  expect: { generated: false }\n", []string{"key is generated"}},
+		{"- op: convert\n  from: tenant_full\n  call: nope\n", []string{"no conversion nope"}},
+		{"- op: convert\n  call: nope\n", []string{"no conversion nope"}},
+		{"- op: convert\n  from: tenant_full\n  call: key\n  args: [1]\n", []string{"key takes 0 arguments, got 1"}},
+		{"- op: convert\n  call: merge_tenant_by_key\n  args: [x, []]\n", []string{"argument 1: "}},
+		{"- op: convert\n  call: merge_tenant_by_key\n  args: [[], []]\n  expect: { results: [[]] }\n", []string{"want 1 results, got 2"}},
+		{"- op: convert\n  call: merge_tenant_by_key\n  args: [[$acme], []]\n  expect: { results: [[{ name: x }], null] }\n", []string{"result 1.0.name: want x, got acme"}},
 		{"- op: sql\n  sql: { sqlite: x }\n", []string{"no sql for postgres"}},
 		{"- op: sql\n  sql: { postgres: NOT SQL }\n", []string{"syntax error"}},
 		{"- op: begin_write\n  end: sideways\n", []string{"no end sideways"}},
@@ -120,6 +129,12 @@ func TestRunProblems(t *testing.T) {
 	// Filtered writes need the store's table.
 	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "tenants.delete_where", Where: "all"}}}, Target{DB: target.DB}); len(got) != 1 || !strings.Contains(got[0], "no table tenants") {
 		t.Errorf("no table: %q", got)
+	}
+
+	// A fallible conversion's error is its outcome.
+	fallible := Target{Schema: Schema{Funcs: map[string]any{"fail": func() (int, error) { return 0, errors.New("off") }}}}
+	if got := Run(ctx, Scenario{Name: "s", Steps: []Step{{Op: "convert", Call: "fail", Expect: map[string]any{"error": map[string]any{"class": ""}}}}}, fallible); got != nil {
+		t.Errorf("fallible: %q", got)
 	}
 
 	// A handle without pair-form transactions has no begin steps.
