@@ -25,6 +25,7 @@ require (
 	github.com/pganalyze/pg_query_go/v6 v6.2.5 // indirect
 	github.com/rogpeppe/go-internal v1.16.0 // indirect
 	github.com/thec1oud/dql/emitters/go v0.0.0
+	github.com/thec1oud/dql/emitters/ts v0.0.0
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 )
@@ -40,6 +41,8 @@ replace github.com/thec1oud/dql/testkit => ../../testkit
 replace github.com/thec1oud/dql/sources => ../../sources
 
 replace github.com/thec1oud/dql/emitters/go => ../../emitters/go
+
+replace github.com/thec1oud/dql/emitters/ts => ../../emitters/ts
 
 replace github.com/thec1oud/dql/dialects => ../../dialects
 

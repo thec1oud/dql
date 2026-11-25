@@ -250,6 +250,11 @@ emit:
     out: gen
   - plugin: kotlin
     dialect: postgres
+  - plugin: ts
+    dialect: postgres
+  - plugin: ts
+    dialect: postgres
+    out: src/shopdb
 `))
 	msgs = nil
 	for _, d := range c.Validate() {
@@ -258,6 +263,7 @@ emit:
 	want = strings.Join([]string{
 		"config-setting-missing: emit[0] (go) has no package; set package:",
 		"config-setting-missing: emit[0] (go) has no out; set out:",
+		"config-setting-missing: emit[3] (ts) has no out; set out:",
 	}, "\n")
 	if got := strings.Join(msgs, "\n"); got != want {
 		t.Errorf("emit settings:\n%s\nwant:\n%s", got, want)

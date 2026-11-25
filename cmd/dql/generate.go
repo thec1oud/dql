@@ -20,6 +20,7 @@ import (
 	"github.com/thec1oud/dql/core/shapes"
 	"github.com/thec1oud/dql/dialects/postgres"
 	goemit "github.com/thec1oud/dql/emitters/go"
+	tsemit "github.com/thec1oud/dql/emitters/ts"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	pgqueries "github.com/thec1oud/dql/querysources/postgres"
@@ -56,11 +57,8 @@ var querySources = map[irv1.Dialect]func() plugin.Plugin{
 // Each resolves a relative out against the directory of dql.yaml.
 var emitters = map[string]func(c *config.Config) plugin.Plugin{
 	goemit.Name: func(c *config.Config) plugin.Plugin { return goemit.New(c.Dir(), goemit.Settings{}) },
+	tsemit.Name: func(c *config.Config) plugin.Plugin { return tsemit.New(c.Dir(), tsemit.Settings{}) },
 }
-
-// planned are emitters that ship in a later milestone; their entries are
-// skipped until then.
-var planned = map[string]bool{"ts": true}
 
 // generate runs every source, assembles the catalog layer (§2.2, §5.2), the
 // shape layer (§14), the operators (§9) and the query layer (§16, §17),
@@ -143,10 +141,6 @@ func generate(args []string, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "dql generate: wrote the bundle to %s\n", out)
 	}
 	for i, e := range c.Emit {
-		if planned[e.Plugin] {
-			fmt.Fprintf(stderr, "dql generate: skipped emit[%d] (%s): the %s emitter arrives in a later milestone\n", i, e.Plugin, e.Plugin)
-			continue
-		}
 		ds, err := runEmitter(ctx, c, e, b)
 		printDiagnostics(stderr, ds)
 		if err != nil {
