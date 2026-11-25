@@ -104,6 +104,7 @@ func TestRunProblems(t *testing.T) {
 		{"- op: select\n  from: tenants\n  shape: tenant_full\n  deleted: with\n", []string{"the schema has no soft delete"}},
 		{"- op: select\n  from: tenants\n  shape: tenant_full\n  deleted: nope\n", []string{"no deleted nope"}},
 		{"- op: select\n  from: users\n  scope: { tenant_id: [1] }\n  shape: user_full\n", []string{"scope: "}},
+		{"- op: write\n  scope: { tenant_id: [1] }\n", []string{"scope: "}},
 		{"- op: sql\n  sql: { sqlite: x }\n", []string{"no sql for postgres"}},
 		{"- op: raw\n  source: main\n  sql: { sqlite: x }\n", []string{"no sql for postgres"}},
 		{"- op: raw\n  source: main\n  sql: { postgres: SELECT $1 }\n  args: [$nope.x]\n", []string{"args: no saved row nope"}},

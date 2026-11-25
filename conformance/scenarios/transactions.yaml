@@ -41,11 +41,16 @@ steps:
             input: { name: independent }
   - op: tenants.count
     expect: { value: 3 }
-  # Nested is a savepoint: its rollback keeps what the outer wrote.
+  # Nested is a savepoint: its rollback keeps what the outer wrote. A read
+  # that joins the write sees its uncommitted row (§22.3).
   - op: write
     steps:
       - op: tenants.insert
         input: { name: before }
+      - op: read
+        steps:
+          - op: tenants.count
+            expect: { value: 4 }
       - op: write
         propagation: nested
         rollback: true
