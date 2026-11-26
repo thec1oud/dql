@@ -9,6 +9,7 @@ require (
 	github.com/thec1oud/dql/proto v0.0.0
 	github.com/thec1oud/dql/querysources v0.0.0
 	github.com/thec1oud/dql/querysources/mysql v0.0.0
+	github.com/thec1oud/dql/querysources/sqlite v0.0.0
 	github.com/thec1oud/dql/sources v0.0.0
 	github.com/thec1oud/dql/testkit v0.0.0
 )
@@ -50,3 +51,5 @@ replace github.com/thec1oud/dql/dialects => ../../dialects
 replace github.com/thec1oud/dql/querysources => ../../querysources
 
 replace github.com/thec1oud/dql/querysources/mysql => ../../querysources/mysql
+
+replace github.com/thec1oud/dql/querysources/sqlite => ../../querysources/sqlite

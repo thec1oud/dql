@@ -10,6 +10,7 @@ import (
 	"github.com/thec1oud/dql/core/bundle"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	"github.com/thec1oud/dql/sources/sqlitetest"
+	"github.com/thec1oud/dql/testkit/golden"
 )
 
 // A SQLite database file runs through sqlite-live and the sqlite dialect,
@@ -53,4 +54,54 @@ func TestGenerateSQLite(t *testing.T) {
 	if code, _, stderr := dql("generate", "-config", config); code != 1 || !strings.Contains(stderr, "sqlite-live: opening catalog shop") {
 		t.Errorf("missing file: %d %q", code, stderr)
 	}
+}
+
+// dql generate types conformance/schemas/sqlite/queries.sql against
+// shop.sql through shop.yaml, and the catalog layer is
+// testdata/sqliteshop/catalog.json, which the SQLite query source's tests
+// type against.
+func TestGenerateConformanceSQLite(t *testing.T) {
+	schemas := filepath.Join("..", "..", "conformance", "schemas", "sqlite")
+	db, err := sqlitetest.Create(context.Background(), filepath.Join(schemas, "shop.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Drop()
+	t.Setenv("SHOP_SQLITE_PATH", db.Path)
+	raw, err := os.ReadFile(filepath.Join(schemas, "shop.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := write(t, "dql.yaml", string(raw))
+	queries, err := os.ReadFile(filepath.Join(schemas, "queries.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(filepath.Dir(cfg), "queries.sql"), queries, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "bundle.json")
+	if code, _, stderr := dql("generate", "-config", cfg, "-bundle", out); code != 0 || stderr != "dql generate: wrote the bundle to "+out+"\n" {
+		t.Fatalf("%d %q", code, stderr)
+	}
+	b := &irv1.Bundle{}
+	raw, _ = os.ReadFile(out)
+	if err := bundle.UnmarshalJSON(raw, b); err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, q := range b.GetQueries().GetQueries() {
+		if q.GetSource() == irv1.QuerySource_QUERY_SOURCE_FILE {
+			names = append(names, q.GetName().GetStored())
+		}
+	}
+	if got := strings.Join(names, " "); got != "AuthorPostCounts GetUserByEmail RenameUser SearchUsers UsersByEmail" {
+		t.Errorf("file queries = %s", got)
+	}
+	b.Shapes = nil
+	js, err := bundle.MarshalJSON(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	golden.Assert(t, filepath.Join("..", "..", "testdata", "sqliteshop", "catalog.json"), js, inputDigest)
 }
