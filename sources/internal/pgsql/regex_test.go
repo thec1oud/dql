@@ -82,3 +82,9 @@ func TestPortableRegex(t *testing.T) {
 		}
 	}
 }
+
+func TestPortableRegexExported(t *testing.T) {
+	if !PortableRegex("^[a-z]+$") || PortableRegex(`\d`) {
+		t.Error("PortableRegex disagrees with portableRegex")
+	}
+}
