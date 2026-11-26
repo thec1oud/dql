@@ -282,14 +282,15 @@ func (f *fragments) shape(s *irv1.Shape) {
 
 // upsert adds the upsert and the insert-or-ignore of one conflict target
 // (§14.7, §20.1). ON DUPLICATE KEY UPDATE fires on a conflict with any
-// unique key of the table, so it is exact only where the conflict target
-// is the table's one uniqueness fact, and approximate elsewhere. The
-// insert-or-ignore assigns a key column to itself, which changes nothing
-// and, unlike INSERT IGNORE, turns no other error into a warning.
+// unique key of the table, so the upsert is exact only where the conflict
+// target is the table's one uniqueness fact, and approximate elsewhere.
+// The insert-or-ignore is INSERT IGNORE, which also turns other errors,
+// such as a missing value, into warnings, so it is approximate and needs
+// the opt-in (§20.1); unlike a no-op ON DUPLICATE KEY UPDATE, it reports no
+// affected row when it skips, under the found-rows counting the driver
+// adapter asks for.
 func (f *fragments) upsert(u *irv1.Upsert) {
 	tb := f.byName[diagnostics.Name(u.GetEntity())]
-	i := slices.IndexFunc(tb.t.GetUniqueness(), func(q *irv1.Uniqueness) bool { return q.GetName() == u.GetConflictTarget() })
-	key := tb.t.GetUniqueness()[i]
 	fidelity := irv1.Fidelity_FIDELITY_EXACT
 	if len(tb.t.GetUniqueness()) > 1 {
 		fidelity = irv1.Fidelity_FIDELITY_APPROXIMATE
@@ -298,14 +299,9 @@ func (f *fragments) upsert(u *irv1.Upsert) {
 	if f.flavor == MySQL {
 		insert += " AS `dql_new`"
 	}
-	insert += " ON DUPLICATE KEY UPDATE "
-	suffix := tb.id + "." + key.GetName()
-	f.add("upsert."+suffix, insert+"{sets}").Fidelity = fidelity
-	col := quote(tb.t.GetColumns()[0].GetName().GetStored())
-	if len(key.GetColumns()) > 0 {
-		col = quote(key.GetColumns()[0])
-	}
-	f.add("ignore."+suffix, insert+col+" = "+tb.quoted+"."+col).Fidelity = fidelity
+	suffix := tb.id + "." + u.GetConflictTarget()
+	f.add("upsert."+suffix, insert+" ON DUPLICATE KEY UPDATE {sets}").Fidelity = fidelity
+	f.add("ignore."+suffix, "INSERT IGNORE INTO "+tb.quoted+" ({cols}) VALUES {rows}").Fidelity = irv1.Fidelity_FIDELITY_APPROXIMATE
 }
 
 // quote quotes an identifier.

@@ -148,18 +148,17 @@ func TestFragments(t *testing.T) {
 		"select.person_brief":     "SELECT `people`.`email` FROM `people`",
 		"select.pets.full.flat":   "SELECT `pets`.`we``ird` FROM `pets`",
 		// No write returns its rows; the runtime re-reads them.
-		"insert.shop.pets":                      "INSERT INTO `pets` ({cols}) VALUES {rows}",
-		"update.shop.pets":                      "UPDATE `pets` SET {sets}{where}",
-		"delete.shop.pets":                      "DELETE FROM `pets`{where}",
-		"set.shop.pets.id":                      "`id` = {0}",
-		"name.shop.pets.id":                     "`id`",
-		"excluded.shop.pets.id":                 "`dql_new`.`id`",
-		"upsert.shop.pets.PRIMARY":              "INSERT INTO `pets` ({cols}) VALUES {rows} AS `dql_new` ON DUPLICATE KEY UPDATE {sets}",
-		"ignore.shop.pets.PRIMARY":              "INSERT INTO `pets` ({cols}) VALUES {rows} AS `dql_new` ON DUPLICATE KEY UPDATE `id` = `pets`.`id`",
-		"ignore.shop.people.people_lower_email": "INSERT INTO `people` ({cols}) VALUES {rows} AS `dql_new` ON DUPLICATE KEY UPDATE `id` = `people`.`id`",
-		"lock.share":                            " FOR SHARE",
-		"value.no_limit":                        "18446744073709551615",
-		"value.now":                             "CURRENT_TIMESTAMP(6)",
+		"insert.shop.pets":         "INSERT INTO `pets` ({cols}) VALUES {rows}",
+		"update.shop.pets":         "UPDATE `pets` SET {sets}{where}",
+		"delete.shop.pets":         "DELETE FROM `pets`{where}",
+		"set.shop.pets.id":         "`id` = {0}",
+		"name.shop.pets.id":        "`id`",
+		"excluded.shop.pets.id":    "`dql_new`.`id`",
+		"upsert.shop.pets.PRIMARY": "INSERT INTO `pets` ({cols}) VALUES {rows} AS `dql_new` ON DUPLICATE KEY UPDATE {sets}",
+		"ignore.shop.pets.PRIMARY": "INSERT IGNORE INTO `pets` ({cols}) VALUES {rows}",
+		"lock.share":               " FOR SHARE",
+		"value.no_limit":           "18446744073709551615",
+		"value.now":                "CURRENT_TIMESTAMP(6)",
 	} {
 		if got[id].GetTemplate() != want {
 			t.Errorf("%s\n got %q\nwant %q", id, got[id].GetTemplate(), want)
@@ -187,6 +186,10 @@ func TestFragments(t *testing.T) {
 	}
 	if f := got["upsert.shop.people.people_lower_email"]; f.GetFidelity() != irv1.Fidelity_FIDELITY_APPROXIMATE {
 		t.Errorf("people upsert %v", f.GetFidelity())
+	}
+	// INSERT IGNORE turns other errors into warnings too.
+	if f := got["ignore.shop.pets.PRIMARY"]; f.GetFidelity() != irv1.Fidelity_FIDELITY_APPROXIMATE {
+		t.Errorf("pets ignore %v", f.GetFidelity())
 	}
 	if f := got["op.ilike"]; f.GetTemplate() != "LOWER({0}) LIKE LOWER({1})" || f.GetFidelity() != irv1.Fidelity_FIDELITY_EMULATED {
 		t.Errorf("op.ilike %v", f)
