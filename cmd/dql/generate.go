@@ -29,6 +29,7 @@ import (
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
 	"github.com/thec1oud/dql/sources/mysqllive"
 	"github.com/thec1oud/dql/sources/pglive"
+	"github.com/thec1oud/dql/sources/sqlitelive"
 )
 
 // sources are the shipped source plugins, which run in-process (ADR 0002).
@@ -40,6 +41,15 @@ var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 	},
 	mysqllive.Name: func(_ *config.Config, s config.Source) plugin.Plugin {
 		return mysqllive.New(mysqllive.Settings{Catalog: s.Catalog, Connection: s.Connection})
+	},
+	sqlitelive.Name: func(c *config.Config, s config.Source) plugin.Plugin {
+		// A database file's path is relative to dql.yaml, as a snapshot's
+		// is; env: and file: URIs are taken as they are.
+		conn := s.Connection
+		if !strings.HasPrefix(conn, "env:") && !strings.HasPrefix(conn, "file:") {
+			conn = c.Resolve(conn)
+		}
+		return sqlitelive.New(sqlitelive.Settings{Catalog: s.Catalog, Connection: conn})
 	},
 	dpgsnapshot.Name: func(c *config.Config, s config.Source) plugin.Plugin {
 		return dpgsnapshot.New(dpgsnapshot.Settings{Snapshot: c.Resolve(s.Snapshot), Catalog: s.Catalog,
