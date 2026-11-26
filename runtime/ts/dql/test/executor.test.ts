@@ -139,6 +139,10 @@ describe("open (§22.1)", () => {
     expect(e).toBeInstanceOf(UsageError);
     expect(e.reason).toBe("statement_mode");
     expect(e.message).toBe("dql: source main: dql: the dialect does not support the statement mode: simple");
+    // A driver declares its modes too.
+    const driver = new FakeDriver();
+    Object.assign(driver, { statementModes: ["prepare"] });
+    expect(((await failure(() => Executor.open(driver, pg, c("describe")))) as UsageError).reason).toBe("statement_mode");
     // A dialect that declares none allows none.
     expect(await failure(() => Executor.open(new FakeDriver(), { ...pg, statementModes: [] }, c("prepare")))).toBeInstanceOf(UsageError);
   });

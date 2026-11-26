@@ -290,7 +290,7 @@ export class Executor implements Writer {
 
   private async open(name: string, c: SourceConfig): Promise<SourcePool> {
     const mode = c.statementMode ?? "prepare";
-    if (this.dialect.statementModes !== undefined && !this.dialect.statementModes.includes(mode)) {
+    if (![this.dialect.statementModes, this.driver.statementModes].every((modes) => modes === undefined || modes.includes(mode))) {
       throw new UsageError("statement_mode", `dql: source ${name}`, mode);
     }
     let dsn = c.primary.dsn;

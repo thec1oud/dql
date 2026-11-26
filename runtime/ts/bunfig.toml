@@ -5,3 +5,5 @@ root = "."
 coverageThreshold = 1.0
 coverageSkipTestFiles = true
 coverageReporter = ["text"]
+# A package's tests import the others' built output, which their own tests cover.
+coveragePathIgnorePatterns = ["**/dist/**"]

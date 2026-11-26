@@ -94,21 +94,27 @@ jobs:
         run: |
           go test $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
 
-  # The TypeScript runtime: type checks, a build, and its unit tests on
-  # Bun with 100% coverage.
+  # The TypeScript runtime: a build, type checks, and its unit tests on
+  # Bun with 100% coverage. @dql/pg's tests run against Postgres.
   ts:
     runs-on: ubuntu-latest
+    env:
+      DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
     defaults:
       run:
         working-directory: runtime/ts
     steps:
       - uses: actions/checkout@v4
+      - name: start Postgres
+        working-directory: .
+        run: docker compose -f conformance/replica/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"
       - run: bun install --frozen-lockfile
-      - run: bun run typecheck
+      # A package type checks against the built declarations of those it uses.
       - run: bun run build
+      - run: bun run typecheck
       - name: test with 100% coverage
         run: bun run coverage
 
