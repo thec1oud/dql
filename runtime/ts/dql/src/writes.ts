@@ -4,9 +4,9 @@ import { type Pred, oneOf } from "./builder.js";
 import type { Row } from "./decode.js";
 import { ConcurrentModification, NotFound } from "./errors.js";
 import { type Reader, type Writer, bind } from "./executor.js";
-import { type Args, Expression, type Fragments, type Node, type Query, type Use, list, statementOf, use } from "./fragments.js";
-import { atomic, queryBulk, written } from "./large.js";
-import { type Statement, execute, queryOptional, reread } from "./statement.js";
+import { type Args, Expression, type Fragments, type Node, type Query, type Use, arg, list, statementOf, use } from "./fragments.js";
+import { type Bulk, atomic, chunk, queryBulk, written } from "./large.js";
+import { type Statement, execute, executeId, queryAll, queryOptional, reread } from "./statement.js";
 import { throwIfIssues, type ValidationIssue } from "./validation.js";
 
 /** entity brands an assignment with the entity it writes. */
@@ -138,10 +138,20 @@ export function filtered<E>(q: Query, p: Pred<E>): Query {
  * named parameters, and decodes the rows it returns, in order (§20.1,
  * §25.2). It repeats the row for each, so the rows split into statements
  * within the dialect's parameter limit, all in one transaction.
+ *
+ * On a dialect without RETURNING the rows are read back in the same
+ * transaction (§20.1). Where every row leaves an auto-increment key to the
+ * database and the table has reread.from, each statement's rows are read
+ * back at once: a multi-row insert that sets no key takes consecutive
+ * values, a step apart, from its last insert ID on. Otherwise each row is
+ * inserted and read back on its own, so that its key comes back as its own
+ * last insert ID.
  */
 export async function insertMany<T>(h: Writer, t: Fragments, q: Query, rows: readonly Args[], decode: (r: Row) => T): Promise<T[]> {
+  if (q.reread !== undefined && batched(t, q, rows)) {
+    return insertBatched(h, t, q, rows, decode);
+  }
   if (q.reread !== undefined) {
-    // Without RETURNING each row is inserted and read back on its own, so that its key comes back as its own last insert ID (§20.1).
     return atomic(h, async (w) => {
       const out: T[] = [];
       for (const r of rows) {
@@ -150,10 +160,15 @@ export async function insertMany<T>(h: Writer, t: Fragments, q: Query, rows: rea
       return out;
     });
   }
-  const per = q.plan.reduce((n, node) => n + placeholders(node, false), 0);
-  const fetched = await queryBulk(h, {
+  return (await queryBulk(h, manyRows(t, q, rows))).map(decode);
+}
+
+/** manyRows is the bulk write of rows with q, each statement repeating q's VALUES row for its rows. */
+function manyRows(t: Fragments, q: Query, rows: readonly Args[]): Bulk {
+  const { reread: _, ...insert } = q;
+  return {
     rows: rows.length,
-    paramsPerRow: per,
+    paramsPerRow: q.plan.reduce((n, node) => n + placeholders(node, false), 0),
     statement: (from, to) => {
       const args: Args = {};
       const sensitive: Record<string, boolean> = {};
@@ -165,10 +180,82 @@ export async function insertMany<T>(h: Writer, t: Fragments, q: Query, rows: rea
           sensitive[`${k}#${i}`] = v;
         }
       });
-      return statementOf({ ...q, plan: q.plan.map((n) => repeat(n, to - from)), sensitive }, t, args);
+      return statementOf({ ...insert, plan: q.plan.map((n) => repeat(n, to - from)), sensitive }, t, args);
     },
+  };
+}
+
+/** batched reports whether insertMany can read rows back by statement: q's key is an auto-increment every row leaves out, its read filters on it, and the table can read from a last insert ID on. */
+function batched(t: Fragments, q: Query, rows: readonly Args[]): boolean {
+  const g = q.generated;
+  return (
+    Object.hasOwn(t.templates, "reread.from") &&
+    g !== undefined &&
+    g !== "" &&
+    readFrom(q.reread as readonly Node[], g, 0n, 0, "") !== undefined &&
+    rows.every((r) => !(g in r))
+  );
+}
+
+/** insertBatched runs insertMany's statements, and after each reads back its rows by their keys, in one transaction. */
+function insertBatched<T>(h: Writer, t: Fragments, q: Query, rows: readonly Args[], decode: (r: Row) => T): Promise<T[]> {
+  const b = manyRows(t, q, rows);
+  const g = q.generated as string;
+  const { reread: back, ...read } = q;
+  return atomic(h, async (w) => {
+    const out: T[] = [];
+    const size = chunk(b, w[bind]().executor.dialect.maxParams ?? 0);
+    for (let from = 0; from < rows.length; from += size) {
+      const to = Math.min(from + size, rows.length);
+      const { affected, id } = await executeId(w, b.statement(from, to));
+      const plan = readFrom(back as readonly Node[], g, id, to - from, q.types?.[g] ?? "") as Node[];
+      const s: Statement = { ...statementOf({ ...read, plan }, t, rows[from]), writes: true, atMostOne: false, kind: "select" };
+      const got = await queryAll(w, s);
+      if (got.length !== affected || affected !== to - from) {
+        throw new Error(`dql: query ${q.name} inserted ${affected} rows and read back ${got.length} of ${to - from}`);
+      }
+      out.push(...got.map(decode));
+    }
+    return out;
   });
-  return fetched.map(decode);
+}
+
+/**
+ * readFrom returns plan, a read by key, reading instead the n rows whose key
+ * gen holds the last insert ID id or a later value of its sequence, in key
+ * order: its comparison of gen with its parameter becomes reread.from, and an
+ * order and a limit follow. It is undefined when plan has no such comparison.
+ */
+function readFrom(plan: readonly Node[], gen: string, id: bigint, n: number, type: string): Node[] | undefined {
+  let col: Node | undefined;
+  const out = plan.map((node) => {
+    const [replaced, c] = fromId(node, gen, id, type);
+    col ??= c;
+    return replaced;
+  });
+  if (col === undefined) {
+    return undefined;
+  }
+  return [...out, use("clause.order", { "0": use("order.asc", { "0": col }) }), use("clause.limit", { "0": arg(BigInt(n)) })];
+}
+
+/** fromId replaces the comparison of a column with gen under node by reread.from, and returns the column. */
+function fromId(node: Node, gen: string, id: bigint, type: string): [Node, Node | undefined] {
+  if (node.node !== "use") {
+    return [node, undefined];
+  }
+  const p = node.holes?.["1"];
+  if (node.fragment === "op.eq" && p?.node === "param" && p.name === gen) {
+    const col = node.holes?.["0"] as Node;
+    return [use("reread.from", { "0": col, "1": arg(id, false, type), "2": arg(id, false, type) }), col];
+  }
+  let found: Node | undefined;
+  const holes = mapHoles(node, (h) => {
+    const [replaced, c] = fromId(h, gen, id, type);
+    found ??= c;
+    return replaced;
+  });
+  return [use(node.fragment, holes), found];
 }
 
 /** placeholders counts the placeholders of the values.row uses under node: its parameters and values. */

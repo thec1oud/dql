@@ -123,6 +123,11 @@ func (f *fragments) add(id, template string) *irv1.Fragment {
 // OR, so only OR and NOT are parenthesized. MySQL has no OFFSET without a
 // LIMIT, so an offset alone takes value.no_limit, the largest row count.
 // MariaDB writes a share lock the older way. Neither has DISTINCT ON.
+// reread.from keeps the keys a multi-row insert generated from its last
+// insert ID {1} on: one statement's keys are consecutive values of the
+// session's auto_increment_increment from it, so a read in key order
+// limited to the row count finds them, though other writers' keys with
+// another offset fall in their range.
 func (f *fragments) static() {
 	share := " FOR SHARE"
 	if f.flavor == MariaDB {
@@ -146,6 +151,7 @@ func (f *fragments) static() {
 		"lock.update":       " FOR UPDATE",
 		"order.asc":         "{0} ASC",
 		"order.desc":        "{0} DESC",
+		"reread.from":       "{0} >= {1} AND MOD({0} - {2}, @@SESSION.auto_increment_increment) = 0",
 		"select.distinct":   "SELECT DISTINCT {cols} FROM {from}",
 		"value.default":     "DEFAULT",
 		"value.no_limit":    "18446744073709551615",

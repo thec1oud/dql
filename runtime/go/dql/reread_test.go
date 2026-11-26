@@ -153,3 +153,133 @@ func TestInsertManyReread(t *testing.T) {
 		t.Error("a failing insert")
 	}
 }
+
+// rangeTable is rereadTable with reread.from, so that InsertMany reads a
+// statement's rows back at once.
+var rangeTable = func() *Fragments {
+	t := &Fragments{Placeholder: Question, Templates: map[string]string{
+		"reread.from":  "{0} >= {1} AND MOD({0} - {2}, 1) = 0",
+		"clause.order": " ORDER BY {0}",
+		"order.asc":    "{0} ASC",
+		"bool.and":     "{0} AND {1}",
+		"col.users.a":  "`users`.`a`",
+	}}
+	for k, v := range rereadTable.Templates {
+		t.Templates[k] = v
+	}
+	return t
+}()
+
+// rangeInsert is rereadInsert whose read also filters on a scope.
+func rangeInsert() *Query {
+	q := rereadInsert()
+	q.Reread = []Node{Use{Fragment: "select.user"}, Use{Fragment: "clause.where", Holes: map[string]Node{"0": Use{Fragment: "bool.and", Holes: map[string]Node{
+		"0": eq("col.users.a", Param("scope")),
+		"1": eq("col.users.id", Param("id")),
+	}}}}}
+	return q
+}
+
+// rangeDriver numbers inserted rows from 1 and reads back the limit's rows
+// from the first key on; short drops that many from each read.
+func rangeDriver(short *int) *fakeDriver {
+	next := int64(0)
+	var first int64
+	d := &fakeDriver{insertID: func(sql string) int64 {
+		if !strings.HasPrefix(sql, "INSERT") {
+			return 0
+		}
+		first = next + 1
+		next += int64(strings.Count(sql, "), (") + 1)
+		return first
+	}}
+	d.handle = func(sql string, args []any) ([]Row, int64, error) {
+		if !strings.HasPrefix(sql, "SELECT") {
+			return nil, int64(strings.Count(sql, "), (") + 1), nil
+		}
+		if !strings.Contains(sql, ">=") {
+			return []Row{{args[1]}}, 0, nil
+		}
+		var out []Row
+		for k := args[1].(int64); k < args[1].(int64)+args[3].(int64)-int64(*short); k++ {
+			out = append(out, Row{k})
+		}
+		return out, 0, nil
+	}
+	return d
+}
+
+// Where every row leaves its auto-increment key out, InsertMany reads each
+// statement's rows back at once, from its last insert ID on, in key order
+// (§20.1, §25.2).
+func TestInsertManyBatched(t *testing.T) {
+	ctx := context.Background()
+	short := 0
+	d := rangeDriver(&short)
+	e := bulkExec(t, d, 4)
+	rows := []Args{{"a": 1, "scope": 9}, {"a": 2, "scope": 9}, {"a": 3, "scope": 9}}
+	got, err := InsertMany(ctx, e, rangeTable, rangeInsert(), rows, decodeInt)
+	if err != nil || len(got) != 3 || got[0] != 1 || got[1] != 2 || got[2] != 3 {
+		t.Fatalf("%v %v", got, err)
+	}
+	c := d.calls()
+	if strings.Count(c, "begin") != 1 || strings.Count(c, "INSERT") != 2 || strings.Count(c, "SELECT") != 2 ||
+		!strings.Contains(c, "`users`.`a` = ? AND `users`.`id` >= ? AND MOD(`users`.`id` - ?, 1) = 0 ORDER BY `users`.`id` ASC LIMIT ?") {
+		t.Errorf("calls %s", c)
+	}
+
+	// A row that sets its key, or a read that cannot read from a key, takes
+	// a row at a time.
+	if _, err := InsertMany(ctx, e, rangeTable, rangeInsert(), []Args{{"a": 1, "scope": 9}, {"id": int64(50), "a": 2, "scope": 9}}, decodeInt); err != nil {
+		t.Fatal(err)
+	}
+	unkeyed := rangeInsert()
+	unkeyed.Generated = ""
+	byKey := rangeInsert()
+	byKey.Reread = []Node{Use{Fragment: "select.user"}, Param("id")}
+	for _, q := range []*Query{unkeyed, byKey} {
+		if batched(rangeTable, q, rows) {
+			t.Errorf("%v reads rows back at once", q.Reread)
+		}
+	}
+
+	// A read that finds fewer rows than the insert wrote is an error.
+	short = 1
+	if _, err := InsertMany(ctx, e, rangeTable, rangeInsert(), rows[:1], decodeInt); err == nil || !strings.Contains(err.Error(), "inserted 1 rows and read back 0 of 1") {
+		t.Errorf("a short read: %v", err)
+	}
+	short = 0
+
+	// Errors of the insert, the read, its assembly and decoding come back.
+	bad := rangeInsert()
+	bad.Plan = []Node{Use{Fragment: "insert.nothing"}}
+	if _, err := InsertMany(ctx, e, rangeTable, bad, rows, decodeInt); err == nil {
+		t.Error("an insert that does not assemble")
+	}
+	noOrder := &Fragments{Placeholder: Question, Templates: map[string]string{}}
+	for k, v := range rangeTable.Templates {
+		if k != "clause.order" {
+			noOrder.Templates[k] = v
+		}
+	}
+	if _, err := InsertMany(ctx, e, noOrder, rangeInsert(), rows, decodeInt); err == nil || !strings.Contains(err.Error(), "in query user.insert") {
+		t.Errorf("a read that does not assemble: %v", err)
+	}
+	if _, err := InsertMany(ctx, e, rangeTable, rangeInsert(), rows, func(Row) (int64, error) { return 0, errors.New("undecodable") }); err == nil {
+		t.Error("a row that does not decode")
+	}
+	handle := d.handle
+	d.handle = func(sql string, args []any) ([]Row, int64, error) {
+		if strings.HasPrefix(sql, "SELECT") {
+			return nil, 0, errors.New("read")
+		}
+		return handle(sql, args)
+	}
+	if _, err := InsertMany(ctx, e, rangeTable, rangeInsert(), rows, decodeInt); err == nil {
+		t.Error("a failing read")
+	}
+	d.handle = func(string, []any) ([]Row, int64, error) { return nil, 0, errors.New("write") }
+	if _, err := InsertMany(ctx, e, rangeTable, rangeInsert(), rows, decodeInt); err == nil {
+		t.Error("a failing insert")
+	}
+}

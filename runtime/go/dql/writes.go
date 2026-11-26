@@ -3,6 +3,7 @@ package dql
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -47,9 +48,17 @@ func Filtered[E any](q *Query, p Pred[E]) (*Query, error) {
 // statements within the dialect's parameter limit, all in one
 // transaction.
 //
-// On a dialect without RETURNING each row is inserted and read back on its
-// own, so that its key comes back as its own last insert ID (§20.1).
+// On a dialect without RETURNING the rows are read back in the same
+// transaction (§20.1). Where every row leaves an auto-increment key to the
+// database and the table has reread.from, each statement's rows are read
+// back at once: a multi-row insert that sets no key takes consecutive
+// values, a step apart, from its last insert ID on. Otherwise each row is
+// inserted and read back on its own, so that its key comes back as its
+// own last insert ID.
 func InsertMany[T any](ctx context.Context, h Writer, t *Fragments, q *Query, rows []Args, decode func(Row) (T, error)) ([]T, error) {
+	if q.Reread != nil && batched(t, q, rows) {
+		return insertBatched(ctx, h, t, q, rows, decode)
+	}
 	if q.Reread != nil {
 		out := make([]T, 0, len(rows))
 		err := Atomic(ctx, h, func(ctx context.Context, w Writer) error {
@@ -72,12 +81,31 @@ func InsertMany[T any](ctx context.Context, h Writer, t *Fragments, q *Query, ro
 		}
 		return out, nil
 	}
+	fetched, err := FetchBulk(ctx, h, manyRows(t, q, rows))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]T, 0, len(fetched))
+	for _, r := range fetched {
+		v, err := decode(r)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, nil
+}
+
+// manyRows is the bulk write of rows with q, each statement repeating q's
+// VALUES row for its rows.
+func manyRows(t *Fragments, q *Query, rows []Args) Bulk {
 	per := 0
 	for _, node := range q.Plan {
 		per += placeholders(node, false)
 	}
-	b := Bulk{Rows: len(rows), ParamsPerRow: per, Statement: func(from, to int) (Statement, error) {
+	return Bulk{Rows: len(rows), ParamsPerRow: per, Statement: func(from, to int) (Statement, error) {
 		many := *q
+		many.Reread = nil
 		args := Args{}
 		sensitive := map[string]bool{}
 		many.Plan = repeatRows(q.Plan, to-from)
@@ -92,19 +120,123 @@ func InsertMany[T any](ctx context.Context, h Writer, t *Fragments, q *Query, ro
 		many.Sensitive = sensitive
 		return many.Statement(t, args)
 	}}
-	fetched, err := FetchBulk(ctx, h, b)
+}
+
+// batched reports whether InsertMany can read rows back by statement: q's
+// key is an auto-increment every row leaves out, its read filters on it,
+// and the table can read from a last insert ID on.
+func batched(t *Fragments, q *Query, rows []Args) bool {
+	if _, ok := t.Templates["reread.from"]; !ok || q.Generated == "" {
+		return false
+	}
+	if _, ok := readFrom(q.Reread, q.Generated, 0, 0, ""); !ok {
+		return false
+	}
+	for _, r := range rows {
+		if _, set := r[q.Generated]; set {
+			return false
+		}
+	}
+	return true
+}
+
+// insertBatched runs InsertMany's statements, and after each reads back
+// its rows by their keys, in one transaction.
+func insertBatched[T any](ctx context.Context, h Writer, t *Fragments, q *Query, rows []Args, decode func(Row) (T, error)) ([]T, error) {
+	b := manyRows(t, q, rows)
+	var out []T
+	err := Atomic(ctx, h, func(ctx context.Context, w Writer) error {
+		out = make([]T, 0, len(rows))
+		e, _ := w.bind()
+		size := b.chunk(e.dialect.MaxParams)
+		for from := 0; from < len(rows); from += size {
+			to := min(from+size, len(rows))
+			s, err := b.Statement(from, to)
+			if err != nil {
+				return err
+			}
+			n, id, err := execID(ctx, w, s)
+			if err != nil {
+				return err
+			}
+			plan, _ := readFrom(q.Reread, q.Generated, id, int64(to-from), q.Types[q.Generated])
+			a, err := t.Assemble(plan, rows[from], q.Sensitive, q.Types)
+			if err != nil {
+				return fmt.Errorf("%w in query %s", err, q.Name)
+			}
+			read := Statement{
+				Query: q.Name, Catalog: q.Catalog, SQL: a.SQL, Args: a.Args, Writes: true,
+				Kind: "select", Sensitive: a.Sensitive, Types: a.Types,
+			}
+			got, err := Fetch(ctx, w, read)
+			if err != nil {
+				return err
+			}
+			if int64(len(got)) != n || n != int64(to-from) {
+				return fmt.Errorf("dql: query %s inserted %d rows and read back %d of %d", q.Name, n, len(got), to-from)
+			}
+			for _, r := range got {
+				v, err := decode(r)
+				if err != nil {
+					return err
+				}
+				out = append(out, v)
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	out := make([]T, 0, len(fetched))
-	for _, r := range fetched {
-		v, err := decode(r)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, v)
-	}
 	return out, nil
+}
+
+// readFrom returns plan, a read by key, reading instead the n rows whose
+// key gen holds the last insert ID id or a later value of its sequence, in
+// key order: its comparison of gen with its parameter becomes reread.from,
+// and an order and a limit follow. ok is false when plan has no such
+// comparison.
+func readFrom(plan []Node, gen string, id, n int64, typ string) ([]Node, bool) {
+	out := make([]Node, 0, len(plan)+2)
+	var col Node
+	for _, node := range plan {
+		node, c := fromID(node, gen, id, typ)
+		if c != nil {
+			col = c
+		}
+		out = append(out, node)
+	}
+	if col == nil {
+		return nil, false
+	}
+	out = append(out,
+		Use{Fragment: "clause.order", Holes: map[string]Node{"0": Use{Fragment: "order.asc", Holes: map[string]Node{"0": col}}}},
+		Use{Fragment: "clause.limit", Holes: map[string]Node{"0": Arg{Value: n}}},
+	)
+	return out, true
+}
+
+// fromID replaces the comparison of a column with gen under node by
+// reread.from, and returns the column.
+func fromID(node Node, gen string, id int64, typ string) (Node, Node) {
+	u, ok := node.(Use)
+	if !ok {
+		return node, nil
+	}
+	if p, ok := u.Holes["1"].(Param); ok && u.Fragment == "op.eq" && string(p) == gen {
+		col := u.Holes["0"]
+		return Use{Fragment: "reread.from", Holes: map[string]Node{"0": col, "1": Arg{Value: id, Type: typ}, "2": Arg{Value: id, Type: typ}}}, col
+	}
+	var found Node
+	holes := make(map[string]Node, len(u.Holes))
+	for k, h := range u.Holes {
+		h, c := fromID(h, gen, id, typ)
+		if c != nil {
+			found = c
+		}
+		holes[k] = h
+	}
+	return Use{Fragment: u.Fragment, Holes: holes}, found
 }
 
 // placeholders counts the placeholders of the values.row uses under node:

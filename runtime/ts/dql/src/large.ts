@@ -157,7 +157,7 @@ export interface Bulk {
 }
 
 /** chunk returns how many rows each statement of b writes. */
-function chunk(b: Bulk, maxParams: number): number {
+export function chunk(b: Bulk, maxParams: number): number {
   if (maxParams <= 0 || b.paramsPerRow <= 0) {
     return Math.max(b.rows, 1);
   }

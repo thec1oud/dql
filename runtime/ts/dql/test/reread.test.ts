@@ -161,3 +161,61 @@ test("a connection held back for independent transactions passes the insert ID t
     expect(await optionalOf(plain, statementOf(insert(), table, { id: 5, a: 1 }), first)).toBe(5);
   }
 });
+
+// ranged is table with reread.from, so that insertMany reads a statement's rows back at once.
+const ranged: Fragments = {
+  placeholder: "question",
+  templates: {
+    ...table.templates,
+    "reread.from": "{0} >= {1} AND MOD({0} - {2}, 1) = 0",
+    "clause.order": " ORDER BY {0}",
+    "order.asc": "{0} ASC",
+    "clause.limit": " LIMIT {0}",
+  },
+};
+
+test("insertMany reads each statement's rows back at once from its last insert ID, where every row leaves the key out (§20.1, §25.2)", async () => {
+  const f = new Fake();
+  const e = await f.executor({ ...pg, maxParams: 4 }, ["shop"]);
+  open.push(e);
+  f.on("user.insert", 1, 2).affected(2).insertId(1n);
+  f.on("user.insert", 3).affected(1).insertId(3n);
+  f.on("user.insert", 1n, 1n, 2n).returns([1n], [2n]);
+  f.on("user.insert", 3n, 3n, 1n).returns([3n]);
+  expect(await insertMany(e, ranged, insert(), [{ a: 1 }, { a: 2 }, { a: 3 }], first)).toEqual([1n, 2n, 3n]);
+  const calls = f.calls();
+  expect(calls.map((c) => c.sql)).toEqual([
+    "INSERT INTO `users` (`id`, `a`) VALUES (DEFAULT, ?), (DEFAULT, ?)",
+    "SELECT `users`.`id` FROM `users` WHERE `users`.`id` >= ? AND MOD(`users`.`id` - ?, 1) = 0 ORDER BY `users`.`id` ASC LIMIT ?",
+    "INSERT INTO `users` (`id`, `a`) VALUES (DEFAULT, ?)",
+    "SELECT `users`.`id` FROM `users` WHERE `users`.`id` >= ? AND MOD(`users`.`id` - ?, 1) = 0 ORDER BY `users`.`id` ASC LIMIT ?",
+  ]);
+  expect(calls.every((c) => c.inTx)).toBe(true);
+
+  // A row that sets its key takes a row at a time.
+  f.on("user.insert", 9n, 4).affected(1).insertId(9n);
+  f.on("user.insert", 9n).returns([9n]);
+  expect(await insertMany(e, ranged, insert(), [{ id: 9n, a: 4 }], first)).toEqual([9n]);
+
+  // A read that finds fewer rows than the insert wrote is an error.
+  f.on("user.insert", 5).affected(1).insertId(5n);
+  f.on("user.insert", 5n, 5n, 1n).returns();
+  await expect(insertMany(e, ranged, insert(), [{ a: 5 }], first)).rejects.toThrow("dql: query user.insert inserted 1 rows and read back 0 of 1");
+});
+
+test("insertMany takes a row at a time without reread.from, a generated key, or a read by it", async () => {
+  const [f, e] = await fake();
+  f.onAny("user.insert").affected(1).insertId(1n);
+  f.on("user.insert", 1n).returns([1n]);
+  const unkeyed: Query = { ...insert(), generated: "" };
+  const plain = [use("select.user"), use("clause.where", { "0": list([param("id")], "") })];
+  for (const [t, q] of [
+    [table, insert()],
+    [ranged, unkeyed],
+    [ranged, insert(plain)],
+  ] as const) {
+    f.on("user.insert", ...(q.generated === "" ? [] : [1n])).returns([1n]);
+    await insertMany(e, t, q, [{ a: 1 }], first).catch(() => undefined);
+  }
+  expect(f.calls().some((c) => c.sql.includes(">="))).toBe(false);
+});
