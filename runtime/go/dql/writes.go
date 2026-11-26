@@ -46,7 +46,32 @@ func Filtered[E any](q *Query, p Pred[E]) (*Query, error) {
 // (§20.1, §25.2). It repeats the row for each, so the rows split into
 // statements within the dialect's parameter limit, all in one
 // transaction.
+//
+// On a dialect without RETURNING each row is inserted and read back on its
+// own, so that its key comes back as its own last insert ID (§20.1).
 func InsertMany[T any](ctx context.Context, h Writer, t *Fragments, q *Query, rows []Args, decode func(Row) (T, error)) ([]T, error) {
+	if q.Reread != nil {
+		out := make([]T, 0, len(rows))
+		err := Atomic(ctx, h, func(ctx context.Context, w Writer) error {
+			out = out[:0] // a rerun starts over
+			for _, r := range rows {
+				s, err := q.Statement(t, r)
+				if err != nil {
+					return err
+				}
+				v, err := OneOf(ctx, w, s, decode)
+				if err != nil {
+					return err
+				}
+				out = append(out, v)
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		return out, nil
+	}
 	per := 0
 	for _, node := range q.Plan {
 		per += placeholders(node, false)

@@ -441,3 +441,22 @@ func TestQueriers(t *testing.T) {
 		t.Error(codes)
 	}
 }
+
+// §20.1: on a dialect without RETURNING a write carries the read of its
+// row, with the parameter the last insert ID fills.
+func TestQueryReread(t *testing.T) {
+	b := shopShapes(t)
+	read := &irv1.FragmentPlan{Parts: []*irv1.FragmentUse{{Fragment: "select.tag.full.flat"}}}
+	query(t, b, "tag.insert").Reread = &irv1.Reread{Plan: read, Generated: "id"}
+	query(t, b, "tag.patch").Reread = &irv1.Reread{Plan: read}
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatal(codes)
+	}
+	contains(t, files, "tag.dql.go",
+		"\t\tReread: []dql.Node{\n\t\t\tdql.Use{Fragment: \"select.tag.full.flat\"},\n\t\t},\n\t\tGenerated: \"id\",\n\t}",
+	)
+	if n := strings.Count(files["tag.dql.go"], "Reread:"); n != 2 {
+		t.Errorf("%d rereads", n)
+	}
+}

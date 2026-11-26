@@ -54,6 +54,9 @@ type Statement struct {
 	// source names the source a raw statement runs on in place of the
 	// catalog's (§22.1).
 	source string
+	// reread reads back the row the write returns, on a dialect without
+	// RETURNING (§20.1).
+	reread *reread
 }
 
 // connFor returns the connection a statement runs on, and whether it is a
@@ -186,18 +189,29 @@ func optional(ctx context.Context, h Reader, s *Statement) (Row, bool, error) {
 
 // Exec runs s, which writes, and returns how many rows it affected.
 func Exec(ctx context.Context, h Writer, s Statement) (n int64, err error) {
+	n, _, err = execID(ctx, h, s)
+	return n, err
+}
+
+// execID runs s, which writes, and returns how many rows it affected and,
+// on a connection that reports it, the last insert ID.
+func execID(ctx context.Context, h Writer, s Statement) (n, id int64, err error) {
 	e, f := handle(ctx, h)
 	ctx, q := e.startQuery(ctx, f, &s)
 	defer func() { q.end(false, n, err) }()
 	c, _, done, err := connFor(ctx, e, f, &s, true)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer func() { done(err) }()
-	n, err = c.Exec(withQuery(ctx, s.Query), s.SQL, s.Args, s.Types)
+	if ic, ok := c.(InsertIDConn); ok {
+		n, id, err = ic.ExecID(withQuery(ctx, s.Query), s.SQL, s.Args, s.Types)
+	} else {
+		n, err = c.Exec(withQuery(ctx, s.Query), s.SQL, s.Args, s.Types)
+	}
 	if err != nil {
 		src, _ := e.sourceOf(&s)
-		return 0, e.translate(err, s.Catalog, s.Query, src)
+		return 0, 0, e.translate(err, s.Catalog, s.Query, src)
 	}
-	return n, nil
+	return n, id, nil
 }

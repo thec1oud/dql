@@ -222,7 +222,19 @@ func (g *generator) queryVars(e *entity) {
 		for _, u := range q.GetPlan().GetParts() {
 			f.printf("\t\t\t%s,\n", g.use(f, u, e.q))
 		}
-		f.printf("\t\t},\n\t}\n")
+		f.printf("\t\t},\n")
+		if rr := q.GetReread(); rr != nil {
+			// The dialect has no RETURNING: the row is read back (§20.1).
+			f.printf("\t\tReread: []%s.Node{\n", dql)
+			for _, u := range rr.GetPlan().GetParts() {
+				f.printf("\t\t\t%s,\n", g.use(f, u, e.q))
+			}
+			f.printf("\t\t},\n")
+			if rr.GetGenerated() != "" {
+				f.printf("\t\tGenerated: %q,\n", rr.GetGenerated())
+			}
+		}
+		f.printf("\t}\n")
 	}
 	f.printf(")\n\n")
 }

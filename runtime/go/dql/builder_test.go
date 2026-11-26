@@ -3,6 +3,7 @@ package dql
 import (
 	"context"
 	"fmt"
+	"maps"
 	"testing"
 )
 
@@ -42,6 +43,14 @@ var userShape = Shape[int64, userE]{
 	CountName: "user.count", ExistsName: "user.exists", Decode: decodeInt,
 }
 
+// noLimitTable is builderTable on a dialect, such as MySQL, that has no
+// OFFSET without a LIMIT.
+func noLimitTable() *Fragments {
+	t := &Fragments{Placeholder: builderTable.Placeholder, Templates: maps.Clone(builderTable.Templates)}
+	t.Templates["value.no_limit"] = "18446744073709551615"
+	return t
+}
+
 func colEq(col string, v any) Pred[userE] {
 	return NewPred[userE](Use{Fragment: "op.eq", Holes: map[string]Node{"0": Use{Fragment: col}, "1": Arg{Value: v}}})
 }
@@ -63,6 +72,12 @@ func TestBuilderStatements(t *testing.T) {
 		args string
 	}{
 		{name: "plain", b: b, want: `SELECT u."id" FROM "app"."users" u`, args: "[]"},
+		// A dialect without OFFSET alone limits to every row.
+		{name: "offset alone", b: NewBuilder(noLimitTable(), From{}, userShape).Offset(5),
+			want: `SELECT u."id" FROM "app"."users" u LIMIT 18446744073709551615 OFFSET $1`, args: "[5]"},
+		{name: "offset with limit", b: NewBuilder(noLimitTable(), From{}, userShape).Limit(2).Offset(5),
+			want: `SELECT u."id" FROM "app"."users" u LIMIT $1 OFFSET $2`, args: "[2 5]"},
+		{name: "offset alone where it can be", b: b.Offset(5), want: `SELECT u."id" FROM "app"."users" u OFFSET $1`, args: "[5]"},
 		{name: "where", b: where,
 			want: `SELECT u."id" FROM "app"."users" u WHERE ((u."email" = $1 OR u."email" = $2) OR NOT (u."id" > $3))`, args: "[a b 1]"},
 		{name: "scope and calls", b: NewBuilder(builderTable, scope, userShape).Where(And(gt, gt)).Where(gt),

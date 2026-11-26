@@ -58,6 +58,16 @@ type Conn interface {
 	Release()
 }
 
+// InsertIDConn is a Conn whose driver reports the ID of the last row an
+// insert numbered, as MySQL's does. The runtime reads a written row back by
+// it on a dialect without RETURNING (§20.1).
+type InsertIDConn interface {
+	Conn
+	// ExecID runs a statement and returns how many rows it affected and the
+	// last insert ID, 0 when it numbered none.
+	ExecID(ctx context.Context, sql string, args []any, types []string) (affected, id int64, err error)
+}
+
 // Rows iterates over a query's rows, each in the driver-neutral form of
 // Row.
 type Rows interface {
