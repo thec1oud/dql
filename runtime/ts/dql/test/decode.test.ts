@@ -259,9 +259,14 @@ describe("converters", () => {
     expect(w({ class: "text", value: "seven" })).toEqual({ ok: false, raw: { class: "text", value: "seven" } });
     expect(weak(asBytes)({ class: "blob", value: new Uint8Array([1]) })).toEqual({ ok: true, value: new Uint8Array([1]) });
     expect(weak(asFloat64)({ class: "real", value: 1.5 })).toEqual({ ok: true, value: 1.5 });
+    // A driver may give the storage class's plain value.
+    expect(w(7n)).toEqual({ ok: true, value: 7n });
+    expect(w(1.5)).toEqual({ ok: false, raw: { class: "real", value: 1.5 } });
+    expect(w("seven")).toEqual({ ok: false, raw: { class: "text", value: "seven" } });
+    expect(w(new Uint8Array([1]))).toEqual({ ok: false, raw: { class: "blob", value: new Uint8Array([1]) } });
     for (const v of [
       null,
-      7n,
+      true,
       { class: "integer" },
       { value: 1n },
       { class: 1, value: 1n },

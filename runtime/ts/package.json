@@ -6,11 +6,12 @@
     "dql",
     "dqlpg",
     "dqlmysql",
+    "dqlsqlite",
     "dqlotel"
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "typecheck": "tsc -p dql/tsconfig.test.json && tsc -p dqlpg/tsconfig.test.json && tsc -p dqlmysql/tsconfig.test.json && tsc -p dqlotel/tsconfig.test.json",
+    "typecheck": "tsc -p dql/tsconfig.test.json && tsc -p dqlpg/tsconfig.test.json && tsc -p dqlmysql/tsconfig.test.json && tsc -p dqlsqlite/tsconfig.test.json && tsc -p dqlotel/tsconfig.test.json",
     "test": "bun test",
     "coverage": "bun test --coverage"
   },

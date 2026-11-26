@@ -433,6 +433,41 @@ describe("writes (§20)", () => {
     expect(last(f).sql).toBe("($1, DEFAULT), ($2, DEFAULT)");
   });
 
+  test("insertMany without value.default leaves unset columns out (§25.2)", async () => {
+    const f = new Fake();
+    const e = await f.executor(pg, ["shop"]);
+    open.push(e);
+    const { "value.default": _, ...templates } = table.templates;
+    const lite: Fragments = { ...table, templates };
+    const insert: Query = {
+      name: "user.insert",
+      catalog: "shop",
+      kind: "insert",
+      writes: true,
+      plan: [
+        use("insert.users", {
+          cols: list([use("name.users.email"), use("name.users.name")], ", "),
+          rows: use("values.row", { "0": list([param("email"), param("name")], ", ") }),
+          returning: use("returning.user"),
+        }),
+        arg(1),
+      ],
+    };
+    f.onAny("user.insert").returns([1n]);
+    const rows = [{ email: "a", name: "A" }, { name: "B" }, { name: "C" }, { name: "D", email: "d" }];
+    expect(await insertMany(e, lite, insert, rows, (r: Row) => r.values[0])).toEqual([1n, 1n, 1n]);
+    expect(f.calls().map((c) => [c.sql, c.args, c.inTx])).toEqual([
+      [`INSERT INTO "app"."users" AS u ("email", "name") VALUES ($1, $2) RETURNING u."id"$3`, ["a", "A", 1], true],
+      [`INSERT INTO "app"."users" AS u ("name") VALUES ($1), ($2) RETURNING u."id"$3`, ["B", "C", 1], true],
+      [`INSERT INTO "app"."users" AS u ("email", "name") VALUES ($1, $2) RETURNING u."id"$3`, ["d", "D", 1], true],
+    ]);
+    // Rows setting the same columns are one statement, and one row is assembled the same way.
+    expect(await insertMany(e, lite, insert, rows.slice(1, 3), (r: Row) => r.values[0])).toEqual([1n]);
+    expect(last(f).sql).toBe(`INSERT INTO "app"."users" AS u ("name") VALUES ($1), ($2) RETURNING u."id"$3`);
+    expect(await insertMany(e, lite, insert, [], (r: Row) => r)).toEqual([]);
+    expect(statementOf(insert, lite, { email: "e" }).sql).toBe(`INSERT INTO "app"."users" AS u ("email") VALUES ($1) RETURNING u."id"$2`);
+  });
+
   test("writes by key tell NotFound from ConcurrentModification (§20.4)", async () => {
     const [f, e] = await fakeExec();
     const write = statementOf({ name: "user.patch", catalog: "shop", kind: "update", writes: true, plan: [use("select.user")] }, table);

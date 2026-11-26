@@ -266,7 +266,7 @@ function assembled(q: Query, t: Fragments, plan: readonly Node[], args: Args): A
 
 /** statementOf assembles q with args into the statement the executor runs. */
 export function statementOf(q: Query, t: Fragments, args: Args = {}): Statement {
-  const a = assembled(q, t, q.plan, args);
+  const a = assembled(q, t, Object.hasOwn(t.templates, "value.default") ? q.plan : omitUnset(q.plan, args), args);
   const back = q.reread;
   return {
     ...(back === undefined
@@ -290,4 +290,25 @@ export function statementOf(q: Query, t: Fragments, args: Args = {}): Statement 
     sensitive: a.sensitive,
     types: a.types,
   };
+}
+
+/**
+ * omitUnset leaves the columns args does not set out of an insert's column
+ * list and VALUES rows, for a dialect without value.default: the column then
+ * takes its default. A multi-row insert's rows set the same columns, as
+ * insertMany groups them so, so the first row's say which.
+ */
+function omitUnset(plan: readonly Node[], args: Args): Node[] {
+  return plan.map((node) => {
+    const cols = node.node === "use" ? node.holes?.["cols"] : undefined;
+    const rows = node.node === "use" ? node.holes?.["rows"] : undefined;
+    if (node.node !== "use" || cols?.node !== "list" || rows === undefined) {
+      return node;
+    }
+    const first = (rows.node === "list" ? rows.items[0] : rows) as Use;
+    const keep = (first.holes?.["0"] as List).items.map((it) => it.node !== "param" || Object.hasOwn(args, it.name));
+    const kept = (l: List): List => list(l.items.filter((_, i) => keep[i]), l.separator);
+    const keptRow = (r: Node): Use => use((r as Use).fragment, { "0": kept((r as Use).holes?.["0"] as List) });
+    return use(node.fragment, { ...node.holes, cols: kept(cols), rows: rows.node === "list" ? list(rows.items.map(keptRow), rows.separator) : keptRow(rows) });
+  });
 }
