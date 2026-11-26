@@ -48,6 +48,15 @@ func (w Weak[T]) Raw() storage.Value {
 	return w.raw
 }
 
+// Any returns the typed value, or the raw value when there is one, for a
+// driver that writes either as it is.
+func (w Weak[T]) Any() any {
+	if w.raw != nil {
+		return w.raw
+	}
+	return w.value
+}
+
 // String formats a typed value as itself and a raw value as raw <class>(v).
 func (w Weak[T]) String() string {
 	if w.raw != nil {

@@ -249,6 +249,11 @@ func TestWeak(t *testing.T) {
 		{storage.Real(1.5), storage.Real(1.5)},
 		{storage.Text("3"), storage.Text("3")},
 		{storage.Blob("x"), storage.Blob("x")},
+		// A driver may give the storage class's plain Go value.
+		{int64(3), nil},
+		{1.5, storage.Real(1.5)},
+		{"3", storage.Text("3")},
+		{[]byte("x"), storage.Blob("x")},
 	} {
 		w, err := conv(c.v)
 		if err != nil || w.Raw() != nil && c.raw == nil || c.raw != nil && w.String() != weak.Raw[int64](c.raw).String() {
@@ -258,8 +263,8 @@ func TestWeak(t *testing.T) {
 	if n, ok := dql.Must(conv(storage.Integer(3))).Get(); !ok || n != 3 {
 		t.Errorf("typed weak value %d, %t", n, ok)
 	}
-	if _, err := conv(int64(3)); err == nil {
-		t.Errorf("Weak took a value that is not a storage.Value")
+	if _, err := conv(true); err == nil {
+		t.Errorf("Weak took a value of no storage class")
 	}
 	if _, err := dql.Weak(dql.Float[float64])(storage.Real(1.5)); err != nil {
 		t.Errorf("Weak[float64]: %v", err)

@@ -20,7 +20,8 @@ import (
 //     bytes and a bytes-fallback opaque value as []byte;
 //   - an array as []any, one level per dimension;
 //   - a composite value as a Row of its attributes in their order;
-//   - a weak column's value as a storage.Value;
+//   - a weak column's value as its storage class, as int64, float64,
+//     string or []byte, or as a storage.Value;
 //   - a to-one nest as a Row, and a to-many nest as []Row;
 //   - any other value as its Go type itself, such as time.Time,
 //     dec.Decimal, civil.Date or Range[int64].
@@ -310,13 +311,29 @@ func NullableElem[T any](conv func(any) (T, error)) func(any) (*T, error) {
 	}
 }
 
-// Weak converts a weak column's storage.Value: a value conv accepts as the
-// affinity type, and otherwise the raw value, which is not an error (§8.10,
-// §13).
+// Weak converts a weak column's value, given as its storage class: an
+// int64, float64, string or []byte, or a storage.Value. A value conv
+// accepts is the affinity type, and any other is the raw value, which is
+// not an error (§8.10, §13).
 func Weak[T any](conv func(any) (T, error)) func(any) (weak.Weak[T], error) {
 	return func(v any) (weak.Weak[T], error) {
-		var plain any
+		var raw storage.Value
 		switch s := v.(type) {
+		case int64:
+			raw = storage.Integer(s)
+		case float64:
+			raw = storage.Real(s)
+		case string:
+			raw = storage.Text(s)
+		case []byte:
+			raw = storage.Blob(s)
+		case storage.Value:
+			raw = s
+		default:
+			return weak.Weak[T]{}, Fail(OffType)
+		}
+		var plain any
+		switch s := raw.(type) {
 		case storage.Integer:
 			plain = int64(s)
 		case storage.Real:
@@ -325,12 +342,10 @@ func Weak[T any](conv func(any) (T, error)) func(any) (weak.Weak[T], error) {
 			plain = string(s)
 		case storage.Blob:
 			plain = []byte(s)
-		default:
-			return weak.Weak[T]{}, Fail(OffType)
 		}
 		if x, err := conv(plain); err == nil {
 			return weak.Of(x), nil
 		}
-		return weak.Raw[T](v.(storage.Value)), nil
+		return weak.Raw[T](raw), nil
 	}
 }

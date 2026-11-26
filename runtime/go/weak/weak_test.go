@@ -53,3 +53,12 @@ func TestRawNil(t *testing.T) {
 	}()
 	weak.Raw[int64](nil)
 }
+
+func TestAny(t *testing.T) {
+	if v := weak.Of("a").Any(); v != "a" {
+		t.Errorf("Any() = %v", v)
+	}
+	if v := weak.Raw[string](storage.Integer(1)).Any(); v != storage.Integer(1) {
+		t.Errorf("Any() = %v", v)
+	}
+}

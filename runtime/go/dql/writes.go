@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strconv"
 )
 
@@ -81,7 +83,23 @@ func InsertMany[T any](ctx context.Context, h Writer, t *Fragments, q *Query, ro
 		}
 		return out, nil
 	}
-	fetched, err := FetchBulk(ctx, h, manyRows(t, q, rows))
+	var fetched []Row
+	var err error
+	if gs := groups(t, rows); len(gs) == 1 {
+		fetched, err = FetchBulk(ctx, h, manyRows(t, q, gs[0]))
+	} else {
+		err = Atomic(ctx, h, func(ctx context.Context, w Writer) error {
+			fetched = fetched[:0] // a rerun starts over
+			for _, group := range gs {
+				got, err := FetchBulk(ctx, w, manyRows(t, q, group))
+				if err != nil {
+					return err
+				}
+				fetched = append(fetched, got...)
+			}
+			return nil
+		})
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +112,91 @@ func InsertMany[T any](ctx context.Context, h Writer, t *Fragments, q *Query, ro
 		out = append(out, v)
 	}
 	return out, nil
+}
+
+// groups splits rows into runs that one statement can write. Where the
+// dialect has value.default, a row's unset column takes DEFAULT, so every
+// row writes in one; where it has none, as on SQLite, a statement leaves
+// unset columns out, so each run of rows setting the same columns is
+// written apart (§25.2).
+func groups(t *Fragments, rows []Args) [][]Args {
+	if _, ok := t.Templates["value.default"]; ok || len(rows) == 0 {
+		return [][]Args{rows}
+	}
+	var out [][]Args
+	from := 0
+	for i := 1; i <= len(rows); i++ {
+		if i == len(rows) || !sameKeys(rows[i], rows[from]) {
+			out = append(out, rows[from:i])
+			from = i
+		}
+	}
+	return out
+}
+
+func sameKeys(a, b Args) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k := range a {
+		if _, ok := b[k]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// omitUnset leaves the columns args does not set out of an insert's column
+// list and VALUES rows, for a dialect without value.default: the column
+// then takes its default. A multi-row insert's rows set the same columns,
+// as groups splits them so, so the first row's say which.
+func omitUnset(plan []Node, args Args) []Node {
+	out := slices.Clone(plan)
+	for i, node := range plan {
+		u, ok := node.(Use)
+		cols, isList := u.Holes["cols"].(List)
+		rows, hasRows := u.Holes["rows"]
+		if !ok || !isList || !hasRows {
+			continue
+		}
+		first := rows
+		if l, ok := rows.(List); ok {
+			first = l.Items[0]
+		}
+		var keep []bool
+		for _, it := range first.(Use).Holes["0"].(List).Items {
+			p, isParam := it.(Param)
+			_, set := args[string(p)]
+			keep = append(keep, !isParam || set)
+		}
+		holes := maps.Clone(u.Holes)
+		holes["cols"] = kept(cols, keep)
+		if l, ok := rows.(List); ok {
+			items := make([]Node, len(l.Items))
+			for j, r := range l.Items {
+				items[j] = keptRow(r.(Use), keep)
+			}
+			holes["rows"] = List{Items: items, Separator: l.Separator}
+		} else {
+			holes["rows"] = keptRow(rows.(Use), keep)
+		}
+		out[i] = Use{Fragment: u.Fragment, Holes: holes}
+	}
+	return out
+}
+
+func kept(l List, keep []bool) List {
+	out := List{Separator: l.Separator}
+	for i, it := range l.Items {
+		if keep[i] {
+			out.Items = append(out.Items, it)
+		}
+	}
+	return out
+}
+
+func keptRow(row Use, keep []bool) Use {
+	return Use{Fragment: row.Fragment, Holes: map[string]Node{"0": kept(row.Holes["0"].(List), keep)}}
 }
 
 // manyRows is the bulk write of rows with q, each statement repeating q's
