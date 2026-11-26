@@ -3,6 +3,7 @@ package dql
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 )
@@ -248,6 +249,12 @@ type Query struct {
 	// The database types of the named parameters, as the dialect names
 	// them; a list parameter's is its array type. See Statement.Types.
 	Types map[string]string
+	// Reread reads back the row a write returns on a dialect without
+	// RETURNING, after the write and in its transaction (§20.1): a plan over
+	// the write's own parameters. Generated names the one the last insert
+	// ID fills when the call leaves it out.
+	Reread    []Node
+	Generated string
 }
 
 // Statement assembles q with args into the statement the executor runs.
@@ -256,8 +263,38 @@ func (q *Query) Statement(t *Fragments, args Args) (Statement, error) {
 	if err != nil {
 		return Statement{}, fmt.Errorf("%w in query %s", err, q.Name)
 	}
-	return Statement{
+	s := Statement{
 		Query: q.Name, Catalog: q.Catalog, SQL: a.SQL, Args: a.Args, Writes: q.Writes, AtMostOne: q.AtMostOne,
 		Consistency: q.Consistency, Kind: q.Kind, Sensitive: a.Sensitive, Types: a.Types,
+	}
+	if q.Reread != nil {
+		s.reread = &reread{t: t, q: q, args: args}
+	}
+	return s, nil
+}
+
+// reread is the read of a written row, assembled once the write has run.
+type reread struct {
+	t    *Fragments
+	q    *Query
+	args Args
+}
+
+// statement assembles the read, with the last insert ID id in the
+// generated parameter when the call left it out. It runs as a write, in the
+// write's transaction on the primary.
+func (r *reread) statement(id int64) (Statement, error) {
+	args := r.args
+	if _, set := args[r.q.Generated]; r.q.Generated != "" && !set {
+		args = maps.Clone(args)
+		args[r.q.Generated] = id
+	}
+	a, err := r.t.Assemble(r.q.Reread, args, r.q.Sensitive, r.q.Types)
+	if err != nil {
+		return Statement{}, fmt.Errorf("%w in query %s", err, r.q.Name)
+	}
+	return Statement{
+		Query: r.q.Name, Catalog: r.q.Catalog, SQL: a.SQL, Args: a.Args, Writes: true, AtMostOne: true,
+		Kind: "select", Sensitive: a.Sensitive, Types: a.Types,
 	}, nil
 }

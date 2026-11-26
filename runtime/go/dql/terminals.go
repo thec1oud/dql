@@ -10,7 +10,17 @@ import (
 // OneOf runs s and decodes its one row: NotFound for none and TooManyRows
 // for more (§19).
 func OneOf[T any](ctx context.Context, h Reader, s Statement, decode func(Row) (T, error)) (T, error) {
-	r, err := One(ctx, h, s)
+	var r Row
+	var err error
+	if s.reread != nil {
+		var ok bool
+		if r, ok, err = written(ctx, h, s); err == nil && !ok {
+			e, _ := h.bind()
+			err = &NotFound{Origin: Origin{Dialect: e.dialect.Name, Query: s.Query}}
+		}
+	} else {
+		r, err = One(ctx, h, s)
+	}
 	if err != nil {
 		var zero T
 		return zero, err
@@ -21,7 +31,11 @@ func OneOf[T any](ctx context.Context, h Reader, s Statement, decode func(Row) (
 // OptionalOf runs s and decodes its row, if any: TooManyRows for more than
 // one (§19).
 func OptionalOf[T any](ctx context.Context, h Reader, s Statement, decode func(Row) (T, error)) (opt.Opt[T], error) {
-	r, ok, err := Optional(ctx, h, s)
+	optional := Optional
+	if s.reread != nil {
+		optional = written
+	}
+	r, ok, err := optional(ctx, h, s)
 	if err != nil || !ok {
 		return opt.None[T](), err
 	}
@@ -125,8 +139,12 @@ func Missing(ctx context.Context, h Reader, query string, exists Statement) erro
 // transaction (§20.4).
 func VersionedOne[T any](ctx context.Context, h Writer, write, exists Statement, decode func(Row) (T, error)) (T, error) {
 	var out T
+	optional := Optional
+	if write.reread != nil {
+		optional = written
+	}
 	err := Atomic(ctx, h, func(ctx context.Context, w Writer) error {
-		r, ok, err := Optional(ctx, w, write)
+		r, ok, err := optional(ctx, w, write)
 		switch {
 		case err != nil:
 			return err
@@ -162,4 +180,29 @@ func ExecByKey(ctx context.Context, h Writer, write Statement) error {
 	}
 	e, _ := h.bind()
 	return &NotFound{Origin: Origin{Dialect: e.dialect.Name, Query: write.Query}}
+}
+
+// written runs s, a write whose row comes back by re-reading it (§20.1),
+// in one transaction: h's, the one ctx carries, or a new one. A write that
+// affects no row, such as an insert-or-ignore that skips, returns none;
+// otherwise the read finds the row by its key, filled from the last insert
+// ID where the call left it out. h must be a Writer.
+func written(ctx context.Context, h Reader, s Statement) (row Row, found bool, err error) {
+	w, ok := h.(Writer)
+	if !ok {
+		return nil, false, ErrReadOnly
+	}
+	err = Atomic(ctx, w, func(ctx context.Context, w Writer) error {
+		n, id, err := execID(ctx, w, s)
+		if err != nil || n == 0 {
+			return err
+		}
+		read, err := s.reread.statement(id)
+		if err != nil {
+			return err
+		}
+		row, found, err = Optional(ctx, w, read)
+		return err
+	})
+	return row, found, err
 }

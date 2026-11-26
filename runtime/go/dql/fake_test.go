@@ -25,6 +25,9 @@ type fakeDriver struct {
 	fail map[string]error
 	// types are the argument types of each statement run, in order.
 	types [][]string
+	// insertID, when set, makes connections report the last insert ID,
+	// which it returns for each statement.
+	insertID func(sql string) int64
 }
 
 type fakeNative struct{ n NativeError }
@@ -116,7 +119,19 @@ func (p *fakePool) Acquire(ctx context.Context) (Conn, error) {
 	p.n++
 	id := fmt.Sprintf("%s#%d", p.cfg.DSN, p.n)
 	p.d.mu.Unlock()
-	return &fakeConn{p: p, id: id}, nil
+	c := &fakeConn{p: p, id: id}
+	if p.d.insertID != nil {
+		return &fakeIDConn{c}, nil
+	}
+	return c, nil
+}
+
+// fakeIDConn reports the last insert ID, as a MySQL connection does.
+type fakeIDConn struct{ *fakeConn }
+
+func (c *fakeIDConn) ExecID(ctx context.Context, sql string, args []any, types []string) (int64, int64, error) {
+	n, err := c.Exec(ctx, sql, args, types)
+	return n, c.p.d.insertID(sql), err
 }
 
 func (p *fakePool) Close() {

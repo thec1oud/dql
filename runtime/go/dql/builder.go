@@ -258,8 +258,13 @@ func (b Builder[T, E]) rows() (Statement, error) {
 	if len(b.order) > 0 {
 		plan = append(plan, Use{Fragment: "clause.order", Holes: map[string]Node{"0": List{Items: b.order, Separator: ", "}}})
 	}
-	if b.limit != nil {
-		plan = append(plan, Use{Fragment: "clause.limit", Holes: map[string]Node{"0": b.limit}})
+	limit := b.limit
+	if _, ok := b.t.Templates["value.no_limit"]; ok && limit == nil && b.offset != nil {
+		// A dialect without OFFSET alone limits to every row (§18.2).
+		limit = Use{Fragment: "value.no_limit"}
+	}
+	if limit != nil {
+		plan = append(plan, Use{Fragment: "clause.limit", Holes: map[string]Node{"0": limit}})
 	}
 	if b.offset != nil {
 		plan = append(plan, Use{Fragment: "clause.offset", Holes: map[string]Node{"0": b.offset}})

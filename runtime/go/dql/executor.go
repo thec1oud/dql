@@ -323,6 +323,15 @@ type generalConn struct {
 	s *sourcePool
 }
 
+// ExecID passes the last insert ID through, where the driver reports it.
+func (c *generalConn) ExecID(ctx context.Context, sql string, args []any, types []string) (int64, int64, error) {
+	if ic, ok := c.Conn.(InsertIDConn); ok {
+		return ic.ExecID(ctx, sql, args, types)
+	}
+	n, err := c.Conn.Exec(ctx, sql, args, types)
+	return n, 0, err
+}
+
 func (c *generalConn) Release() {
 	c.Conn.Release()
 	c.s.done()
