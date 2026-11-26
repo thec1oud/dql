@@ -34,7 +34,7 @@ import {
 import { parse } from "yaml";
 import type { Recorder } from "./events.ts";
 import { type Method, type Param, type Type, type Types, norm } from "./types.ts";
-import { Decoder, type Json, encode, isObject, normalize, show } from "./values.ts";
+import { Decoder, type Fill, type Json, encode, isObject, normalize, show } from "./values.ts";
 
 /** Scenario is one scenario file: steps run in order against a fresh database of the named schema, on a source with a replica when replica is set. */
 export interface Scenario {
@@ -117,6 +117,8 @@ export interface Inject {
 export interface Schema {
   readonly ddl: readonly string[];
   readonly dialect: string;
+  /** fill gives a field of a type the dialect requires a value for when a scenario leaves it out, by type and field: on MySQL, a UUID key filled by an expression default (STANDING-RULES, 2026-11-26). */
+  readonly fill?: Fill;
   readonly module: Readonly<Record<string, unknown>>;
   readonly types: Types;
   exec(dsn: string, sql: string): Promise<void>;
@@ -232,7 +234,7 @@ class Runner {
     this.db = t.db;
     this.types = t.schema.types;
     this.module = t.schema.module;
-    this.decoder = new Decoder(this.types);
+    this.decoder = new Decoder(this.types, t.schema.fill);
   }
 
   /** run runs one step. */

@@ -2,6 +2,7 @@
   "nodeModulesDir": "manual",
   "imports": {
     "@dql/runtime": "../../../runtime/ts/dql/dist/index.js",
-    "@dql/pg": "../../../runtime/ts/dqlpg/dist/index.js"
+    "@dql/pg": "../../../runtime/ts/dqlpg/dist/index.js",
+    "@dql/mysql": "../../../runtime/ts/dqlmysql/dist/index.js"
   }
 }
