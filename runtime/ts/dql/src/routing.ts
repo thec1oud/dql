@@ -1,6 +1,7 @@
 // Read consistency and sessions (design record §22.5).
 
 import { ambient, within } from "./context.js";
+import { formatDuration } from "./hooks.js";
 
 /** Level is how fresh a read must be. */
 type Level = "primary" | "any" | "bounded" | "read-your-writes";
@@ -42,6 +43,21 @@ export class Consistency {
   /** orFail makes a read-your-writes read fail with ReplicaUnavailable, rather than read from the primary, when no replica has replayed the session's writes (after waiting, with wait). */
   orFail(): Consistency {
     return new Consistency(this.level, this.bound, this.waitFor, true);
+  }
+
+  /** toString names the level as Go's runtime does: primary, any, bounded(2s) or read-your-writes, with any wait or fail. */
+  toString(): string {
+    let s: string = this.level;
+    if (this.level === "bounded") {
+      s += `(${formatDuration(this.bound)})`;
+    }
+    if (this.waitFor > 0) {
+      s += `.wait(${formatDuration(this.waitFor)})`;
+    }
+    if (this.fails) {
+      s += ".or-fail";
+    }
+    return s;
   }
 }
 
