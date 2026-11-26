@@ -1,0 +1,27 @@
+scenario: bulk-limits-32766
+schema: shop
+requires: [returning, params-32766]
+steps:
+  # SQLite binds at most 32766 parameters in a statement, and a tenant row
+  # binds 2: 16383 rows are the most one statement writes (§25.2).
+  - op: tenants.insert_many
+    input: { generate: { count: 16382, row: { name: "below-$i" } } }
+    expect: { count: 16382, statements: 1 }
+  - op: tenants.insert_many
+    input: { generate: { count: 16383, row: { name: "at-$i" } } }
+    expect: { count: 16383, statements: 1 }
+  # One row more splits the write into two statements in one transaction.
+  - op: tenants.insert_many
+    input: { generate: { count: 16384, row: { name: "above-$i" } } }
+    expect:
+      count: 16384
+      events:
+        - { tx: begin, propagation: join }
+        - { query: tenant.insert, rows: 16383 }
+        - { query: tenant.insert, rows: 1 }
+        - { tx: end, outcome: commit }
+  - op: tenants.count
+    expect: { value: 49149 }
+  - op: tenants.insert_many
+    input: []
+    expect: { count: 0, statements: 0 }

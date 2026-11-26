@@ -1102,7 +1102,7 @@
                           "plugin": "sqlite-live"
                         },
                         "value": {
-                          "string": "local_datetime"
+                          "string": "instant"
                         }
                       },
                       {
@@ -1124,12 +1124,12 @@
                     },
                     "default": {
                       "class": "DEFAULT_EXPRESSION",
-                      "native": "strftime('%Y-%m-%dT%H:%M:%f', 'now')"
+                      "native": "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
                     },
                     "extensions": [
                       {
                         "@type": "type.dql.dev/dql.ext.sqlite.v1.Comment",
-                        "text": "@immutable @as(local_datetime)"
+                        "text": "@immutable @as(instant)"
                       }
                     ],
                     "name": {
@@ -1157,7 +1157,7 @@
                           "plugin": "sqlite-live"
                         },
                         "value": {
-                          "string": "local_datetime"
+                          "string": "instant"
                         }
                       },
                       {
@@ -1179,12 +1179,12 @@
                     },
                     "default": {
                       "class": "DEFAULT_EXPRESSION",
-                      "native": "strftime('%Y-%m-%dT%H:%M:%f', 'now')"
+                      "native": "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
                     },
                     "extensions": [
                       {
                         "@type": "type.dql.dev/dql.ext.sqlite.v1.Comment",
-                        "text": "@db-updated @as(local_datetime)"
+                        "text": "@db-updated @as(instant)"
                       }
                     ],
                     "name": {
@@ -1289,13 +1289,13 @@
                 "extensions": [
                   {
                     "@type": "type.dql.dev/dql.ext.sqlite.v1.TableDefinition",
-                    "sql": "CREATE TABLE users (\n  id            INTEGER PRIMARY KEY,\n  tenant_id     TEXT NOT NULL, -- @bound @as(uuid)\n  email         TEXT NOT NULL,\n  display_name  TEXT,\n  password_hash TEXT NOT NULL, -- @write-only @sensitive\n  created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f', 'now')), -- @immutable @as(local_datetime)\n  updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f', 'now')), -- @db-updated @as(local_datetime)\n  version       INTEGER NOT NULL DEFAULT 1, -- @version\n  CONSTRAINT users_email_check CHECK (length(email) \u003c= 320),\n  CONSTRAINT users_display_name_check CHECK (length(display_name) \u003c= 80),\n  CONSTRAINT users_tenant_email_key UNIQUE (tenant_id, email),\n  CONSTRAINT users_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants (id)\n) STRICT",
+                    "sql": "CREATE TABLE users (\n  id            INTEGER PRIMARY KEY,\n  tenant_id     TEXT NOT NULL, -- @bound @as(uuid)\n  email         TEXT NOT NULL,\n  display_name  TEXT,\n  password_hash TEXT NOT NULL, -- @write-only @sensitive\n  created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), -- @immutable @as(instant)\n  updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), -- @db-updated @as(instant)\n  version       INTEGER NOT NULL DEFAULT 1, -- @version\n  CONSTRAINT users_email_check CHECK (length(email) \u003c= 320),\n  CONSTRAINT users_display_name_check CHECK (length(display_name) \u003c= 80),\n  CONSTRAINT users_tenant_email_key UNIQUE (tenant_id, email),\n  CONSTRAINT users_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants (id)\n) STRICT",
                     "strict": true
                   },
                   {
                     "@type": "type.dql.dev/dql.ext.sqlite.v1.Trigger",
                     "name": "users_updated_at",
-                    "sql": "CREATE TRIGGER users_updated_at AFTER UPDATE ON users FOR EACH ROW\n  WHEN NEW.updated_at = OLD.updated_at\nBEGIN\n  UPDATE users SET updated_at = strftime('%Y-%m-%dT%H:%M:%f', 'now') WHERE id = NEW.id;\nEND"
+                    "sql": "CREATE TRIGGER users_updated_at AFTER UPDATE ON users FOR EACH ROW\n  WHEN NEW.updated_at = OLD.updated_at\nBEGIN\n  UPDATE users SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = NEW.id;\nEND"
                   }
                 ],
                 "foreignKeys": [
@@ -1367,7 +1367,7 @@
         ],
         "provenance": {
           "fidelity": "SOURCE_FIDELITY_FULL",
-          "inputFingerprint": "sha256:04c102c9609c0a21cc9332f518f9eae215c625d11238cd7e84cea8fd16984785",
+          "inputFingerprint": "sha256:1c5730c5e3ab894d97e422824b07f94b0fb5db8cc51922fb9e539b65fa84fdda",
           "source": "sqlite-live",
           "sourceVersion": "1.0.0"
         }

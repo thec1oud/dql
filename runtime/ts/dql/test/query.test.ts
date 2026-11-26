@@ -6,6 +6,7 @@ import {
   type Args,
   Consistency,
   DEFAULT,
+  Expression,
   type Fragments,
   type Node,
   type Pred,
@@ -466,6 +467,11 @@ describe("writes (§20)", () => {
     expect(last(f).sql).toBe(`INSERT INTO "app"."users" AS u ("name") VALUES ($1), ($2) RETURNING u."id"$3`);
     expect(await insertMany(e, lite, insert, [], (r: Row) => r)).toEqual([]);
     expect(statementOf(insert, lite, { email: "e" }).sql).toBe(`INSERT INTO "app"."users" AS u ("email") VALUES ($1) RETURNING u."id"$2`);
+    // DEFAULT in a SET renders the column's default, as SQLite has no DEFAULT there; elsewhere it still needs value.default.
+    const withDefault: Fragments = { ...lite, templates: { ...lite.templates, "default.users.name": "('')" } };
+    const patch: Query = { name: "user.patch", catalog: "shop", kind: "update", writes: true, plan: [use("set.users.name", { "0": param("name") }), param("email")] };
+    expect(statementOf(patch, withDefault, { name: new Expression(use("value.default")), email: 1 }).sql).toBe(`"name" = ('')$1`);
+    expect(() => statementOf(patch, withDefault, { name: 1, email: new Expression(use("value.default")) })).toThrow("dql: the fragment table has no value.default");
   });
 
   test("writes by key tell NotFound from ConcurrentModification (§20.4)", async () => {

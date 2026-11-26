@@ -1,0 +1,11 @@
+scenario: pattern-constraints
+schema: shop
+requires: [pattern-checks]
+# A check that text matches a pattern is portable, so it fails validation
+# before any statement (constraints holds the other constraints). SQLite has
+# no regular expressions to check one with.
+steps:
+  - op: tags.insert
+    input: { name: Not A Slug }
+    expect:
+      error: { class: ValidationErrors, kind: pattern, field: name }

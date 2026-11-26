@@ -1,0 +1,18 @@
+scenario: foreign-key-names
+schema: shop
+requires: [named-foreign-keys]
+# A foreign-key violation names the rule it broke (constraints holds the
+# other violations). SQLite reports one without naming it.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: 999999, title: Hello }
+    expect:
+      error: { class: ForeignKeyViolation, constraint: posts_author_id_fkey }
