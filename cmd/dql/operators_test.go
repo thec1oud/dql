@@ -81,6 +81,8 @@ func TestGenerateOperatorFailures(t *testing.T) {
 		{"none", nil, "dql generate: no dialect plugin serves DIALECT_POSTGRES\n"},
 		{"wrong kind", fakeDialect{kind: irv1.PluginKind_PLUGIN_KIND_SOURCE}, "dql generate: dialect fake: "},
 		{"invoke fails", fakeDialect{kind: irv1.PluginKind_PLUGIN_KIND_DIALECT, err: errors.New("boom")}, "dql generate: dialect fake: boom\n"},
+		// The profile comes before the shapes; the fragment table after.
+		{"fragments fail", fakeDialect{kind: irv1.PluginKind_PLUGIN_KIND_DIALECT, err: errors.New("boom"), withShapes: true}, "dql generate: dialect fake: boom\n"},
 		{"error diagnostic", fakeDialect{kind: irv1.PluginKind_PLUGIN_KIND_DIALECT,
 			ds: []*irv1.Diagnostic{diagnostics.Errorf("dialect-broken", nil, "broken")}}, "error dialect-broken: broken"},
 		{"unprefixed operator", fakeDialect{kind: irv1.PluginKind_PLUGIN_KIND_DIALECT,
@@ -103,6 +105,8 @@ type fakeDialect struct {
 	ops  []*irv1.Operator
 	// profile is the capability profile it publishes.
 	profile *irv1.CapabilityProfile
+	// withShapes: it fails with err only once the bundle has its shapes.
+	withShapes bool
 }
 
 func (f fakeDialect) Handshake() *irv1.PluginHandshake {
@@ -112,8 +116,8 @@ func (f fakeDialect) Handshake() *irv1.PluginHandshake {
 	}
 }
 
-func (f fakeDialect) Invoke(context.Context, *irv1.Invoke) (*irv1.InvokeResult, error) {
-	if f.err != nil {
+func (f fakeDialect) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, error) {
+	if f.err != nil && (!f.withShapes || in.GetBundle().GetShapes() != nil) {
 		return nil, f.err
 	}
 	return &irv1.InvokeResult{Bundle: &irv1.Bundle{Operators: f.ops, Capabilities: f.profile}, Diagnostics: f.ds}, nil

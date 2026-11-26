@@ -18,8 +18,8 @@ import (
 // a custom shape's nest is listed once. The diagnostics are those of the
 // custom shapes and the host-name collisions of the layer, sorted. The error is Forms', for catalogs no assembled
 // bundle has.
-func Layer(catalogs []*irv1.Catalog, customs []Custom) (*irv1.ShapeLayer, []*irv1.Diagnostic, error) {
-	flat := Presets(catalogs)
+func Layer(catalogs []*irv1.Catalog, customs []Custom, opts Options) (*irv1.ShapeLayer, []*irv1.Diagnostic, error) {
+	flat := presets(catalogs, opts)
 	forms, unions, err := Forms(catalogs, flat)
 	if err != nil {
 		return nil, nil, err
@@ -39,6 +39,15 @@ func Layer(catalogs []*irv1.Catalog, customs []Custom) (*irv1.ShapeLayer, []*irv
 	diags = append(diags, checkHostNames(catalogs, layer, n)...)
 	diagnostics.Sort(diags)
 	return layer, diags, nil
+}
+
+// Options are the dialect's facts the shape layer depends on.
+type Options struct {
+	// ReadBack: the dialect returns a written row by re-reading it by its
+	// key (returned_rows REREAD, §20.1), so a Draft must set every key
+	// column the database fills other than as an auto-increment identity,
+	// whose value comes back as the last insert ID (decided 2026-11-26).
+	ReadBack bool
 }
 
 // Ref returns the id of the shape of layer that ref names as dql.yaml writes

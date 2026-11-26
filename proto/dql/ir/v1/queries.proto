@@ -46,6 +46,21 @@ message Query {
   // Proven to return at most one row, through an equality filter on every
   // column of an identifying key, so the extra-row check is skipped (§19).
   bool at_most_one = 15;
+  // On a dialect that returns written rows by re-reading them
+  // (returned_rows REREAD), how a builder write that returns rows reads
+  // them back (§20.1).
+  Reread reread = 16;
+}
+
+// The read that returns a written row on a dialect without RETURNING
+// (§20.1): the write's result shape filtered on the row's key, which the
+// runtime runs after the write, in its transaction. Its parameters are the
+// write's own, by name.
+message Reread {
+  FragmentPlan plan = 1;
+  // The parameter the write's last insert ID fills when the call leaves it
+  // out: the key's auto-increment column, or empty.
+  string generated = 2;
 }
 
 enum QuerySource {

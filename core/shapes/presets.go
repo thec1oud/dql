@@ -43,7 +43,12 @@ func (e Entity) Writable() bool {
 // only Full and Key (§6.4); an entity without a key gets no Key (§11.1), and
 // one without bound columns gets no Scope.
 func Presets(catalogs []*irv1.Catalog) []*irv1.Shape {
+	return presets(catalogs, Options{})
+}
+
+func presets(catalogs []*irv1.Catalog, opts Options) []*irv1.Shape {
 	ix := newIndex(catalogs)
+	ix.readBack = opts.ReadBack
 	var out []*irv1.Shape
 	for _, e := range Entities(catalogs) {
 		out = append(out, ix.presets(e)...)
@@ -76,7 +81,13 @@ func (ix *index) Flat(e Entity, preset irv1.Preset) *irv1.Shape {
 	s := newShape(e, preset, irv1.Form_FORM_FLAT)
 	key := facts.Key(e.Table)
 	for _, c := range e.Table.GetColumns() {
-		m := modality(c, preset, slices.Contains(key, c.GetName().GetStored()))
+		isKey := slices.Contains(key, c.GetName().GetStored())
+		m := modality(c, preset, isKey)
+		if ix.readBack && preset == irv1.Preset_PRESET_DRAFT && isKey && m.presence == irv1.Presence_PRESENCE_OPTIONAL &&
+			c.GetDefault().GetClass() != irv1.DefaultClass_DEFAULT_IDENTITY_BY_DEFAULT {
+			// The row is read back by its key, which the call must give.
+			m.presence = irv1.Presence_PRESENCE_REQUIRED
+		}
 		if m.forbidden != irv1.ForbiddenReason_FORBIDDEN_UNSPECIFIED {
 			s.Forbidden = append(s.Forbidden, &irv1.ForbiddenField{Column: c.GetName().GetStored(), Reason: m.forbidden})
 			continue

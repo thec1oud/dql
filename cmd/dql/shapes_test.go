@@ -141,10 +141,10 @@ func TestGenerateShapeLayerFailures(t *testing.T) {
 		}
 	}
 
-	defer func(f func([]*irv1.Catalog, []shapes.Custom) (*irv1.ShapeLayer, []*irv1.Diagnostic, error)) {
+	defer func(f func([]*irv1.Catalog, []shapes.Custom, shapes.Options) (*irv1.ShapeLayer, []*irv1.Diagnostic, error)) {
 		buildShapes = f
 	}(buildShapes)
-	buildShapes = func([]*irv1.Catalog, []shapes.Custom) (*irv1.ShapeLayer, []*irv1.Diagnostic, error) {
+	buildShapes = func([]*irv1.Catalog, []shapes.Custom, shapes.Options) (*irv1.ShapeLayer, []*irv1.Diagnostic, error) {
 		return nil, nil, fmt.Errorf("boom")
 	}
 	if code, stderr, b := generateShapes(t, ""); code != 1 || b != nil || stderr != "dql generate: boom\n" {

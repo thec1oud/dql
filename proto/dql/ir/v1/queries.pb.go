@@ -238,7 +238,11 @@ type Query struct {
 	Tables []*QualifiedName `protobuf:"bytes,14,rep,name=tables,proto3" json:"tables,omitempty"`
 	// Proven to return at most one row, through an equality filter on every
 	// column of an identifying key, so the extra-row check is skipped (§19).
-	AtMostOne     bool `protobuf:"varint,15,opt,name=at_most_one,json=atMostOne,proto3" json:"at_most_one,omitempty"`
+	AtMostOne bool `protobuf:"varint,15,opt,name=at_most_one,json=atMostOne,proto3" json:"at_most_one,omitempty"`
+	// On a dialect that returns written rows by re-reading them
+	// (returned_rows REREAD), how a builder write that returns rows reads
+	// them back (§20.1).
+	Reread        *Reread `protobuf:"bytes,16,opt,name=reread,proto3" json:"reread,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -389,6 +393,13 @@ func (x *Query) GetAtMostOne() bool {
 	return false
 }
 
+func (x *Query) GetReread() *Reread {
+	if x != nil {
+		return x.Reread
+	}
+	return nil
+}
+
 type isQuery_Sql interface {
 	isQuery_Sql()
 }
@@ -406,6 +417,64 @@ type Query_Plan struct {
 func (*Query_Text) isQuery_Sql() {}
 
 func (*Query_Plan) isQuery_Sql() {}
+
+// The read that returns a written row on a dialect without RETURNING
+// (§20.1): the write's result shape filtered on the row's key, which the
+// runtime runs after the write, in its transaction. Its parameters are the
+// write's own, by name.
+type Reread struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Plan  *FragmentPlan          `protobuf:"bytes,1,opt,name=plan,proto3" json:"plan,omitempty"`
+	// The parameter the write's last insert ID fills when the call leaves it
+	// out: the key's auto-increment column, or empty.
+	Generated     string `protobuf:"bytes,2,opt,name=generated,proto3" json:"generated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Reread) Reset() {
+	*x = Reread{}
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Reread) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Reread) ProtoMessage() {}
+
+func (x *Reread) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Reread.ProtoReflect.Descriptor instead.
+func (*Reread) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Reread) GetPlan() *FragmentPlan {
+	if x != nil {
+		return x.Plan
+	}
+	return nil
+}
+
+func (x *Reread) GetGenerated() string {
+	if x != nil {
+		return x.Generated
+	}
+	return ""
+}
 
 // A query parameter (§17.1, §17.2).
 type Param struct {
@@ -427,7 +496,7 @@ type Param struct {
 
 func (x *Param) Reset() {
 	*x = Param{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[1]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -439,7 +508,7 @@ func (x *Param) String() string {
 func (*Param) ProtoMessage() {}
 
 func (x *Param) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[1]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -452,7 +521,7 @@ func (x *Param) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Param.ProtoReflect.Descriptor instead.
 func (*Param) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{1}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Param) GetName() string {
@@ -507,7 +576,7 @@ type ResultShape struct {
 
 func (x *ResultShape) Reset() {
 	*x = ResultShape{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[2]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -519,7 +588,7 @@ func (x *ResultShape) String() string {
 func (*ResultShape) ProtoMessage() {}
 
 func (x *ResultShape) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[2]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -532,7 +601,7 @@ func (x *ResultShape) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResultShape.ProtoReflect.Descriptor instead.
 func (*ResultShape) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{2}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ResultShape) GetKind() isResultShape_Kind {
@@ -595,7 +664,7 @@ type AnonymousShape struct {
 
 func (x *AnonymousShape) Reset() {
 	*x = AnonymousShape{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -607,7 +676,7 @@ func (x *AnonymousShape) String() string {
 func (*AnonymousShape) ProtoMessage() {}
 
 func (x *AnonymousShape) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -620,7 +689,7 @@ func (x *AnonymousShape) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnonymousShape.ProtoReflect.Descriptor instead.
 func (*AnonymousShape) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{3}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AnonymousShape) GetFields() []*ResultField {
@@ -646,7 +715,7 @@ type ResultField struct {
 
 func (x *ResultField) Reset() {
 	*x = ResultField{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -658,7 +727,7 @@ func (x *ResultField) String() string {
 func (*ResultField) ProtoMessage() {}
 
 func (x *ResultField) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -671,7 +740,7 @@ func (x *ResultField) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResultField.ProtoReflect.Descriptor instead.
 func (*ResultField) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{4}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ResultField) GetName() string {
@@ -722,7 +791,7 @@ type Consistency struct {
 
 func (x *Consistency) Reset() {
 	*x = Consistency{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[5]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -734,7 +803,7 @@ func (x *Consistency) String() string {
 func (*Consistency) ProtoMessage() {}
 
 func (x *Consistency) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[5]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -747,7 +816,7 @@ func (x *Consistency) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Consistency.ProtoReflect.Descriptor instead.
 func (*Consistency) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{5}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Consistency) GetLevel() ConsistencyLevel {
@@ -779,7 +848,7 @@ type ScopeUse struct {
 
 func (x *ScopeUse) Reset() {
 	*x = ScopeUse{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[6]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -791,7 +860,7 @@ func (x *ScopeUse) String() string {
 func (*ScopeUse) ProtoMessage() {}
 
 func (x *ScopeUse) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[6]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -804,7 +873,7 @@ func (x *ScopeUse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScopeUse.ProtoReflect.Descriptor instead.
 func (*ScopeUse) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{6}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ScopeUse) GetColumns() []string {
@@ -833,7 +902,7 @@ type FragmentPlan struct {
 
 func (x *FragmentPlan) Reset() {
 	*x = FragmentPlan{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[7]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -845,7 +914,7 @@ func (x *FragmentPlan) String() string {
 func (*FragmentPlan) ProtoMessage() {}
 
 func (x *FragmentPlan) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[7]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -858,7 +927,7 @@ func (x *FragmentPlan) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FragmentPlan.ProtoReflect.Descriptor instead.
 func (*FragmentPlan) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{7}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *FragmentPlan) GetParts() []*FragmentUse {
@@ -882,7 +951,7 @@ type FragmentUse struct {
 
 func (x *FragmentUse) Reset() {
 	*x = FragmentUse{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -894,7 +963,7 @@ func (x *FragmentUse) String() string {
 func (*FragmentUse) ProtoMessage() {}
 
 func (x *FragmentUse) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -907,7 +976,7 @@ func (x *FragmentUse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FragmentUse.ProtoReflect.Descriptor instead.
 func (*FragmentUse) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{8}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *FragmentUse) GetFragment() string {
@@ -941,7 +1010,7 @@ type HoleFill struct {
 
 func (x *HoleFill) Reset() {
 	*x = HoleFill{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[9]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -953,7 +1022,7 @@ func (x *HoleFill) String() string {
 func (*HoleFill) ProtoMessage() {}
 
 func (x *HoleFill) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[9]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -966,7 +1035,7 @@ func (x *HoleFill) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HoleFill.ProtoReflect.Descriptor instead.
 func (*HoleFill) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{9}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *HoleFill) GetHole() string {
@@ -1046,7 +1115,7 @@ type FragmentList struct {
 
 func (x *FragmentList) Reset() {
 	*x = FragmentList{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[10]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1058,7 +1127,7 @@ func (x *FragmentList) String() string {
 func (*FragmentList) ProtoMessage() {}
 
 func (x *FragmentList) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[10]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1071,7 +1140,7 @@ func (x *FragmentList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FragmentList.ProtoReflect.Descriptor instead.
 func (*FragmentList) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{10}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FragmentList) GetItems() []*ListItem {
@@ -1102,7 +1171,7 @@ type ListItem struct {
 
 func (x *ListItem) Reset() {
 	*x = ListItem{}
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[11]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1114,7 +1183,7 @@ func (x *ListItem) String() string {
 func (*ListItem) ProtoMessage() {}
 
 func (x *ListItem) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_queries_proto_msgTypes[11]
+	mi := &file_dql_ir_v1_queries_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1127,7 +1196,7 @@ func (x *ListItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListItem.ProtoReflect.Descriptor instead.
 func (*ListItem) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{11}
+	return file_dql_ir_v1_queries_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ListItem) GetValue() isListItem_Value {
@@ -1176,7 +1245,7 @@ var File_dql_ir_v1_queries_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\n" +
-	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\xe1\x04\n" +
+	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\x8c\x05\n" +
 	"\x05Query\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x12.\n" +
 	"\x06source\x18\x02 \x01(\x0e2\x16.dql.ir.v1.QuerySourceR\x06source\x128\n" +
@@ -1193,8 +1262,12 @@ const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\blocation\x18\f \x01(\tR\blocation\x12\x18\n" +
 	"\areturns\x18\r \x01(\tR\areturns\x120\n" +
 	"\x06tables\x18\x0e \x03(\v2\x18.dql.ir.v1.QualifiedNameR\x06tables\x12\x1e\n" +
-	"\vat_most_one\x18\x0f \x01(\bR\tatMostOneB\x05\n" +
-	"\x03sql\"\x8c\x01\n" +
+	"\vat_most_one\x18\x0f \x01(\bR\tatMostOne\x12)\n" +
+	"\x06reread\x18\x10 \x01(\v2\x11.dql.ir.v1.RereadR\x06rereadB\x05\n" +
+	"\x03sql\"S\n" +
+	"\x06Reread\x12+\n" +
+	"\x04plan\x18\x01 \x01(\v2\x17.dql.ir.v1.FragmentPlanR\x04plan\x12\x1c\n" +
+	"\tgenerated\x18\x02 \x01(\tR\tgenerated\"\x8c\x01\n" +
 	"\x05Param\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
 	"\x04type\x18\x02 \x01(\v2\x0f.dql.ir.v1.TypeR\x04type\x12\x1a\n" +
@@ -1271,60 +1344,63 @@ func file_dql_ir_v1_queries_proto_rawDescGZIP() []byte {
 }
 
 var file_dql_ir_v1_queries_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_dql_ir_v1_queries_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_dql_ir_v1_queries_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_dql_ir_v1_queries_proto_goTypes = []any{
 	(QuerySource)(0),            // 0: dql.ir.v1.QuerySource
 	(Cardinality)(0),            // 1: dql.ir.v1.Cardinality
 	(ConsistencyLevel)(0),       // 2: dql.ir.v1.ConsistencyLevel
 	(*Query)(nil),               // 3: dql.ir.v1.Query
-	(*Param)(nil),               // 4: dql.ir.v1.Param
-	(*ResultShape)(nil),         // 5: dql.ir.v1.ResultShape
-	(*AnonymousShape)(nil),      // 6: dql.ir.v1.AnonymousShape
-	(*ResultField)(nil),         // 7: dql.ir.v1.ResultField
-	(*Consistency)(nil),         // 8: dql.ir.v1.Consistency
-	(*ScopeUse)(nil),            // 9: dql.ir.v1.ScopeUse
-	(*FragmentPlan)(nil),        // 10: dql.ir.v1.FragmentPlan
-	(*FragmentUse)(nil),         // 11: dql.ir.v1.FragmentUse
-	(*HoleFill)(nil),            // 12: dql.ir.v1.HoleFill
-	(*FragmentList)(nil),        // 13: dql.ir.v1.FragmentList
-	(*ListItem)(nil),            // 14: dql.ir.v1.ListItem
-	(*Identifier)(nil),          // 15: dql.ir.v1.Identifier
-	(*QualifiedName)(nil),       // 16: dql.ir.v1.QualifiedName
-	(*Type)(nil),                // 17: dql.ir.v1.Type
-	(*ShapeId)(nil),             // 18: dql.ir.v1.ShapeId
-	(NullabilitySource)(0),      // 19: dql.ir.v1.NullabilitySource
-	(*durationpb.Duration)(nil), // 20: google.protobuf.Duration
+	(*Reread)(nil),              // 4: dql.ir.v1.Reread
+	(*Param)(nil),               // 5: dql.ir.v1.Param
+	(*ResultShape)(nil),         // 6: dql.ir.v1.ResultShape
+	(*AnonymousShape)(nil),      // 7: dql.ir.v1.AnonymousShape
+	(*ResultField)(nil),         // 8: dql.ir.v1.ResultField
+	(*Consistency)(nil),         // 9: dql.ir.v1.Consistency
+	(*ScopeUse)(nil),            // 10: dql.ir.v1.ScopeUse
+	(*FragmentPlan)(nil),        // 11: dql.ir.v1.FragmentPlan
+	(*FragmentUse)(nil),         // 12: dql.ir.v1.FragmentUse
+	(*HoleFill)(nil),            // 13: dql.ir.v1.HoleFill
+	(*FragmentList)(nil),        // 14: dql.ir.v1.FragmentList
+	(*ListItem)(nil),            // 15: dql.ir.v1.ListItem
+	(*Identifier)(nil),          // 16: dql.ir.v1.Identifier
+	(*QualifiedName)(nil),       // 17: dql.ir.v1.QualifiedName
+	(*Type)(nil),                // 18: dql.ir.v1.Type
+	(*ShapeId)(nil),             // 19: dql.ir.v1.ShapeId
+	(NullabilitySource)(0),      // 20: dql.ir.v1.NullabilitySource
+	(*durationpb.Duration)(nil), // 21: google.protobuf.Duration
 }
 var file_dql_ir_v1_queries_proto_depIdxs = []int32{
-	15, // 0: dql.ir.v1.Query.name:type_name -> dql.ir.v1.Identifier
+	16, // 0: dql.ir.v1.Query.name:type_name -> dql.ir.v1.Identifier
 	0,  // 1: dql.ir.v1.Query.source:type_name -> dql.ir.v1.QuerySource
 	1,  // 2: dql.ir.v1.Query.cardinality:type_name -> dql.ir.v1.Cardinality
-	4,  // 3: dql.ir.v1.Query.params:type_name -> dql.ir.v1.Param
-	5,  // 4: dql.ir.v1.Query.result:type_name -> dql.ir.v1.ResultShape
-	8,  // 5: dql.ir.v1.Query.consistency:type_name -> dql.ir.v1.Consistency
-	9,  // 6: dql.ir.v1.Query.scope:type_name -> dql.ir.v1.ScopeUse
-	10, // 7: dql.ir.v1.Query.plan:type_name -> dql.ir.v1.FragmentPlan
-	16, // 8: dql.ir.v1.Query.tables:type_name -> dql.ir.v1.QualifiedName
-	17, // 9: dql.ir.v1.Param.type:type_name -> dql.ir.v1.Type
-	18, // 10: dql.ir.v1.ResultShape.shape:type_name -> dql.ir.v1.ShapeId
-	6,  // 11: dql.ir.v1.ResultShape.anonymous:type_name -> dql.ir.v1.AnonymousShape
-	7,  // 12: dql.ir.v1.AnonymousShape.fields:type_name -> dql.ir.v1.ResultField
-	17, // 13: dql.ir.v1.ResultField.type:type_name -> dql.ir.v1.Type
-	16, // 14: dql.ir.v1.ResultField.origin:type_name -> dql.ir.v1.QualifiedName
-	19, // 15: dql.ir.v1.ResultField.nullability_source:type_name -> dql.ir.v1.NullabilitySource
-	2,  // 16: dql.ir.v1.Consistency.level:type_name -> dql.ir.v1.ConsistencyLevel
-	20, // 17: dql.ir.v1.Consistency.max_staleness:type_name -> google.protobuf.Duration
-	11, // 18: dql.ir.v1.FragmentPlan.parts:type_name -> dql.ir.v1.FragmentUse
-	12, // 19: dql.ir.v1.FragmentUse.holes:type_name -> dql.ir.v1.HoleFill
-	11, // 20: dql.ir.v1.HoleFill.fragment:type_name -> dql.ir.v1.FragmentUse
-	13, // 21: dql.ir.v1.HoleFill.list:type_name -> dql.ir.v1.FragmentList
-	14, // 22: dql.ir.v1.FragmentList.items:type_name -> dql.ir.v1.ListItem
-	11, // 23: dql.ir.v1.ListItem.fragment:type_name -> dql.ir.v1.FragmentUse
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	5,  // 3: dql.ir.v1.Query.params:type_name -> dql.ir.v1.Param
+	6,  // 4: dql.ir.v1.Query.result:type_name -> dql.ir.v1.ResultShape
+	9,  // 5: dql.ir.v1.Query.consistency:type_name -> dql.ir.v1.Consistency
+	10, // 6: dql.ir.v1.Query.scope:type_name -> dql.ir.v1.ScopeUse
+	11, // 7: dql.ir.v1.Query.plan:type_name -> dql.ir.v1.FragmentPlan
+	17, // 8: dql.ir.v1.Query.tables:type_name -> dql.ir.v1.QualifiedName
+	4,  // 9: dql.ir.v1.Query.reread:type_name -> dql.ir.v1.Reread
+	11, // 10: dql.ir.v1.Reread.plan:type_name -> dql.ir.v1.FragmentPlan
+	18, // 11: dql.ir.v1.Param.type:type_name -> dql.ir.v1.Type
+	19, // 12: dql.ir.v1.ResultShape.shape:type_name -> dql.ir.v1.ShapeId
+	7,  // 13: dql.ir.v1.ResultShape.anonymous:type_name -> dql.ir.v1.AnonymousShape
+	8,  // 14: dql.ir.v1.AnonymousShape.fields:type_name -> dql.ir.v1.ResultField
+	18, // 15: dql.ir.v1.ResultField.type:type_name -> dql.ir.v1.Type
+	17, // 16: dql.ir.v1.ResultField.origin:type_name -> dql.ir.v1.QualifiedName
+	20, // 17: dql.ir.v1.ResultField.nullability_source:type_name -> dql.ir.v1.NullabilitySource
+	2,  // 18: dql.ir.v1.Consistency.level:type_name -> dql.ir.v1.ConsistencyLevel
+	21, // 19: dql.ir.v1.Consistency.max_staleness:type_name -> google.protobuf.Duration
+	12, // 20: dql.ir.v1.FragmentPlan.parts:type_name -> dql.ir.v1.FragmentUse
+	13, // 21: dql.ir.v1.FragmentUse.holes:type_name -> dql.ir.v1.HoleFill
+	12, // 22: dql.ir.v1.HoleFill.fragment:type_name -> dql.ir.v1.FragmentUse
+	14, // 23: dql.ir.v1.HoleFill.list:type_name -> dql.ir.v1.FragmentList
+	15, // 24: dql.ir.v1.FragmentList.items:type_name -> dql.ir.v1.ListItem
+	12, // 25: dql.ir.v1.ListItem.fragment:type_name -> dql.ir.v1.FragmentUse
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_queries_proto_init() }
@@ -1340,16 +1416,16 @@ func file_dql_ir_v1_queries_proto_init() {
 		(*Query_Text)(nil),
 		(*Query_Plan)(nil),
 	}
-	file_dql_ir_v1_queries_proto_msgTypes[2].OneofWrappers = []any{
+	file_dql_ir_v1_queries_proto_msgTypes[3].OneofWrappers = []any{
 		(*ResultShape_Shape)(nil),
 		(*ResultShape_Anonymous)(nil),
 	}
-	file_dql_ir_v1_queries_proto_msgTypes[9].OneofWrappers = []any{
+	file_dql_ir_v1_queries_proto_msgTypes[10].OneofWrappers = []any{
 		(*HoleFill_Fragment)(nil),
 		(*HoleFill_Param)(nil),
 		(*HoleFill_List)(nil),
 	}
-	file_dql_ir_v1_queries_proto_msgTypes[11].OneofWrappers = []any{
+	file_dql_ir_v1_queries_proto_msgTypes[12].OneofWrappers = []any{
 		(*ListItem_Fragment)(nil),
 		(*ListItem_Param)(nil),
 	}
@@ -1359,7 +1435,7 @@ func file_dql_ir_v1_queries_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_queries_proto_rawDesc), len(file_dql_ir_v1_queries_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

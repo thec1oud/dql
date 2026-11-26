@@ -108,7 +108,7 @@ func generate(args []string, stderr io.Writer) int {
 	if b == nil {
 		return 1
 	}
-	ds, err := shapeLayer(b, c)
+	ds, err := shapeLayer(ctx, b, c)
 	if err != nil {
 		fmt.Fprintf(stderr, "dql generate: %v\n", err)
 		return 1
@@ -212,36 +212,56 @@ func emitFlags(c *config.Config, e config.Emit) []string {
 // plugin of b's dialect in-process for its capability profile, the
 // operators it contributes and the fragment table (§16.2), and resolves every column's operators (§9). It returns the diagnostics, sorted, and adds them to the
 // bundle's.
+//
+// profile has already found the plugin.
 func operatorLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) (ds []*irv1.Diagnostic, err error) {
-	build, ok := dialects[b.GetDialect()]
-	if !ok {
-		return nil, fmt.Errorf("no dialect plugin serves %s", b.GetDialect())
-	}
+	build := dialects[b.GetDialect()]
 	b.Operators = operators.Catalog()
-	p := build()
-	name := p.Handshake().GetPlugin().GetName()
-	client, err := plugin.InProcess(p, &irv1.CoreHello{IrVersion: b.GetVersion()}, irv1.PluginKind_PLUGIN_KIND_DIALECT)
-	if err == nil {
-		var res *irv1.InvokeResult
-		if res, err = client.Invoke(ctx, &irv1.Invoke{Bundle: b}); err == nil {
-			b.Capabilities = res.GetBundle().GetCapabilities()
-			b.Queries = &irv1.QueryLayer{Fragments: res.GetBundle().GetQueries().GetFragments()}
-			var added []*irv1.Diagnostic
-			b.Operators, added = operators.Add(b.Operators, res.GetBundle().GetOperators(), irv1.OperatorOriginKind_OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN, name)
-			ds = append(res.GetDiagnostics(), added...)
-		}
-		if cerr := client.Close(); err == nil {
-			err = cerr
-		}
-	}
+	res, name, err := invokeDialect(ctx, build(), b)
 	if err != nil {
-		return nil, fmt.Errorf("dialect %s: %w", name, err)
+		return nil, err
 	}
+	b.Capabilities = res.GetBundle().GetCapabilities()
+	b.Queries = &irv1.QueryLayer{Fragments: res.GetBundle().GetQueries().GetFragments()}
+	var added []*irv1.Diagnostic
+	b.Operators, added = operators.Add(b.Operators, res.GetBundle().GetOperators(), irv1.OperatorOriginKind_OPERATOR_ORIGIN_KIND_DIALECT_PLUGIN, name)
+	ds = append(res.GetDiagnostics(), added...)
 	ds = append(ds, operators.Resolve(b, operators.Options{AllowApproximate: c.Operators.AllowApproximate})...)
 	diagnostics.Sort(ds)
 	b.Diagnostics = append(b.Diagnostics, ds...)
 	diagnostics.Sort(b.Diagnostics)
 	return ds, nil
+}
+
+// invokeDialect runs a dialect plugin in-process on b.
+func invokeDialect(ctx context.Context, p plugin.Plugin, b *irv1.Bundle) (*irv1.InvokeResult, string, error) {
+	name := p.Handshake().GetPlugin().GetName()
+	client, err := plugin.InProcess(p, &irv1.CoreHello{IrVersion: b.GetVersion()}, irv1.PluginKind_PLUGIN_KIND_DIALECT)
+	var res *irv1.InvokeResult
+	if err == nil {
+		res, err = client.Invoke(ctx, &irv1.Invoke{Bundle: b})
+		if cerr := client.Close(); err == nil {
+			err = cerr
+		}
+	}
+	if err != nil {
+		return nil, name, fmt.Errorf("dialect %s: %w", name, err)
+	}
+	return res, name, nil
+}
+
+// profile returns the capability profile of b's dialect, from its plugin
+// run on the catalogs alone.
+func profile(ctx context.Context, b *irv1.Bundle) (*irv1.CapabilityProfile, error) {
+	build, ok := dialects[b.GetDialect()]
+	if !ok {
+		return nil, fmt.Errorf("no dialect plugin serves %s", b.GetDialect())
+	}
+	res, _, err := invokeDialect(ctx, build(), &irv1.Bundle{Version: b.GetVersion(), Dialect: b.GetDialect(), Catalogs: b.GetCatalogs()})
+	if err != nil {
+		return nil, err
+	}
+	return res.GetBundle().GetCapabilities(), nil
 }
 
 // queryLayer plans the builder's queries on the fragment table (§16.2, §18
@@ -292,8 +312,15 @@ var buildShapes = shapes.Layer
 // conversion table, with the conversions c declares, and the merges (§14.9,
 // §8.9). It returns the diagnostics of both, sorted, and adds them to the
 // bundle's.
-func shapeLayer(b *irv1.Bundle, c *config.Config) ([]*irv1.Diagnostic, error) {
-	layer, ds, err := buildShapes(b.GetCatalogs(), c.CustomShapes())
+//
+// Which Draft fields are required depends on how the dialect returns
+// written rows, which its plugin's profile says.
+func shapeLayer(ctx context.Context, b *irv1.Bundle, c *config.Config) ([]*irv1.Diagnostic, error) {
+	p, err := profile(ctx, b)
+	if err != nil {
+		return nil, err
+	}
+	layer, ds, err := buildShapes(b.GetCatalogs(), c.CustomShapes(), shapes.Options{ReadBack: p.GetReturnedRows() == irv1.ReturnedRows_RETURNED_ROWS_REREAD})
 	if err != nil {
 		return nil, err
 	}
