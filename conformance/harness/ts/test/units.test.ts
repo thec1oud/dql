@@ -166,10 +166,17 @@ test("mask, diff and compare", async () => {
     await writeFile(join(dir, side, "prepare", "s.json"), JSON.stringify(outcomes));
   }
   await writeFile(join(dir, "ts", "prepare", "t.json"), "[]");
+  // Another dialect's outcomes are a directory deeper.
+  for (const side of ["go", "ts"]) {
+    await mkdir(join(dir, side, "mysql", "simple"), { recursive: true });
+    await writeFile(join(dir, side, "mysql", "simple", "s.json"), JSON.stringify([o]));
+  }
+  await writeFile(join(dir, "ts", "mysql", "simple", "u.json"), "[]");
   const got = await compare(join(dir, "go"), join(dir, "ts"));
-  expect(got.length).toBe(2);
-  expect(got[0]).toContain("prepare/s: outcome 1 differs");
-  expect(got[1]).toContain("prepare/t.json: no Go outcomes");
+  expect(got.length).toBe(3);
+  expect(got[0]).toContain("mysql/simple/u.json: no Go outcomes");
+  expect(got[1]).toContain("prepare/s: outcome 1 differs");
+  expect(got[2]).toContain("prepare/t.json: no Go outcomes");
 });
 
 test("load", async () => {

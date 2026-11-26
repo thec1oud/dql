@@ -50,12 +50,17 @@ export function encode(v: unknown): Json {
   return v as Json;
 }
 
-/** Decoder builds values of a package's types from YAML. */
+/** Fill gives the fields a scenario may leave out of an object of a type, by type and field, each a function that makes a value. */
+export type Fill = Readonly<Record<string, Readonly<Record<string, () => unknown>>>>;
+
+/** Decoder builds values of a package's types from YAML, giving the fields fill names when a value leaves them out. */
 export class Decoder {
   readonly types: Types;
+  readonly fill: Fill;
 
-  constructor(types: Types) {
+  constructor(types: Types, fill: Fill = {}) {
     this.types = types;
+    this.fill = fill;
   }
 
   /** decode builds a value of type t from v, whose keys are spelled by norm. */
@@ -160,10 +165,14 @@ export class Decoder {
       throw new Error(`want an object for ${name}, got ${show(v)}`);
     }
     const out: Record<string, unknown> = {};
+    const fill = this.fill[name] ?? {};
     for (const f of fields) {
       const x = v[norm(f.name)];
+      const make = fill[f.name];
       if (x !== undefined) {
         out[f.name] = at(f.name, () => this.decode(x, f.type));
+      } else if (make !== undefined) {
+        out[f.name] = make();
       }
     }
     return out;

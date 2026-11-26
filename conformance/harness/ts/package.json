@@ -12,6 +12,7 @@
     "coverage": "bun test --coverage"
   },
   "dependencies": {
+    "mysql2": "3.24.6",
     "pg": "8.23.1",
     "yaml": "2.8.1"
   },

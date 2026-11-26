@@ -65,21 +65,32 @@ export function diff(name: string, want: readonly Outcome[], got: readonly Outco
   return [];
 }
 
-/** compare compares the outcomes in two directories, each holding <mode>/<scenario>.json, over the modes the second has. */
+/** files returns the outcome files under dir, by their paths relative to it, sorted. */
+async function files(dir: string): Promise<string[]> {
+  const out: string[] = [];
+  for (const e of await readdir(dir, { withFileTypes: true })) {
+    if (e.isDirectory()) {
+      out.push(...(await files(join(dir, e.name))).map((f) => join(e.name, f)));
+    } else {
+      out.push(e.name);
+    }
+  }
+  return out.sort();
+}
+
+/** compare compares the outcomes in two directories, each holding <mode>/<scenario>.json for Postgres and <dialect>/<mode>/<scenario>.json for the others, over the files the second has. */
 export async function compare(goDir: string, tsDir: string): Promise<string[]> {
   const problems: string[] = [];
-  for (const mode of (await readdir(tsDir)).sort()) {
-    for (const f of (await readdir(join(tsDir, mode))).sort()) {
-      const read = async (dir: string) => JSON.parse(await readFile(join(dir, mode, f), "utf8")) as Outcome[];
-      let want: Outcome[];
-      try {
-        want = await read(goDir);
-      } catch (e) {
-        problems.push(`${mode}/${f}: no Go outcomes: ${(e as Error).message}`);
-        continue;
-      }
-      problems.push(...diff(`${mode}/${f.replace(/\.json$/, "")}`, want, await read(tsDir)));
+  for (const f of await files(tsDir)) {
+    const read = async (dir: string) => JSON.parse(await readFile(join(dir, f), "utf8")) as Outcome[];
+    let want: Outcome[];
+    try {
+      want = await read(goDir);
+    } catch (e) {
+      problems.push(`${f}: no Go outcomes: ${(e as Error).message}`);
+      continue;
     }
+    problems.push(...diff(f.replace(/\.json$/, ""), want, await read(tsDir)));
   }
   return problems;
 }

@@ -3,9 +3,9 @@ schema: shop
 requires: [replica]
 replica: true
 steps:
-  - op: tenants.insert
-    input: { name: acme }
-  # Every consistency level routes a read as guide §5.6 says.
+  # Every consistency level routes a read as guide §5.6 says. The table is
+  # still empty, so a replica read returns the same rows however far the
+  # replica has replayed, and the outcomes compare across runtimes.
   - op: select
     from: tenants
     shape: tenant_full
@@ -40,6 +40,9 @@ steps:
         shape: tenant_full
         consistency: any
         expect: { events: [{ replica: false }] }
+
+  - op: tenants.insert
+    input: { name: acme }
 
   # A session's writes are read back from a replica once it has replayed them.
   - op: session
