@@ -395,6 +395,61 @@ func (x *IndexPart) GetCollation() string {
 	return ""
 }
 
+// A check constraint as its CREATE TABLE statement defines it: its
+// expression as written, and whether CONSTRAINT names it. SQLite reports a
+// violation of an unnamed check by its expression.
+type Check struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Expression    string                 `protobuf:"bytes,1,opt,name=expression,proto3" json:"expression,omitempty"`
+	Named         bool                   `protobuf:"varint,2,opt,name=named,proto3" json:"named,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Check) Reset() {
+	*x = Check{}
+	mi := &file_dql_ext_sqlite_v1_sqlite_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Check) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Check) ProtoMessage() {}
+
+func (x *Check) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ext_sqlite_v1_sqlite_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Check.ProtoReflect.Descriptor instead.
+func (*Check) Descriptor() ([]byte, []int) {
+	return file_dql_ext_sqlite_v1_sqlite_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Check) GetExpression() string {
+	if x != nil {
+		return x.Expression
+	}
+	return ""
+}
+
+func (x *Check) GetNamed() bool {
+	if x != nil {
+		return x.Named
+	}
+	return false
+}
+
 // A table's trigger.
 type Trigger struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -407,7 +462,7 @@ type Trigger struct {
 
 func (x *Trigger) Reset() {
 	*x = Trigger{}
-	mi := &file_dql_ext_sqlite_v1_sqlite_proto_msgTypes[6]
+	mi := &file_dql_ext_sqlite_v1_sqlite_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -419,7 +474,7 @@ func (x *Trigger) String() string {
 func (*Trigger) ProtoMessage() {}
 
 func (x *Trigger) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ext_sqlite_v1_sqlite_proto_msgTypes[6]
+	mi := &file_dql_ext_sqlite_v1_sqlite_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -432,7 +487,7 @@ func (x *Trigger) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trigger.ProtoReflect.Descriptor instead.
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return file_dql_ext_sqlite_v1_sqlite_proto_rawDescGZIP(), []int{6}
+	return file_dql_ext_sqlite_v1_sqlite_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Trigger) GetName() string {
@@ -480,7 +535,12 @@ const file_dql_ext_sqlite_v1_sqlite_proto_rawDesc = "" +
 	"\n" +
 	"descending\x18\x03 \x01(\bR\n" +
 	"descending\x12\x1c\n" +
-	"\tcollation\x18\x04 \x01(\tR\tcollation\"/\n" +
+	"\tcollation\x18\x04 \x01(\tR\tcollation\"=\n" +
+	"\x05Check\x12\x1e\n" +
+	"\n" +
+	"expression\x18\x01 \x01(\tR\n" +
+	"expression\x12\x14\n" +
+	"\x05named\x18\x02 \x01(\bR\x05named\"/\n" +
 	"\aTrigger\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x10\n" +
 	"\x03sql\x18\x02 \x01(\tR\x03sqlB=Z;github.com/thec1oud/dql/proto/dql/ext/sqlite/v1;sqliteextv1b\x06proto3"
@@ -497,7 +557,7 @@ func file_dql_ext_sqlite_v1_sqlite_proto_rawDescGZIP() []byte {
 	return file_dql_ext_sqlite_v1_sqlite_proto_rawDescData
 }
 
-var file_dql_ext_sqlite_v1_sqlite_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_dql_ext_sqlite_v1_sqlite_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_dql_ext_sqlite_v1_sqlite_proto_goTypes = []any{
 	(*Database)(nil),        // 0: dql.ext.sqlite.v1.Database
 	(*Comment)(nil),         // 1: dql.ext.sqlite.v1.Comment
@@ -505,7 +565,8 @@ var file_dql_ext_sqlite_v1_sqlite_proto_goTypes = []any{
 	(*ViewDefinition)(nil),  // 3: dql.ext.sqlite.v1.ViewDefinition
 	(*Index)(nil),           // 4: dql.ext.sqlite.v1.Index
 	(*IndexPart)(nil),       // 5: dql.ext.sqlite.v1.IndexPart
-	(*Trigger)(nil),         // 6: dql.ext.sqlite.v1.Trigger
+	(*Check)(nil),           // 6: dql.ext.sqlite.v1.Check
+	(*Trigger)(nil),         // 7: dql.ext.sqlite.v1.Trigger
 }
 var file_dql_ext_sqlite_v1_sqlite_proto_depIdxs = []int32{
 	5, // 0: dql.ext.sqlite.v1.Index.parts:type_name -> dql.ext.sqlite.v1.IndexPart
@@ -527,7 +588,7 @@ func file_dql_ext_sqlite_v1_sqlite_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ext_sqlite_v1_sqlite_proto_rawDesc), len(file_dql_ext_sqlite_v1_sqlite_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -219,6 +219,7 @@ func (m *mapper) table(t introspect.Table) *irv1.Table {
 		con.Annotations = m.annotations(m.qn(t.Name, con.Name), "the comment of constraint "+con.Name, c.Comment)
 		ce := &exts{m: m}
 		ce.comment(c.Comment)
+		ce.add(&sqliteextv1.Check{Expression: c.Expr, Named: c.Name != ""})
 		con.Extensions = ce.list()
 		out.Constraints = append(out.Constraints, con)
 	}

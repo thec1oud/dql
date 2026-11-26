@@ -323,6 +323,13 @@
                       "published_at",
                       "status"
                     ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "published_at IS NULL OR status \u003c\u003e 'draft'",
+                        "named": true
+                      }
+                    ],
                     "kind": "CONSTRAINT_KIND_CHECK",
                     "name": "posts_published_check",
                     "opaque": {
@@ -348,6 +355,11 @@
                       "status"
                     ],
                     "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "status IN ('draft', 'published', 'archived')",
+                        "named": true
+                      },
                       {
                         "@type": "type.dql.dev/dql.ext.sqlite.v1.Comment",
                         "text": "@enum(post_status)"
@@ -375,6 +387,13 @@
                     "clientValidated": true,
                     "columns": [
                       "title"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "length(title) BETWEEN 1 AND 200",
+                        "named": true
+                      }
                     ],
                     "kind": "CONSTRAINT_KIND_CHECK",
                     "name": "posts_title_check",
@@ -736,6 +755,13 @@
                     "clientValidated": true,
                     "columns": [
                       "name"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "length(name) \u003c= 200",
+                        "named": true
+                      }
                     ],
                     "kind": "CONSTRAINT_KIND_CHECK",
                     "name": "tags_name_check",
@@ -1222,6 +1248,13 @@
                     "columns": [
                       "display_name"
                     ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "length(display_name) \u003c= 80",
+                        "named": true
+                      }
+                    ],
                     "kind": "CONSTRAINT_KIND_CHECK",
                     "name": "users_display_name_check",
                     "portable": {
@@ -1235,6 +1268,13 @@
                     "clientValidated": true,
                     "columns": [
                       "email"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "length(email) \u003c= 320",
+                        "named": true
+                      }
                     ],
                     "kind": "CONSTRAINT_KIND_CHECK",
                     "name": "users_email_check",
@@ -1327,7 +1367,7 @@
         ],
         "provenance": {
           "fidelity": "SOURCE_FIDELITY_FULL",
-          "inputFingerprint": "sha256:beea0266c0f5db29ce41bce4c25316d68f7070da32ed8f261d3b5ecd54323fb1",
+          "inputFingerprint": "sha256:04c102c9609c0a21cc9332f518f9eae215c625d11238cd7e84cea8fd16984785",
           "source": "sqlite-live",
           "sourceVersion": "1.0.0"
         }

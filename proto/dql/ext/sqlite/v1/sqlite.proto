@@ -60,6 +60,14 @@ message IndexPart {
   string collation = 4;
 }
 
+// A check constraint as its CREATE TABLE statement defines it: its
+// expression as written, and whether CONSTRAINT names it. SQLite reports a
+// violation of an unnamed check by its expression.
+message Check {
+  string expression = 1;
+  bool named = 2;
+}
+
 // A table's trigger.
 message Trigger {
   string name = 1;
