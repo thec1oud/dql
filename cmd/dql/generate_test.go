@@ -229,6 +229,8 @@ func TestGenerateFailures(t *testing.T) {
 				"dql generate: sources[1] (dpg-snapshot): plugin: starting /nonexistent/dql-plugin-dpg-snapshot"}},
 		{"mysql-live fails", "sources:\n  - plugin: mysql-live\n    catalog: shop\n    connection: env:SHOP_DATABASE_URL\n",
 			[]string{"dql generate: sources[0] (mysql-live): mysql-live: connection names env:SHOP_DATABASE_URL, which is not set"}},
+		{"sqlserver-live fails", "sources:\n  - plugin: sqlserver-live\n    catalog: shop\n    connection: env:SHOP_DATABASE_URL\n",
+			[]string{"dql generate: sources[0] (sqlserver-live): sqlserver-live: connection names env:SHOP_DATABASE_URL, which is not set"}},
 		{"assembly fails", "sources:\n  - plugin: echo\nemit:\n  - plugin: go\n    dialect: postgres\n    package: p\n    out: gen\n",
 			[]string{"error catalog-none: the sources produced no catalog"}},
 	} {

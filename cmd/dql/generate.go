@@ -32,6 +32,7 @@ import (
 	"github.com/thec1oud/dql/sources/mysqllive"
 	"github.com/thec1oud/dql/sources/pglive"
 	"github.com/thec1oud/dql/sources/sqlitelive"
+	"github.com/thec1oud/dql/sources/sqlserverlive"
 )
 
 // sources are the shipped source plugins, which run in-process (ADR 0002).
@@ -52,6 +53,10 @@ var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 			conn = c.Resolve(conn)
 		}
 		return sqlitelive.New(sqlitelive.Settings{Catalog: s.Catalog, Connection: conn})
+	},
+	sqlserverlive.Name: func(_ *config.Config, s config.Source) plugin.Plugin {
+		return sqlserverlive.New(sqlserverlive.Settings{Catalog: s.Catalog, Connection: s.Connection,
+			DefaultNamespace: s.DefaultNamespace})
 	},
 	dpgsnapshot.Name: func(c *config.Config, s config.Source) plugin.Plugin {
 		return dpgsnapshot.New(dpgsnapshot.Settings{Snapshot: c.Resolve(s.Snapshot), Catalog: s.Catalog,

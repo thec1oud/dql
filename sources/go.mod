@@ -1,11 +1,12 @@
 module github.com/thec1oud/dql/sources
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.1
 	github.com/go-sql-driver/mysql v1.10.2
 	github.com/jackc/pgx/v5 v5.7.6
+	github.com/microsoft/go-mssqldb v1.12.0
 	github.com/pganalyze/pg_query_go/v6 v6.2.5
 	github.com/pingcap/tidb/pkg/parser v0.0.0-20251126154744-e4e814fdc0af
 	github.com/thec1oud/dql/core v0.0.0
@@ -18,12 +19,15 @@ require (
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
+	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	github.com/shopspring/decimal v1.4.0 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	modernc.org/libc v1.66.10 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
@@ -37,11 +41,12 @@ require (
 	github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86 // indirect
 	github.com/pingcap/log v1.1.0 // indirect
 	github.com/thec1oud/dql/querysources/sqlite v0.0.0
+	github.com/thec1oud/dql/querysources/sqlserver v0.0.0
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.37.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
 
@@ -53,3 +58,5 @@ replace (
 )
 
 replace github.com/thec1oud/dql/querysources/sqlite => ../querysources/sqlite
+
+replace github.com/thec1oud/dql/querysources/sqlserver => ../querysources/sqlserver
