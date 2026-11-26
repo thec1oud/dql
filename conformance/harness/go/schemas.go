@@ -25,10 +25,14 @@ import (
 // into testdata/variantdb.
 var Schemas = map[string]Schema{
 	"shop": {
-		DDL:     []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
-		Dialect: "postgres",
-		Exec:    run,
-		Open:    opener(shopdb.NewExecutor, shopdb.New),
+		DDL:      []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/inject.sql"},
+		Dialect:  "postgres",
+		URLEnv:   "DQL_TEST_POSTGRES_URL",
+		Database: Database,
+		Modes:    []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple},
+		Features: postgresFeatures,
+		Exec:     run,
+		Open:     opener(pgDriver, shopdb.NewExecutor, shopdb.New),
 		Tables: map[string]any{
 			"tenants": shopdb.Tenants, "users": shopdb.Users, "profiles": shopdb.Profiles,
 			"posts": shopdb.Posts, "tags": shopdb.Tags, "post_tags": shopdb.PostTags,
@@ -96,10 +100,14 @@ var Schemas = map[string]Schema{
 		},
 	},
 	"shop_variants": {
-		DDL:     []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/variants.sql", "conformance/schemas/postgres/inject.sql"},
-		Dialect: "postgres",
-		Exec:    run,
-		Open:    opener(variantdb.NewExecutor, variantdb.New),
+		DDL:      []string{"testdata/shop/schema.sql", "conformance/schemas/postgres/variants.sql", "conformance/schemas/postgres/inject.sql"},
+		Dialect:  "postgres",
+		URLEnv:   "DQL_TEST_POSTGRES_URL",
+		Database: Database,
+		Modes:    []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple},
+		Features: postgresFeatures,
+		Exec:     run,
+		Open:     opener(pgDriver, variantdb.NewExecutor, variantdb.New),
 		Tables: map[string]any{
 			"tenants": variantdb.Tenants, "users": variantdb.Users, "profiles": variantdb.Profiles,
 			"posts": variantdb.Posts, "tags": variantdb.Tags, "post_tags": variantdb.PostTags,
@@ -170,10 +178,18 @@ var Schemas = map[string]Schema{
 	},
 }
 
+// Matrix holds each dialect's schemas, which every scenario runs on.
+var Matrix = map[string]map[string]Schema{"postgres": Schemas, "mysql": MySQLSchemas}
+
+// postgresFeatures are the features Postgres's schemas hold: every one a
+// scenario requires.
+var postgresFeatures = []string{"arrays", "composites", "regex-match", "replica", "returning", "serialization-failure"}
+
 // opener opens a schema's handle, made by newDB on the executor newExec
 // makes: on the database at dsn with its replicas, at most maxConns
 // connections to it, 4 by default, sending statements in mode (§26.4).
 func opener[DB any](
+	driver func() dql.Driver,
 	newExec func(context.Context, dql.Driver, dql.Config, ...dql.Option) (*dql.Executor, error),
 	newDB func(*dql.Executor) DB,
 ) func(ctx context.Context, dsn string, replicas []string, maxConns int, mode dql.StatementMode, opts ...dql.Option) (any, *dql.Executor, error) {
@@ -196,9 +212,7 @@ func opener[DB any](
 				once.Do(func() { close(in) })
 			}
 		}})
-		// The driver registers the schemas' composite type, as dqlpgx
-		// documents, so that its values decode into their attributes.
-		e, err := newExec(ctx, dqlpgx.New("app.money_amount"), dql.Config{
+		e, err := newExec(ctx, driver(), dql.Config{
 			Sources:  map[string]dql.SourceConfig{"main": src},
 			Catalogs: map[string]string{"shop": "main"},
 		}, append([]dql.Option{dql.WithTrackInterval(trackInterval), rotation}, opts...)...)
@@ -216,6 +230,11 @@ func opener[DB any](
 		return newDB(e), e, nil
 	}
 }
+
+// pgDriver is the Postgres driver, which registers the schemas' composite
+// type, as dqlpgx documents, so that its values decode into their
+// attributes.
+func pgDriver() dql.Driver { return dqlpgx.New("app.money_amount") }
 
 // rotationWait is how long a scenario's executor waits for its replica to
 // enter rotation.

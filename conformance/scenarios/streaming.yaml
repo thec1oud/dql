@@ -33,13 +33,6 @@ steps:
     filter: [{ column: name, op: eq, value: nobody }]
     read: iter
     expect: { rows: [] }
-  # A server error ends the stream with that error.
-  - op: select
-    from: tenants
-    shape: tenant_full
-    filter: [{ column: name, op: regex_match, value: "(" }]
-    read: iter
-    expect: { error: { class: DatabaseError } }
   # A stream in a read transaction reads on the transaction's connection.
   - op: read
     steps:

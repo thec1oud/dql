@@ -4,11 +4,13 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/thec1oud/dql/core/bundle"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	"github.com/thec1oud/dql/sources/mysqltest"
+	"github.com/thec1oud/dql/testkit/golden"
 )
 
 // A MySQL database runs through mysql-live and the mysql dialect: the
@@ -39,5 +41,46 @@ func TestGenerateMySQL(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(filepath.Dir(config), "gen", "dql-fragments.dql.go")); err != nil {
 		t.Error(err)
+	}
+}
+
+// goldenMysqlshopdb is the go emitter's golden output for the running
+// example on MySQL, which the conformance harness runs.
+var goldenMysqlshopdb = filepath.Join("..", "..", "conformance", "harness", "go", "testdata", "mysqlshopdb")
+
+// inputDigest is the digest of a catalog's input, which holds the name of
+// the database it was read from, fresh in each run.
+var inputDigest = regexp.MustCompile(`sha256:[0-9a-f]{64}`)
+
+// dql generate writes the conformance harness's mysqlshopdb package from
+// conformance/schemas/mysql/shop.yaml.
+func TestGenerateConformanceMySQL(t *testing.T) {
+	ctx := context.Background()
+	schemas := filepath.Join("..", "..", "conformance", "schemas", "mysql")
+	db, err := mysqltest.Create(ctx, filepath.Join(schemas, "shop.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Drop(ctx)
+	t.Setenv("SHOP_MYSQL_DSN", db.DSN)
+	raw, err := os.ReadFile(filepath.Join(schemas, "shop.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := write(t, "dql.yaml", string(raw))
+	if code, _, stderr := dql("generate", "-config", cfg); code != 0 || stderr != "" {
+		t.Fatalf("%d %q", code, stderr)
+	}
+	files, _ := filepath.Glob(filepath.Join(filepath.Dir(cfg), "mysqlshopdb", "*.dql.go"))
+	want, _ := filepath.Glob(filepath.Join(goldenMysqlshopdb, "*.dql.go"))
+	if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
+		t.Errorf("%d files, golden has %d", len(files), len(want))
+	}
+	for _, f := range files {
+		got, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		golden.Assert(t, filepath.Join(goldenMysqlshopdb, filepath.Base(f)), got, inputDigest)
 	}
 }
