@@ -60,6 +60,16 @@
         "@types/pg-cursor": "2.7.2",
       },
     },
+    "dqlsqlite": {
+      "name": "@dql/sqlite",
+      "version": "0.1.0",
+      "dependencies": {
+        "@dql/runtime": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "26.6.10",
+      },
+    },
   },
   "packages": {
     "@dql/mysql": ["@dql/mysql@workspace:dqlmysql"],
@@ -69,6 +79,8 @@
     "@dql/pg": ["@dql/pg@workspace:dqlpg"],
 
     "@dql/runtime": ["@dql/runtime@workspace:dql"],
+
+    "@dql/sqlite": ["@dql/sqlite@workspace:dqlsqlite"],
 
     "@opentelemetry/api": ["@opentelemetry/api@1.9.0", "", {}, "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="],
 

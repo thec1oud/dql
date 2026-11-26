@@ -160,7 +160,44 @@ export async function insertMany<T>(h: Writer, t: Fragments, q: Query, rows: rea
       return out;
     });
   }
-  return (await queryBulk(h, manyRows(t, q, rows))).map(decode);
+  const gs = groups(t, rows);
+  if (gs.length === 1) {
+    return (await queryBulk(h, manyRows(t, q, gs[0] as readonly Args[]))).map(decode);
+  }
+  return atomic(h, async (w) => {
+    const out: T[] = [];
+    for (const g of gs) {
+      out.push(...(await queryBulk(w, manyRows(t, q, g))).map(decode));
+    }
+    return out;
+  });
+}
+
+/**
+ * groups splits rows into runs that one statement can write. Where the
+ * dialect has value.default, a row's unset column takes DEFAULT, so every row
+ * writes in one; where it has none, as on SQLite, a statement leaves unset
+ * columns out, so each run of rows setting the same columns is written apart
+ * (§25.2).
+ */
+function groups(t: Fragments, rows: readonly Args[]): (readonly Args[])[] {
+  if (Object.hasOwn(t.templates, "value.default") || rows.length === 0) {
+    return [rows];
+  }
+  const out: Args[][] = [];
+  let run: Args[] = [];
+  let key = "";
+  for (const r of rows) {
+    const k = JSON.stringify(Object.keys(r).sort());
+    if (run.length > 0 && k !== key) {
+      out.push(run);
+      run = [];
+    }
+    run.push(r);
+    key = k;
+  }
+  out.push(run);
+  return out;
 }
 
 /** manyRows is the bulk write of rows with q, each statement repeating q's VALUES row for its rows. */

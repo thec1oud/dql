@@ -24,7 +24,8 @@ import { type StorageValue, type Weak, weakOf, weakRaw } from "./weak.js";
  *   bytes and a bytes-fallback opaque value as a Uint8Array;
  * - an array as an array, one level per dimension;
  * - a composite value as a Row of its attributes in their order;
- * - a weak column's value as a StorageValue;
+ * - a weak column's value as its storage class, as a bigint, a number, a
+ *   string or a Uint8Array, or as a StorageValue;
  * - a to-one nest as a Row, and a to-many nest as a Row[];
  * - any other value as its TypeScript type itself, such as a Decimal, a
  *   Temporal.Instant or a Range.
@@ -375,26 +376,46 @@ export function asMultirange<T>(conv: Converter<T>): Converter<Range<T>[]> {
 
 const storageClasses: Record<StorageValue["class"], string> = { integer: "bigint", real: "number", text: "string", blob: "object" };
 
+/** storageOf returns the StorageValue a driver gave for a weak column, as its storage class's plain value or as a StorageValue, or undefined for a value of no storage class. */
+function storageOf(v: unknown): StorageValue | undefined {
+  switch (typeof v) {
+    case "bigint":
+      return { class: "integer", value: v };
+    case "number":
+      return { class: "real", value: v };
+    case "string":
+      return { class: "text", value: v };
+  }
+  if (v instanceof Uint8Array) {
+    return { class: "blob", value: v };
+  }
+  if (
+    typeof v !== "object" ||
+    v === null ||
+    !("class" in v) ||
+    !("value" in v) ||
+    typeof v.class !== "string" ||
+    !Object.hasOwn(storageClasses, v.class) ||
+    typeof v.value !== storageClasses[v.class as StorageValue["class"]] ||
+    (v.class === "blob" && !(v.value instanceof Uint8Array))
+  ) {
+    return undefined;
+  }
+  return v as StorageValue;
+}
+
 /**
- * weak converts a weak column's StorageValue: a value conv accepts as the
- * affinity type, and otherwise the raw value, which is not an error (§8.10,
- * §13).
+ * weak converts a weak column's value, given as its storage class: a bigint,
+ * a number, a string or a Uint8Array, or a StorageValue. A value conv accepts
+ * is the affinity type, and any other is the raw value, which is not an error
+ * (§8.10, §13).
  */
 export function weak<T>(conv: Converter<T>): Converter<Weak<T>> {
   return (v) => {
-    if (
-      typeof v !== "object" ||
-      v === null ||
-      !("class" in v) ||
-      !("value" in v) ||
-      typeof v.class !== "string" ||
-      !Object.hasOwn(storageClasses, v.class) ||
-      typeof v.value !== storageClasses[v.class as StorageValue["class"]] ||
-      (v.class === "blob" && !(v.value instanceof Uint8Array))
-    ) {
+    const raw = storageOf(v);
+    if (raw === undefined) {
       return fail("off_type");
     }
-    const raw = v as StorageValue;
     try {
       return weakOf(conv(raw.value));
     } catch (e) {
