@@ -413,6 +413,17 @@ describe("connections", () => {
     await pool.close();
   });
 
+  test("a connect that fails after its wait was aborted is dropped", async () => {
+    const pool = await new MySqlDriver().open({ dsn: "mysql://nobody@127.0.0.1:1/x", maxConns: 0, setup: [], mode: "prepare" });
+    const ac = new AbortController();
+    const waiting = pool.acquire(ac.signal).catch((x) => x);
+    ac.abort(new Error("gone"));
+    expect(((await waiting) as Error).message).toBe("gone");
+    // The pool answers in order, so the aborted connect has failed by now.
+    expect(await pool.acquire().catch((x) => (x as { code?: string }).code)).toBe("ECONNREFUSED");
+    await pool.close();
+  });
+
   test("a cancel request that cannot connect leaves the statement to finish", async () => {
     const pool = await new MySqlDriver().open({ dsn: url, maxConns: 0, setup: [], mode: "describe" });
     const conn = await pool.acquire();
