@@ -225,8 +225,11 @@ type Type struct {
 	//	*Type_Named
 	//	*Type_Opaque
 	//	*Type_Weak
-	Kind          isType_Kind `protobuf_oneof:"kind"`
-	Native        *NativeType `protobuf:"bytes,100,opt,name=native,proto3" json:"native,omitempty"`
+	Kind   isType_Kind `protobuf_oneof:"kind"`
+	Native *NativeType `protobuf:"bytes,100,opt,name=native,proto3" json:"native,omitempty"`
+	// Set by the core when an annotation narrowed the type the source read
+	// (§7.2, §8.7). Decoding converts the stored form and checks it (§13).
+	Narrowed      *Narrowing `protobuf:"bytes,101,opt,name=narrowed,proto3" json:"narrowed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -617,6 +620,13 @@ func (x *Type) GetNative() *NativeType {
 	return nil
 }
 
+func (x *Type) GetNarrowed() *Narrowing {
+	if x != nil {
+		return x.Narrowed
+	}
+	return nil
+}
+
 type isType_Kind interface {
 	isType_Kind()
 }
@@ -850,6 +860,72 @@ func (*Type_Opaque) isType_Kind() {}
 
 func (*Type_Weak) isType_Kind() {}
 
+// How an annotation narrowed a type: as(<logical type>) on a compatible
+// column, or bool on a TINYINT(1).
+type Narrowing struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The annotation's key: core.as or core.bool.
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Where the assertion came from, as a decode error names it, such as
+	// "core.as from the comment of column tenants.id".
+	Assertion string `protobuf:"bytes,2,opt,name=assertion,proto3" json:"assertion,omitempty"`
+	// The type the source read, which the database still hands back.
+	Stored        *Type `protobuf:"bytes,3,opt,name=stored,proto3" json:"stored,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Narrowing) Reset() {
+	*x = Narrowing{}
+	mi := &file_dql_ir_v1_types_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Narrowing) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Narrowing) ProtoMessage() {}
+
+func (x *Narrowing) ProtoReflect() protoreflect.Message {
+	mi := &file_dql_ir_v1_types_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Narrowing.ProtoReflect.Descriptor instead.
+func (*Narrowing) Descriptor() ([]byte, []int) {
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Narrowing) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *Narrowing) GetAssertion() string {
+	if x != nil {
+		return x.Assertion
+	}
+	return ""
+}
+
+func (x *Narrowing) GetStored() *Type {
+	if x != nil {
+		return x.Stored
+	}
+	return nil
+}
+
 type Empty struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -858,7 +934,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[1]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -870,7 +946,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[1]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -883,7 +959,7 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{1}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{2}
 }
 
 type Decimal struct {
@@ -896,7 +972,7 @@ type Decimal struct {
 
 func (x *Decimal) Reset() {
 	*x = Decimal{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[2]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -908,7 +984,7 @@ func (x *Decimal) String() string {
 func (*Decimal) ProtoMessage() {}
 
 func (x *Decimal) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[2]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -921,7 +997,7 @@ func (x *Decimal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Decimal.ProtoReflect.Descriptor instead.
 func (*Decimal) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{2}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Decimal) GetPrecision() uint32 {
@@ -946,7 +1022,7 @@ type Text struct {
 
 func (x *Text) Reset() {
 	*x = Text{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -958,7 +1034,7 @@ func (x *Text) String() string {
 func (*Text) ProtoMessage() {}
 
 func (x *Text) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[3]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -971,7 +1047,7 @@ func (x *Text) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Text.ProtoReflect.Descriptor instead.
 func (*Text) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{3}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{4}
 }
 
 type Varchar struct {
@@ -984,7 +1060,7 @@ type Varchar struct {
 
 func (x *Varchar) Reset() {
 	*x = Varchar{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -996,7 +1072,7 @@ func (x *Varchar) String() string {
 func (*Varchar) ProtoMessage() {}
 
 func (x *Varchar) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[4]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1009,7 +1085,7 @@ func (x *Varchar) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Varchar.ProtoReflect.Descriptor instead.
 func (*Varchar) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{4}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Varchar) GetLength() uint32 {
@@ -1036,7 +1112,7 @@ type Char struct {
 
 func (x *Char) Reset() {
 	*x = Char{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[5]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1048,7 +1124,7 @@ func (x *Char) String() string {
 func (*Char) ProtoMessage() {}
 
 func (x *Char) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[5]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1061,7 +1137,7 @@ func (x *Char) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Char.ProtoReflect.Descriptor instead.
 func (*Char) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{5}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Char) GetLength() uint32 {
@@ -1087,7 +1163,7 @@ type Bytes struct {
 
 func (x *Bytes) Reset() {
 	*x = Bytes{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[6]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1099,7 +1175,7 @@ func (x *Bytes) String() string {
 func (*Bytes) ProtoMessage() {}
 
 func (x *Bytes) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[6]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1112,7 +1188,7 @@ func (x *Bytes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Bytes.ProtoReflect.Descriptor instead.
 func (*Bytes) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{6}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *Bytes) GetMaxLength() uint32 {
@@ -1132,7 +1208,7 @@ type TimeType struct {
 
 func (x *TimeType) Reset() {
 	*x = TimeType{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[7]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1144,7 +1220,7 @@ func (x *TimeType) String() string {
 func (*TimeType) ProtoMessage() {}
 
 func (x *TimeType) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[7]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1157,7 +1233,7 @@ func (x *TimeType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeType.ProtoReflect.Descriptor instead.
 func (*TimeType) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{7}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TimeType) GetPrecision() uint32 {
@@ -1177,7 +1253,7 @@ type Bit struct {
 
 func (x *Bit) Reset() {
 	*x = Bit{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1189,7 +1265,7 @@ func (x *Bit) String() string {
 func (*Bit) ProtoMessage() {}
 
 func (x *Bit) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[8]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1202,7 +1278,7 @@ func (x *Bit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Bit.ProtoReflect.Descriptor instead.
 func (*Bit) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{8}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Bit) GetLength() uint32 {
@@ -1228,7 +1304,7 @@ type RangeType struct {
 
 func (x *RangeType) Reset() {
 	*x = RangeType{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[9]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1240,7 +1316,7 @@ func (x *RangeType) String() string {
 func (*RangeType) ProtoMessage() {}
 
 func (x *RangeType) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[9]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1253,7 +1329,7 @@ func (x *RangeType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RangeType.ProtoReflect.Descriptor instead.
 func (*RangeType) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{9}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RangeType) GetElement() *Type {
@@ -1275,7 +1351,7 @@ type ArrayType struct {
 
 func (x *ArrayType) Reset() {
 	*x = ArrayType{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[10]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1287,7 +1363,7 @@ func (x *ArrayType) String() string {
 func (*ArrayType) ProtoMessage() {}
 
 func (x *ArrayType) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[10]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1300,7 +1376,7 @@ func (x *ArrayType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ArrayType.ProtoReflect.Descriptor instead.
 func (*ArrayType) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{10}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ArrayType) GetElement() *Type {
@@ -1339,7 +1415,7 @@ type NamedRef struct {
 
 func (x *NamedRef) Reset() {
 	*x = NamedRef{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[11]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1351,7 +1427,7 @@ func (x *NamedRef) String() string {
 func (*NamedRef) ProtoMessage() {}
 
 func (x *NamedRef) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[11]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1364,7 +1440,7 @@ func (x *NamedRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NamedRef.ProtoReflect.Descriptor instead.
 func (*NamedRef) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{11}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NamedRef) GetKind() isNamedRef_Kind {
@@ -1435,7 +1511,7 @@ type Opaque struct {
 
 func (x *Opaque) Reset() {
 	*x = Opaque{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[12]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1447,7 +1523,7 @@ func (x *Opaque) String() string {
 func (*Opaque) ProtoMessage() {}
 
 func (x *Opaque) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[12]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1460,7 +1536,7 @@ func (x *Opaque) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Opaque.ProtoReflect.Descriptor instead.
 func (*Opaque) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{12}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Opaque) GetFallback() OpaqueFallback {
@@ -1482,7 +1558,7 @@ type Weak struct {
 
 func (x *Weak) Reset() {
 	*x = Weak{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[13]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1494,7 +1570,7 @@ func (x *Weak) String() string {
 func (*Weak) ProtoMessage() {}
 
 func (x *Weak) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[13]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1507,7 +1583,7 @@ func (x *Weak) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Weak.ProtoReflect.Descriptor instead.
 func (*Weak) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{13}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Weak) GetAffinity() *Type {
@@ -1541,7 +1617,7 @@ type NativeType struct {
 
 func (x *NativeType) Reset() {
 	*x = NativeType{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[14]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1553,7 +1629,7 @@ func (x *NativeType) String() string {
 func (*NativeType) ProtoMessage() {}
 
 func (x *NativeType) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[14]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1566,7 +1642,7 @@ func (x *NativeType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NativeType.ProtoReflect.Descriptor instead.
 func (*NativeType) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{14}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *NativeType) GetName() *QualifiedName {
@@ -1610,7 +1686,7 @@ type TypeModifier struct {
 
 func (x *TypeModifier) Reset() {
 	*x = TypeModifier{}
-	mi := &file_dql_ir_v1_types_proto_msgTypes[15]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1622,7 +1698,7 @@ func (x *TypeModifier) String() string {
 func (*TypeModifier) ProtoMessage() {}
 
 func (x *TypeModifier) ProtoReflect() protoreflect.Message {
-	mi := &file_dql_ir_v1_types_proto_msgTypes[15]
+	mi := &file_dql_ir_v1_types_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1635,7 +1711,7 @@ func (x *TypeModifier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TypeModifier.ProtoReflect.Descriptor instead.
 func (*TypeModifier) Descriptor() ([]byte, []int) {
-	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{15}
+	return file_dql_ir_v1_types_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *TypeModifier) GetKind() isTypeModifier_Kind {
@@ -1683,7 +1759,7 @@ var File_dql_ir_v1_types_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_types_proto_rawDesc = "" +
 	"\n" +
-	"\x15dql/ir/v1/types.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\"\xf6\r\n" +
+	"\x15dql/ir/v1/types.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\"\xa8\x0e\n" +
 	"\x04Type\x12&\n" +
 	"\x04bool\x18\x01 \x01(\v2\x10.dql.ir.v1.EmptyH\x00R\x04bool\x12&\n" +
 	"\x04int8\x18\x02 \x01(\v2\x10.dql.ir.v1.EmptyH\x00R\x04int8\x12(\n" +
@@ -1727,8 +1803,13 @@ const file_dql_ir_v1_types_proto_rawDesc = "" +
 	"\x05named\x18F \x01(\v2\x13.dql.ir.v1.NamedRefH\x00R\x05named\x12+\n" +
 	"\x06opaque\x18P \x01(\v2\x11.dql.ir.v1.OpaqueH\x00R\x06opaque\x12%\n" +
 	"\x04weak\x18Z \x01(\v2\x0f.dql.ir.v1.WeakH\x00R\x04weak\x12-\n" +
-	"\x06native\x18d \x01(\v2\x15.dql.ir.v1.NativeTypeR\x06nativeB\x06\n" +
-	"\x04kind\"\a\n" +
+	"\x06native\x18d \x01(\v2\x15.dql.ir.v1.NativeTypeR\x06native\x120\n" +
+	"\bnarrowed\x18e \x01(\v2\x14.dql.ir.v1.NarrowingR\bnarrowedB\x06\n" +
+	"\x04kind\"d\n" +
+	"\tNarrowing\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x1c\n" +
+	"\tassertion\x18\x02 \x01(\tR\tassertion\x12'\n" +
+	"\x06stored\x18\x03 \x01(\v2\x0f.dql.ir.v1.TypeR\x06stored\"\a\n" +
 	"\x05Empty\"_\n" +
 	"\aDecimal\x12!\n" +
 	"\tprecision\x18\x01 \x01(\rH\x00R\tprecision\x88\x01\x01\x12\x19\n" +
@@ -1813,86 +1894,89 @@ func file_dql_ir_v1_types_proto_rawDescGZIP() []byte {
 }
 
 var file_dql_ir_v1_types_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_dql_ir_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_dql_ir_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_dql_ir_v1_types_proto_goTypes = []any{
 	(LengthUnit)(0),       // 0: dql.ir.v1.LengthUnit
 	(OpaqueFallback)(0),   // 1: dql.ir.v1.OpaqueFallback
 	(StorageClass)(0),     // 2: dql.ir.v1.StorageClass
 	(*Type)(nil),          // 3: dql.ir.v1.Type
-	(*Empty)(nil),         // 4: dql.ir.v1.Empty
-	(*Decimal)(nil),       // 5: dql.ir.v1.Decimal
-	(*Text)(nil),          // 6: dql.ir.v1.Text
-	(*Varchar)(nil),       // 7: dql.ir.v1.Varchar
-	(*Char)(nil),          // 8: dql.ir.v1.Char
-	(*Bytes)(nil),         // 9: dql.ir.v1.Bytes
-	(*TimeType)(nil),      // 10: dql.ir.v1.TimeType
-	(*Bit)(nil),           // 11: dql.ir.v1.Bit
-	(*RangeType)(nil),     // 12: dql.ir.v1.RangeType
-	(*ArrayType)(nil),     // 13: dql.ir.v1.ArrayType
-	(*NamedRef)(nil),      // 14: dql.ir.v1.NamedRef
-	(*Opaque)(nil),        // 15: dql.ir.v1.Opaque
-	(*Weak)(nil),          // 16: dql.ir.v1.Weak
-	(*NativeType)(nil),    // 17: dql.ir.v1.NativeType
-	(*TypeModifier)(nil),  // 18: dql.ir.v1.TypeModifier
-	(*QualifiedName)(nil), // 19: dql.ir.v1.QualifiedName
+	(*Narrowing)(nil),     // 4: dql.ir.v1.Narrowing
+	(*Empty)(nil),         // 5: dql.ir.v1.Empty
+	(*Decimal)(nil),       // 6: dql.ir.v1.Decimal
+	(*Text)(nil),          // 7: dql.ir.v1.Text
+	(*Varchar)(nil),       // 8: dql.ir.v1.Varchar
+	(*Char)(nil),          // 9: dql.ir.v1.Char
+	(*Bytes)(nil),         // 10: dql.ir.v1.Bytes
+	(*TimeType)(nil),      // 11: dql.ir.v1.TimeType
+	(*Bit)(nil),           // 12: dql.ir.v1.Bit
+	(*RangeType)(nil),     // 13: dql.ir.v1.RangeType
+	(*ArrayType)(nil),     // 14: dql.ir.v1.ArrayType
+	(*NamedRef)(nil),      // 15: dql.ir.v1.NamedRef
+	(*Opaque)(nil),        // 16: dql.ir.v1.Opaque
+	(*Weak)(nil),          // 17: dql.ir.v1.Weak
+	(*NativeType)(nil),    // 18: dql.ir.v1.NativeType
+	(*TypeModifier)(nil),  // 19: dql.ir.v1.TypeModifier
+	(*QualifiedName)(nil), // 20: dql.ir.v1.QualifiedName
 }
 var file_dql_ir_v1_types_proto_depIdxs = []int32{
-	4,  // 0: dql.ir.v1.Type.bool:type_name -> dql.ir.v1.Empty
-	4,  // 1: dql.ir.v1.Type.int8:type_name -> dql.ir.v1.Empty
-	4,  // 2: dql.ir.v1.Type.int16:type_name -> dql.ir.v1.Empty
-	4,  // 3: dql.ir.v1.Type.int32:type_name -> dql.ir.v1.Empty
-	4,  // 4: dql.ir.v1.Type.int64:type_name -> dql.ir.v1.Empty
-	4,  // 5: dql.ir.v1.Type.uint8:type_name -> dql.ir.v1.Empty
-	4,  // 6: dql.ir.v1.Type.uint16:type_name -> dql.ir.v1.Empty
-	4,  // 7: dql.ir.v1.Type.uint32:type_name -> dql.ir.v1.Empty
-	4,  // 8: dql.ir.v1.Type.uint64:type_name -> dql.ir.v1.Empty
-	4,  // 9: dql.ir.v1.Type.float32:type_name -> dql.ir.v1.Empty
-	4,  // 10: dql.ir.v1.Type.float64:type_name -> dql.ir.v1.Empty
-	5,  // 11: dql.ir.v1.Type.decimal:type_name -> dql.ir.v1.Decimal
-	4,  // 12: dql.ir.v1.Type.money:type_name -> dql.ir.v1.Empty
-	6,  // 13: dql.ir.v1.Type.text:type_name -> dql.ir.v1.Text
-	7,  // 14: dql.ir.v1.Type.varchar:type_name -> dql.ir.v1.Varchar
-	8,  // 15: dql.ir.v1.Type.char:type_name -> dql.ir.v1.Char
-	9,  // 16: dql.ir.v1.Type.bytes:type_name -> dql.ir.v1.Bytes
-	10, // 17: dql.ir.v1.Type.instant:type_name -> dql.ir.v1.TimeType
-	10, // 18: dql.ir.v1.Type.instant_with_offset:type_name -> dql.ir.v1.TimeType
-	10, // 19: dql.ir.v1.Type.local_datetime:type_name -> dql.ir.v1.TimeType
-	4,  // 20: dql.ir.v1.Type.date:type_name -> dql.ir.v1.Empty
-	10, // 21: dql.ir.v1.Type.local_time:type_name -> dql.ir.v1.TimeType
-	10, // 22: dql.ir.v1.Type.time_with_offset:type_name -> dql.ir.v1.TimeType
-	10, // 23: dql.ir.v1.Type.interval:type_name -> dql.ir.v1.TimeType
-	4,  // 24: dql.ir.v1.Type.uuid:type_name -> dql.ir.v1.Empty
-	4,  // 25: dql.ir.v1.Type.json:type_name -> dql.ir.v1.Empty
-	4,  // 26: dql.ir.v1.Type.jsonb:type_name -> dql.ir.v1.Empty
-	4,  // 27: dql.ir.v1.Type.xml:type_name -> dql.ir.v1.Empty
-	4,  // 28: dql.ir.v1.Type.inet:type_name -> dql.ir.v1.Empty
-	4,  // 29: dql.ir.v1.Type.cidr:type_name -> dql.ir.v1.Empty
-	4,  // 30: dql.ir.v1.Type.macaddr:type_name -> dql.ir.v1.Empty
-	11, // 31: dql.ir.v1.Type.bit:type_name -> dql.ir.v1.Bit
-	12, // 32: dql.ir.v1.Type.range:type_name -> dql.ir.v1.RangeType
-	12, // 33: dql.ir.v1.Type.multirange:type_name -> dql.ir.v1.RangeType
-	13, // 34: dql.ir.v1.Type.array:type_name -> dql.ir.v1.ArrayType
-	14, // 35: dql.ir.v1.Type.named:type_name -> dql.ir.v1.NamedRef
-	15, // 36: dql.ir.v1.Type.opaque:type_name -> dql.ir.v1.Opaque
-	16, // 37: dql.ir.v1.Type.weak:type_name -> dql.ir.v1.Weak
-	17, // 38: dql.ir.v1.Type.native:type_name -> dql.ir.v1.NativeType
-	0,  // 39: dql.ir.v1.Varchar.unit:type_name -> dql.ir.v1.LengthUnit
-	0,  // 40: dql.ir.v1.Char.unit:type_name -> dql.ir.v1.LengthUnit
-	3,  // 41: dql.ir.v1.RangeType.element:type_name -> dql.ir.v1.Type
-	3,  // 42: dql.ir.v1.ArrayType.element:type_name -> dql.ir.v1.Type
-	19, // 43: dql.ir.v1.NamedRef.enum:type_name -> dql.ir.v1.QualifiedName
-	19, // 44: dql.ir.v1.NamedRef.domain:type_name -> dql.ir.v1.QualifiedName
-	19, // 45: dql.ir.v1.NamedRef.composite:type_name -> dql.ir.v1.QualifiedName
-	1,  // 46: dql.ir.v1.Opaque.fallback:type_name -> dql.ir.v1.OpaqueFallback
-	3,  // 47: dql.ir.v1.Weak.affinity:type_name -> dql.ir.v1.Type
-	2,  // 48: dql.ir.v1.Weak.storage_classes:type_name -> dql.ir.v1.StorageClass
-	19, // 49: dql.ir.v1.NativeType.name:type_name -> dql.ir.v1.QualifiedName
-	18, // 50: dql.ir.v1.NativeType.modifiers:type_name -> dql.ir.v1.TypeModifier
-	51, // [51:51] is the sub-list for method output_type
-	51, // [51:51] is the sub-list for method input_type
-	51, // [51:51] is the sub-list for extension type_name
-	51, // [51:51] is the sub-list for extension extendee
-	0,  // [0:51] is the sub-list for field type_name
+	5,  // 0: dql.ir.v1.Type.bool:type_name -> dql.ir.v1.Empty
+	5,  // 1: dql.ir.v1.Type.int8:type_name -> dql.ir.v1.Empty
+	5,  // 2: dql.ir.v1.Type.int16:type_name -> dql.ir.v1.Empty
+	5,  // 3: dql.ir.v1.Type.int32:type_name -> dql.ir.v1.Empty
+	5,  // 4: dql.ir.v1.Type.int64:type_name -> dql.ir.v1.Empty
+	5,  // 5: dql.ir.v1.Type.uint8:type_name -> dql.ir.v1.Empty
+	5,  // 6: dql.ir.v1.Type.uint16:type_name -> dql.ir.v1.Empty
+	5,  // 7: dql.ir.v1.Type.uint32:type_name -> dql.ir.v1.Empty
+	5,  // 8: dql.ir.v1.Type.uint64:type_name -> dql.ir.v1.Empty
+	5,  // 9: dql.ir.v1.Type.float32:type_name -> dql.ir.v1.Empty
+	5,  // 10: dql.ir.v1.Type.float64:type_name -> dql.ir.v1.Empty
+	6,  // 11: dql.ir.v1.Type.decimal:type_name -> dql.ir.v1.Decimal
+	5,  // 12: dql.ir.v1.Type.money:type_name -> dql.ir.v1.Empty
+	7,  // 13: dql.ir.v1.Type.text:type_name -> dql.ir.v1.Text
+	8,  // 14: dql.ir.v1.Type.varchar:type_name -> dql.ir.v1.Varchar
+	9,  // 15: dql.ir.v1.Type.char:type_name -> dql.ir.v1.Char
+	10, // 16: dql.ir.v1.Type.bytes:type_name -> dql.ir.v1.Bytes
+	11, // 17: dql.ir.v1.Type.instant:type_name -> dql.ir.v1.TimeType
+	11, // 18: dql.ir.v1.Type.instant_with_offset:type_name -> dql.ir.v1.TimeType
+	11, // 19: dql.ir.v1.Type.local_datetime:type_name -> dql.ir.v1.TimeType
+	5,  // 20: dql.ir.v1.Type.date:type_name -> dql.ir.v1.Empty
+	11, // 21: dql.ir.v1.Type.local_time:type_name -> dql.ir.v1.TimeType
+	11, // 22: dql.ir.v1.Type.time_with_offset:type_name -> dql.ir.v1.TimeType
+	11, // 23: dql.ir.v1.Type.interval:type_name -> dql.ir.v1.TimeType
+	5,  // 24: dql.ir.v1.Type.uuid:type_name -> dql.ir.v1.Empty
+	5,  // 25: dql.ir.v1.Type.json:type_name -> dql.ir.v1.Empty
+	5,  // 26: dql.ir.v1.Type.jsonb:type_name -> dql.ir.v1.Empty
+	5,  // 27: dql.ir.v1.Type.xml:type_name -> dql.ir.v1.Empty
+	5,  // 28: dql.ir.v1.Type.inet:type_name -> dql.ir.v1.Empty
+	5,  // 29: dql.ir.v1.Type.cidr:type_name -> dql.ir.v1.Empty
+	5,  // 30: dql.ir.v1.Type.macaddr:type_name -> dql.ir.v1.Empty
+	12, // 31: dql.ir.v1.Type.bit:type_name -> dql.ir.v1.Bit
+	13, // 32: dql.ir.v1.Type.range:type_name -> dql.ir.v1.RangeType
+	13, // 33: dql.ir.v1.Type.multirange:type_name -> dql.ir.v1.RangeType
+	14, // 34: dql.ir.v1.Type.array:type_name -> dql.ir.v1.ArrayType
+	15, // 35: dql.ir.v1.Type.named:type_name -> dql.ir.v1.NamedRef
+	16, // 36: dql.ir.v1.Type.opaque:type_name -> dql.ir.v1.Opaque
+	17, // 37: dql.ir.v1.Type.weak:type_name -> dql.ir.v1.Weak
+	18, // 38: dql.ir.v1.Type.native:type_name -> dql.ir.v1.NativeType
+	4,  // 39: dql.ir.v1.Type.narrowed:type_name -> dql.ir.v1.Narrowing
+	3,  // 40: dql.ir.v1.Narrowing.stored:type_name -> dql.ir.v1.Type
+	0,  // 41: dql.ir.v1.Varchar.unit:type_name -> dql.ir.v1.LengthUnit
+	0,  // 42: dql.ir.v1.Char.unit:type_name -> dql.ir.v1.LengthUnit
+	3,  // 43: dql.ir.v1.RangeType.element:type_name -> dql.ir.v1.Type
+	3,  // 44: dql.ir.v1.ArrayType.element:type_name -> dql.ir.v1.Type
+	20, // 45: dql.ir.v1.NamedRef.enum:type_name -> dql.ir.v1.QualifiedName
+	20, // 46: dql.ir.v1.NamedRef.domain:type_name -> dql.ir.v1.QualifiedName
+	20, // 47: dql.ir.v1.NamedRef.composite:type_name -> dql.ir.v1.QualifiedName
+	1,  // 48: dql.ir.v1.Opaque.fallback:type_name -> dql.ir.v1.OpaqueFallback
+	3,  // 49: dql.ir.v1.Weak.affinity:type_name -> dql.ir.v1.Type
+	2,  // 50: dql.ir.v1.Weak.storage_classes:type_name -> dql.ir.v1.StorageClass
+	20, // 51: dql.ir.v1.NativeType.name:type_name -> dql.ir.v1.QualifiedName
+	19, // 52: dql.ir.v1.NativeType.modifiers:type_name -> dql.ir.v1.TypeModifier
+	53, // [53:53] is the sub-list for method output_type
+	53, // [53:53] is the sub-list for method input_type
+	53, // [53:53] is the sub-list for extension type_name
+	53, // [53:53] is the sub-list for extension extendee
+	0,  // [0:53] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_types_proto_init() }
@@ -1941,16 +2025,16 @@ func file_dql_ir_v1_types_proto_init() {
 		(*Type_Opaque)(nil),
 		(*Type_Weak)(nil),
 	}
-	file_dql_ir_v1_types_proto_msgTypes[2].OneofWrappers = []any{}
-	file_dql_ir_v1_types_proto_msgTypes[6].OneofWrappers = []any{}
+	file_dql_ir_v1_types_proto_msgTypes[3].OneofWrappers = []any{}
 	file_dql_ir_v1_types_proto_msgTypes[7].OneofWrappers = []any{}
 	file_dql_ir_v1_types_proto_msgTypes[8].OneofWrappers = []any{}
-	file_dql_ir_v1_types_proto_msgTypes[11].OneofWrappers = []any{
+	file_dql_ir_v1_types_proto_msgTypes[9].OneofWrappers = []any{}
+	file_dql_ir_v1_types_proto_msgTypes[12].OneofWrappers = []any{
 		(*NamedRef_Enum)(nil),
 		(*NamedRef_Domain)(nil),
 		(*NamedRef_Composite)(nil),
 	}
-	file_dql_ir_v1_types_proto_msgTypes[15].OneofWrappers = []any{
+	file_dql_ir_v1_types_proto_msgTypes[16].OneofWrappers = []any{
 		(*TypeModifier_Int)(nil),
 		(*TypeModifier_String_)(nil),
 	}
@@ -1960,7 +2044,7 @@ func file_dql_ir_v1_types_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_types_proto_rawDesc), len(file_dql_ir_v1_types_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   16,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

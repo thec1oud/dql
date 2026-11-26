@@ -27,6 +27,10 @@ import {
   asUint64,
   asUint8,
   asserted,
+  asParsed,
+  asTimeOfDay,
+  parseInstant,
+  parseUuid,
   elem,
   nest,
   nullableElem,
@@ -148,6 +152,26 @@ describe("converters", () => {
     expect([asBoolean(true), asBoolean(false), asBoolean(0), asBoolean(1), asBoolean(0n), asBoolean(1n)]).toEqual([true, false, false, true, false, true]);
     expect(failure(() => asBoolean(2))).toEqual(offType);
     expect(failure(() => asBoolean("true"))).toEqual(offType);
+  });
+
+  test("narrowed columns decode from their stored form (§7.2, §13)", () => {
+    const uuid = asParsed(parseUuid);
+    expect(uuid("A0EEBC99-9C0B-4EF8-BB6D-6BB9BD380A11")).toBe(parseUuid("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"));
+    expect(failure(() => uuid("nope"))).toEqual(offType);
+    expect(failure(() => uuid(1))).toEqual(offType);
+    const date = asParsed((s) => Temporal.PlainDate.from(s), Temporal.PlainDate);
+    const d = Temporal.PlainDate.from("2026-11-26");
+    expect(date(d)).toBe(d);
+    expect(date("2026-11-26").equals(d)).toBe(true);
+    const at = Temporal.Instant.from("2026-11-26T09:30:00.5Z");
+    expect(parseInstant("2026-11-26 09:30:00.5").equals(at)).toBe(true);
+    expect(parseInstant("2026-11-26T10:30:00.5+01:00").equals(at)).toBe(true);
+    const noon = Temporal.PlainTime.from("12:30:15.25");
+    expect(asTimeOfDay(noon)).toBe(noon);
+    expect(asTimeOfDay(Temporal.Duration.from({ hours: 12, minutes: 30, seconds: 15, milliseconds: 250 })).equals(noon)).toBe(true);
+    for (const v of [Temporal.Duration.from({ hours: 24 }), Temporal.Duration.from({ hours: -1 }), Temporal.Duration.from({ days: 1 }), "12:00"]) {
+      expect(failure(() => asTimeOfDay(v))).toEqual(offType);
+    }
   });
 
   test("asserted names the annotation that narrows a type (§13)", () => {

@@ -28,7 +28,7 @@ func TestMySQLQueries(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			acme, err := db.Tenants.Insert(ctx, mysqlshopdb.TenantDraft{ID: uuid.NewString(), Name: "acme"})
+			acme, err := db.Tenants.Insert(ctx, mysqlshopdb.TenantDraft{ID: uuid.New(), Name: "acme"})
 			check(err)
 			h := db.WithScope(mysqlshopdb.UserScope{TenantID: acme.ID})
 			ann, err := h.Users.Insert(ctx, mysqlshopdb.UserDraft{Email: "ann@acme.com", DisplayName: opt.Some(&annName), PasswordHash: "x"})
@@ -77,7 +77,7 @@ func TestMySQLQueries(t *testing.T) {
 			if n, err = h.Queries.RenameUser(ctx, nil, ann.ID, ann.Version); err != nil || n != 0 {
 				t.Errorf("stale rename %d %v", n, err)
 			}
-			other := db.WithScope(mysqlshopdb.UserScope{TenantID: uuid.NewString()})
+			other := db.WithScope(mysqlshopdb.UserScope{TenantID: uuid.New()})
 			if _, err := other.Queries.GetUserByEmail(ctx, "ann@acme.com"); dql.ClassOf(err) != dql.ClassNotFound {
 				t.Errorf("another scope: %v", err)
 			}

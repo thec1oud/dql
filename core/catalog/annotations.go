@@ -21,6 +21,7 @@ const (
 	keyNonNull              = "core.nonnull"
 	keyArrayElementsNonNull = "core.array-elements-nonnull"
 	keyBool                 = "core.bool"
+	keyAs                   = "core.as"
 )
 
 // site is one object annotations can be on, with the facts its checks need.
@@ -241,11 +242,52 @@ func narrow(s *site) {
 		arr.ElementNullable = false
 	}
 	// bool maps a type that stores booleans by convention, MySQL
-	// TINYINT(1), to the boolean type; the native type is kept, and
-	// decoding fails on a value other than 0 or 1 (§8.7, §13).
-	if t := s.col.GetType(); t.GetNative().GetBooleanStorage() && find(*s.anns, keyBool) {
-		t.Kind = &irv1.Type_Bool{Bool: &irv1.Empty{}}
+	// TINYINT(1), to the boolean type (§8.7), and as narrows a column to a
+	// compatible logical type (§7.2). The native type is kept, and the
+	// narrowing records the stored type, which decoding converts and checks
+	// (§13).
+	if s.col.GetType().GetNative().GetBooleanStorage() && find(*s.anns, keyBool) {
+		narrowTo(s, keyBool, &irv1.Type{Kind: &irv1.Type_Bool{Bool: &irv1.Empty{}}})
 	}
+	for _, a := range *s.anns {
+		if to := a.GetValue().GetString_(); a.GetKey() == keyAs && annotate.Narrows(s.target.Type, to) {
+			narrowTo(s, keyAs, narrowed(s.target.Type, to))
+		}
+	}
+}
+
+// narrowTo sets a site's column to the type t, narrowed by the annotation
+// with the key from the type the source read.
+func narrowTo(s *site, key string, t *irv1.Type) {
+	assertion := key + " on " + diagnostics.Name(s.target.Name)
+	for _, a := range *s.anns {
+		if a.GetKey() == key && a.GetOrigin().GetLocation() != "" {
+			assertion = key + " from " + a.GetOrigin().GetLocation()
+		}
+	}
+	t.Native = s.col.GetType().GetNative()
+	t.Narrowed = &irv1.Narrowing{Key: key, Assertion: assertion, Stored: proto.CloneOf(s.target.Type)}
+	s.col.Type = t
+}
+
+// narrowed returns the logical type to, one annotate.Narrows allows from
+// the stored type: a time of day keeps a TIME's precision.
+func narrowed(stored *irv1.Type, to string) *irv1.Type {
+	switch to {
+	case "uuid":
+		return &irv1.Type{Kind: &irv1.Type_Uuid{Uuid: &irv1.Empty{}}}
+	case "date":
+		return &irv1.Type{Kind: &irv1.Type_Date{Date: &irv1.Empty{}}}
+	case "local_time":
+		t := &irv1.TimeType{}
+		if i := stored.GetInterval(); i != nil {
+			t.Precision = i.Precision
+		}
+		return &irv1.Type{Kind: &irv1.Type_LocalTime{LocalTime: t}}
+	case "local_datetime":
+		return &irv1.Type{Kind: &irv1.Type_LocalDatetime{LocalDatetime: &irv1.TimeType{}}}
+	}
+	return &irv1.Type{Kind: &irv1.Type_Instant{Instant: &irv1.TimeType{}}}
 }
 
 func find(anns []*irv1.Annotation, key string) bool {

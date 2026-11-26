@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -48,10 +50,6 @@ func (g *generator) decoder(s *irv1.Shape) {
 		conv := g.conv(f, fld.GetType(), at, "column "+displayName(at))
 		if timeType(col) == "date" && fld.GetType().GetInstant() != nil {
 			conv = f.rt("asDate", true)
-		}
-		if fld.GetType().GetBool() != nil && fld.GetType().GetNative().GetBooleanStorage() {
-			// bool narrows a TINYINT(1); an integer other than 0 or 1 names it.
-			conv = fmt.Sprintf("%s(%s, %s)", f.rt("asserted", true), conv, jsString(annotated(col.GetAnnotations(), "core.bool", at)))
 		}
 		get := fmt.Sprintf("d.field(%d, %s, %s, %s)", i, jsString(fld.GetColumn()), jsString(g.assertion(s, fld, col)), conv)
 		if fld.GetNullable() {
@@ -128,6 +126,9 @@ var builtinConverters = map[string]string{
 // conv returns the converter of a non-null value of t: an expression of type
 // Converter<T>, where T is t's TypeScript type (§13).
 func (g *generator) conv(f *file, t *irv1.Type, at *irv1.QualifiedName, what string) string {
+	if n := t.GetNarrowed(); n != nil {
+		return f.rt("asserted", true) + "(" + g.narrowedConv(f, t, at, what) + ", " + jsString(n.GetAssertion()) + ")"
+	}
 	kind := t.ProtoReflect().WhichOneof(t.ProtoReflect().Descriptor().Oneofs().ByName("kind"))
 	if kind == nil {
 		g.tsType(f, t, at, what) // reports the unknown type
@@ -186,6 +187,34 @@ func (g *generator) conv(f *file, t *irv1.Type, at *irv1.QualifiedName, what str
 	default: // *irv1.Type_Weak; the oneof has no other kind
 		return f.rt("weak", true) + "(" + g.conv(f, t.GetWeak().GetAffinity(), at, what) + ")"
 	}
+}
+
+// narrowedConv returns the converter of a type an annotation narrowed, which
+// reads the type the database stores: text holding a uuid or a time, a TIME
+// holding a time of day, or a TINYINT(1) holding 0 or 1 (§7.2, §8.7, §13).
+func (g *generator) narrowedConv(f *file, t *irv1.Type, at *irv1.QualifiedName, what string) string {
+	temporal := func(class string) string {
+		c := f.rt("Temporal", true) + "." + class
+		return f.rt("asParsed", true) + "((s) => " + c + ".from(s), " + c + ")"
+	}
+	switch t.GetKind().(type) {
+	case *irv1.Type_Uuid:
+		return f.rt("asParsed", true) + "(" + f.rt("parseUuid", true) + ")"
+	case *irv1.Type_Date:
+		return temporal("PlainDate")
+	case *irv1.Type_LocalDatetime:
+		return temporal("PlainDateTime")
+	case *irv1.Type_Instant:
+		return f.rt("asParsed", true) + "(" + f.rt("parseInstant", true) + ", " + f.rt("Temporal", true) + ".Instant)"
+	case *irv1.Type_LocalTime:
+		if t.GetNarrowed().GetStored().GetInterval() != nil {
+			return f.rt("asTimeOfDay", true)
+		}
+		return temporal("PlainTime")
+	}
+	plain := proto.CloneOf(t)
+	plain.Narrowed = nil
+	return g.conv(f, plain, at, what)
 }
 
 // firstName returns the first of two names that is set.

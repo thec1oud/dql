@@ -287,8 +287,12 @@ func (c *checker) rules(k Key, v *irv1.AnnotationValue) {
 			c.redundant("%s: merge on %s changes nothing: merge is the default policy; remove the annotation (§14.6)", k.IR(), c.at)
 		}
 	case "as":
-		if v.GetString_() == typ {
+		switch to := v.GetString_(); {
+		case to == typ:
 			c.redundant("%s(%s) on %s changes nothing: the column already has that type; remove the annotation (§7.2)", k.IR(), typ, c.at)
+		case !Narrows(t.Type, to):
+			c.wrongTargetFix(k, "is "+article(describe(t.Type))+" column, which decoding cannot check as "+to,
+				"remove the annotation; as narrows text to uuid, date, local_time, local_datetime or instant, and interval to local_time")
 		}
 	case "db-updated":
 		if t.OnUpdate {

@@ -208,6 +208,6 @@ func openMySQL(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-// newUUID returns a random UUID's text, as MySQL's uuid() default would
-// write one.
-func newUUID() any { return uuid.NewString() }
+// newUUID returns a random UUID, as MySQL's uuid() default would write
+// one; as(uuid) narrows the CHAR(36) it is stored in (§7.2).
+func newUUID() any { return uuid.New() }

@@ -458,11 +458,49 @@ func TestBool(t *testing.T) {
 	if cols[0].GetType().GetBool() == nil || cols[0].GetType().GetNative().GetRaw() != "tinyint(1)" || cols[1].GetType().GetInt8() == nil {
 		t.Errorf("columns = %v", cols)
 	}
+	if n := cols[0].GetType().GetNarrowed(); n.GetKey() != "core.bool" || n.GetAssertion() != "core.bool from COMMENT ON COLUMN app.t.on" || n.GetStored().GetInt8() == nil {
+		t.Errorf("narrowed = %v", n)
+	}
 
 	tb = table("t", col("on", tiny(false)))
 	tb.Columns[0].Annotations = []*irv1.Annotation{comment("bool", "COMMENT ON COLUMN app.t.on", nil)}
 	wantLines(t, assembleFails(t, Options{}, output(irv1.Dialect_DIALECT_MYSQL, small("shop", "app", tb))),
 		"ERROR annotation-wrong-target shop.app.t.on")
+}
+
+// §7.2: as narrows text to a uuid or a time, keeping the native type, and
+// a TIME, an interval, to a time of day of its precision; an assertion
+// with no location names the column. An incompatible as narrows nothing
+// and fails.
+func TestAs(t *testing.T) {
+	char := &irv1.Type{Kind: &irv1.Type_Char{Char: &irv1.Char{}}, Native: &irv1.NativeType{Raw: "char(36)"}}
+	tm := &irv1.Type{Kind: &irv1.Type_Interval{Interval: &irv1.TimeType{Precision: proto.Uint32(3)}}}
+	as := func(to string) *irv1.Annotation {
+		return comment("as", "", &irv1.AnnotationValue{Kind: &irv1.AnnotationValue_String_{String_: to}})
+	}
+	cols := []*irv1.Column{col("id", char), col("t", tm), col("d", tText()), col("l", tText()), col("i", tText())}
+	for i, to := range []string{"uuid", "local_time", "date", "local_datetime", "instant"} {
+		cols[i].Annotations = []*irv1.Annotation{as(to)}
+	}
+	b := assembleOK(t, Options{}, output(irv1.Dialect_DIALECT_MYSQL, small("shop", "app", table("t", cols...))))
+	got := b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[0].GetColumns()
+	id, tod := got[0].GetType(), got[1].GetType()
+	if id.GetUuid() == nil || id.GetNative().GetRaw() != "char(36)" || id.GetNarrowed().GetStored().GetChar() == nil ||
+		id.GetNarrowed().GetAssertion() != "core.as on shop.app.t.id" {
+		t.Errorf("id = %v", id)
+	}
+	if tod.GetLocalTime().GetPrecision() != 3 || tod.GetNarrowed().GetStored().GetInterval() == nil {
+		t.Errorf("t = %v", tod)
+	}
+	if got[2].GetType().GetDate() == nil || got[3].GetType().GetLocalDatetime() == nil || got[4].GetType().GetInstant() == nil ||
+		got[3].GetType().GetLocalDatetime().Precision != nil {
+		t.Errorf("columns = %v", got)
+	}
+
+	tb := table("t", col("n", tInt32()))
+	tb.Columns[0].Annotations = []*irv1.Annotation{as("uuid")}
+	wantLines(t, assembleFails(t, Options{}, output(irv1.Dialect_DIALECT_MYSQL, small("shop", "app", tb))),
+		"ERROR annotation-wrong-target shop.app.t.n")
 }
 
 // §7.2: nonnull on a function narrows its one result value; on a function

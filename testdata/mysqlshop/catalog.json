@@ -16,7 +16,7 @@
       "provenance": {
         "source": "mysql-live",
         "sourceVersion": "1.0.0",
-        "inputFingerprint": "sha256:24dae193f38d23cd943df48055cc5532c820ca7c5d1e35f73c6fbc64b5b70840",
+        "inputFingerprint": "sha256:6fc7cda2f872aebc11361e7ff66c3c973301a4ea852a0e3ae2afa1e2e261eabb",
         "fidelity": "SOURCE_FIDELITY_FULL"
       },
       "namespaces": [
@@ -1074,6 +1074,25 @@
                       ],
                       "raw": "tinyint(1)",
                       "booleanStorage": true
+                    },
+                    "narrowed": {
+                      "key": "core.bool",
+                      "assertion": "core.bool from the comment of column posts.featured",
+                      "stored": {
+                        "int8": {},
+                        "native": {
+                          "name": {
+                            "object": "tinyint"
+                          },
+                          "modifiers": [
+                            {
+                              "int": 1
+                            }
+                          ],
+                          "raw": "tinyint(1)",
+                          "booleanStorage": true
+                        }
+                      }
                     }
                   },
                   "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
@@ -2239,7 +2258,7 @@
               "extensions": [
                 {
                   "@type": "type.dql.dev/dql.ext.mysql.v1.ViewDefinition",
-                  "definition": "select `dql_test_14969_913255_1`.`posts`.`id` AS `id`,`dql_test_14969_913255_1`.`posts`.`title` AS `title`,`dql_test_14969_913255_1`.`posts`.`author_id` AS `author_id`,`dql_test_14969_913255_1`.`posts`.`published_at` AS `published_at` from `dql_test_14969_913255_1`.`posts` where (`dql_test_14969_913255_1`.`posts`.`status` = 'published')",
+                  "definition": "select `dql_test_3885_475509_1`.`posts`.`id` AS `id`,`dql_test_3885_475509_1`.`posts`.`title` AS `title`,`dql_test_3885_475509_1`.`posts`.`author_id` AS `author_id`,`dql_test_3885_475509_1`.`posts`.`published_at` AS `published_at` from `dql_test_3885_475509_1`.`posts` where (`dql_test_3885_475509_1`.`posts`.`status` = 'published')",
                   "updatable": true,
                   "securityType": "DEFINER",
                   "checkOption": "NONE"
@@ -2625,10 +2644,7 @@
                   },
                   "ordinal": 1,
                   "type": {
-                    "char": {
-                      "length": 36,
-                      "unit": "LENGTH_UNIT_CHARACTERS"
-                    },
+                    "uuid": {},
                     "native": {
                       "name": {
                         "object": "char"
@@ -2639,6 +2655,27 @@
                         }
                       ],
                       "raw": "char(36)"
+                    },
+                    "narrowed": {
+                      "key": "core.as",
+                      "assertion": "core.as from the comment of column tenants.id",
+                      "stored": {
+                        "char": {
+                          "length": 36,
+                          "unit": "LENGTH_UNIT_CHARACTERS"
+                        },
+                        "native": {
+                          "name": {
+                            "object": "char"
+                          },
+                          "modifiers": [
+                            {
+                              "int": 36
+                            }
+                          ],
+                          "raw": "char(36)"
+                        }
+                      }
                     }
                   },
                   "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
@@ -3005,10 +3042,7 @@
                   },
                   "ordinal": 2,
                   "type": {
-                    "char": {
-                      "length": 36,
-                      "unit": "LENGTH_UNIT_CHARACTERS"
-                    },
+                    "uuid": {},
                     "native": {
                       "name": {
                         "object": "char"
@@ -3019,6 +3053,27 @@
                         }
                       ],
                       "raw": "char(36)"
+                    },
+                    "narrowed": {
+                      "key": "core.as",
+                      "assertion": "core.as from the comment of column users.tenant_id",
+                      "stored": {
+                        "char": {
+                          "length": 36,
+                          "unit": "LENGTH_UNIT_CHARACTERS"
+                        },
+                        "native": {
+                          "name": {
+                            "object": "char"
+                          },
+                          "modifiers": [
+                            {
+                              "int": 36
+                            }
+                          ],
+                          "raw": "char(36)"
+                        }
+                      }
                     }
                   },
                   "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
@@ -5498,6 +5553,25 @@
                 ],
                 "raw": "tinyint(1)",
                 "booleanStorage": true
+              },
+              "narrowed": {
+                "key": "core.bool",
+                "assertion": "core.bool from the comment of column posts.featured",
+                "stored": {
+                  "int8": {},
+                  "native": {
+                    "name": {
+                      "object": "tinyint"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 1
+                      }
+                    ],
+                    "raw": "tinyint(1)",
+                    "booleanStorage": true
+                  }
+                }
               }
             },
             "optional": true
@@ -5767,6 +5841,25 @@
                 ],
                 "raw": "tinyint(1)",
                 "booleanStorage": true
+              },
+              "narrowed": {
+                "key": "core.bool",
+                "assertion": "core.bool from the comment of column posts.featured",
+                "stored": {
+                  "int8": {},
+                  "native": {
+                    "name": {
+                      "object": "tinyint"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 1
+                      }
+                    ],
+                    "raw": "tinyint(1)",
+                    "booleanStorage": true
+                  }
+                }
               }
             },
             "optional": true
@@ -6025,6 +6118,25 @@
                 ],
                 "raw": "tinyint(1)",
                 "booleanStorage": true
+              },
+              "narrowed": {
+                "key": "core.bool",
+                "assertion": "core.bool from the comment of column posts.featured",
+                "stored": {
+                  "int8": {},
+                  "native": {
+                    "name": {
+                      "object": "tinyint"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 1
+                      }
+                    ],
+                    "raw": "tinyint(1)",
+                    "booleanStorage": true
+                  }
+                }
               }
             },
             "optional": true
@@ -6315,6 +6427,25 @@
                 ],
                 "raw": "tinyint(1)",
                 "booleanStorage": true
+              },
+              "narrowed": {
+                "key": "core.bool",
+                "assertion": "core.bool from the comment of column posts.featured",
+                "stored": {
+                  "int8": {},
+                  "native": {
+                    "name": {
+                      "object": "tinyint"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 1
+                      }
+                    ],
+                    "raw": "tinyint(1)",
+                    "booleanStorage": true
+                  }
+                }
               }
             },
             "optional": true
@@ -6535,6 +6666,25 @@
                 ],
                 "raw": "tinyint(1)",
                 "booleanStorage": true
+              },
+              "narrowed": {
+                "key": "core.bool",
+                "assertion": "core.bool from the comment of column posts.featured",
+                "stored": {
+                  "int8": {},
+                  "native": {
+                    "name": {
+                      "object": "tinyint"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 1
+                      }
+                    ],
+                    "raw": "tinyint(1)",
+                    "booleanStorage": true
+                  }
+                }
               }
             },
             "optional": true
@@ -6890,6 +7040,25 @@
                 ],
                 "raw": "tinyint(1)",
                 "booleanStorage": true
+              },
+              "narrowed": {
+                "key": "core.bool",
+                "assertion": "core.bool from the comment of column posts.featured",
+                "stored": {
+                  "int8": {},
+                  "native": {
+                    "name": {
+                      "object": "tinyint"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 1
+                      }
+                    ],
+                    "raw": "tinyint(1)",
+                    "booleanStorage": true
+                  }
+                }
               }
             },
             "optional": true
@@ -6999,6 +7168,25 @@
                 ],
                 "raw": "tinyint(1)",
                 "booleanStorage": true
+              },
+              "narrowed": {
+                "key": "core.bool",
+                "assertion": "core.bool from the comment of column posts.featured",
+                "stored": {
+                  "int8": {},
+                  "native": {
+                    "name": {
+                      "object": "tinyint"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 1
+                      }
+                    ],
+                    "raw": "tinyint(1)",
+                    "booleanStorage": true
+                  }
+                }
               }
             },
             "optional": true
@@ -11376,10 +11564,7 @@
           {
             "name": "key.id",
             "type": {
-              "char": {
-                "length": 36,
-                "unit": "LENGTH_UNIT_CHARACTERS"
-              },
+              "uuid": {},
               "native": {
                 "name": {
                   "object": "char"
@@ -11390,6 +11575,27 @@
                   }
                 ],
                 "raw": "char(36)"
+              },
+              "narrowed": {
+                "key": "core.as",
+                "assertion": "core.as from the comment of column tenants.id",
+                "stored": {
+                  "char": {
+                    "length": 36,
+                    "unit": "LENGTH_UNIT_CHARACTERS"
+                  },
+                  "native": {
+                    "name": {
+                      "object": "char"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 36
+                      }
+                    ],
+                    "raw": "char(36)"
+                  }
+                }
               }
             }
           }
@@ -11491,10 +11697,7 @@
           {
             "name": "key.id",
             "type": {
-              "char": {
-                "length": 36,
-                "unit": "LENGTH_UNIT_CHARACTERS"
-              },
+              "uuid": {},
               "native": {
                 "name": {
                   "object": "char"
@@ -11505,6 +11708,27 @@
                   }
                 ],
                 "raw": "char(36)"
+              },
+              "narrowed": {
+                "key": "core.as",
+                "assertion": "core.as from the comment of column tenants.id",
+                "stored": {
+                  "char": {
+                    "length": 36,
+                    "unit": "LENGTH_UNIT_CHARACTERS"
+                  },
+                  "native": {
+                    "name": {
+                      "object": "char"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 36
+                      }
+                    ],
+                    "raw": "char(36)"
+                  }
+                }
               }
             }
           }
@@ -11568,10 +11792,7 @@
           {
             "name": "key.id",
             "type": {
-              "char": {
-                "length": 36,
-                "unit": "LENGTH_UNIT_CHARACTERS"
-              },
+              "uuid": {},
               "native": {
                 "name": {
                   "object": "char"
@@ -11582,6 +11803,27 @@
                   }
                 ],
                 "raw": "char(36)"
+              },
+              "narrowed": {
+                "key": "core.as",
+                "assertion": "core.as from the comment of column tenants.id",
+                "stored": {
+                  "char": {
+                    "length": 36,
+                    "unit": "LENGTH_UNIT_CHARACTERS"
+                  },
+                  "native": {
+                    "name": {
+                      "object": "char"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 36
+                      }
+                    ],
+                    "raw": "char(36)"
+                  }
+                }
               }
             }
           }
@@ -11645,10 +11887,7 @@
           {
             "name": "id",
             "type": {
-              "char": {
-                "length": 36,
-                "unit": "LENGTH_UNIT_CHARACTERS"
-              },
+              "uuid": {},
               "native": {
                 "name": {
                   "object": "char"
@@ -11659,6 +11898,27 @@
                   }
                 ],
                 "raw": "char(36)"
+              },
+              "narrowed": {
+                "key": "core.as",
+                "assertion": "core.as from the comment of column tenants.id",
+                "stored": {
+                  "char": {
+                    "length": 36,
+                    "unit": "LENGTH_UNIT_CHARACTERS"
+                  },
+                  "native": {
+                    "name": {
+                      "object": "char"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 36
+                      }
+                    ],
+                    "raw": "char(36)"
+                  }
+                }
               }
             }
           },
@@ -11785,10 +12045,7 @@
           {
             "name": "id",
             "type": {
-              "char": {
-                "length": 36,
-                "unit": "LENGTH_UNIT_CHARACTERS"
-              },
+              "uuid": {},
               "native": {
                 "name": {
                   "object": "char"
@@ -11799,6 +12056,27 @@
                   }
                 ],
                 "raw": "char(36)"
+              },
+              "narrowed": {
+                "key": "core.as",
+                "assertion": "core.as from the comment of column tenants.id",
+                "stored": {
+                  "char": {
+                    "length": 36,
+                    "unit": "LENGTH_UNIT_CHARACTERS"
+                  },
+                  "native": {
+                    "name": {
+                      "object": "char"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 36
+                      }
+                    ],
+                    "raw": "char(36)"
+                  }
+                }
               }
             }
           },
@@ -11938,10 +12216,7 @@
           {
             "name": "key.id",
             "type": {
-              "char": {
-                "length": 36,
-                "unit": "LENGTH_UNIT_CHARACTERS"
-              },
+              "uuid": {},
               "native": {
                 "name": {
                   "object": "char"
@@ -11952,6 +12227,27 @@
                   }
                 ],
                 "raw": "char(36)"
+              },
+              "narrowed": {
+                "key": "core.as",
+                "assertion": "core.as from the comment of column tenants.id",
+                "stored": {
+                  "char": {
+                    "length": 36,
+                    "unit": "LENGTH_UNIT_CHARACTERS"
+                  },
+                  "native": {
+                    "name": {
+                      "object": "char"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 36
+                      }
+                    ],
+                    "raw": "char(36)"
+                  }
+                }
               }
             }
           }
@@ -12130,10 +12426,7 @@
           {
             "name": "id",
             "type": {
-              "char": {
-                "length": 36,
-                "unit": "LENGTH_UNIT_CHARACTERS"
-              },
+              "uuid": {},
               "native": {
                 "name": {
                   "object": "char"
@@ -12144,6 +12437,27 @@
                   }
                 ],
                 "raw": "char(36)"
+              },
+              "narrowed": {
+                "key": "core.as",
+                "assertion": "core.as from the comment of column tenants.id",
+                "stored": {
+                  "char": {
+                    "length": 36,
+                    "unit": "LENGTH_UNIT_CHARACTERS"
+                  },
+                  "native": {
+                    "name": {
+                      "object": "char"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 36
+                      }
+                    ],
+                    "raw": "char(36)"
+                  }
+                }
               }
             }
           },
@@ -12291,10 +12605,7 @@
           {
             "name": "id",
             "type": {
-              "char": {
-                "length": 36,
-                "unit": "LENGTH_UNIT_CHARACTERS"
-              },
+              "uuid": {},
               "native": {
                 "name": {
                   "object": "char"
@@ -12305,6 +12616,27 @@
                   }
                 ],
                 "raw": "char(36)"
+              },
+              "narrowed": {
+                "key": "core.as",
+                "assertion": "core.as from the comment of column tenants.id",
+                "stored": {
+                  "char": {
+                    "length": 36,
+                    "unit": "LENGTH_UNIT_CHARACTERS"
+                  },
+                  "native": {
+                    "name": {
+                      "object": "char"
+                    },
+                    "modifiers": [
+                      {
+                        "int": 36
+                      }
+                    ],
+                    "raw": "char(36)"
+                  }
+                }
               }
             }
           },

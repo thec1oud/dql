@@ -52,6 +52,21 @@ message Type {
     Weak weak = 90;
   }
   NativeType native = 100;
+  // Set by the core when an annotation narrowed the type the source read
+  // (§7.2, §8.7). Decoding converts the stored form and checks it (§13).
+  Narrowing narrowed = 101;
+}
+
+// How an annotation narrowed a type: as(<logical type>) on a compatible
+// column, or bool on a TINYINT(1).
+message Narrowing {
+  // The annotation's key: core.as or core.bool.
+  string key = 1;
+  // Where the assertion came from, as a decode error names it, such as
+  // "core.as from the comment of column tenants.id".
+  string assertion = 2;
+  // The type the source read, which the database still hands back.
+  Type stored = 3;
 }
 
 message Empty {}

@@ -7,6 +7,7 @@
 import { DecodeError, type DecodeReason } from "./errors.js";
 import type { JsonValue } from "./json.js";
 import type { Bound, Range } from "./range.js";
+import { Temporal } from "./temporal.js";
 import { join } from "./validation.js";
 import { type StorageValue, type Weak, weakOf, weakRaw } from "./weak.js";
 
@@ -189,6 +190,46 @@ export function asserted<T>(conv: Converter<T>, assertion: string): Converter<T>
     }
   };
 }
+
+/**
+ * asParsed converts a column an annotation narrowed from text, such as a
+ * CHAR(36) as(uuid) (§7.2, §13): an instance of the type when the class is
+ * given, or text that parse reads; anything else is off type.
+ */
+export function asParsed<T>(parse: (s: string) => T, instance?: abstract new (...args: never[]) => T): Converter<T> {
+  return (v) => {
+    if (instance !== undefined && v instanceof instance) {
+      return v;
+    }
+    if (typeof v === "string") {
+      try {
+        return parse(v);
+      } catch {
+        // off type below
+      }
+    }
+    return fail("off_type");
+  };
+}
+
+/** parseInstant parses RFC 3339 text, or YYYY-MM-DD HH:MM:SS with an optional fraction read as UTC, which is how a MySQL driver writes an instant into a text column. */
+export function parseInstant(s: string): Temporal.Instant {
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/.test(s) ? Temporal.Instant.from(`${s.replace(" ", "T")}Z`) : Temporal.Instant.from(s);
+}
+
+/** asTimeOfDay converts a Temporal.PlainTime, or a duration of hours and smaller units from zero up to 24 hours, such as a MySQL TIME as(local_time) narrows (§13). */
+export const asTimeOfDay: Converter<Temporal.PlainTime> = (v) => {
+  if (v instanceof Temporal.PlainTime) {
+    return v;
+  }
+  if (v instanceof Temporal.Duration && v.years === 0 && v.months === 0 && v.weeks === 0 && v.days === 0) {
+    const ns = v.total({ unit: "nanoseconds" });
+    if (ns >= 0 && ns < 86_400e9) {
+      return Temporal.PlainTime.from("00:00").add(v);
+    }
+  }
+  return fail("off_type");
+};
 
 /** asString converts a string, typed as S: a branded string such as Uuid when the column's type is one. */
 export function asString<S extends string = string>(v: unknown): S {
