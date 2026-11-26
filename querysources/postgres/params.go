@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+
+	"github.com/thec1oud/dql/querysources/queryfile"
 )
 
 // A paramKind is how a query file writes a parameter (§17.1).
@@ -195,7 +197,7 @@ func sqlcCall(s string, start, at int) (rawParam, error) {
 	if len(name) >= 2 && name[0] == '\'' && name[len(name)-1] == '\'' {
 		name = name[1 : len(name)-1]
 	}
-	if !identifier.MatchString(name) {
+	if !queryfile.Identifier.MatchString(name) {
 		return rawParam{}, fmt.Errorf("sqlc.%s(%s): %q is not a parameter name", s[at:j], inner[:close], name)
 	}
 	end := len(s) - len(inner) + close + 1

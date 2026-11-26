@@ -18,6 +18,9 @@ annotations:
   shop.profiles.profiles_user_id_fkey: { inverse-name: profile }
   shop.posts.posts_author_id_fkey:     { collection-policy: replace, removal: delete }
 
+queries:
+  - queries.sql
+
 emit:
   - plugin: go
     dialect: mysql
