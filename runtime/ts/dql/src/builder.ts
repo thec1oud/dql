@@ -3,11 +3,12 @@
 // keys; the builder joins them into a plan and runs it.
 
 import { Decoder, type Row, asBoolean, asInt64 } from "./decode.js";
-import type { Reader } from "./executor.js";
+import { type Reader, bind } from "./executor.js";
+import { NotFound } from "./errors.js";
 import { type Fragments, type Node, type Use, arg, list, statementOf, use } from "./fragments.js";
-import { iterate } from "./large.js";
+import { iterate, written } from "./large.js";
 import type { Consistency } from "./routing.js";
-import { type Statement, queryAll, queryOne, queryOptional } from "./statement.js";
+import { type Statement, queryAll, queryOne, queryOptional, reread } from "./statement.js";
 
 /** entity brands a predicate, order key or shape with the entity it is of. */
 declare const entity: unique symbol;
@@ -336,12 +337,19 @@ export function newBuilder<T, E>(t: Fragments, from: From, shape: Shape<T, E>): 
 
 /** oneOf runs s and decodes its one row: NotFound for none and TooManyRows for more (§19). */
 export async function oneOf<T>(h: Reader, s: Statement, decode: (r: Row) => T): Promise<T> {
-  return decode(await queryOne(h, s));
+  if (s[reread] === undefined) {
+    return decode(await queryOne(h, s));
+  }
+  const r = await written(h, s);
+  if (r === undefined) {
+    throw new NotFound({ dialect: h[bind]().executor.dialect.name, query: s.query });
+  }
+  return decode(r);
 }
 
 /** optionalOf runs s and decodes its row, if any: TooManyRows for more than one (§19). */
 export async function optionalOf<T>(h: Reader, s: Statement, decode: (r: Row) => T): Promise<T | undefined> {
-  const r = await queryOptional(h, s);
+  const r = s[reread] === undefined ? await queryOptional(h, s) : await written(h, s);
   return r === undefined ? undefined : decode(r);
 }
 

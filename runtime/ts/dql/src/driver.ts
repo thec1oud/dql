@@ -78,6 +78,27 @@ export interface Conn {
   release(): void;
 }
 
+/**
+ * InsertIdConn is a Conn whose driver reports the ID of the last row an
+ * insert numbered, as MySQL's does. The runtime reads a written row back by
+ * it on a dialect without RETURNING (§20.1).
+ */
+export interface InsertIdConn extends Conn {
+  /** execId runs a statement and returns how many rows it affected and the last insert ID, 0n when it numbered none. */
+  execId(s: Sent): Promise<InsertResult>;
+}
+
+/** InsertResult is what a write reports: the rows it affected and the last insert ID. */
+export interface InsertResult {
+  readonly affected: number;
+  readonly id: bigint;
+}
+
+/** hasInsertId reports whether c's driver reports insert IDs. */
+export function hasInsertId(c: Conn): c is InsertIdConn {
+  return typeof (c as Partial<InsertIdConn>).execId === "function";
+}
+
 /** Rows reads a query's rows, each in the driver-neutral form of Row. */
 export interface Rows {
   /** next returns the next row, or undefined after the last. */

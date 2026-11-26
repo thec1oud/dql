@@ -1,7 +1,7 @@
 // The executor, its handles and transactions (design record §22).
 
 import { ambient, within } from "./context.js";
-import type { BeginOptions, Conn, Driver, Isolation, Pool, Rows, Sent, StatementMode } from "./driver.js";
+import { type BeginOptions, type Conn, type Driver, type InsertResult, type Isolation, type Pool, type Rows, type Sent, type StatementMode, hasInsertId } from "./driver.js";
 import { ConnectionError, PoolExhausted, ReplicaUnavailable } from "./errors.js";
 import { HookSet, type Hooks, Leaked, type TxEvent } from "./hooks.js";
 import { DEFAULT_RETRY, type RetryPolicy, backoff, fits, retried, retryable, wait } from "./retry.js";
@@ -240,6 +240,13 @@ class GeneralConn implements Conn {
   }
   exec(s: Sent): Promise<number> {
     return this.conn.exec(s);
+  }
+  /** execId passes the last insert ID through, where the driver reports it. */
+  async execId(s: Sent): Promise<InsertResult> {
+    if (hasInsertId(this.conn)) {
+      return this.conn.execId(s);
+    }
+    return { affected: await this.conn.exec(s), id: 0n };
   }
   begin(o: BeginOptions, signal?: AbortSignal): Promise<void> {
     return this.conn.begin(o, signal);

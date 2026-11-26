@@ -95,7 +95,7 @@ export {
   weak,
 } from "./decode.js";
 export { currentSignal, withSignal, withTimeout } from "./context.js";
-export type { BeginOptions, Conn, Driver, Isolation, NativeError, Pool, PoolConfig, Rows, Sent, StatementMode } from "./driver.js";
+export type { BeginOptions, Conn, Driver, InsertIdConn, InsertResult, Isolation, NativeError, Pool, PoolConfig, Rows, Sent, StatementMode } from "./driver.js";
 export type { ErrorMap, Reported } from "./translate.js";
 export { DEFAULT_RETRY, Retried, Retrier, type RetryPolicy, retry } from "./retry.js";
 export {

@@ -245,7 +245,19 @@ func (g *generator) queryConsts(f *file, e *entity) {
 		for _, u := range q.GetPlan().GetParts() {
 			f.printf("    %s,\n", g.use(f, u, e.q))
 		}
-		f.printf("  ],\n};\n\n")
+		f.printf("  ],\n")
+		if rr := q.GetReread(); rr != nil {
+			// The dialect has no RETURNING: the row is read back (§20.1).
+			f.printf("  reread: [\n")
+			for _, u := range rr.GetPlan().GetParts() {
+				f.printf("    %s,\n", g.use(f, u, e.q))
+			}
+			f.printf("  ],\n")
+			if rr.GetGenerated() != "" {
+				f.printf("  generated: %s,\n", jsString(rr.GetGenerated()))
+			}
+		}
+		f.printf("};\n\n")
 	}
 }
 
