@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 )
 
@@ -37,10 +39,6 @@ func (g *generator) decoder(s *irv1.Shape) {
 	for i, fld := range s.GetFields() {
 		at := &irv1.QualifiedName{Catalog: q.GetCatalog(), Namespace: q.GetNamespace(), Object: q.GetObject(), Member: fld.GetColumn()}
 		conv := g.conv(f, fld.GetType(), at, "field "+fld.GetColumn()+" of shape "+shape)
-		if c := column(t, fld.GetColumn()); fld.GetType().GetBool() != nil && fld.GetType().GetNative().GetBooleanStorage() {
-			// bool narrows a TINYINT(1); an integer other than 0 or 1 names it.
-			conv = fmt.Sprintf("%s.Asserted(%s, %q)", dql, conv, annotated(c.GetAnnotations(), "core.bool", at))
-		}
 		get := fmt.Sprintf("%s.Field(d, %d, %q, %q, %s)", dql, i, fld.GetColumn(), g.assertion(s, fld, column(t, fld.GetColumn())), conv)
 		if fld.GetNullable() {
 			get = fmt.Sprintf("%s.Nullable(d, %d, %q, %s)", dql, i, fld.GetColumn(), conv)
@@ -122,6 +120,9 @@ func annotated(annotations []*irv1.Annotation, key string, at *irv1.QualifiedNam
 // type func(any) (T, error), where T is t's Go type (§13).
 func (g *generator) conv(f *file, t *irv1.Type, at *irv1.QualifiedName, what string) string {
 	dql := f.use(pkgDQL, "dql")
+	if n := t.GetNarrowed(); n != nil {
+		return fmt.Sprintf("%s.Asserted(%s, %q)", dql, g.narrowedConv(f, t, at, what), n.GetAssertion())
+	}
 	goType := g.goType(f, t, at, what)
 	switch k := t.GetKind().(type) {
 	case *irv1.Type_Bool:
@@ -159,6 +160,31 @@ func (g *generator) conv(f *file, t *irv1.Type, at *irv1.QualifiedName, what str
 		return dql + ".Bytes"
 	}
 	return dql + ".As[" + goType + "]"
+}
+
+// narrowedConv returns the converter of a type an annotation narrowed, which
+// reads the type the database stores: text holding a uuid or a time, a TIME
+// holding a time of day, or a TINYINT(1) holding 0 or 1 (§7.2, §8.7, §13).
+func (g *generator) narrowedConv(f *file, t *irv1.Type, at *irv1.QualifiedName, what string) string {
+	dql := f.use(pkgDQL, "dql")
+	switch t.GetKind().(type) {
+	case *irv1.Type_Uuid:
+		return dql + ".Parsed(" + f.use(pkgUUID, "uuid") + ".Parse)"
+	case *irv1.Type_Date:
+		return dql + ".Parsed(" + f.use(pkgCiv, "civil") + ".ParseDate)"
+	case *irv1.Type_LocalDatetime:
+		return dql + ".Parsed(" + f.use(pkgCiv, "civil") + ".ParseDateTime)"
+	case *irv1.Type_Instant:
+		return dql + ".Parsed(" + dql + ".ParseInstant)"
+	case *irv1.Type_LocalTime:
+		if t.GetNarrowed().GetStored().GetInterval() != nil {
+			return dql + ".TimeOfDay"
+		}
+		return dql + ".Parsed(" + f.use(pkgCiv, "civil") + ".ParseTime)"
+	}
+	plain := proto.CloneOf(t)
+	plain.Narrowed = nil
+	return g.conv(f, plain, at, what)
 }
 
 // firstName returns the first of two names that is set.

@@ -174,25 +174,47 @@ func TestDecodeFailures(t *testing.T) {
 	}
 }
 
-// §8.7, §13: a TINYINT(1) annotated bool decodes with asBoolean, and an
-// integer other than 0 or 1 names the annotation, by its location when the
-// origin records one.
-func TestBoolDecoder(t *testing.T) {
-	tiny := &irv1.Type{Kind: &irv1.Type_Bool{Bool: &irv1.Empty{}},
-		Native: &irv1.NativeType{Name: &irv1.QualifiedName{Object: "tinyint"}, Raw: "tinyint(1)", BooleanStorage: true}}
-	s := shp(customID("item_flags"), "item flags", "items", []*irv1.Field{fl("on", tiny, false, false), fl("off", tiny, false, true)})
-	b := decodeBundle([]*irv1.Shape{s})
+// §7.2, §8.7, §13: a narrowed type decodes from the stored type, with the
+// assertion the core recorded: a TINYINT(1) bool, text as a uuid or a time,
+// and a TIME as a time of day.
+func TestNarrowedDecoder(t *testing.T) {
+	narrowed := func(kind *irv1.Type, stored *irv1.Type) *irv1.Type {
+		kind.Narrowed = &irv1.Narrowing{Key: "core.as", Assertion: "core.as on shop.app.items", Stored: stored}
+		return kind
+	}
+	tm := &irv1.Type{Kind: &irv1.Type_Interval{Interval: &irv1.TimeType{}}}
+	tiny := &irv1.Type{Kind: &irv1.Type_Int8{Int8: &irv1.Empty{}}}
+	types := []*irv1.Type{
+		narrowed(&irv1.Type{Kind: &irv1.Type_Bool{Bool: &irv1.Empty{}}}, tiny),
+		narrowed(&irv1.Type{Kind: &irv1.Type_Uuid{Uuid: &irv1.Empty{}}}, tText),
+		narrowed(&irv1.Type{Kind: &irv1.Type_Date{Date: &irv1.Empty{}}}, tText),
+		narrowed(&irv1.Type{Kind: &irv1.Type_LocalDatetime{LocalDatetime: &irv1.TimeType{}}}, tText),
+		narrowed(&irv1.Type{Kind: &irv1.Type_Instant{Instant: &irv1.TimeType{}}}, tText),
+		narrowed(&irv1.Type{Kind: &irv1.Type_LocalTime{LocalTime: &irv1.TimeType{}}}, tText),
+		narrowed(&irv1.Type{Kind: &irv1.Type_LocalTime{LocalTime: &irv1.TimeType{}}}, tm),
+	}
+	names := []string{"on", "uid2", "day", "dt", "ts", "tod", "dur"}
+	var fields []*irv1.Field
+	b := decodeBundle(nil)
 	items := b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[0]
-	on := col("on", tiny)
-	on.Annotations = []*irv1.Annotation{{Key: "core.bool", Origin: &irv1.Origin{Kind: irv1.OriginKind_ORIGIN_DB_COMMENT, Location: "COMMENT ON COLUMN app.items.on"}}}
-	items.Columns = append(items.Columns, on, col("off", tiny))
+	for i, n := range names {
+		fields = append(fields, fl(n, types[i], false, i == 1))
+		items.Columns = append(items.Columns, col(n, types[i]))
+	}
+	b.Shapes = &irv1.ShapeLayer{Shapes: []*irv1.Shape{shp(customID("item_narrow"), "item narrow", "items", fields)}}
 	files, codes := generate(t, b, Options{})
 	if len(codes) != 0 {
 		t.Fatalf("codes %q", codes)
 	}
+	const as = `"core.as on shop.app.items"`
 	for _, part := range []string{
-		`    on: d.field(0, "on", "", asserted(asBoolean, "core.bool from COMMENT ON COLUMN app.items.on")),`,
-		`    off: d.nullable(1, "off", asserted(asBoolean, "core.bool on shop.app.items.off")),`,
+		`    on: d.field(0, "on", "", asserted(asBoolean, ` + as + `)),`,
+		`    uid2: d.nullable(1, "uid2", asserted(asParsed(parseUuid), ` + as + `)),`,
+		`asserted(asParsed((s) => Temporal.PlainDate.from(s), Temporal.PlainDate), ` + as + `)`,
+		`asserted(asParsed((s) => Temporal.PlainDateTime.from(s), Temporal.PlainDateTime), ` + as + `)`,
+		`asserted(asParsed(parseInstant, Temporal.Instant), ` + as + `)`,
+		`asserted(asParsed((s) => Temporal.PlainTime.from(s), Temporal.PlainTime), ` + as + `)`,
+		`asserted(asTimeOfDay, ` + as + `)`,
 	} {
 		if !strings.Contains(files["dql-shapes.dql.ts"], part) {
 			t.Errorf("dql-shapes.dql.ts lacks %q:\n%s", part, files["dql-shapes.dql.ts"])

@@ -41,7 +41,7 @@ var typingCases = []struct{ body, want string }{
 	{"SELECT lower(email) AS a, length(display_name) AS b, now() AS c, abs(version) AS d, round(version, 2) AS e, concat(email, '!') AS f, concat_ws(',', display_name, email) AS g, uuid() AS h FROM users", "a:text b:int64? c:local_datetime d:int32 e:int64 f:text g:text h:text w"},
 	{"SELECT created_at + INTERVAL 1 DAY AS a, date_sub(birthday, INTERVAL 1 MONTH) AS b, date_add(birthday, INTERVAL 1 HOUR) AS c, datediff(birthday, curdate()) AS d, year(birthday) AS e, date_format(birthday, '%Y') AS f, curtime() AS g FROM profiles JOIN users ON users.id = profiles.user_id", "a:local_datetime b:date? c:local_datetime? d:int64? e:int64? f:text? g:interval"},
 	{"SELECT count(*) AS a, count(display_name) AS b, sum(version) AS c, min(email) AS d, avg(version) AS e, group_concat(email ORDER BY id SEPARATOR ',') AS f FROM users", "a:int64 b:int64 c:decimal? d:varchar? e:decimal? f:text?"},
-	{"SELECT tenant_id, sum(version) AS s, max(created_at) AS m FROM users GROUP BY tenant_id", "tenant_id:char s:decimal m:instant"},
+	{"SELECT tenant_id, sum(version) AS s, max(created_at) AS m FROM users GROUP BY tenant_id", "tenant_id:uuid s:decimal m:instant"},
 	{"SELECT row_number() OVER (PARTITION BY tenant_id ORDER BY id) AS r, sum(id) OVER () AS s, lag(email) OVER (ORDER BY id) AS l FROM users", "r:int64 s:decimal? l:varchar?"},
 	{"SELECT post_score(id) AS a FROM posts", "a:decimal?"},
 	{"SELECT json_extract(@doc, '$.a') AS a, json_object('a', id) AS b FROM users", "@doc:json a:json? b:json"},

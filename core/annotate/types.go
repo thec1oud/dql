@@ -48,3 +48,21 @@ func describe(t *irv1.Type) string {
 	}
 	return "untyped"
 }
+
+// narrowings lists, for each stored type, the logical types as(<logical
+// type>) narrows it to: text that holds a uuid or a time in its ISO form,
+// and MySQL's TIME, an interval, to a time of day (§7.2, §8.8). Decoding
+// parses or checks every one (§13).
+var narrowings = map[string][]string{
+	"text":     textNarrowings,
+	"varchar":  textNarrowings,
+	"char":     textNarrowings,
+	"interval": {"local_time"},
+}
+
+var textNarrowings = []string{"date", "instant", "local_datetime", "local_time", "uuid"}
+
+// Narrows reports whether as(to) may narrow a column of type from.
+func Narrows(from *irv1.Type, to string) bool {
+	return slices.Contains(narrowings[typeName(from)], to)
+}

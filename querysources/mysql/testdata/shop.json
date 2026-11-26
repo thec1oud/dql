@@ -142,10 +142,7 @@
               {
                 "name": "tenant_id",
                 "type": {
-                  "char": {
-                    "length": 36,
-                    "unit": "LENGTH_UNIT_CHARACTERS"
-                  },
+                  "uuid": {},
                   "native": {
                     "name": {
                       "object": "char"
@@ -156,6 +153,27 @@
                       }
                     ],
                     "raw": "char(36)"
+                  },
+                  "narrowed": {
+                    "key": "core.as",
+                    "assertion": "core.as from the comment of column users.tenant_id",
+                    "stored": {
+                      "char": {
+                        "length": 36,
+                        "unit": "LENGTH_UNIT_CHARACTERS"
+                      },
+                      "native": {
+                        "name": {
+                          "object": "char"
+                        },
+                        "modifiers": [
+                          {
+                            "int": 36
+                          }
+                        ],
+                        "raw": "char(36)"
+                      }
+                    }
                   }
                 },
                 "origin": {

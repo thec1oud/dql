@@ -168,7 +168,7 @@ func TestCatalogs(t *testing.T) {
 		{"SELECT u.id FROM users u, deals d", "query-cross-catalog: q.sql:1: query Q: reads the catalogs crm and shop; a query runs on one catalog's source"},
 		{"SELECT BUMP(1) AS a, bump(@a) AS b", "@a:int64 a:int64! b:int64! w"},
 		{"SELECT display_name, coalesce(display_name, 'x') AS a, CASE WHEN id > 1 THEN display_name ELSE email END AS b, display_name = 'x' AS c FROM users", "display_name:varchar! a:varchar! b:text! c:bool!"},
-		{"SELECT tenant_id, max(display_name) AS m FROM users GROUP BY tenant_id", "tenant_id:char m:varchar!"},
+		{"SELECT tenant_id, max(display_name) AS m FROM users GROUP BY tenant_id", "tenant_id:uuid m:varchar!"},
 	} {
 		res, err := New().Invoke(context.Background(), &irv1.Invoke{Bundle: proto.Clone(b).(*irv1.Bundle),
 			QueryFiles: []*irv1.QueryFile{{Path: "q.sql", Text: "-- name: Q :many\n" + c.body}}})
