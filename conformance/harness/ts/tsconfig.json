@@ -16,8 +16,9 @@
     "paths": {
       "@dql/runtime": ["../../../runtime/ts/dql/dist/index"],
       "@dql/pg": ["../../../runtime/ts/dqlpg/dist/index"],
-      "@dql/mysql": ["../../../runtime/ts/dqlmysql/dist/index"]
+      "@dql/mysql": ["../../../runtime/ts/dqlmysql/dist/index"],
+      "@dql/sqlite": ["../../../runtime/ts/dqlsqlite/dist/index"]
     }
   },
-  "include": ["src", "test", "variantdb", "mysqlshopdb", "mysqlvariantdb", "mariadbshopdb"]
+  "include": ["src", "test", "variantdb", "mysqlshopdb", "mysqlvariantdb", "mariadbshopdb", "sqliteshopdb"]
 }

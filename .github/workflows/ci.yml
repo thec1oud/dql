@@ -173,7 +173,7 @@ jobs:
 
   # The conformance scenarios on TypeScript (guide M5, M6): the harness's
   # own tests on Bun with 100% coverage, then every scenario on Postgres,
-  # MySQL and MariaDB on Node, Bun and Deno, each runtime's outcomes
+  # MySQL, MariaDB and SQLite on Node, Bun and Deno, each runtime's outcomes
   # compared with Go's for identity.
   ts-conformance:
     runs-on: ubuntu-latest
@@ -215,8 +215,6 @@ jobs:
         run: bun run coverage
       - name: Go's outcomes
         working-directory: conformance/harness/go
-        # Postgres, MySQL and MariaDB, which the TypeScript harness runs, and
-        # SQLite, which it does not run yet.
         run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/go" go test -count=1 -run 'TestScenarios' .
       - name: every scenario on Node
         run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/node" node --import ./src/node.ts src/main.ts

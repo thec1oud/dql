@@ -1,4 +1,4 @@
-// Node resolves @dql/runtime, @dql/pg and @dql/mysql to the runtime workspace's builds,
+// Node resolves @dql/runtime, @dql/pg, @dql/mysql and @dql/sqlite to the runtime workspace's builds,
 // as tsconfig.json's paths do for tsc and Bun, and deno.json's imports for
 // Deno, so that the generated packages and the harness share one runtime.
 //
@@ -10,6 +10,7 @@ const builds: Readonly<Record<string, string>> = {
   "@dql/runtime": new URL("../../../../runtime/ts/dql/dist/index.js", import.meta.url).href,
   "@dql/pg": new URL("../../../../runtime/ts/dqlpg/dist/index.js", import.meta.url).href,
   "@dql/mysql": new URL("../../../../runtime/ts/dqlmysql/dist/index.js", import.meta.url).href,
+  "@dql/sqlite": new URL("../../../../runtime/ts/dqlsqlite/dist/index.js", import.meta.url).href,
 };
 
 registerHooks({

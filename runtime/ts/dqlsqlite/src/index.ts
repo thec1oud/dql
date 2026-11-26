@@ -23,7 +23,7 @@ import { type Database, type Open, binding } from "./backend.js";
 import { codeOf, native } from "./errors.js";
 
 export { encode } from "./args.js";
-export { type Database, type Open, type Prepared, bun, node } from "./backend.js";
+export { type Database, type Open, type Prepared, binding, bun, node } from "./backend.js";
 export { codeOf, native } from "./errors.js";
 
 /** SqliteDriver is a Driver on the runtime's SQLite binding. */
@@ -84,16 +84,26 @@ class SqlitePool implements Pool {
       return new SqliteConn(this, this.fresh());
     }
     const db = await new Promise<Database>((resolve, reject) => {
+      // No socket keeps the process alive while it waits, and Node's
+      // timeout signals do not, so a waiter holds a timer of its own until
+      // it is settled: else Node would exit before the wait ends. The
+      // timer is there only to be pending, so any callback does.
+      const alive = setInterval(Date.now, 2 ** 30);
       const w: Waiter = {
         resolve: (db) => {
+          clearInterval(alive);
           signal?.removeEventListener("abort", aborted);
           resolve(db);
         },
-        reject,
+        reject: (e) => {
+          clearInterval(alive);
+          signal?.removeEventListener("abort", aborted);
+          reject(e);
+        },
       };
       const aborted = () => {
         this.waiters.splice(this.waiters.indexOf(w), 1);
-        reject(signal?.reason);
+        w.reject(signal?.reason);
       };
       signal?.addEventListener("abort", aborted, { once: true });
       this.waiters.push(w);
