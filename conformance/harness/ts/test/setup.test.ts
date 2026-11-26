@@ -71,3 +71,9 @@ test("scenarios with problems", async () => {
   expect(await scenarios([], (l) => lines.push(l), dir)).toBe(2);
   expect(lines).toEqual(["prepare/s step 1 (tenants.count): want value 1, got 0", "FAIL prepare/s", "describe/s step 1 (tenants.count): want value 1, got 0", "FAIL describe/s"]);
 });
+
+test("a scenario needing a feature Postgres lacks is skipped", async () => {
+  const lines: string[] = [];
+  expect(await scenarios(["tinyint-bool"], (l) => lines.push(l))).toBe(0);
+  expect(lines).toEqual(["skip prepare/tinyint-bool: Postgres lacks tinyint-bool", "skip describe/tinyint-bool: Postgres lacks tinyint-bool"]);
+});

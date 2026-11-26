@@ -90,6 +90,12 @@ export async function scenarios(names: readonly string[], print: (line: string) 
   let problems = 0;
   for (const mode of modes) {
     for (const sc of scs) {
+      const lacks = missing(sc);
+      if (lacks.length > 0) {
+        // It runs on another dialect; Go writes no outcomes for it here either.
+        print(`skip ${mode}/${sc.scenario}: Postgres lacks ${lacks.join(", ")}`);
+        continue;
+      }
       const r = await runScenario(sc, mode);
       for (const p of r.problems) {
         print(`${mode}/${p}`);
