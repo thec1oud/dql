@@ -26,6 +26,7 @@ import (
 	"github.com/thec1oud/dql/core/diagnostics"
 	"github.com/thec1oud/dql/core/naming"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
+	"github.com/thec1oud/dql/querysources/queryfile"
 )
 
 // Name is the plugin's name.
@@ -63,14 +64,14 @@ func (*Plugin) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, e
 		seen = map[string]string{}
 	)
 	for _, f := range in.GetQueryFiles() {
-		blocks, fds := split(f)
+		blocks, fds := queryfile.Split(f)
 		ds = append(ds, fds...)
 		for _, blk := range blocks {
-			if at, dup := seen[blk.name]; dup {
-				ds = append(ds, fileError("query-duplicate", blk.name, "%s: query %s is also defined at %s; give each query its own name", blk.location, blk.name, at))
+			if at, dup := seen[blk.Name]; dup {
+				ds = append(ds, queryfile.Error("query-duplicate", blk.Name, "%s: query %s is also defined at %s; give each query its own name", blk.Location, blk.Name, at))
 				continue
 			}
-			seen[blk.name] = blk.location
+			seen[blk.Name] = blk.Location
 			q, d := typeQuery(ix, f.GetPath(), blk)
 			if d != nil {
 				ds = append(ds, d)
@@ -85,11 +86,11 @@ func (*Plugin) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, e
 }
 
 // typeQuery parses and types one query (§17.2).
-func typeQuery(ix *index, path string, blk *block) (*irv1.Query, *irv1.Diagnostic) {
+func typeQuery(ix *index, path string, blk *queryfile.Block) (*irv1.Query, *irv1.Diagnostic) {
 	fail := func(code string, off int, format string, args ...any) (*irv1.Query, *irv1.Diagnostic) {
-		return nil, fileError(code, blk.name, "%s: query %s: %s", blk.at(path, off), blk.name, fmt.Sprintf(format, args...))
+		return nil, queryfile.Error(code, blk.Name, "%s: query %s: %s", blk.At(path, off), blk.Name, fmt.Sprintf(format, args...))
 	}
-	r, err := rewrite(blk.body)
+	r, err := rewrite(blk.Body)
 	if err != nil {
 		return fail("query-param", -1, "%v", err)
 	}
@@ -112,13 +113,13 @@ func typeQuery(ix *index, path string, blk *block) (*irv1.Query, *irv1.Diagnosti
 		return fail(qe.code, r.original(qe.off), "%s", qe.msg)
 	}
 	q := &irv1.Query{
-		Name:        &irv1.Identifier{Stored: blk.name, Words: naming.Words(blk.name)},
+		Name:        &irv1.Identifier{Stored: blk.Name, Words: naming.Words(blk.Name)},
 		Source:      irv1.QuerySource_QUERY_SOURCE_FILE,
-		Cardinality: blk.cardinality,
-		Consistency: blk.consistency,
+		Cardinality: blk.Cardinality,
+		Consistency: blk.Consistency,
 		Writes:      a.writes,
-		Location:    blk.location,
-		Returns:     blk.returns,
+		Location:    blk.Location,
+		Returns:     blk.Returns,
 		Sql:         &irv1.Query_Text{Text: statementText(r.text, stmt)},
 	}
 	if len(a.catalogs) > 1 {
@@ -130,7 +131,7 @@ func typeQuery(ix *index, path string, blk *block) (*irv1.Query, *irv1.Diagnosti
 	for _, k := range slices.Sorted(maps.Keys(a.tables)) {
 		q.Tables = append(q.Tables, a.tables[k])
 	}
-	scope := &irv1.ScopeUse{Unscoped: blk.unscoped}
+	scope := &irv1.ScopeUse{Unscoped: blk.Unscoped}
 	for _, p := range a.params {
 		if p.raw.kind == scopeParam {
 			scope.Columns = append(scope.Columns, p.raw.name)
@@ -145,7 +146,7 @@ func typeQuery(ix *index, path string, blk *block) (*irv1.Query, *irv1.Diagnosti
 	if len(scope.Columns) > 0 || scope.Unscoped {
 		q.Scope = scope
 	}
-	if blk.cardinality == irv1.Cardinality_CARDINALITY_EXEC || blk.cardinality == irv1.Cardinality_CARDINALITY_EXEC_ROWS {
+	if blk.Cardinality == irv1.Cardinality_CARDINALITY_EXEC || blk.Cardinality == irv1.Cardinality_CARDINALITY_EXEC_ROWS {
 		return q, nil
 	}
 	if cols == nil {
@@ -160,7 +161,7 @@ func typeQuery(ix *index, path string, blk *block) (*irv1.Query, *irv1.Diagnosti
 }
 
 // resultFields turns result columns into fields and applies -- nonnull:.
-func resultFields(cols []column, blk *block) ([]*irv1.ResultField, *queryError) {
+func resultFields(cols []column, blk *queryfile.Block) ([]*irv1.ResultField, *queryError) {
 	var fields []*irv1.ResultField
 	byName := map[string]*irv1.ResultField{}
 	for _, c := range cols {
@@ -186,7 +187,7 @@ func resultFields(cols []column, blk *block) ([]*irv1.ResultField, *queryError) 
 		byName[c.name] = f
 		fields = append(fields, f)
 	}
-	for _, n := range blk.nonnull {
+	for _, n := range blk.Nonnull {
 		f := byName[n]
 		if f == nil {
 			return nil, &queryError{code: "query-nonnull-unknown", off: -1, msg: fmt.Sprintf("-- nonnull: names %s, which is not a result column", n)}
@@ -217,17 +218,4 @@ func syntaxOffset(err error) int {
 		return perr.Cursorpos - 1
 	}
 	return -1
-}
-
-// at returns where offset off of the statement is, as path:line:column,
-// or the -- name: line for -1.
-func (b *block) at(path string, off int) string {
-	if off < 0 {
-		return b.location
-	}
-	off = min(off, len(b.body))
-	before := b.body[:off]
-	line := b.line + strings.Count(before, "\n")
-	col := off - strings.LastIndexByte(before, '\n')
-	return fmt.Sprintf("%s:%d:%d", path, line, col)
 }

@@ -24,6 +24,7 @@ import (
 	tsemit "github.com/thec1oud/dql/emitters/ts"
 	"github.com/thec1oud/dql/plugin"
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
+	myqueries "github.com/thec1oud/dql/querysources/mysql"
 	pgqueries "github.com/thec1oud/dql/querysources/postgres"
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
 	"github.com/thec1oud/dql/sources/mysqllive"
@@ -57,6 +58,7 @@ var dialects = map[irv1.Dialect]func() plugin.Plugin{
 // query files they type, which run in-process (ADR 0002).
 var querySources = map[irv1.Dialect]func() plugin.Plugin{
 	irv1.Dialect_DIALECT_POSTGRES: func() plugin.Plugin { return pgqueries.New() },
+	irv1.Dialect_DIALECT_MYSQL:    func() plugin.Plugin { return myqueries.New() },
 }
 
 // emitters are the shipped emitter plugins, which run in-process (ADR 0002).

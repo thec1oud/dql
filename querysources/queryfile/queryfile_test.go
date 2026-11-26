@@ -1,4 +1,4 @@
-package postgres
+package queryfile
 
 import (
 	"fmt"
@@ -11,23 +11,23 @@ import (
 // blocks describes what split makes of text: each block, then each
 // diagnostic's message.
 func blocks(text string) string {
-	bs, ds := split(&irv1.QueryFile{Path: "q.sql", Text: text})
+	bs, ds := Split(&irv1.QueryFile{Path: "q.sql", Text: text})
 	var out []string
 	for _, b := range bs {
-		s := fmt.Sprintf("%s %s %s@%d %q", b.name, b.cardinality, b.location, b.line, b.body)
-		if b.returns != "" {
-			s += " returns=" + b.returns
+		s := fmt.Sprintf("%s %s %s@%d %q", b.Name, b.Cardinality, b.Location, b.Line, b.Body)
+		if b.Returns != "" {
+			s += " returns=" + b.Returns
 		}
-		if b.nonnull != nil {
-			s += " nonnull=" + strings.Join(b.nonnull, ",")
+		if b.Nonnull != nil {
+			s += " nonnull=" + strings.Join(b.Nonnull, ",")
 		}
-		if c := b.consistency; c != nil {
+		if c := b.Consistency; c != nil {
 			s += " consistency=" + c.GetLevel().String()
 			if c.GetMaxStaleness() != nil {
 				s += "/" + c.GetMaxStaleness().AsDuration().String()
 			}
 		}
-		if b.unscoped {
+		if b.Unscoped {
 			s += " unscoped"
 		}
 		out = append(out, s)
@@ -67,6 +67,15 @@ func TestSplit(t *testing.T) {
 	} {
 		if got := blocks(c.text); got != c.want {
 			t.Errorf("split(%q)\n got %s\nwant %s", c.text, got, c.want)
+		}
+	}
+}
+
+func TestAt(t *testing.T) {
+	b := &Block{Location: "q.sql:1", Body: "SELECT 1\nFROM t", Line: 2}
+	for off, want := range map[int]string{-1: "q.sql:1", 0: "q.sql:2:1", 10: "q.sql:3:2", 99: "q.sql:3:7"} {
+		if got := b.At("q.sql", off); got != want {
+			t.Errorf("At(%d) = %s, want %s", off, got, want)
 		}
 	}
 }

@@ -52,6 +52,10 @@ var goldenMysqlshopdb = filepath.Join("..", "..", "conformance", "harness", "go"
 // the database it was read from, fresh in each run.
 var inputDigest = regexp.MustCompile(`sha256:[0-9a-f]{64}`)
 
+// databaseName is the name of a fresh test database, which a view's
+// definition holds.
+var databaseName = regexp.MustCompile(`dql_test_[0-9_]+`)
+
 // dql generate writes the conformance harness's mysqlshopdb package from
 // conformance/schemas/mysql/shop.yaml.
 func TestGenerateConformanceMySQL(t *testing.T) {
@@ -68,9 +72,29 @@ func TestGenerateConformanceMySQL(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := write(t, "dql.yaml", string(raw))
-	if code, _, stderr := dql("generate", "-config", cfg); code != 0 || stderr != "" {
+	queries, err := os.ReadFile(filepath.Join(schemas, "queries.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(filepath.Dir(cfg), "queries.sql"), queries, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "bundle.json")
+	if code, _, stderr := dql("generate", "-config", cfg, "-bundle", out); code != 0 || stderr != "dql generate: wrote the bundle to "+out+"\n" {
 		t.Fatalf("%d %q", code, stderr)
 	}
+	// The catalog layer, which the MySQL query source's tests type against.
+	b := &irv1.Bundle{}
+	raw, _ = os.ReadFile(out)
+	if err := bundle.UnmarshalJSON(raw, b); err != nil {
+		t.Fatal(err)
+	}
+	b.Shapes = nil
+	js, err := bundle.MarshalJSON(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	golden.Assert(t, filepath.Join("..", "..", "testdata", "mysqlshop", "catalog.json"), js, inputDigest, databaseName)
 	files, _ := filepath.Glob(filepath.Join(filepath.Dir(cfg), "mysqlshopdb", "*.dql.go"))
 	want, _ := filepath.Glob(filepath.Join(goldenMysqlshopdb, "*.dql.go"))
 	if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
