@@ -5,9 +5,9 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { Decoder, type Keyed, type Row, type ValidationIssue, asInt64, issuesAt, nest } from "@dql/runtime";
-import { type PostFull, type PostPartial, type PostRef, decodePostFull, validatePostPartial, validatePostRef } from "./post.dql.ts";
-import { type TagFull, type TagPartial, type TagRef, decodeTagFull, validateTagPartial, validateTagRef } from "./tag.dql.ts";
+import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, type ValidationIssue, allRows, arg, asInt64, compare, issuesAt, nest, not, ordered, related } from "@dql/runtime";
+import { type PostFull, type PostPartial, type PostRef, type PostsTable, decodePostFull, validatePostPartial, validatePostRef } from "./post.dql.ts";
+import { type TagFull, type TagPartial, type TagRef, type TagsTable, decodeTagFull, validateTagPartial, validateTagRef } from "./tag.dql.ts";
 
 /** PostTagDraft is the shape post_tag.draft.flat of shop.app.post_tags. */
 export interface PostTagDraft {
@@ -422,8 +422,154 @@ export function mergePostTagByKey(
   return { merged, unmatched };
 }
 
+/** PostTagsTable stands for table shop.app.post_tags in builder reads: it types the table's predicates and order keys (§18.2). */
+export interface PostTagsTable {
+  readonly __table: "shop.app.post_tags";
+}
+
+/** postTags is table shop.app.post_tags in builder reads (§18.2): its columns and relations make predicates and order keys on its rows. */
+export const postTags = {
+  /** allRows keeps every row: a filtered write must be given it to write them all (§20.1). */
+  allRows(): Pred<PostTagsTable> {
+    return allRows<PostTagsTable>();
+  },
+  /** postId is column post_id in builder reads (§9.4). */
+  postId: {
+    /** any is operator any on post_id (§9.4). */
+    any(v: readonly bigint[]): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.any", "col.post_tags.post_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on post_id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.between", "col.post_tags.post_id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on post_id (§9.4). */
+    eq(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.eq", "col.post_tags.post_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on post_id (§9.4). */
+    ge(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.ge", "col.post_tags.post_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on post_id (§9.4). */
+    gt(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.gt", "col.post_tags.post_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on post_id (§9.4). */
+    in(v: readonly bigint[]): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.in", "col.post_tags.post_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on post_id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.is_distinct_from", "col.post_tags.post_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** le is operator le on post_id (§9.4). */
+    le(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.le", "col.post_tags.post_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on post_id (§9.4). */
+    lt(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.lt", "col.post_tags.post_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on post_id (§9.4). */
+    ne(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.ne", "col.post_tags.post_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by post_id, ascending. */
+    asc(): Order<PostTagsTable> {
+      return ordered<PostTagsTable>("order.asc", "col.post_tags.post_id");
+    },
+    /** desc orders by post_id, descending. */
+    desc(): Order<PostTagsTable> {
+      return ordered<PostTagsTable>("order.desc", "col.post_tags.post_id");
+    },
+  },
+  /** tagId is column tag_id in builder reads (§9.4). */
+  tagId: {
+    /** any is operator any on tag_id (§9.4). */
+    any(v: readonly bigint[]): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.any", "col.post_tags.tag_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on tag_id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.between", "col.post_tags.tag_id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on tag_id (§9.4). */
+    eq(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.eq", "col.post_tags.tag_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on tag_id (§9.4). */
+    ge(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.ge", "col.post_tags.tag_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on tag_id (§9.4). */
+    gt(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.gt", "col.post_tags.tag_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on tag_id (§9.4). */
+    in(v: readonly bigint[]): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.in", "col.post_tags.tag_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on tag_id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.is_distinct_from", "col.post_tags.tag_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** le is operator le on tag_id (§9.4). */
+    le(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.le", "col.post_tags.tag_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on tag_id (§9.4). */
+    lt(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.lt", "col.post_tags.tag_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on tag_id (§9.4). */
+    ne(v: bigint): Pred<PostTagsTable> {
+      return compare<PostTagsTable>("op.ne", "col.post_tags.tag_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by tag_id, ascending. */
+    asc(): Order<PostTagsTable> {
+      return ordered<PostTagsTable>("order.asc", "col.post_tags.tag_id");
+    },
+    /** desc orders by tag_id, descending. */
+    desc(): Order<PostTagsTable> {
+      return ordered<PostTagsTable>("order.desc", "col.post_tags.tag_id");
+    },
+  },
+  /** post is relation post in builder reads (§18.2). */
+  post: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<PostsTable>[]): Pred<PostTagsTable> {
+      return related<PostTagsTable, PostsTable>("rel.post_tags.post", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<PostsTable>[]): Pred<PostTagsTable> {
+      return not(related<PostTagsTable, PostsTable>("rel.post_tags.post", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<PostsTable>): Pred<PostTagsTable> {
+      return not(related<PostTagsTable, PostsTable>("rel.post_tags.post", not(p)));
+    },
+  },
+  /** tag is relation tag in builder reads (§18.2). */
+  tag: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<TagsTable>[]): Pred<PostTagsTable> {
+      return related<PostTagsTable, TagsTable>("rel.post_tags.tag", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<TagsTable>[]): Pred<PostTagsTable> {
+      return not(related<PostTagsTable, TagsTable>("rel.post_tags.tag", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<TagsTable>): Pred<PostTagsTable> {
+      return not(related<PostTagsTable, TagsTable>("rel.post_tags.tag", not(p)));
+    },
+  },
+} as const;
+
 /** PostTagsReadStore reads shop.app.post_tags (§26.3). */
 export interface PostTagsReadStore {
+  select<T>(shape: Shape<T, PostTagsTable>): Builder<T, PostTagsTable>;
   get(k: PostTagKey): Promise<PostTagFull>;
   find(k: PostTagKey): Promise<PostTagFull | undefined>;
   count(): Promise<bigint>;

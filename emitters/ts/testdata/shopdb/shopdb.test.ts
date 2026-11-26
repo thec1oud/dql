@@ -4,28 +4,53 @@
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { PgDriver } from "@dql/pg";
-import { type Executor, classOf, isViolation, parseUuid } from "@dql/runtime";
-import { Db, type EmailAddress, type UserScopedReadTx, type UserScopedWriteTx, UserFull, newExecutor, parseEmailAddress, parseSlugText, unscoped } from "./index.dql.ts";
+import { Consistency, type Executor, classOf, isViolation, not, or, parseUuid } from "@dql/runtime";
+import {
+  Db,
+  type EmailAddress,
+  type UserScopedReadTx,
+  type UserScopedWriteTx,
+  UserFull,
+  newExecutor,
+  parseEmailAddress,
+  parseSlugText,
+  posts,
+  shapes,
+  unscoped,
+  users,
+} from "./index.dql.ts";
 
 const base = process.env["DQL_TEST_POSTGRES_URL"] ?? "";
-const name = `shopdb_test_${process.pid}_${Date.now()}`;
-let admin: Executor;
-let exec: Executor;
+let admin: Executor | undefined;
+const made: { name: string; exec: Executor }[] = [];
 
 function config(dsn: string) {
   return { sources: { main: { primary: { dsn, maxConns: 4 } } }, catalogs: { shop: "main" } };
 }
 
-// A fresh database holding testdata/shop/schema.sql, dropped when the tests end.
 beforeAll(async () => {
   if (base === "") {
     throw new Error("DQL_TEST_POSTGRES_URL is not set");
   }
   admin = await newExecutor(new PgDriver(), config(base));
-  await new Db(admin).raw("main").exec(`CREATE DATABASE ${name} TEMPLATE template0 ENCODING 'UTF8' LOCALE 'C'`);
+});
+
+afterAll(async () => {
+  for (const { name, exec } of made) {
+    await exec.close();
+    await new Db(admin as Executor).raw("main").exec(`DROP DATABASE ${name} WITH (FORCE)`);
+  }
+  await admin?.close();
+});
+
+/** database returns an executor on a fresh database holding testdata/shop/schema.sql, dropped when the tests end. */
+async function database(): Promise<Executor> {
+  const name = `shopdb_test_${process.pid}_${made.length}_${Date.now()}`;
+  await new Db(admin as Executor).raw("main").exec(`CREATE DATABASE ${name} TEMPLATE template0 ENCODING 'UTF8' LOCALE 'C'`);
   const u = new URL(base);
   u.pathname = `/${name}`;
-  exec = await newExecutor(new PgDriver(), config(u.toString()));
+  const exec = await newExecutor(new PgDriver(), config(u.toString()));
+  made.push({ name, exec });
   // Raw statements run one at a time; the schema's statements end their lines.
   const schema = await Bun.file(new URL("../../../../testdata/shop/schema.sql", import.meta.url)).text();
   for (const s of schema.split(/;\s*$/m)) {
@@ -33,15 +58,8 @@ beforeAll(async () => {
       await new Db(exec).raw("main").exec(s);
     }
   }
-});
-
-afterAll(async () => {
-  await exec?.close();
-  if (admin !== undefined) {
-    await new Db(admin).raw("main").exec(`DROP DATABASE ${name} WITH (FORCE)`);
-    await admin.close();
-  }
-});
+  return exec;
+}
 
 /** failure returns the class of the error p rejects with. */
 async function failure(p: Promise<unknown>): Promise<string | undefined> {
@@ -54,7 +72,7 @@ async function failure(p: Promise<unknown>): Promise<string | undefined> {
 }
 
 test("stores", async () => {
-  const db = new Db(exec);
+  const db = new Db(await database());
 
   const acme = await db.tenants.insert({ name: "acme" });
   const other = await db.tenants.insert({ id: parseUuid(crypto.randomUUID()), name: "other" });
@@ -153,4 +171,47 @@ test("stores", async () => {
   await h.posts.delete(post);
   await h.users.delete(UserFull.key(cur));
   expect(await failure(h.users.delete(UserFull.key(cur)))).toBe("NotFound");
+});
+
+test("select", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const other = await db.tenants.insert({ name: "other" });
+  const h = db.withScope({ tenantId: acme.id });
+  const o = db.withScope({ tenantId: other.id });
+  const a = await h.users.insert({ email: parseEmailAddress("ann@acme.com"), passwordHash: "x", displayName: "Ann" });
+  const b = await h.users.insert({ email: parseEmailAddress("bob@acme.com"), passwordHash: "x" });
+  await o.users.insert({ email: parseEmailAddress("ann@other.com"), passwordHash: "x" });
+  const p = await h.posts.insert({ authorId: a.id, title: "Hello", labels: ["Ann"] });
+
+  // The scope filters every read; where, orderBy, limit and offset compose.
+  const all = h.users.select(shapes.userFull);
+  expect((await all.orderBy(users.email.desc()).all()).map((u) => u.id)).toEqual([b.id, a.id]);
+  expect((await all.where(users.email.ilike("ANN%")).one()).id).toBe(a.id);
+  expect((await all.orderBy(users.id.asc()).limit(1).offset(1).all()).map((u) => u.id)).toEqual([b.id]);
+  expect(await all.where(or(users.displayName.isNull(), users.id.in([a.id]))).count()).toBe(2n);
+  expect(await all.where(not(users.email.eq(parseEmailAddress("ann@acme.com"))), users.displayName.isNotNull()).optionalOne()).toBeUndefined();
+  expect(await failure(all.one())).toBe("TooManyRows");
+
+  // Across scopes, every tenant's rows.
+  expect(await unscoped(h).users.select(shapes.userFull).where(users.email.startsWith("ann@")).count()).toBe(2n);
+
+  // Relation predicates.
+  expect((await all.where(users.postsToAuthor.any(posts.title.eq("Hello"))).all()).map((u) => u.id)).toEqual([a.id]);
+  expect((await all.where(users.postsToAuthor.none()).all()).map((u) => u.id)).toEqual([b.id]);
+  expect(await all.where(users.postsToAuthor.all(posts.title.eq("Hello"))).count()).toBe(2n);
+  const ps = h.posts.select(shapes.postFull);
+  expect(await ps.where(posts.labels.arrayContains("Ann"), posts.author.any(users.email.contains("acme"))).exists()).toBe(true);
+
+  // Distinct, locks and iter.
+  expect(await h.tenants.select(shapes.tenantFull).distinct().all()).toHaveLength(2);
+  const locked = await h.write((tx: UserScopedWriteTx) => tx.posts.select(shapes.postFull).where(posts.id.eq(p.id)).forUpdate().noWait().one());
+  expect(locked.id).toBe(p.id);
+  let n = 0;
+  for await (const u of all.noLog().consistency(Consistency.primary).iter()) {
+    expect(u.tenantId).toBe(acme.id);
+    n++;
+  }
+  expect(n).toBe(2);
+  expect(await h.users.select(shapes.userFull).forShare().skipLocked().all()).toHaveLength(2);
 });

@@ -5,13 +5,13 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { Decoder, type Keyed, type Row, Temporal, type Uuid, type ValidationIssue, asInstanceOf, asInt32, asInt64, asString, issuesAt, nest } from "@dql/runtime";
+import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type Uuid, type ValidationIssue, allRows, arg, asInstanceOf, asInt32, asInt64, asString, compare, issuesAt, nest, not, ordered, related } from "@dql/runtime";
 import { dqlEmailAddressCheck } from "./dql-checks.dql.ts";
 import { dqlDecodeEmailAddress } from "./dql-decoders.dql.ts";
 import type { EmailAddress } from "./dql-types.dql.ts";
-import { type PostChangeForAuthor, type PostChangeForEditor, type PostDraftForAuthor, type PostDraftForEditor, type PostFull, decodePostFull, validatePostChangeForAuthor, validatePostChangeForEditor, validatePostDraftForAuthor, validatePostDraftForEditor } from "./post.dql.ts";
-import { type ProfileChangeForUser, type ProfileDraftForUser, type ProfileFull, decodeProfileFull, validateProfileChangeForUser, validateProfileDraftForUser } from "./profile.dql.ts";
-import { type TenantFull, decodeTenantFull } from "./tenant.dql.ts";
+import { type PostChangeForAuthor, type PostChangeForEditor, type PostDraftForAuthor, type PostDraftForEditor, type PostFull, type PostsTable, decodePostFull, validatePostChangeForAuthor, validatePostChangeForEditor, validatePostDraftForAuthor, validatePostDraftForEditor } from "./post.dql.ts";
+import { type ProfileChangeForUser, type ProfileDraftForUser, type ProfileFull, type ProfilesTable, decodeProfileFull, validateProfileChangeForUser, validateProfileDraftForUser } from "./profile.dql.ts";
+import { type TenantFull, type TenantsTable, decodeTenantFull } from "./tenant.dql.ts";
 
 /** UserDraft is the shape user.draft.flat of shop.app.users. */
 export interface UserDraft {
@@ -506,8 +506,558 @@ export function mergeUserByKey(
   return { merged, unmatched };
 }
 
+/** UsersTable stands for table shop.app.users in builder reads: it types the table's predicates and order keys (§18.2). */
+export interface UsersTable {
+  readonly __table: "shop.app.users";
+}
+
+/** users is table shop.app.users in builder reads (§18.2): its columns and relations make predicates and order keys on its rows. */
+export const users = {
+  /** allRows keeps every row: a filtered write must be given it to write them all (§20.1). */
+  allRows(): Pred<UsersTable> {
+    return allRows<UsersTable>();
+  },
+  /** id is column id in builder reads (§9.4). */
+  id: {
+    /** any is operator any on id (§9.4). */
+    any(v: readonly bigint[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.any", "col.users.id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<UsersTable> {
+      return compare<UsersTable>("op.between", "col.users.id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on id (§9.4). */
+    eq(v: bigint): Pred<UsersTable> {
+      return compare<UsersTable>("op.eq", "col.users.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on id (§9.4). */
+    ge(v: bigint): Pred<UsersTable> {
+      return compare<UsersTable>("op.ge", "col.users.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on id (§9.4). */
+    gt(v: bigint): Pred<UsersTable> {
+      return compare<UsersTable>("op.gt", "col.users.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on id (§9.4). */
+    in(v: readonly bigint[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.in", "col.users.id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_distinct_from", "col.users.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** le is operator le on id (§9.4). */
+    le(v: bigint): Pred<UsersTable> {
+      return compare<UsersTable>("op.le", "col.users.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on id (§9.4). */
+    lt(v: bigint): Pred<UsersTable> {
+      return compare<UsersTable>("op.lt", "col.users.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on id (§9.4). */
+    ne(v: bigint): Pred<UsersTable> {
+      return compare<UsersTable>("op.ne", "col.users.id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by id, ascending. */
+    asc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.asc", "col.users.id");
+    },
+    /** desc orders by id, descending. */
+    desc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.desc", "col.users.id");
+    },
+  },
+  /** tenantId is column tenant_id in builder reads (§9.4). */
+  tenantId: {
+    /** any is operator any on tenant_id (§9.4). */
+    any(v: readonly Uuid[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.any", "col.users.tenant_id", arg(v, false, "pg_catalog._uuid"));
+    },
+    /** between is operator between on tenant_id (§9.4). */
+    between(v0: Uuid, v1: Uuid): Pred<UsersTable> {
+      return compare<UsersTable>("op.between", "col.users.tenant_id", arg(v0, false, "pg_catalog.uuid"), arg(v1, false, "pg_catalog.uuid"));
+    },
+    /** eq is operator eq on tenant_id (§9.4). */
+    eq(v: Uuid): Pred<UsersTable> {
+      return compare<UsersTable>("op.eq", "col.users.tenant_id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** ge is operator ge on tenant_id (§9.4). */
+    ge(v: Uuid): Pred<UsersTable> {
+      return compare<UsersTable>("op.ge", "col.users.tenant_id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** gt is operator gt on tenant_id (§9.4). */
+    gt(v: Uuid): Pred<UsersTable> {
+      return compare<UsersTable>("op.gt", "col.users.tenant_id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** in is operator in on tenant_id (§9.4). */
+    in(v: readonly Uuid[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.in", "col.users.tenant_id", arg(v, false, "pg_catalog._uuid"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on tenant_id (§9.4). */
+    isDistinctFrom(v: Uuid): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_distinct_from", "col.users.tenant_id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** le is operator le on tenant_id (§9.4). */
+    le(v: Uuid): Pred<UsersTable> {
+      return compare<UsersTable>("op.le", "col.users.tenant_id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** lt is operator lt on tenant_id (§9.4). */
+    lt(v: Uuid): Pred<UsersTable> {
+      return compare<UsersTable>("op.lt", "col.users.tenant_id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** ne is operator ne on tenant_id (§9.4). */
+    ne(v: Uuid): Pred<UsersTable> {
+      return compare<UsersTable>("op.ne", "col.users.tenant_id", arg(v, false, "pg_catalog.uuid"));
+    },
+    /** asc orders by tenant_id, ascending. */
+    asc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.asc", "col.users.tenant_id");
+    },
+    /** desc orders by tenant_id, descending. */
+    desc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.desc", "col.users.tenant_id");
+    },
+  },
+  /** email is column email in builder reads (§9.4). */
+  email: {
+    /** any is operator any on email (§9.4). */
+    any(v: readonly EmailAddress[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.any", "col.users.email", arg(v, false, "pg_catalog._text"));
+    },
+    /** between is operator between on email (§9.4). */
+    between(v0: EmailAddress, v1: EmailAddress): Pred<UsersTable> {
+      return compare<UsersTable>("op.between", "col.users.email", arg(v0, false, "pg_catalog.text"), arg(v1, false, "pg_catalog.text"));
+    },
+    /** contains is operator contains on email (§9.4). */
+    contains(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.contains", "col.users.email", arg(v));
+    },
+    /** eq is operator eq on email (§9.4). */
+    eq(v: EmailAddress): Pred<UsersTable> {
+      return compare<UsersTable>("op.eq", "col.users.email", arg(v, false, "pg_catalog.text"));
+    },
+    /** ge is operator ge on email (§9.4). */
+    ge(v: EmailAddress): Pred<UsersTable> {
+      return compare<UsersTable>("op.ge", "col.users.email", arg(v, false, "pg_catalog.text"));
+    },
+    /** gt is operator gt on email (§9.4). */
+    gt(v: EmailAddress): Pred<UsersTable> {
+      return compare<UsersTable>("op.gt", "col.users.email", arg(v, false, "pg_catalog.text"));
+    },
+    /** ilike is operator ilike on email (§9.4). */
+    ilike(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.ilike", "col.users.email", arg(v));
+    },
+    /** in is operator in on email (§9.4). */
+    in(v: readonly EmailAddress[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.in", "col.users.email", arg(v, false, "pg_catalog._text"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on email (§9.4). */
+    isDistinctFrom(v: EmailAddress): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_distinct_from", "col.users.email", arg(v, false, "pg_catalog.text"));
+    },
+    /** le is operator le on email (§9.4). */
+    le(v: EmailAddress): Pred<UsersTable> {
+      return compare<UsersTable>("op.le", "col.users.email", arg(v, false, "pg_catalog.text"));
+    },
+    /** like is operator like on email (§9.4). */
+    like(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.like", "col.users.email", arg(v));
+    },
+    /** lt is operator lt on email (§9.4). */
+    lt(v: EmailAddress): Pred<UsersTable> {
+      return compare<UsersTable>("op.lt", "col.users.email", arg(v, false, "pg_catalog.text"));
+    },
+    /** ne is operator ne on email (§9.4). */
+    ne(v: EmailAddress): Pred<UsersTable> {
+      return compare<UsersTable>("op.ne", "col.users.email", arg(v, false, "pg_catalog.text"));
+    },
+    /** regexMatch is operator regex_match on email (§9.4). */
+    regexMatch(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.regex_match", "col.users.email", arg(v));
+    },
+    /** startsWith is operator starts_with on email (§9.4). */
+    startsWith(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.starts_with", "col.users.email", arg(v));
+    },
+    /** asc orders by email, ascending. */
+    asc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.asc", "col.users.email");
+    },
+    /** desc orders by email, descending. */
+    desc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.desc", "col.users.email");
+    },
+  },
+  /** displayName is column display_name in builder reads (§9.4). */
+  displayName: {
+    /** any is operator any on display_name (§9.4). */
+    any(v: readonly string[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.any", "col.users.display_name", arg(v, false, "pg_catalog._varchar"));
+    },
+    /** between is operator between on display_name (§9.4). */
+    between(v0: string, v1: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.between", "col.users.display_name", arg(v0, false, "pg_catalog.varchar"), arg(v1, false, "pg_catalog.varchar"));
+    },
+    /** contains is operator contains on display_name (§9.4). */
+    contains(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.contains", "col.users.display_name", arg(v));
+    },
+    /** eq is operator eq on display_name (§9.4). */
+    eq(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.eq", "col.users.display_name", arg(v, false, "pg_catalog.varchar"));
+    },
+    /** ge is operator ge on display_name (§9.4). */
+    ge(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.ge", "col.users.display_name", arg(v, false, "pg_catalog.varchar"));
+    },
+    /** gt is operator gt on display_name (§9.4). */
+    gt(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.gt", "col.users.display_name", arg(v, false, "pg_catalog.varchar"));
+    },
+    /** ilike is operator ilike on display_name (§9.4). */
+    ilike(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.ilike", "col.users.display_name", arg(v));
+    },
+    /** in is operator in on display_name (§9.4). */
+    in(v: readonly string[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.in", "col.users.display_name", arg(v, false, "pg_catalog._varchar"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on display_name (§9.4). */
+    isDistinctFrom(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_distinct_from", "col.users.display_name", arg(v, false, "pg_catalog.varchar"));
+    },
+    /** isNotNull is operator is_not_null on display_name (§9.4). */
+    isNotNull(): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_not_null", "col.users.display_name");
+    },
+    /** isNull is operator is_null on display_name (§9.4). */
+    isNull(): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_null", "col.users.display_name");
+    },
+    /** le is operator le on display_name (§9.4). */
+    le(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.le", "col.users.display_name", arg(v, false, "pg_catalog.varchar"));
+    },
+    /** like is operator like on display_name (§9.4). */
+    like(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.like", "col.users.display_name", arg(v));
+    },
+    /** lt is operator lt on display_name (§9.4). */
+    lt(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.lt", "col.users.display_name", arg(v, false, "pg_catalog.varchar"));
+    },
+    /** ne is operator ne on display_name (§9.4). */
+    ne(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.ne", "col.users.display_name", arg(v, false, "pg_catalog.varchar"));
+    },
+    /** regexMatch is operator regex_match on display_name (§9.4). */
+    regexMatch(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.regex_match", "col.users.display_name", arg(v));
+    },
+    /** startsWith is operator starts_with on display_name (§9.4). */
+    startsWith(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.starts_with", "col.users.display_name", arg(v));
+    },
+    /** asc orders by display_name, ascending. */
+    asc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.asc", "col.users.display_name");
+    },
+    /** desc orders by display_name, descending. */
+    desc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.desc", "col.users.display_name");
+    },
+  },
+  /** passwordHash is column password_hash in builder reads (§9.4). */
+  passwordHash: {
+    /** any is operator any on password_hash (§9.4). */
+    any(v: readonly string[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.any", "col.users.password_hash", arg(v, true, "pg_catalog._text"));
+    },
+    /** between is operator between on password_hash (§9.4). */
+    between(v0: string, v1: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.between", "col.users.password_hash", arg(v0, true, "pg_catalog.text"), arg(v1, true, "pg_catalog.text"));
+    },
+    /** contains is operator contains on password_hash (§9.4). */
+    contains(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.contains", "col.users.password_hash", arg(v, true));
+    },
+    /** eq is operator eq on password_hash (§9.4). */
+    eq(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.eq", "col.users.password_hash", arg(v, true, "pg_catalog.text"));
+    },
+    /** ge is operator ge on password_hash (§9.4). */
+    ge(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.ge", "col.users.password_hash", arg(v, true, "pg_catalog.text"));
+    },
+    /** gt is operator gt on password_hash (§9.4). */
+    gt(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.gt", "col.users.password_hash", arg(v, true, "pg_catalog.text"));
+    },
+    /** ilike is operator ilike on password_hash (§9.4). */
+    ilike(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.ilike", "col.users.password_hash", arg(v, true));
+    },
+    /** in is operator in on password_hash (§9.4). */
+    in(v: readonly string[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.in", "col.users.password_hash", arg(v, true, "pg_catalog._text"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on password_hash (§9.4). */
+    isDistinctFrom(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_distinct_from", "col.users.password_hash", arg(v, true, "pg_catalog.text"));
+    },
+    /** le is operator le on password_hash (§9.4). */
+    le(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.le", "col.users.password_hash", arg(v, true, "pg_catalog.text"));
+    },
+    /** like is operator like on password_hash (§9.4). */
+    like(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.like", "col.users.password_hash", arg(v, true));
+    },
+    /** lt is operator lt on password_hash (§9.4). */
+    lt(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.lt", "col.users.password_hash", arg(v, true, "pg_catalog.text"));
+    },
+    /** ne is operator ne on password_hash (§9.4). */
+    ne(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.ne", "col.users.password_hash", arg(v, true, "pg_catalog.text"));
+    },
+    /** regexMatch is operator regex_match on password_hash (§9.4). */
+    regexMatch(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.regex_match", "col.users.password_hash", arg(v, true));
+    },
+    /** startsWith is operator starts_with on password_hash (§9.4). */
+    startsWith(v: string): Pred<UsersTable> {
+      return compare<UsersTable>("op.starts_with", "col.users.password_hash", arg(v, true));
+    },
+    /** asc orders by password_hash, ascending. */
+    asc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.asc", "col.users.password_hash");
+    },
+    /** desc orders by password_hash, descending. */
+    desc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.desc", "col.users.password_hash");
+    },
+  },
+  /** createdAt is column created_at in builder reads (§9.4). */
+  createdAt: {
+    /** any is operator any on created_at (§9.4). */
+    any(v: readonly Temporal.Instant[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.any", "col.users.created_at", arg(v, false, "pg_catalog._timestamptz"));
+    },
+    /** between is operator between on created_at (§9.4). */
+    between(v0: Temporal.Instant, v1: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.between", "col.users.created_at", arg(v0, false, "pg_catalog.timestamptz"), arg(v1, false, "pg_catalog.timestamptz"));
+    },
+    /** eq is operator eq on created_at (§9.4). */
+    eq(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.eq", "col.users.created_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** ge is operator ge on created_at (§9.4). */
+    ge(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.ge", "col.users.created_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** gt is operator gt on created_at (§9.4). */
+    gt(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.gt", "col.users.created_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** in is operator in on created_at (§9.4). */
+    in(v: readonly Temporal.Instant[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.in", "col.users.created_at", arg(v, false, "pg_catalog._timestamptz"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on created_at (§9.4). */
+    isDistinctFrom(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_distinct_from", "col.users.created_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** le is operator le on created_at (§9.4). */
+    le(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.le", "col.users.created_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** lt is operator lt on created_at (§9.4). */
+    lt(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.lt", "col.users.created_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** ne is operator ne on created_at (§9.4). */
+    ne(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.ne", "col.users.created_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** asc orders by created_at, ascending. */
+    asc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.asc", "col.users.created_at");
+    },
+    /** desc orders by created_at, descending. */
+    desc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.desc", "col.users.created_at");
+    },
+  },
+  /** updatedAt is column updated_at in builder reads (§9.4). */
+  updatedAt: {
+    /** any is operator any on updated_at (§9.4). */
+    any(v: readonly Temporal.Instant[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.any", "col.users.updated_at", arg(v, false, "pg_catalog._timestamptz"));
+    },
+    /** between is operator between on updated_at (§9.4). */
+    between(v0: Temporal.Instant, v1: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.between", "col.users.updated_at", arg(v0, false, "pg_catalog.timestamptz"), arg(v1, false, "pg_catalog.timestamptz"));
+    },
+    /** eq is operator eq on updated_at (§9.4). */
+    eq(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.eq", "col.users.updated_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** ge is operator ge on updated_at (§9.4). */
+    ge(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.ge", "col.users.updated_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** gt is operator gt on updated_at (§9.4). */
+    gt(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.gt", "col.users.updated_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** in is operator in on updated_at (§9.4). */
+    in(v: readonly Temporal.Instant[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.in", "col.users.updated_at", arg(v, false, "pg_catalog._timestamptz"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on updated_at (§9.4). */
+    isDistinctFrom(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_distinct_from", "col.users.updated_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** le is operator le on updated_at (§9.4). */
+    le(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.le", "col.users.updated_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** lt is operator lt on updated_at (§9.4). */
+    lt(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.lt", "col.users.updated_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** ne is operator ne on updated_at (§9.4). */
+    ne(v: Temporal.Instant): Pred<UsersTable> {
+      return compare<UsersTable>("op.ne", "col.users.updated_at", arg(v, false, "pg_catalog.timestamptz"));
+    },
+    /** asc orders by updated_at, ascending. */
+    asc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.asc", "col.users.updated_at");
+    },
+    /** desc orders by updated_at, descending. */
+    desc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.desc", "col.users.updated_at");
+    },
+  },
+  /** version is column version in builder reads (§9.4). */
+  version: {
+    /** any is operator any on version (§9.4). */
+    any(v: readonly number[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.any", "col.users.version", arg(v, false, "pg_catalog._int4"));
+    },
+    /** between is operator between on version (§9.4). */
+    between(v0: number, v1: number): Pred<UsersTable> {
+      return compare<UsersTable>("op.between", "col.users.version", arg(v0, false, "pg_catalog.int4"), arg(v1, false, "pg_catalog.int4"));
+    },
+    /** eq is operator eq on version (§9.4). */
+    eq(v: number): Pred<UsersTable> {
+      return compare<UsersTable>("op.eq", "col.users.version", arg(v, false, "pg_catalog.int4"));
+    },
+    /** ge is operator ge on version (§9.4). */
+    ge(v: number): Pred<UsersTable> {
+      return compare<UsersTable>("op.ge", "col.users.version", arg(v, false, "pg_catalog.int4"));
+    },
+    /** gt is operator gt on version (§9.4). */
+    gt(v: number): Pred<UsersTable> {
+      return compare<UsersTable>("op.gt", "col.users.version", arg(v, false, "pg_catalog.int4"));
+    },
+    /** in is operator in on version (§9.4). */
+    in(v: readonly number[]): Pred<UsersTable> {
+      return compare<UsersTable>("op.in", "col.users.version", arg(v, false, "pg_catalog._int4"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on version (§9.4). */
+    isDistinctFrom(v: number): Pred<UsersTable> {
+      return compare<UsersTable>("op.is_distinct_from", "col.users.version", arg(v, false, "pg_catalog.int4"));
+    },
+    /** le is operator le on version (§9.4). */
+    le(v: number): Pred<UsersTable> {
+      return compare<UsersTable>("op.le", "col.users.version", arg(v, false, "pg_catalog.int4"));
+    },
+    /** lt is operator lt on version (§9.4). */
+    lt(v: number): Pred<UsersTable> {
+      return compare<UsersTable>("op.lt", "col.users.version", arg(v, false, "pg_catalog.int4"));
+    },
+    /** ne is operator ne on version (§9.4). */
+    ne(v: number): Pred<UsersTable> {
+      return compare<UsersTable>("op.ne", "col.users.version", arg(v, false, "pg_catalog.int4"));
+    },
+    /** asc orders by version, ascending. */
+    asc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.asc", "col.users.version");
+    },
+    /** desc orders by version, descending. */
+    desc(): Order<UsersTable> {
+      return ordered<UsersTable>("order.desc", "col.users.version");
+    },
+  },
+  /** postsToAuthor is relation posts_to_author in builder reads (§18.2). */
+  postsToAuthor: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<PostsTable>[]): Pred<UsersTable> {
+      return related<UsersTable, PostsTable>("rel.users.posts_to_author", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<PostsTable>[]): Pred<UsersTable> {
+      return not(related<UsersTable, PostsTable>("rel.users.posts_to_author", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<PostsTable>): Pred<UsersTable> {
+      return not(related<UsersTable, PostsTable>("rel.users.posts_to_author", not(p)));
+    },
+  },
+  /** postsToEditor is relation posts_to_editor in builder reads (§18.2). */
+  postsToEditor: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<PostsTable>[]): Pred<UsersTable> {
+      return related<UsersTable, PostsTable>("rel.users.posts_to_editor", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<PostsTable>[]): Pred<UsersTable> {
+      return not(related<UsersTable, PostsTable>("rel.users.posts_to_editor", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<PostsTable>): Pred<UsersTable> {
+      return not(related<UsersTable, PostsTable>("rel.users.posts_to_editor", not(p)));
+    },
+  },
+  /** profile is relation profile in builder reads (§18.2). */
+  profile: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<ProfilesTable>[]): Pred<UsersTable> {
+      return related<UsersTable, ProfilesTable>("rel.users.profile", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<ProfilesTable>[]): Pred<UsersTable> {
+      return not(related<UsersTable, ProfilesTable>("rel.users.profile", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<ProfilesTable>): Pred<UsersTable> {
+      return not(related<UsersTable, ProfilesTable>("rel.users.profile", not(p)));
+    },
+  },
+  /** tenant is relation tenant in builder reads (§18.2). */
+  tenant: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<TenantsTable>[]): Pred<UsersTable> {
+      return related<UsersTable, TenantsTable>("rel.users.tenant", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<TenantsTable>[]): Pred<UsersTable> {
+      return not(related<UsersTable, TenantsTable>("rel.users.tenant", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<TenantsTable>): Pred<UsersTable> {
+      return not(related<UsersTable, TenantsTable>("rel.users.tenant", not(p)));
+    },
+  },
+} as const;
+
 /** UsersReadStore reads shop.app.users (§26.3). */
 export interface UsersReadStore {
+  select<T>(shape: Shape<T, UsersTable>): Builder<T, UsersTable>;
   get(k: UserKey): Promise<UserFull>;
   getByTenantIdAndEmail(email: EmailAddress): Promise<UserFull>;
   find(k: UserKey): Promise<UserFull | undefined>;
@@ -529,6 +1079,7 @@ export interface UsersStore extends UsersReadStore {
 
 /** UsersUnscopedReadStore reads, across scopes, shop.app.users (§26.3). */
 export interface UsersUnscopedReadStore {
+  select<T>(shape: Shape<T, UsersTable>): Builder<T, UsersTable>;
   get(scope: UserScope, k: UserKey): Promise<UserFull>;
   getByTenantIdAndEmail(scope: UserScope, email: EmailAddress): Promise<UserFull>;
   find(scope: UserScope, k: UserKey): Promise<UserFull | undefined>;

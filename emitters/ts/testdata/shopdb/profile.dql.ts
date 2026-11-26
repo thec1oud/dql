@@ -5,8 +5,8 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { Decoder, type Keyed, type Row, Temporal, type ValidationIssue, asInstanceOf, asInt64, asString, issuesAt, nest } from "@dql/runtime";
-import { type UserFull, type UserPartial, type UserRef, decodeUserFull, redactUserPartial, redactUserRef, validateUserPartial, validateUserRef } from "./user.dql.ts";
+import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type ValidationIssue, allRows, arg, asInstanceOf, asInt64, asString, compare, issuesAt, nest, not, ordered, related } from "@dql/runtime";
+import { type UserFull, type UserPartial, type UserRef, type UsersTable, decodeUserFull, redactUserPartial, redactUserRef, validateUserPartial, validateUserRef } from "./user.dql.ts";
 
 /** ProfileDraft is the shape profile.draft.flat of shop.app.profiles. */
 export interface ProfileDraft {
@@ -422,8 +422,226 @@ export function mergeProfileByKey(
   return { merged, unmatched };
 }
 
+/** ProfilesTable stands for table shop.app.profiles in builder reads: it types the table's predicates and order keys (§18.2). */
+export interface ProfilesTable {
+  readonly __table: "shop.app.profiles";
+}
+
+/** profiles is table shop.app.profiles in builder reads (§18.2): its columns and relations make predicates and order keys on its rows. */
+export const profiles = {
+  /** allRows keeps every row: a filtered write must be given it to write them all (§20.1). */
+  allRows(): Pred<ProfilesTable> {
+    return allRows<ProfilesTable>();
+  },
+  /** userId is column user_id in builder reads (§9.4). */
+  userId: {
+    /** any is operator any on user_id (§9.4). */
+    any(v: readonly bigint[]): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.any", "col.profiles.user_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** between is operator between on user_id (§9.4). */
+    between(v0: bigint, v1: bigint): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.between", "col.profiles.user_id", arg(v0, false, "pg_catalog.int8"), arg(v1, false, "pg_catalog.int8"));
+    },
+    /** eq is operator eq on user_id (§9.4). */
+    eq(v: bigint): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.eq", "col.profiles.user_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ge is operator ge on user_id (§9.4). */
+    ge(v: bigint): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.ge", "col.profiles.user_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** gt is operator gt on user_id (§9.4). */
+    gt(v: bigint): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.gt", "col.profiles.user_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** in is operator in on user_id (§9.4). */
+    in(v: readonly bigint[]): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.in", "col.profiles.user_id", arg(v, false, "pg_catalog._int8"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on user_id (§9.4). */
+    isDistinctFrom(v: bigint): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.is_distinct_from", "col.profiles.user_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** le is operator le on user_id (§9.4). */
+    le(v: bigint): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.le", "col.profiles.user_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** lt is operator lt on user_id (§9.4). */
+    lt(v: bigint): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.lt", "col.profiles.user_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** ne is operator ne on user_id (§9.4). */
+    ne(v: bigint): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.ne", "col.profiles.user_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** asc orders by user_id, ascending. */
+    asc(): Order<ProfilesTable> {
+      return ordered<ProfilesTable>("order.asc", "col.profiles.user_id");
+    },
+    /** desc orders by user_id, descending. */
+    desc(): Order<ProfilesTable> {
+      return ordered<ProfilesTable>("order.desc", "col.profiles.user_id");
+    },
+  },
+  /** bio is column bio in builder reads (§9.4). */
+  bio: {
+    /** any is operator any on bio (§9.4). */
+    any(v: readonly string[]): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.any", "col.profiles.bio", arg(v, false, "pg_catalog._text"));
+    },
+    /** between is operator between on bio (§9.4). */
+    between(v0: string, v1: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.between", "col.profiles.bio", arg(v0, false, "pg_catalog.text"), arg(v1, false, "pg_catalog.text"));
+    },
+    /** contains is operator contains on bio (§9.4). */
+    contains(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.contains", "col.profiles.bio", arg(v));
+    },
+    /** eq is operator eq on bio (§9.4). */
+    eq(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.eq", "col.profiles.bio", arg(v, false, "pg_catalog.text"));
+    },
+    /** ge is operator ge on bio (§9.4). */
+    ge(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.ge", "col.profiles.bio", arg(v, false, "pg_catalog.text"));
+    },
+    /** gt is operator gt on bio (§9.4). */
+    gt(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.gt", "col.profiles.bio", arg(v, false, "pg_catalog.text"));
+    },
+    /** ilike is operator ilike on bio (§9.4). */
+    ilike(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.ilike", "col.profiles.bio", arg(v));
+    },
+    /** in is operator in on bio (§9.4). */
+    in(v: readonly string[]): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.in", "col.profiles.bio", arg(v, false, "pg_catalog._text"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on bio (§9.4). */
+    isDistinctFrom(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.is_distinct_from", "col.profiles.bio", arg(v, false, "pg_catalog.text"));
+    },
+    /** isNotNull is operator is_not_null on bio (§9.4). */
+    isNotNull(): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.is_not_null", "col.profiles.bio");
+    },
+    /** isNull is operator is_null on bio (§9.4). */
+    isNull(): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.is_null", "col.profiles.bio");
+    },
+    /** le is operator le on bio (§9.4). */
+    le(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.le", "col.profiles.bio", arg(v, false, "pg_catalog.text"));
+    },
+    /** like is operator like on bio (§9.4). */
+    like(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.like", "col.profiles.bio", arg(v));
+    },
+    /** lt is operator lt on bio (§9.4). */
+    lt(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.lt", "col.profiles.bio", arg(v, false, "pg_catalog.text"));
+    },
+    /** ne is operator ne on bio (§9.4). */
+    ne(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.ne", "col.profiles.bio", arg(v, false, "pg_catalog.text"));
+    },
+    /** regexMatch is operator regex_match on bio (§9.4). */
+    regexMatch(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.regex_match", "col.profiles.bio", arg(v));
+    },
+    /** startsWith is operator starts_with on bio (§9.4). */
+    startsWith(v: string): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.starts_with", "col.profiles.bio", arg(v));
+    },
+    /** asc orders by bio, ascending. */
+    asc(): Order<ProfilesTable> {
+      return ordered<ProfilesTable>("order.asc", "col.profiles.bio");
+    },
+    /** desc orders by bio, descending. */
+    desc(): Order<ProfilesTable> {
+      return ordered<ProfilesTable>("order.desc", "col.profiles.bio");
+    },
+  },
+  /** birthday is column birthday in builder reads (§9.4). */
+  birthday: {
+    /** any is operator any on birthday (§9.4). */
+    any(v: readonly Temporal.PlainDate[]): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.any", "col.profiles.birthday", arg(v, false, "pg_catalog._date"));
+    },
+    /** between is operator between on birthday (§9.4). */
+    between(v0: Temporal.PlainDate, v1: Temporal.PlainDate): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.between", "col.profiles.birthday", arg(v0, false, "pg_catalog.date"), arg(v1, false, "pg_catalog.date"));
+    },
+    /** eq is operator eq on birthday (§9.4). */
+    eq(v: Temporal.PlainDate): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.eq", "col.profiles.birthday", arg(v, false, "pg_catalog.date"));
+    },
+    /** ge is operator ge on birthday (§9.4). */
+    ge(v: Temporal.PlainDate): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.ge", "col.profiles.birthday", arg(v, false, "pg_catalog.date"));
+    },
+    /** gt is operator gt on birthday (§9.4). */
+    gt(v: Temporal.PlainDate): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.gt", "col.profiles.birthday", arg(v, false, "pg_catalog.date"));
+    },
+    /** in is operator in on birthday (§9.4). */
+    in(v: readonly Temporal.PlainDate[]): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.in", "col.profiles.birthday", arg(v, false, "pg_catalog._date"));
+    },
+    /** isDistinctFrom is operator is_distinct_from on birthday (§9.4). */
+    isDistinctFrom(v: Temporal.PlainDate): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.is_distinct_from", "col.profiles.birthday", arg(v, false, "pg_catalog.date"));
+    },
+    /** isNotNull is operator is_not_null on birthday (§9.4). */
+    isNotNull(): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.is_not_null", "col.profiles.birthday");
+    },
+    /** isNull is operator is_null on birthday (§9.4). */
+    isNull(): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.is_null", "col.profiles.birthday");
+    },
+    /** le is operator le on birthday (§9.4). */
+    le(v: Temporal.PlainDate): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.le", "col.profiles.birthday", arg(v, false, "pg_catalog.date"));
+    },
+    /** lt is operator lt on birthday (§9.4). */
+    lt(v: Temporal.PlainDate): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.lt", "col.profiles.birthday", arg(v, false, "pg_catalog.date"));
+    },
+    /** ne is operator ne on birthday (§9.4). */
+    ne(v: Temporal.PlainDate): Pred<ProfilesTable> {
+      return compare<ProfilesTable>("op.ne", "col.profiles.birthday", arg(v, false, "pg_catalog.date"));
+    },
+    /** asc orders by birthday, ascending. */
+    asc(): Order<ProfilesTable> {
+      return ordered<ProfilesTable>("order.asc", "col.profiles.birthday");
+    },
+    /** desc orders by birthday, descending. */
+    desc(): Order<ProfilesTable> {
+      return ordered<ProfilesTable>("order.desc", "col.profiles.birthday");
+    },
+  },
+  /** user is relation user in builder reads (§18.2). */
+  user: {
+    /** any holds where a related row exists that every predicate holds for. */
+    any(...ps: Pred<UsersTable>[]): Pred<ProfilesTable> {
+      return related<ProfilesTable, UsersTable>("rel.profiles.user", ...ps);
+    },
+    /** none holds where no related row exists that every predicate holds for. */
+    none(...ps: Pred<UsersTable>[]): Pred<ProfilesTable> {
+      return not(related<ProfilesTable, UsersTable>("rel.profiles.user", ...ps));
+    },
+    /** all holds where p does not fail for any related row; it holds where there are none. */
+    all(p: Pred<UsersTable>): Pred<ProfilesTable> {
+      return not(related<ProfilesTable, UsersTable>("rel.profiles.user", not(p)));
+    },
+  },
+} as const;
+
 /** ProfilesReadStore reads shop.app.profiles (§26.3). */
 export interface ProfilesReadStore {
+  select<T>(shape: Shape<T, ProfilesTable>): Builder<T, ProfilesTable>;
   get(k: ProfileKey): Promise<ProfileFull>;
   find(k: ProfileKey): Promise<ProfileFull | undefined>;
   count(): Promise<bigint>;
