@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Builder, Decoder, type Order, type Pred, type Row, type Shape, Temporal, allRows, arg, asInstanceOf, asInt64, asString, compare, ordered } from "@dql/runtime";
+import { type Assignment, type Builder, Decoder, type Order, type Pred, type Row, type Shape, Temporal, type Update, allRows, arg, asInstanceOf, asInt64, asString, compare, ordered } from "@dql/runtime";
 
 /** PublishedPostFull is the shape published_post.full.flat of shop.app.published_posts. */
 export interface PublishedPostFull {

@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type ValidationIssue, allRows, arg, array, asEnum, asInstanceOf, asInt64, asString, compare, issuesAt, nest, not, nullableElem, ordered, related } from "@dql/runtime";
+import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type Update, type ValidationIssue, allRows, arg, arith, array, asEnum, asInstanceOf, asInt64, asString, compare, issuesAt, nest, not, nullableElem, ordered, related, set } from "@dql/runtime";
 import { dqlPostsTitleCheck } from "./dql-checks.dql.ts";
 import { dqlDecodeMoneyAmount } from "./dql-decoders.dql.ts";
 import { type MoneyAmount, PostStatus } from "./dql-types.dql.ts";
@@ -782,6 +782,10 @@ export const posts = {
     desc(): Order<PostsTable> {
       return ordered<PostsTable>("order.desc", "col.posts.id");
     },
+    /** set assigns DEFAULT to id on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostsTable> {
+      return set<PostsTable>("id", e);
+    },
   },
   /** authorId is column author_id in builder reads (§9.4). */
   authorId: {
@@ -832,6 +836,18 @@ export const posts = {
     /** desc orders by author_id, descending. */
     desc(): Order<PostsTable> {
       return ordered<PostsTable>("order.desc", "col.posts.author_id");
+    },
+    /** set assigns DEFAULT to author_id on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostsTable> {
+      return set<PostsTable>("author_id", e);
+    },
+    /** add sets author_id to author_id + v on an update (§20.2). */
+    add(v: bigint): Update<PostsTable> {
+      return arith<PostsTable>("op.add", "author_id", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** sub sets author_id to author_id - v on an update (§20.2). */
+    sub(v: bigint): Update<PostsTable> {
+      return arith<PostsTable>("op.sub", "author_id", "col.posts.author_id", arg(v, false, "pg_catalog.int8"));
     },
   },
   /** editorId is column editor_id in builder reads (§9.4). */
@@ -891,6 +907,18 @@ export const posts = {
     /** desc orders by editor_id, descending. */
     desc(): Order<PostsTable> {
       return ordered<PostsTable>("order.desc", "col.posts.editor_id");
+    },
+    /** set assigns DEFAULT to editor_id on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostsTable> {
+      return set<PostsTable>("editor_id", e);
+    },
+    /** add sets editor_id to editor_id + v on an update (§20.2). */
+    add(v: bigint): Update<PostsTable> {
+      return arith<PostsTable>("op.add", "editor_id", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
+    },
+    /** sub sets editor_id to editor_id - v on an update (§20.2). */
+    sub(v: bigint): Update<PostsTable> {
+      return arith<PostsTable>("op.sub", "editor_id", "col.posts.editor_id", arg(v, false, "pg_catalog.int8"));
     },
   },
   /** title is column title in builder reads (§9.4). */
@@ -962,6 +990,10 @@ export const posts = {
     /** desc orders by title, descending. */
     desc(): Order<PostsTable> {
       return ordered<PostsTable>("order.desc", "col.posts.title");
+    },
+    /** set assigns DEFAULT to title on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostsTable> {
+      return set<PostsTable>("title", e);
     },
   },
   /** slug is column slug in builder reads (§9.4). */
@@ -1093,6 +1125,10 @@ export const posts = {
     desc(): Order<PostsTable> {
       return ordered<PostsTable>("order.desc", "col.posts.status");
     },
+    /** set assigns DEFAULT to status on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostsTable> {
+      return set<PostsTable>("status", e);
+    },
   },
   /** price is column price in builder reads (§9.4). */
   price: {
@@ -1132,6 +1168,10 @@ export const posts = {
     desc(): Order<PostsTable> {
       return ordered<PostsTable>("order.desc", "col.posts.price");
     },
+    /** set assigns DEFAULT to price on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostsTable> {
+      return set<PostsTable>("price", e);
+    },
   },
   /** labels is column labels in builder reads (§9.4). */
   labels: {
@@ -1170,6 +1210,10 @@ export const posts = {
     /** desc orders by labels, descending. */
     desc(): Order<PostsTable> {
       return ordered<PostsTable>("order.desc", "col.posts.labels");
+    },
+    /** set assigns DEFAULT to labels on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<PostsTable> {
+      return set<PostsTable>("labels", e);
     },
   },
   /** publishedAt is column published_at in builder reads (§9.4). */
@@ -1229,6 +1273,10 @@ export const posts = {
     /** desc orders by published_at, descending. */
     desc(): Order<PostsTable> {
       return ordered<PostsTable>("order.desc", "col.posts.published_at");
+    },
+    /** set assigns now or DEFAULT to published_at on a write, in place of a value (§20.2). */
+    set(e: Expr): Assignment<PostsTable> {
+      return set<PostsTable>("published_at", e);
     },
   },
   /** author is relation author in builder reads (§18.2). */
@@ -1304,11 +1352,16 @@ export interface PostsReadStore {
 
 /** PostsStore reads and writes shop.app.posts (§26.3). */
 export interface PostsStore extends PostsReadStore {
-  insert(d: PostDraft): Promise<PostFull>;
-  insertOrIgnoreByPostsOnePublishedSlug(d: PostDraft): Promise<PostFull | undefined>;
-  insertOrIgnore(d: PostDraft): Promise<PostFull | undefined>;
-  upsertByPostsOnePublishedSlug(d: PostDraft): Promise<PostFull>;
-  upsert(d: PostDraft): Promise<PostFull>;
-  patch(k: PostKey, p: PostPartial): Promise<PostFull>;
+  insert(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull>;
+  insertMany(ds: readonly PostDraft[], ...as: Assignment<PostsTable>[]): Promise<PostFull[]>;
+  insertOrIgnoreByPostsOnePublishedSlug(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull | undefined>;
+  insertOrIgnore(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull | undefined>;
+  upsertByPostsOnePublishedSlug(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull>;
+  upsert(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull>;
+  upsertSetByPostsOnePublishedSlug(d: PostDraft, p: PostPartial, ...as: Update<PostsTable>[]): Promise<PostFull>;
+  upsertSet(d: PostDraft, p: PostPartial, ...as: Update<PostsTable>[]): Promise<PostFull>;
+  patch(k: PostKey, p: PostPartial, ...as: Update<PostsTable>[]): Promise<PostFull>;
+  updateWhere(where: Pred<PostsTable>, p: PostPartial, ...as: Update<PostsTable>[]): Promise<number>;
   delete(k: PostKey): Promise<void>;
+  deleteWhere(where: Pred<PostsTable>): Promise<number>;
 }

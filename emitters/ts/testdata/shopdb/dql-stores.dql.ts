@@ -5,12 +5,12 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Args, type Builder, Consistency, type Query, type Reader, type Shape, type Statement, type Writer, allOf, arg, count, execByKey, execute, exists, list, newBuilder, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
+import { type Args, type Assignment, type Builder, Consistency, type Pred, type Query, type Reader, type Shape, type Statement, type Update, type Writer, allOf, arg, assign, count, execByKey, execute, exists, filtered, insertMany, list, newBuilder, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
 import { fragments } from "./dql-fragments.dql.ts";
 import { type AuthorPostCountsRow, type UnscopedQuerier, type UnscopedReadQuerier, type UserScopedQuerier, type UserScopedReadQuerier, decodeAuthorPostCountsRow } from "./dql-queries.dql.ts";
 import type { EmailAddress, SlugText } from "./dql-types.dql.ts";
 import { type PostDraft, type PostFull, type PostKey, type PostPartial, type PostsReadStore, type PostsStore, type PostsTable, decodePostFull, validatePostDraft, validatePostPartial } from "./post.dql.ts";
-import { type PostTagDraft, type PostTagFull, type PostTagKey, type PostTagsReadStore, type PostTagsStore, type PostTagsTable, decodePostTagFull, validatePostTagDraft } from "./post_tag.dql.ts";
+import { type PostTagDraft, type PostTagFull, type PostTagKey, type PostTagPartial, type PostTagsReadStore, type PostTagsStore, type PostTagsTable, decodePostTagFull, validatePostTagDraft, validatePostTagPartial } from "./post_tag.dql.ts";
 import { type ProfileDraft, type ProfileFull, type ProfileKey, type ProfilePartial, type ProfilesReadStore, type ProfilesStore, type ProfilesTable, decodeProfileFull, validateProfileDraft, validateProfilePartial } from "./profile.dql.ts";
 import { type PublishedPostFull, type PublishedPostsReadStore, type PublishedPostsTable, decodePublishedPostFull } from "./published_post.dql.ts";
 import { type TagDraft, type TagFull, type TagKey, type TagPartial, type TagsReadStore, type TagsStore, type TagsTable, decodeTagFull, validateTagDraft, validateTagPartial } from "./tag.dql.ts";
@@ -94,6 +94,17 @@ const postTagUpsertByPrimary: Query = {
   ],
 };
 
+const postTagUpsertSetByPrimary: Query = {
+  name: "post_tag.upsert_set.by_primary",
+  catalog: "shop",
+  kind: "upsert_set",
+  writes: true,
+  types: { "post_id": "pg_catalog.int8", "tag_id": "pg_catalog.int8" },
+  plan: [
+    use("upsert.post_tags.post_tags_pkey", { "cols": list([use("name.post_tags.post_id"), use("name.post_tags.tag_id")], ", "), "returning": use("returning.post_tag.full.flat"), "rows": use("values.row", { "0": list([param("post_id"), param("tag_id")], ", ") }), "sets": list([use("set.post_tags.post_id", { "0": use("col.post_tags.post_id") })], ", ") }),
+  ],
+};
+
 const postTagDelete: Query = {
   name: "post_tag.delete",
   catalog: "shop",
@@ -102,6 +113,16 @@ const postTagDelete: Query = {
   types: { "key.post_id": "pg_catalog.int8", "key.tag_id": "pg_catalog.int8" },
   plan: [
     use("delete.post_tags", { "where": use("clause.where", { "0": use("bool.and", { "0": use("op.eq", { "0": use("col.post_tags.post_id"), "1": param("key.post_id") }), "1": use("op.eq", { "0": use("col.post_tags.tag_id"), "1": param("key.tag_id") }) }) }) }),
+  ],
+};
+
+const postTagDeleteWhere: Query = {
+  name: "post_tag.delete_where",
+  catalog: "shop",
+  kind: "delete_where",
+  writes: true,
+  plan: [
+    use("delete.post_tags"),
   ],
 };
 
@@ -149,29 +170,61 @@ export class PostTagsWrites extends PostTagsReads implements PostTagsStore {
   }
 
   /** insert runs post_tag.insert (§20.1). */
-  async insert(d: PostTagDraft): Promise<PostTagFull> {
+  async insert(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull> {
     throwIfIssues(validatePostTagDraft(d));
     const args: Args = { "post_id": d.postId, "tag_id": d.tagId };
+    assign(postTagInsert, "post_tag.draft.flat", args, as);
     return oneOf(this.w, statementOf(postTagInsert, fragments, args), decodePostTagFull);
   }
 
+  /** insertMany runs post_tag.insert for each draft, in one transaction (§20.1). */
+  async insertMany(ds: readonly PostTagDraft[], ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull[]> {
+    for (const d of ds) {
+      throwIfIssues(validatePostTagDraft(d));
+    }
+    const rows: Args[] = [];
+    for (const d of ds) {
+      const args: Args = { "post_id": d.postId, "tag_id": d.tagId };
+      assign(postTagInsert, "post_tag.draft.flat", args, as);
+      rows.push(args);
+    }
+    return insertMany(this.w, fragments, postTagInsert, rows, decodePostTagFull);
+  }
+
   /** insertOrIgnore runs post_tag.insert_or_ignore.by_primary (§20.1). */
-  async insertOrIgnore(d: PostTagDraft): Promise<PostTagFull | undefined> {
+  async insertOrIgnore(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull | undefined> {
     throwIfIssues(validatePostTagDraft(d));
     const args: Args = { "post_id": d.postId, "tag_id": d.tagId };
+    assign(postTagInsertOrIgnoreByPrimary, "post_tag.draft.flat", args, as);
     return optionalOf(this.w, statementOf(postTagInsertOrIgnoreByPrimary, fragments, args), decodePostTagFull);
   }
 
   /** upsert runs post_tag.upsert.by_primary (§20.1). */
-  async upsert(d: PostTagDraft): Promise<PostTagFull> {
+  async upsert(d: PostTagDraft, ...as: Assignment<PostTagsTable>[]): Promise<PostTagFull> {
     throwIfIssues(validatePostTagDraft(d));
     const args: Args = { "post_id": d.postId, "tag_id": d.tagId };
+    assign(postTagUpsertByPrimary, "post_tag.draft.flat", args, as);
     return oneOf(this.w, statementOf(postTagUpsertByPrimary, fragments, args), decodePostTagFull);
+  }
+
+  /** upsertSet runs post_tag.upsert_set.by_primary (§20.1). */
+  async upsertSet(d: PostTagDraft, p: PostTagPartial, ...as: Update<PostTagsTable>[]): Promise<PostTagFull> {
+    throwIfIssues(validatePostTagDraft(d));
+    throwIfIssues(validatePostTagPartial(p));
+    const args: Args = { "post_id": d.postId, "tag_id": d.tagId };
+    assign(postTagUpsertSetByPrimary, "post_tag.partial.flat", args, as, "set.");
+    return oneOf(this.w, statementOf(postTagUpsertSetByPrimary, fragments, args), decodePostTagFull);
   }
 
   /** delete runs post_tag.delete (§20.1). */
   async delete(k: PostTagKey): Promise<void> {
     return execByKey(this.w, statementOf(postTagDelete, fragments, { "key.post_id": k.postId, "key.tag_id": k.tagId }));
+  }
+
+  /** deleteWhere runs post_tag.delete_where (§20.1). */
+  async deleteWhere(where: Pred<PostTagsTable>): Promise<number> {
+    const q = filtered(postTagDeleteWhere, where);
+    return execute(this.w, statementOf(q, fragments, {}));
   }
 }
 
@@ -274,6 +327,28 @@ const postUpsertByPrimary: Query = {
   ],
 };
 
+const postUpsertSetByPostsOnePublishedSlug: Query = {
+  name: "post.upsert_set.by_posts_one_published_slug",
+  catalog: "shop",
+  kind: "upsert_set",
+  writes: true,
+  types: { "id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz", "set.author_id": "pg_catalog.int8", "set.editor_id": "pg_catalog.int8", "set.title": "pg_catalog.text", "set.status": "app.post_status", "set.price": "app.money_amount", "set.labels": "pg_catalog._text", "set.published_at": "pg_catalog.timestamptz" },
+  plan: [
+    use("upsert.posts.posts_one_published_slug", { "cols": list([use("name.posts.id"), use("name.posts.author_id"), use("name.posts.editor_id"), use("name.posts.title"), use("name.posts.status"), use("name.posts.price"), use("name.posts.labels"), use("name.posts.published_at")], ", "), "returning": use("returning.post.full.flat"), "rows": use("values.row", { "0": list([param("id"), param("author_id"), param("editor_id"), param("title"), param("status"), param("price"), param("labels"), param("published_at")], ", ") }), "sets": list([use("set.posts.author_id", { "0": param("set.author_id") }), use("set.posts.editor_id", { "0": param("set.editor_id") }), use("set.posts.title", { "0": param("set.title") }), use("set.posts.status", { "0": param("set.status") }), use("set.posts.price", { "0": param("set.price") }), use("set.posts.labels", { "0": param("set.labels") }), use("set.posts.published_at", { "0": param("set.published_at") }), use("set.posts.id", { "0": use("col.posts.id") })], ", ") }),
+  ],
+};
+
+const postUpsertSetByPrimary: Query = {
+  name: "post.upsert_set.by_primary",
+  catalog: "shop",
+  kind: "upsert_set",
+  writes: true,
+  types: { "id": "pg_catalog.int8", "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz", "set.author_id": "pg_catalog.int8", "set.editor_id": "pg_catalog.int8", "set.title": "pg_catalog.text", "set.status": "app.post_status", "set.price": "app.money_amount", "set.labels": "pg_catalog._text", "set.published_at": "pg_catalog.timestamptz" },
+  plan: [
+    use("upsert.posts.posts_pkey", { "cols": list([use("name.posts.id"), use("name.posts.author_id"), use("name.posts.editor_id"), use("name.posts.title"), use("name.posts.status"), use("name.posts.price"), use("name.posts.labels"), use("name.posts.published_at")], ", "), "returning": use("returning.post.full.flat"), "rows": use("values.row", { "0": list([param("id"), param("author_id"), param("editor_id"), param("title"), param("status"), param("price"), param("labels"), param("published_at")], ", ") }), "sets": list([use("set.posts.author_id", { "0": param("set.author_id") }), use("set.posts.editor_id", { "0": param("set.editor_id") }), use("set.posts.title", { "0": param("set.title") }), use("set.posts.status", { "0": param("set.status") }), use("set.posts.price", { "0": param("set.price") }), use("set.posts.labels", { "0": param("set.labels") }), use("set.posts.published_at", { "0": param("set.published_at") }), use("set.posts.id", { "0": use("col.posts.id") })], ", ") }),
+  ],
+};
+
 const postPatch: Query = {
   name: "post.patch",
   catalog: "shop",
@@ -286,6 +361,17 @@ const postPatch: Query = {
   ],
 };
 
+const postUpdateWhere: Query = {
+  name: "post.update_where",
+  catalog: "shop",
+  kind: "update_where",
+  writes: true,
+  types: { "author_id": "pg_catalog.int8", "editor_id": "pg_catalog.int8", "title": "pg_catalog.text", "status": "app.post_status", "price": "app.money_amount", "labels": "pg_catalog._text", "published_at": "pg_catalog.timestamptz" },
+  plan: [
+    use("update.posts", { "sets": list([use("set.posts.author_id", { "0": param("author_id") }), use("set.posts.editor_id", { "0": param("editor_id") }), use("set.posts.title", { "0": param("title") }), use("set.posts.status", { "0": param("status") }), use("set.posts.price", { "0": param("price") }), use("set.posts.labels", { "0": param("labels") }), use("set.posts.published_at", { "0": param("published_at") })], ", ") }),
+  ],
+};
+
 const postDelete: Query = {
   name: "post.delete",
   catalog: "shop",
@@ -294,6 +380,16 @@ const postDelete: Query = {
   types: { "key.id": "pg_catalog.int8" },
   plan: [
     use("delete.posts", { "where": use("clause.where", { "0": use("op.eq", { "0": use("col.posts.id"), "1": param("key.id") }) }) }),
+  ],
+};
+
+const postDeleteWhere: Query = {
+  name: "post.delete_where",
+  catalog: "shop",
+  kind: "delete_where",
+  writes: true,
+  plan: [
+    use("delete.posts"),
   ],
 };
 
@@ -341,7 +437,7 @@ export class PostsWrites extends PostsReads implements PostsStore {
   }
 
   /** insert runs post.insert (§20.1). */
-  async insert(d: PostDraft): Promise<PostFull> {
+  async insert(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull> {
     throwIfIssues(validatePostDraft(d));
     const args: Args = { "author_id": d.authorId, "title": d.title };
     if (d.id !== undefined) {
@@ -362,11 +458,44 @@ export class PostsWrites extends PostsReads implements PostsStore {
     if (d.publishedAt !== undefined) {
       args["published_at"] = d.publishedAt;
     }
+    assign(postInsert, "post.draft.flat", args, as);
     return oneOf(this.w, statementOf(postInsert, fragments, args), decodePostFull);
   }
 
+  /** insertMany runs post.insert for each draft, in one transaction (§20.1). */
+  async insertMany(ds: readonly PostDraft[], ...as: Assignment<PostsTable>[]): Promise<PostFull[]> {
+    for (const d of ds) {
+      throwIfIssues(validatePostDraft(d));
+    }
+    const rows: Args[] = [];
+    for (const d of ds) {
+      const args: Args = { "author_id": d.authorId, "title": d.title };
+      if (d.id !== undefined) {
+        args["id"] = d.id;
+      }
+      if (d.editorId !== undefined) {
+        args["editor_id"] = d.editorId;
+      }
+      if (d.status !== undefined) {
+        args["status"] = d.status;
+      }
+      if (d.price !== undefined) {
+        args["price"] = d.price;
+      }
+      if (d.labels !== undefined) {
+        args["labels"] = d.labels;
+      }
+      if (d.publishedAt !== undefined) {
+        args["published_at"] = d.publishedAt;
+      }
+      assign(postInsert, "post.draft.flat", args, as);
+      rows.push(args);
+    }
+    return insertMany(this.w, fragments, postInsert, rows, decodePostFull);
+  }
+
   /** insertOrIgnoreByPostsOnePublishedSlug runs post.insert_or_ignore.by_posts_one_published_slug (§20.1). */
-  async insertOrIgnoreByPostsOnePublishedSlug(d: PostDraft): Promise<PostFull | undefined> {
+  async insertOrIgnoreByPostsOnePublishedSlug(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull | undefined> {
     throwIfIssues(validatePostDraft(d));
     const args: Args = { "author_id": d.authorId, "title": d.title };
     if (d.id !== undefined) {
@@ -387,11 +516,12 @@ export class PostsWrites extends PostsReads implements PostsStore {
     if (d.publishedAt !== undefined) {
       args["published_at"] = d.publishedAt;
     }
+    assign(postInsertOrIgnoreByPostsOnePublishedSlug, "post.draft.flat", args, as);
     return optionalOf(this.w, statementOf(postInsertOrIgnoreByPostsOnePublishedSlug, fragments, args), decodePostFull);
   }
 
   /** insertOrIgnore runs post.insert_or_ignore.by_primary (§20.1). */
-  async insertOrIgnore(d: PostDraft): Promise<PostFull | undefined> {
+  async insertOrIgnore(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull | undefined> {
     throwIfIssues(validatePostDraft(d));
     const args: Args = { "author_id": d.authorId, "title": d.title };
     if (d.id !== undefined) {
@@ -412,11 +542,12 @@ export class PostsWrites extends PostsReads implements PostsStore {
     if (d.publishedAt !== undefined) {
       args["published_at"] = d.publishedAt;
     }
+    assign(postInsertOrIgnoreByPrimary, "post.draft.flat", args, as);
     return optionalOf(this.w, statementOf(postInsertOrIgnoreByPrimary, fragments, args), decodePostFull);
   }
 
   /** upsertByPostsOnePublishedSlug runs post.upsert.by_posts_one_published_slug (§20.1). */
-  async upsertByPostsOnePublishedSlug(d: PostDraft): Promise<PostFull> {
+  async upsertByPostsOnePublishedSlug(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull> {
     throwIfIssues(validatePostDraft(d));
     const args: Args = { "author_id": d.authorId, "title": d.title };
     if (d.id !== undefined) {
@@ -437,11 +568,12 @@ export class PostsWrites extends PostsReads implements PostsStore {
     if (d.publishedAt !== undefined) {
       args["published_at"] = d.publishedAt;
     }
+    assign(postUpsertByPostsOnePublishedSlug, "post.draft.flat", args, as);
     return oneOf(this.w, statementOf(postUpsertByPostsOnePublishedSlug, fragments, args), decodePostFull);
   }
 
   /** upsert runs post.upsert.by_primary (§20.1). */
-  async upsert(d: PostDraft): Promise<PostFull> {
+  async upsert(d: PostDraft, ...as: Assignment<PostsTable>[]): Promise<PostFull> {
     throwIfIssues(validatePostDraft(d));
     const args: Args = { "author_id": d.authorId, "title": d.title };
     if (d.id !== undefined) {
@@ -462,11 +594,108 @@ export class PostsWrites extends PostsReads implements PostsStore {
     if (d.publishedAt !== undefined) {
       args["published_at"] = d.publishedAt;
     }
+    assign(postUpsertByPrimary, "post.draft.flat", args, as);
     return oneOf(this.w, statementOf(postUpsertByPrimary, fragments, args), decodePostFull);
   }
 
+  /** upsertSetByPostsOnePublishedSlug runs post.upsert_set.by_posts_one_published_slug (§20.1). */
+  async upsertSetByPostsOnePublishedSlug(d: PostDraft, p: PostPartial, ...as: Update<PostsTable>[]): Promise<PostFull> {
+    throwIfIssues(validatePostDraft(d));
+    throwIfIssues(validatePostPartial(p));
+    const args: Args = { "author_id": d.authorId, "title": d.title };
+    if (d.id !== undefined) {
+      args["id"] = d.id;
+    }
+    if (d.editorId !== undefined) {
+      args["editor_id"] = d.editorId;
+    }
+    if (d.status !== undefined) {
+      args["status"] = d.status;
+    }
+    if (d.price !== undefined) {
+      args["price"] = d.price;
+    }
+    if (d.labels !== undefined) {
+      args["labels"] = d.labels;
+    }
+    if (d.publishedAt !== undefined) {
+      args["published_at"] = d.publishedAt;
+    }
+    if (p.authorId !== undefined) {
+      args["set.author_id"] = p.authorId;
+    }
+    if (p.editorId !== undefined) {
+      args["set.editor_id"] = p.editorId;
+    }
+    if (p.title !== undefined) {
+      args["set.title"] = p.title;
+    }
+    if (p.status !== undefined) {
+      args["set.status"] = p.status;
+    }
+    if (p.price !== undefined) {
+      args["set.price"] = p.price;
+    }
+    if (p.labels !== undefined) {
+      args["set.labels"] = p.labels;
+    }
+    if (p.publishedAt !== undefined) {
+      args["set.published_at"] = p.publishedAt;
+    }
+    assign(postUpsertSetByPostsOnePublishedSlug, "post.partial.flat", args, as, "set.");
+    return oneOf(this.w, statementOf(postUpsertSetByPostsOnePublishedSlug, fragments, args), decodePostFull);
+  }
+
+  /** upsertSet runs post.upsert_set.by_primary (§20.1). */
+  async upsertSet(d: PostDraft, p: PostPartial, ...as: Update<PostsTable>[]): Promise<PostFull> {
+    throwIfIssues(validatePostDraft(d));
+    throwIfIssues(validatePostPartial(p));
+    const args: Args = { "author_id": d.authorId, "title": d.title };
+    if (d.id !== undefined) {
+      args["id"] = d.id;
+    }
+    if (d.editorId !== undefined) {
+      args["editor_id"] = d.editorId;
+    }
+    if (d.status !== undefined) {
+      args["status"] = d.status;
+    }
+    if (d.price !== undefined) {
+      args["price"] = d.price;
+    }
+    if (d.labels !== undefined) {
+      args["labels"] = d.labels;
+    }
+    if (d.publishedAt !== undefined) {
+      args["published_at"] = d.publishedAt;
+    }
+    if (p.authorId !== undefined) {
+      args["set.author_id"] = p.authorId;
+    }
+    if (p.editorId !== undefined) {
+      args["set.editor_id"] = p.editorId;
+    }
+    if (p.title !== undefined) {
+      args["set.title"] = p.title;
+    }
+    if (p.status !== undefined) {
+      args["set.status"] = p.status;
+    }
+    if (p.price !== undefined) {
+      args["set.price"] = p.price;
+    }
+    if (p.labels !== undefined) {
+      args["set.labels"] = p.labels;
+    }
+    if (p.publishedAt !== undefined) {
+      args["set.published_at"] = p.publishedAt;
+    }
+    assign(postUpsertSetByPrimary, "post.partial.flat", args, as, "set.");
+    return oneOf(this.w, statementOf(postUpsertSetByPrimary, fragments, args), decodePostFull);
+  }
+
   /** patch runs post.patch (§20.1). */
-  async patch(k: PostKey, p: PostPartial): Promise<PostFull> {
+  async patch(k: PostKey, p: PostPartial, ...as: Update<PostsTable>[]): Promise<PostFull> {
     throwIfIssues(validatePostPartial(p));
     const args: Args = { "key.id": k.id };
     let set = false;
@@ -498,16 +727,65 @@ export class PostsWrites extends PostsReads implements PostsStore {
       args["published_at"] = p.publishedAt;
       set = true;
     }
-    if (!set) {
+    assign(postPatch, "post.partial.flat", args, as);
+    if (!set && as.length === 0) {
       // Nothing to change: the row as it is.
       return this.get(k);
     }
     return oneOf(this.w, statementOf(postPatch, fragments, args), decodePostFull);
   }
 
+  /** updateWhere runs post.update_where (§20.1). */
+  async updateWhere(where: Pred<PostsTable>, p: PostPartial, ...as: Update<PostsTable>[]): Promise<number> {
+    throwIfIssues(validatePostPartial(p));
+    const q = filtered(postUpdateWhere, where);
+    const args: Args = {};
+    let set = false;
+    if (p.authorId !== undefined) {
+      args["author_id"] = p.authorId;
+      set = true;
+    }
+    if (p.editorId !== undefined) {
+      args["editor_id"] = p.editorId;
+      set = true;
+    }
+    if (p.title !== undefined) {
+      args["title"] = p.title;
+      set = true;
+    }
+    if (p.status !== undefined) {
+      args["status"] = p.status;
+      set = true;
+    }
+    if (p.price !== undefined) {
+      args["price"] = p.price;
+      set = true;
+    }
+    if (p.labels !== undefined) {
+      args["labels"] = p.labels;
+      set = true;
+    }
+    if (p.publishedAt !== undefined) {
+      args["published_at"] = p.publishedAt;
+      set = true;
+    }
+    assign(q, "post.partial.flat", args, as);
+    if (!set && as.length === 0) {
+      // Nothing to change.
+      return 0;
+    }
+    return execute(this.w, statementOf(q, fragments, args));
+  }
+
   /** delete runs post.delete (§20.1). */
   async delete(k: PostKey): Promise<void> {
     return execByKey(this.w, statementOf(postDelete, fragments, { "key.id": k.id }));
+  }
+
+  /** deleteWhere runs post.delete_where (§20.1). */
+  async deleteWhere(where: Pred<PostsTable>): Promise<number> {
+    const q = filtered(postDeleteWhere, where);
+    return execute(this.w, statementOf(q, fragments, {}));
   }
 }
 
@@ -588,6 +866,17 @@ const profileUpsertByPrimary: Query = {
   ],
 };
 
+const profileUpsertSetByPrimary: Query = {
+  name: "profile.upsert_set.by_primary",
+  catalog: "shop",
+  kind: "upsert_set",
+  writes: true,
+  types: { "user_id": "pg_catalog.int8", "bio": "pg_catalog.text", "birthday": "pg_catalog.date", "set.bio": "pg_catalog.text", "set.birthday": "pg_catalog.date" },
+  plan: [
+    use("upsert.profiles.profiles_pkey", { "cols": list([use("name.profiles.user_id"), use("name.profiles.bio"), use("name.profiles.birthday")], ", "), "returning": use("returning.profile.full.flat"), "rows": use("values.row", { "0": list([param("user_id"), param("bio"), param("birthday")], ", ") }), "sets": list([use("set.profiles.bio", { "0": param("set.bio") }), use("set.profiles.birthday", { "0": param("set.birthday") }), use("set.profiles.user_id", { "0": use("col.profiles.user_id") })], ", ") }),
+  ],
+};
+
 const profilePatch: Query = {
   name: "profile.patch",
   catalog: "shop",
@@ -600,6 +889,17 @@ const profilePatch: Query = {
   ],
 };
 
+const profileUpdateWhere: Query = {
+  name: "profile.update_where",
+  catalog: "shop",
+  kind: "update_where",
+  writes: true,
+  types: { "bio": "pg_catalog.text", "birthday": "pg_catalog.date" },
+  plan: [
+    use("update.profiles", { "sets": list([use("set.profiles.bio", { "0": param("bio") }), use("set.profiles.birthday", { "0": param("birthday") })], ", ") }),
+  ],
+};
+
 const profileDelete: Query = {
   name: "profile.delete",
   catalog: "shop",
@@ -608,6 +908,16 @@ const profileDelete: Query = {
   types: { "key.user_id": "pg_catalog.int8" },
   plan: [
     use("delete.profiles", { "where": use("clause.where", { "0": use("op.eq", { "0": use("col.profiles.user_id"), "1": param("key.user_id") }) }) }),
+  ],
+};
+
+const profileDeleteWhere: Query = {
+  name: "profile.delete_where",
+  catalog: "shop",
+  kind: "delete_where",
+  writes: true,
+  plan: [
+    use("delete.profiles"),
   ],
 };
 
@@ -655,7 +965,7 @@ export class ProfilesWrites extends ProfilesReads implements ProfilesStore {
   }
 
   /** insert runs profile.insert (§20.1). */
-  async insert(d: ProfileDraft): Promise<ProfileFull> {
+  async insert(d: ProfileDraft, ...as: Assignment<ProfilesTable>[]): Promise<ProfileFull> {
     throwIfIssues(validateProfileDraft(d));
     const args: Args = { "user_id": d.userId };
     if (d.bio !== undefined) {
@@ -664,11 +974,32 @@ export class ProfilesWrites extends ProfilesReads implements ProfilesStore {
     if (d.birthday !== undefined) {
       args["birthday"] = d.birthday;
     }
+    assign(profileInsert, "profile.draft.flat", args, as);
     return oneOf(this.w, statementOf(profileInsert, fragments, args), decodeProfileFull);
   }
 
+  /** insertMany runs profile.insert for each draft, in one transaction (§20.1). */
+  async insertMany(ds: readonly ProfileDraft[], ...as: Assignment<ProfilesTable>[]): Promise<ProfileFull[]> {
+    for (const d of ds) {
+      throwIfIssues(validateProfileDraft(d));
+    }
+    const rows: Args[] = [];
+    for (const d of ds) {
+      const args: Args = { "user_id": d.userId };
+      if (d.bio !== undefined) {
+        args["bio"] = d.bio;
+      }
+      if (d.birthday !== undefined) {
+        args["birthday"] = d.birthday;
+      }
+      assign(profileInsert, "profile.draft.flat", args, as);
+      rows.push(args);
+    }
+    return insertMany(this.w, fragments, profileInsert, rows, decodeProfileFull);
+  }
+
   /** insertOrIgnore runs profile.insert_or_ignore.by_primary (§20.1). */
-  async insertOrIgnore(d: ProfileDraft): Promise<ProfileFull | undefined> {
+  async insertOrIgnore(d: ProfileDraft, ...as: Assignment<ProfilesTable>[]): Promise<ProfileFull | undefined> {
     throwIfIssues(validateProfileDraft(d));
     const args: Args = { "user_id": d.userId };
     if (d.bio !== undefined) {
@@ -677,11 +1008,12 @@ export class ProfilesWrites extends ProfilesReads implements ProfilesStore {
     if (d.birthday !== undefined) {
       args["birthday"] = d.birthday;
     }
+    assign(profileInsertOrIgnoreByPrimary, "profile.draft.flat", args, as);
     return optionalOf(this.w, statementOf(profileInsertOrIgnoreByPrimary, fragments, args), decodeProfileFull);
   }
 
   /** upsert runs profile.upsert.by_primary (§20.1). */
-  async upsert(d: ProfileDraft): Promise<ProfileFull> {
+  async upsert(d: ProfileDraft, ...as: Assignment<ProfilesTable>[]): Promise<ProfileFull> {
     throwIfIssues(validateProfileDraft(d));
     const args: Args = { "user_id": d.userId };
     if (d.bio !== undefined) {
@@ -690,11 +1022,33 @@ export class ProfilesWrites extends ProfilesReads implements ProfilesStore {
     if (d.birthday !== undefined) {
       args["birthday"] = d.birthday;
     }
+    assign(profileUpsertByPrimary, "profile.draft.flat", args, as);
     return oneOf(this.w, statementOf(profileUpsertByPrimary, fragments, args), decodeProfileFull);
   }
 
+  /** upsertSet runs profile.upsert_set.by_primary (§20.1). */
+  async upsertSet(d: ProfileDraft, p: ProfilePartial, ...as: Update<ProfilesTable>[]): Promise<ProfileFull> {
+    throwIfIssues(validateProfileDraft(d));
+    throwIfIssues(validateProfilePartial(p));
+    const args: Args = { "user_id": d.userId };
+    if (d.bio !== undefined) {
+      args["bio"] = d.bio;
+    }
+    if (d.birthday !== undefined) {
+      args["birthday"] = d.birthday;
+    }
+    if (p.bio !== undefined) {
+      args["set.bio"] = p.bio;
+    }
+    if (p.birthday !== undefined) {
+      args["set.birthday"] = p.birthday;
+    }
+    assign(profileUpsertSetByPrimary, "profile.partial.flat", args, as, "set.");
+    return oneOf(this.w, statementOf(profileUpsertSetByPrimary, fragments, args), decodeProfileFull);
+  }
+
   /** patch runs profile.patch (§20.1). */
-  async patch(k: ProfileKey, p: ProfilePartial): Promise<ProfileFull> {
+  async patch(k: ProfileKey, p: ProfilePartial, ...as: Update<ProfilesTable>[]): Promise<ProfileFull> {
     throwIfIssues(validateProfilePartial(p));
     const args: Args = { "key.user_id": k.userId };
     let set = false;
@@ -706,16 +1060,45 @@ export class ProfilesWrites extends ProfilesReads implements ProfilesStore {
       args["birthday"] = p.birthday;
       set = true;
     }
-    if (!set) {
+    assign(profilePatch, "profile.partial.flat", args, as);
+    if (!set && as.length === 0) {
       // Nothing to change: the row as it is.
       return this.get(k);
     }
     return oneOf(this.w, statementOf(profilePatch, fragments, args), decodeProfileFull);
   }
 
+  /** updateWhere runs profile.update_where (§20.1). */
+  async updateWhere(where: Pred<ProfilesTable>, p: ProfilePartial, ...as: Update<ProfilesTable>[]): Promise<number> {
+    throwIfIssues(validateProfilePartial(p));
+    const q = filtered(profileUpdateWhere, where);
+    const args: Args = {};
+    let set = false;
+    if (p.bio !== undefined) {
+      args["bio"] = p.bio;
+      set = true;
+    }
+    if (p.birthday !== undefined) {
+      args["birthday"] = p.birthday;
+      set = true;
+    }
+    assign(q, "profile.partial.flat", args, as);
+    if (!set && as.length === 0) {
+      // Nothing to change.
+      return 0;
+    }
+    return execute(this.w, statementOf(q, fragments, args));
+  }
+
   /** delete runs profile.delete (§20.1). */
   async delete(k: ProfileKey): Promise<void> {
     return execByKey(this.w, statementOf(profileDelete, fragments, { "key.user_id": k.userId }));
+  }
+
+  /** deleteWhere runs profile.delete_where (§20.1). */
+  async deleteWhere(where: Pred<ProfilesTable>): Promise<number> {
+    const q = filtered(profileDeleteWhere, where);
+    return execute(this.w, statementOf(q, fragments, {}));
   }
 }
 
@@ -932,6 +1315,17 @@ const tagPatch: Query = {
   ],
 };
 
+const tagUpdateWhere: Query = {
+  name: "tag.update_where",
+  catalog: "shop",
+  kind: "update_where",
+  writes: true,
+  types: { "name": "pg_catalog.text" },
+  plan: [
+    use("update.tags", { "sets": list([use("set.tags.name", { "0": param("name") })], ", ") }),
+  ],
+};
+
 const tagDelete: Query = {
   name: "tag.delete",
   catalog: "shop",
@@ -940,6 +1334,16 @@ const tagDelete: Query = {
   types: { "key.id": "pg_catalog.int8" },
   plan: [
     use("delete.tags", { "where": use("clause.where", { "0": use("op.eq", { "0": use("col.tags.id"), "1": param("key.id") }) }) }),
+  ],
+};
+
+const tagDeleteWhere: Query = {
+  name: "tag.delete_where",
+  catalog: "shop",
+  kind: "delete_where",
+  writes: true,
+  plan: [
+    use("delete.tags"),
   ],
 };
 
@@ -997,42 +1401,61 @@ export class TagsWrites extends TagsReads implements TagsStore {
   }
 
   /** insert runs tag.insert (§20.1). */
-  async insert(d: TagDraft): Promise<TagFull> {
+  async insert(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull> {
     throwIfIssues(validateTagDraft(d));
     const args: Args = { "name": d.name };
+    assign(tagInsert, "tag.draft.flat", args, as);
     return oneOf(this.w, statementOf(tagInsert, fragments, args), decodeTagFull);
   }
 
+  /** insertMany runs tag.insert for each draft, in one transaction (§20.1). */
+  async insertMany(ds: readonly TagDraft[], ...as: Assignment<TagsTable>[]): Promise<TagFull[]> {
+    for (const d of ds) {
+      throwIfIssues(validateTagDraft(d));
+    }
+    const rows: Args[] = [];
+    for (const d of ds) {
+      const args: Args = { "name": d.name };
+      assign(tagInsert, "tag.draft.flat", args, as);
+      rows.push(args);
+    }
+    return insertMany(this.w, fragments, tagInsert, rows, decodeTagFull);
+  }
+
   /** insertOrIgnoreByName runs tag.insert_or_ignore.by_name (§20.1). */
-  async insertOrIgnoreByName(d: TagDraft): Promise<TagFull | undefined> {
+  async insertOrIgnoreByName(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull | undefined> {
     throwIfIssues(validateTagDraft(d));
     const args: Args = { "name": d.name };
+    assign(tagInsertOrIgnoreByName, "tag.draft.flat", args, as);
     return optionalOf(this.w, statementOf(tagInsertOrIgnoreByName, fragments, args), decodeTagFull);
   }
 
   /** insertOrIgnore runs tag.insert_or_ignore.by_primary (§20.1). */
-  async insertOrIgnore(d: TagDraft): Promise<TagFull | undefined> {
+  async insertOrIgnore(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull | undefined> {
     throwIfIssues(validateTagDraft(d));
     const args: Args = { "name": d.name };
+    assign(tagInsertOrIgnoreByPrimary, "tag.draft.flat", args, as);
     return optionalOf(this.w, statementOf(tagInsertOrIgnoreByPrimary, fragments, args), decodeTagFull);
   }
 
   /** upsertByName runs tag.upsert.by_name (§20.1). */
-  async upsertByName(d: TagDraft): Promise<TagFull> {
+  async upsertByName(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull> {
     throwIfIssues(validateTagDraft(d));
     const args: Args = { "name": d.name };
+    assign(tagUpsertByName, "tag.draft.flat", args, as);
     return oneOf(this.w, statementOf(tagUpsertByName, fragments, args), decodeTagFull);
   }
 
   /** upsert runs tag.upsert.by_primary (§20.1). */
-  async upsert(d: TagDraft): Promise<TagFull> {
+  async upsert(d: TagDraft, ...as: Assignment<TagsTable>[]): Promise<TagFull> {
     throwIfIssues(validateTagDraft(d));
     const args: Args = { "name": d.name };
+    assign(tagUpsertByPrimary, "tag.draft.flat", args, as);
     return oneOf(this.w, statementOf(tagUpsertByPrimary, fragments, args), decodeTagFull);
   }
 
   /** patch runs tag.patch (§20.1). */
-  async patch(k: TagKey, p: TagPartial): Promise<TagFull> {
+  async patch(k: TagKey, p: TagPartial, ...as: Update<TagsTable>[]): Promise<TagFull> {
     throwIfIssues(validateTagPartial(p));
     const args: Args = { "key.id": k.id };
     let set = false;
@@ -1040,16 +1463,41 @@ export class TagsWrites extends TagsReads implements TagsStore {
       args["name"] = p.name;
       set = true;
     }
-    if (!set) {
+    assign(tagPatch, "tag.partial.flat", args, as);
+    if (!set && as.length === 0) {
       // Nothing to change: the row as it is.
       return this.get(k);
     }
     return oneOf(this.w, statementOf(tagPatch, fragments, args), decodeTagFull);
   }
 
+  /** updateWhere runs tag.update_where (§20.1). */
+  async updateWhere(where: Pred<TagsTable>, p: TagPartial, ...as: Update<TagsTable>[]): Promise<number> {
+    throwIfIssues(validateTagPartial(p));
+    const q = filtered(tagUpdateWhere, where);
+    const args: Args = {};
+    let set = false;
+    if (p.name !== undefined) {
+      args["name"] = p.name;
+      set = true;
+    }
+    assign(q, "tag.partial.flat", args, as);
+    if (!set && as.length === 0) {
+      // Nothing to change.
+      return 0;
+    }
+    return execute(this.w, statementOf(q, fragments, args));
+  }
+
   /** delete runs tag.delete (§20.1). */
   async delete(k: TagKey): Promise<void> {
     return execByKey(this.w, statementOf(tagDelete, fragments, { "key.id": k.id }));
+  }
+
+  /** deleteWhere runs tag.delete_where (§20.1). */
+  async deleteWhere(where: Pred<TagsTable>): Promise<number> {
+    const q = filtered(tagDeleteWhere, where);
+    return execute(this.w, statementOf(q, fragments, {}));
   }
 }
 
@@ -1130,6 +1578,17 @@ const tenantUpsertByPrimary: Query = {
   ],
 };
 
+const tenantUpsertSetByPrimary: Query = {
+  name: "tenant.upsert_set.by_primary",
+  catalog: "shop",
+  kind: "upsert_set",
+  writes: true,
+  types: { "id": "pg_catalog.uuid", "name": "pg_catalog.text", "set.name": "pg_catalog.text" },
+  plan: [
+    use("upsert.tenants.tenants_pkey", { "cols": list([use("name.tenants.id"), use("name.tenants.name")], ", "), "returning": use("returning.tenant.full.flat"), "rows": use("values.row", { "0": list([param("id"), param("name")], ", ") }), "sets": list([use("set.tenants.name", { "0": param("set.name") }), use("set.tenants.id", { "0": use("col.tenants.id") })], ", ") }),
+  ],
+};
+
 const tenantPatch: Query = {
   name: "tenant.patch",
   catalog: "shop",
@@ -1142,6 +1601,17 @@ const tenantPatch: Query = {
   ],
 };
 
+const tenantUpdateWhere: Query = {
+  name: "tenant.update_where",
+  catalog: "shop",
+  kind: "update_where",
+  writes: true,
+  types: { "name": "pg_catalog.text" },
+  plan: [
+    use("update.tenants", { "sets": list([use("set.tenants.name", { "0": param("name") })], ", ") }),
+  ],
+};
+
 const tenantDelete: Query = {
   name: "tenant.delete",
   catalog: "shop",
@@ -1150,6 +1620,16 @@ const tenantDelete: Query = {
   types: { "key.id": "pg_catalog.uuid" },
   plan: [
     use("delete.tenants", { "where": use("clause.where", { "0": use("op.eq", { "0": use("col.tenants.id"), "1": param("key.id") }) }) }),
+  ],
+};
+
+const tenantDeleteWhere: Query = {
+  name: "tenant.delete_where",
+  catalog: "shop",
+  kind: "delete_where",
+  writes: true,
+  plan: [
+    use("delete.tenants"),
   ],
 };
 
@@ -1197,37 +1677,72 @@ export class TenantsWrites extends TenantsReads implements TenantsStore {
   }
 
   /** insert runs tenant.insert (§20.1). */
-  async insert(d: TenantDraft): Promise<TenantFull> {
+  async insert(d: TenantDraft, ...as: Assignment<TenantsTable>[]): Promise<TenantFull> {
     throwIfIssues(validateTenantDraft(d));
     const args: Args = { "name": d.name };
     if (d.id !== undefined) {
       args["id"] = d.id;
     }
+    assign(tenantInsert, "tenant.draft.flat", args, as);
     return oneOf(this.w, statementOf(tenantInsert, fragments, args), decodeTenantFull);
   }
 
+  /** insertMany runs tenant.insert for each draft, in one transaction (§20.1). */
+  async insertMany(ds: readonly TenantDraft[], ...as: Assignment<TenantsTable>[]): Promise<TenantFull[]> {
+    for (const d of ds) {
+      throwIfIssues(validateTenantDraft(d));
+    }
+    const rows: Args[] = [];
+    for (const d of ds) {
+      const args: Args = { "name": d.name };
+      if (d.id !== undefined) {
+        args["id"] = d.id;
+      }
+      assign(tenantInsert, "tenant.draft.flat", args, as);
+      rows.push(args);
+    }
+    return insertMany(this.w, fragments, tenantInsert, rows, decodeTenantFull);
+  }
+
   /** insertOrIgnore runs tenant.insert_or_ignore.by_primary (§20.1). */
-  async insertOrIgnore(d: TenantDraft): Promise<TenantFull | undefined> {
+  async insertOrIgnore(d: TenantDraft, ...as: Assignment<TenantsTable>[]): Promise<TenantFull | undefined> {
     throwIfIssues(validateTenantDraft(d));
     const args: Args = { "name": d.name };
     if (d.id !== undefined) {
       args["id"] = d.id;
     }
+    assign(tenantInsertOrIgnoreByPrimary, "tenant.draft.flat", args, as);
     return optionalOf(this.w, statementOf(tenantInsertOrIgnoreByPrimary, fragments, args), decodeTenantFull);
   }
 
   /** upsert runs tenant.upsert.by_primary (§20.1). */
-  async upsert(d: TenantDraft): Promise<TenantFull> {
+  async upsert(d: TenantDraft, ...as: Assignment<TenantsTable>[]): Promise<TenantFull> {
     throwIfIssues(validateTenantDraft(d));
     const args: Args = { "name": d.name };
     if (d.id !== undefined) {
       args["id"] = d.id;
     }
+    assign(tenantUpsertByPrimary, "tenant.draft.flat", args, as);
     return oneOf(this.w, statementOf(tenantUpsertByPrimary, fragments, args), decodeTenantFull);
   }
 
+  /** upsertSet runs tenant.upsert_set.by_primary (§20.1). */
+  async upsertSet(d: TenantDraft, p: TenantPartial, ...as: Update<TenantsTable>[]): Promise<TenantFull> {
+    throwIfIssues(validateTenantDraft(d));
+    throwIfIssues(validateTenantPartial(p));
+    const args: Args = { "name": d.name };
+    if (d.id !== undefined) {
+      args["id"] = d.id;
+    }
+    if (p.name !== undefined) {
+      args["set.name"] = p.name;
+    }
+    assign(tenantUpsertSetByPrimary, "tenant.partial.flat", args, as, "set.");
+    return oneOf(this.w, statementOf(tenantUpsertSetByPrimary, fragments, args), decodeTenantFull);
+  }
+
   /** patch runs tenant.patch (§20.1). */
-  async patch(k: TenantKey, p: TenantPartial): Promise<TenantFull> {
+  async patch(k: TenantKey, p: TenantPartial, ...as: Update<TenantsTable>[]): Promise<TenantFull> {
     throwIfIssues(validateTenantPartial(p));
     const args: Args = { "key.id": k.id };
     let set = false;
@@ -1235,16 +1750,41 @@ export class TenantsWrites extends TenantsReads implements TenantsStore {
       args["name"] = p.name;
       set = true;
     }
-    if (!set) {
+    assign(tenantPatch, "tenant.partial.flat", args, as);
+    if (!set && as.length === 0) {
       // Nothing to change: the row as it is.
       return this.get(k);
     }
     return oneOf(this.w, statementOf(tenantPatch, fragments, args), decodeTenantFull);
   }
 
+  /** updateWhere runs tenant.update_where (§20.1). */
+  async updateWhere(where: Pred<TenantsTable>, p: TenantPartial, ...as: Update<TenantsTable>[]): Promise<number> {
+    throwIfIssues(validateTenantPartial(p));
+    const q = filtered(tenantUpdateWhere, where);
+    const args: Args = {};
+    let set = false;
+    if (p.name !== undefined) {
+      args["name"] = p.name;
+      set = true;
+    }
+    assign(q, "tenant.partial.flat", args, as);
+    if (!set && as.length === 0) {
+      // Nothing to change.
+      return 0;
+    }
+    return execute(this.w, statementOf(q, fragments, args));
+  }
+
   /** delete runs tenant.delete (§20.1). */
   async delete(k: TenantKey): Promise<void> {
     return execByKey(this.w, statementOf(tenantDelete, fragments, { "key.id": k.id }));
+  }
+
+  /** deleteWhere runs tenant.delete_where (§20.1). */
+  async deleteWhere(where: Pred<TenantsTable>): Promise<number> {
+    const q = filtered(tenantDeleteWhere, where);
+    return execute(this.w, statementOf(q, fragments, {}));
   }
 }
 
@@ -1378,6 +1918,30 @@ const userUpsertByTenantIdAndEmail: Query = {
   ],
 };
 
+const userUpsertSetByPrimary: Query = {
+  name: "user.upsert_set.by_primary",
+  catalog: "shop",
+  kind: "upsert_set",
+  writes: true,
+  sensitive: { "password_hash": true, "set.password_hash": true },
+  types: { "email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "set.email": "pg_catalog.text", "set.display_name": "pg_catalog.varchar", "set.password_hash": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid" },
+  plan: [
+    use("upsert.users.users_pkey", { "cols": list([use("name.users.email"), use("name.users.display_name"), use("name.users.password_hash"), use("name.users.created_at"), use("name.users.updated_at"), use("name.users.version"), use("name.users.tenant_id")], ", "), "returning": use("returning.user.full.flat"), "rows": use("values.row", { "0": list([param("email"), param("display_name"), param("password_hash"), param("created_at"), param("updated_at"), param("version"), param("scope.tenant_id")], ", ") }), "sets": list([use("set.users.email", { "0": param("set.email") }), use("set.users.display_name", { "0": param("set.display_name") }), use("set.users.password_hash", { "0": param("set.password_hash") }), use("set.users.version", { "0": use("op.add", { "0": use("col.users.version"), "1": use("value.one") }) })], ", ") }),
+  ],
+};
+
+const userUpsertSetByTenantIdAndEmail: Query = {
+  name: "user.upsert_set.by_tenant_id_and_email",
+  catalog: "shop",
+  kind: "upsert_set",
+  writes: true,
+  sensitive: { "password_hash": true, "set.password_hash": true },
+  types: { "email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "created_at": "pg_catalog.timestamptz", "updated_at": "pg_catalog.timestamptz", "version": "pg_catalog.int4", "set.email": "pg_catalog.text", "set.display_name": "pg_catalog.varchar", "set.password_hash": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid" },
+  plan: [
+    use("upsert.users.users_tenant_email_key", { "cols": list([use("name.users.email"), use("name.users.display_name"), use("name.users.password_hash"), use("name.users.created_at"), use("name.users.updated_at"), use("name.users.version"), use("name.users.tenant_id")], ", "), "returning": use("returning.user.full.flat"), "rows": use("values.row", { "0": list([param("email"), param("display_name"), param("password_hash"), param("created_at"), param("updated_at"), param("version"), param("scope.tenant_id")], ", ") }), "sets": list([use("set.users.email", { "0": param("set.email") }), use("set.users.display_name", { "0": param("set.display_name") }), use("set.users.password_hash", { "0": param("set.password_hash") }), use("set.users.version", { "0": use("op.add", { "0": use("col.users.version"), "1": use("value.one") }) })], ", ") }),
+  ],
+};
+
 const userPatch: Query = {
   name: "user.patch",
   catalog: "shop",
@@ -1391,6 +1955,18 @@ const userPatch: Query = {
   ],
 };
 
+const userUpdateWhere: Query = {
+  name: "user.update_where",
+  catalog: "shop",
+  kind: "update_where",
+  writes: true,
+  sensitive: { "password_hash": true },
+  types: { "email": "pg_catalog.text", "display_name": "pg_catalog.varchar", "password_hash": "pg_catalog.text", "scope.tenant_id": "pg_catalog.uuid" },
+  plan: [
+    use("update.users", { "sets": list([use("set.users.email", { "0": param("email") }), use("set.users.display_name", { "0": param("display_name") }), use("set.users.password_hash", { "0": param("password_hash") }), use("set.users.version", { "0": use("op.add", { "0": use("col.users.version"), "1": use("value.one") }) })], ", "), "where": use("clause.where", { "0": use("op.eq", { "0": use("col.users.tenant_id"), "1": param("scope.tenant_id") }) }) }),
+  ],
+};
+
 const userDelete: Query = {
   name: "user.delete",
   catalog: "shop",
@@ -1399,6 +1975,17 @@ const userDelete: Query = {
   types: { "key.id": "pg_catalog.int8", "key.version": "pg_catalog.int4", "scope.tenant_id": "pg_catalog.uuid" },
   plan: [
     use("delete.users", { "where": use("clause.where", { "0": use("bool.and", { "0": use("bool.and", { "0": use("op.eq", { "0": use("col.users.tenant_id"), "1": param("scope.tenant_id") }), "1": use("op.eq", { "0": use("col.users.id"), "1": param("key.id") }) }), "1": use("op.eq", { "0": use("col.users.version"), "1": param("key.version") }) }) }) }),
+  ],
+};
+
+const userDeleteWhere: Query = {
+  name: "user.delete_where",
+  catalog: "shop",
+  kind: "delete_where",
+  writes: true,
+  types: { "scope.tenant_id": "pg_catalog.uuid" },
+  plan: [
+    use("delete.users", { "where": use("clause.where", { "0": use("op.eq", { "0": use("col.users.tenant_id"), "1": param("scope.tenant_id") }) }) }),
   ],
 };
 
@@ -1458,7 +2045,7 @@ export class UsersWrites extends UsersReads implements UsersStore {
   }
 
   /** insert runs user.insert (§20.1). */
-  async insert(d: UserDraft): Promise<UserFull> {
+  async insert(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull> {
     throwIfIssues(validateUserDraft(d));
     const args: Args = { "email": d.email, "password_hash": d.passwordHash, "scope.tenant_id": this.scope.tenantId };
     if (d.displayName !== undefined) {
@@ -1473,11 +2060,38 @@ export class UsersWrites extends UsersReads implements UsersStore {
     if (d.version !== undefined) {
       args["version"] = d.version;
     }
+    assign(userInsert, "user.draft.flat", args, as);
     return oneOf(this.w, statementOf(userInsert, fragments, args), decodeUserFull);
   }
 
+  /** insertMany runs user.insert for each draft, in one transaction (§20.1). */
+  async insertMany(ds: readonly UserDraft[], ...as: Assignment<UsersTable>[]): Promise<UserFull[]> {
+    for (const d of ds) {
+      throwIfIssues(validateUserDraft(d));
+    }
+    const rows: Args[] = [];
+    for (const d of ds) {
+      const args: Args = { "email": d.email, "password_hash": d.passwordHash, "scope.tenant_id": this.scope.tenantId };
+      if (d.displayName !== undefined) {
+        args["display_name"] = d.displayName;
+      }
+      if (d.createdAt !== undefined) {
+        args["created_at"] = d.createdAt;
+      }
+      if (d.updatedAt !== undefined) {
+        args["updated_at"] = d.updatedAt;
+      }
+      if (d.version !== undefined) {
+        args["version"] = d.version;
+      }
+      assign(userInsert, "user.draft.flat", args, as);
+      rows.push(args);
+    }
+    return insertMany(this.w, fragments, userInsert, rows, decodeUserFull);
+  }
+
   /** insertOrIgnore runs user.insert_or_ignore.by_primary (§20.1). */
-  async insertOrIgnore(d: UserDraft): Promise<UserFull | undefined> {
+  async insertOrIgnore(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined> {
     throwIfIssues(validateUserDraft(d));
     const args: Args = { "email": d.email, "password_hash": d.passwordHash, "scope.tenant_id": this.scope.tenantId };
     if (d.displayName !== undefined) {
@@ -1492,11 +2106,12 @@ export class UsersWrites extends UsersReads implements UsersStore {
     if (d.version !== undefined) {
       args["version"] = d.version;
     }
+    assign(userInsertOrIgnoreByPrimary, "user.draft.flat", args, as);
     return optionalOf(this.w, statementOf(userInsertOrIgnoreByPrimary, fragments, args), decodeUserFull);
   }
 
   /** insertOrIgnoreByTenantIdAndEmail runs user.insert_or_ignore.by_tenant_id_and_email (§20.1). */
-  async insertOrIgnoreByTenantIdAndEmail(d: UserDraft): Promise<UserFull | undefined> {
+  async insertOrIgnoreByTenantIdAndEmail(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined> {
     throwIfIssues(validateUserDraft(d));
     const args: Args = { "email": d.email, "password_hash": d.passwordHash, "scope.tenant_id": this.scope.tenantId };
     if (d.displayName !== undefined) {
@@ -1511,11 +2126,12 @@ export class UsersWrites extends UsersReads implements UsersStore {
     if (d.version !== undefined) {
       args["version"] = d.version;
     }
+    assign(userInsertOrIgnoreByTenantIdAndEmail, "user.draft.flat", args, as);
     return optionalOf(this.w, statementOf(userInsertOrIgnoreByTenantIdAndEmail, fragments, args), decodeUserFull);
   }
 
   /** upsert runs user.upsert.by_primary (§20.1). */
-  async upsert(d: UserDraft): Promise<UserFull> {
+  async upsert(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull> {
     throwIfIssues(validateUserDraft(d));
     const args: Args = { "email": d.email, "password_hash": d.passwordHash, "scope.tenant_id": this.scope.tenantId };
     if (d.displayName !== undefined) {
@@ -1530,11 +2146,12 @@ export class UsersWrites extends UsersReads implements UsersStore {
     if (d.version !== undefined) {
       args["version"] = d.version;
     }
+    assign(userUpsertByPrimary, "user.draft.flat", args, as);
     return oneOf(this.w, statementOf(userUpsertByPrimary, fragments, args), decodeUserFull);
   }
 
   /** upsertByTenantIdAndEmail runs user.upsert.by_tenant_id_and_email (§20.1). */
-  async upsertByTenantIdAndEmail(d: UserDraft): Promise<UserFull> {
+  async upsertByTenantIdAndEmail(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull> {
     throwIfIssues(validateUserDraft(d));
     const args: Args = { "email": d.email, "password_hash": d.passwordHash, "scope.tenant_id": this.scope.tenantId };
     if (d.displayName !== undefined) {
@@ -1549,11 +2166,72 @@ export class UsersWrites extends UsersReads implements UsersStore {
     if (d.version !== undefined) {
       args["version"] = d.version;
     }
+    assign(userUpsertByTenantIdAndEmail, "user.draft.flat", args, as);
     return oneOf(this.w, statementOf(userUpsertByTenantIdAndEmail, fragments, args), decodeUserFull);
   }
 
+  /** upsertSet runs user.upsert_set.by_primary (§20.1). */
+  async upsertSet(d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull> {
+    throwIfIssues(validateUserDraft(d));
+    throwIfIssues(validateUserPartial(p));
+    const args: Args = { "email": d.email, "password_hash": d.passwordHash, "scope.tenant_id": this.scope.tenantId };
+    if (d.displayName !== undefined) {
+      args["display_name"] = d.displayName;
+    }
+    if (d.createdAt !== undefined) {
+      args["created_at"] = d.createdAt;
+    }
+    if (d.updatedAt !== undefined) {
+      args["updated_at"] = d.updatedAt;
+    }
+    if (d.version !== undefined) {
+      args["version"] = d.version;
+    }
+    if (p.email !== undefined) {
+      args["set.email"] = p.email;
+    }
+    if (p.displayName !== undefined) {
+      args["set.display_name"] = p.displayName;
+    }
+    if (p.passwordHash !== undefined) {
+      args["set.password_hash"] = p.passwordHash;
+    }
+    assign(userUpsertSetByPrimary, "user.partial.flat", args, as, "set.");
+    return oneOf(this.w, statementOf(userUpsertSetByPrimary, fragments, args), decodeUserFull);
+  }
+
+  /** upsertSetByTenantIdAndEmail runs user.upsert_set.by_tenant_id_and_email (§20.1). */
+  async upsertSetByTenantIdAndEmail(d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull> {
+    throwIfIssues(validateUserDraft(d));
+    throwIfIssues(validateUserPartial(p));
+    const args: Args = { "email": d.email, "password_hash": d.passwordHash, "scope.tenant_id": this.scope.tenantId };
+    if (d.displayName !== undefined) {
+      args["display_name"] = d.displayName;
+    }
+    if (d.createdAt !== undefined) {
+      args["created_at"] = d.createdAt;
+    }
+    if (d.updatedAt !== undefined) {
+      args["updated_at"] = d.updatedAt;
+    }
+    if (d.version !== undefined) {
+      args["version"] = d.version;
+    }
+    if (p.email !== undefined) {
+      args["set.email"] = p.email;
+    }
+    if (p.displayName !== undefined) {
+      args["set.display_name"] = p.displayName;
+    }
+    if (p.passwordHash !== undefined) {
+      args["set.password_hash"] = p.passwordHash;
+    }
+    assign(userUpsertSetByTenantIdAndEmail, "user.partial.flat", args, as, "set.");
+    return oneOf(this.w, statementOf(userUpsertSetByTenantIdAndEmail, fragments, args), decodeUserFull);
+  }
+
   /** patch runs user.patch (§20.1). */
-  async patch(k: UserKey, p: UserPartial): Promise<UserFull> {
+  async patch(k: UserKey, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull> {
     throwIfIssues(validateUserPartial(p));
     const args: Args = { "key.id": k.id, "key.version": k.version, "scope.tenant_id": this.scope.tenantId };
     if (p.email !== undefined) {
@@ -1565,14 +2243,39 @@ export class UsersWrites extends UsersReads implements UsersStore {
     if (p.passwordHash !== undefined) {
       args["password_hash"] = p.passwordHash;
     }
+    assign(userPatch, "user.partial.flat", args, as);
     const found = statementOf(userFindByPrimary, fragments, { "key.id": k.id, "scope.tenant_id": this.scope.tenantId });
     return versionedOne(this.w, statementOf(userPatch, fragments, args), found, decodeUserFull);
+  }
+
+  /** updateWhere runs user.update_where (§20.1). */
+  async updateWhere(where: Pred<UsersTable>, p: UserPartial, ...as: Update<UsersTable>[]): Promise<number> {
+    throwIfIssues(validateUserPartial(p));
+    const q = filtered(userUpdateWhere, where);
+    const args: Args = { "scope.tenant_id": this.scope.tenantId };
+    if (p.email !== undefined) {
+      args["email"] = p.email;
+    }
+    if (p.displayName !== undefined) {
+      args["display_name"] = p.displayName;
+    }
+    if (p.passwordHash !== undefined) {
+      args["password_hash"] = p.passwordHash;
+    }
+    assign(q, "user.partial.flat", args, as);
+    return execute(this.w, statementOf(q, fragments, args));
   }
 
   /** delete runs user.delete (§20.1). */
   async delete(k: UserKey): Promise<void> {
     const found = statementOf(userFindByPrimary, fragments, { "key.id": k.id, "scope.tenant_id": this.scope.tenantId });
     return versionedExec(this.w, statementOf(userDelete, fragments, { "key.id": k.id, "key.version": k.version, "scope.tenant_id": this.scope.tenantId }), found);
+  }
+
+  /** deleteWhere runs user.delete_where (§20.1). */
+  async deleteWhere(where: Pred<UsersTable>): Promise<number> {
+    const q = filtered(userDeleteWhere, where);
+    return execute(this.w, statementOf(q, fragments, { "scope.tenant_id": this.scope.tenantId }));
   }
 }
 
@@ -1630,38 +2333,63 @@ export class UsersUnscopedWrites extends UsersUnscopedReads implements UsersUnsc
   }
 
   /** insert runs user.insert in scope (§21.2). */
-  insert(scope: UserScope, d: UserDraft): Promise<UserFull> {
-    return new UsersWrites(this.w, scope).insert(d);
+  insert(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull> {
+    return new UsersWrites(this.w, scope).insert(d, ...as);
+  }
+
+  /** insertMany runs user.insert in scope (§21.2). */
+  insertMany(scope: UserScope, ds: readonly UserDraft[], ...as: Assignment<UsersTable>[]): Promise<UserFull[]> {
+    return new UsersWrites(this.w, scope).insertMany(ds, ...as);
   }
 
   /** insertOrIgnore runs user.insert_or_ignore.by_primary in scope (§21.2). */
-  insertOrIgnore(scope: UserScope, d: UserDraft): Promise<UserFull | undefined> {
-    return new UsersWrites(this.w, scope).insertOrIgnore(d);
+  insertOrIgnore(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined> {
+    return new UsersWrites(this.w, scope).insertOrIgnore(d, ...as);
   }
 
   /** insertOrIgnoreByTenantIdAndEmail runs user.insert_or_ignore.by_tenant_id_and_email in scope (§21.2). */
-  insertOrIgnoreByTenantIdAndEmail(scope: UserScope, d: UserDraft): Promise<UserFull | undefined> {
-    return new UsersWrites(this.w, scope).insertOrIgnoreByTenantIdAndEmail(d);
+  insertOrIgnoreByTenantIdAndEmail(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined> {
+    return new UsersWrites(this.w, scope).insertOrIgnoreByTenantIdAndEmail(d, ...as);
   }
 
   /** upsert runs user.upsert.by_primary in scope (§21.2). */
-  upsert(scope: UserScope, d: UserDraft): Promise<UserFull> {
-    return new UsersWrites(this.w, scope).upsert(d);
+  upsert(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull> {
+    return new UsersWrites(this.w, scope).upsert(d, ...as);
   }
 
   /** upsertByTenantIdAndEmail runs user.upsert.by_tenant_id_and_email in scope (§21.2). */
-  upsertByTenantIdAndEmail(scope: UserScope, d: UserDraft): Promise<UserFull> {
-    return new UsersWrites(this.w, scope).upsertByTenantIdAndEmail(d);
+  upsertByTenantIdAndEmail(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull> {
+    return new UsersWrites(this.w, scope).upsertByTenantIdAndEmail(d, ...as);
+  }
+
+  /** upsertSet runs user.upsert_set.by_primary in scope (§21.2). */
+  upsertSet(scope: UserScope, d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull> {
+    return new UsersWrites(this.w, scope).upsertSet(d, p, ...as);
+  }
+
+  /** upsertSetByTenantIdAndEmail runs user.upsert_set.by_tenant_id_and_email in scope (§21.2). */
+  upsertSetByTenantIdAndEmail(scope: UserScope, d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull> {
+    return new UsersWrites(this.w, scope).upsertSetByTenantIdAndEmail(d, p, ...as);
   }
 
   /** patch runs user.patch in scope (§21.2). */
-  patch(scope: UserScope, k: UserKey, p: UserPartial): Promise<UserFull> {
-    return new UsersWrites(this.w, scope).patch(k, p);
+  patch(scope: UserScope, k: UserKey, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull> {
+    return new UsersWrites(this.w, scope).patch(k, p, ...as);
+  }
+
+  /** updateWhere runs user.update_where in scope (§21.2). */
+  updateWhere(scope: UserScope, where: Pred<UsersTable>, p: UserPartial, ...as: Update<UsersTable>[]): Promise<number> {
+    return new UsersWrites(this.w, scope).updateWhere(where, p, ...as);
   }
 
   /** delete runs user.delete in scope (§21.2). */
   delete(scope: UserScope, k: UserKey): Promise<void> {
     return new UsersWrites(this.w, scope).delete(k);
+  }
+
+  /** deleteWhere runs user.delete_where in scope (§21.2). */
+  deleteWhere(scope: UserScope, where: Pred<UsersTable>): Promise<number> {
+    return new UsersWrites(this.w, scope).deleteWhere(where);
   }
 }
 

@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Builder, Decoder, type Keyed, type Order, type Pred, type Row, type Shape, type Uuid, type ValidationIssue, allRows, arg, asString, compare, not, ordered, related } from "@dql/runtime";
+import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, type Update, type Uuid, type ValidationIssue, allRows, arg, asString, compare, not, ordered, related, set } from "@dql/runtime";
 import { type UserFull, type UsersTable, decodeUserFull } from "./user.dql.ts";
 
 /** TenantDraft is the shape tenant.draft.flat of shop.app.tenants. */
@@ -350,6 +350,10 @@ export const tenants = {
     desc(): Order<TenantsTable> {
       return ordered<TenantsTable>("order.desc", "col.tenants.id");
     },
+    /** set assigns DEFAULT to id on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<TenantsTable> {
+      return set<TenantsTable>("id", e);
+    },
   },
   /** name is column name in builder reads (§9.4). */
   name: {
@@ -421,6 +425,10 @@ export const tenants = {
     desc(): Order<TenantsTable> {
       return ordered<TenantsTable>("order.desc", "col.tenants.name");
     },
+    /** set assigns DEFAULT to name on a write, in place of a value (§20.2). */
+    set(e: Expr<"default">): Assignment<TenantsTable> {
+      return set<TenantsTable>("name", e);
+    },
   },
   /** users is relation users in builder reads (§18.2). */
   users: {
@@ -450,9 +458,13 @@ export interface TenantsReadStore {
 
 /** TenantsStore reads and writes shop.app.tenants (§26.3). */
 export interface TenantsStore extends TenantsReadStore {
-  insert(d: TenantDraft): Promise<TenantFull>;
-  insertOrIgnore(d: TenantDraft): Promise<TenantFull | undefined>;
-  upsert(d: TenantDraft): Promise<TenantFull>;
-  patch(k: TenantKey, p: TenantPartial): Promise<TenantFull>;
+  insert(d: TenantDraft, ...as: Assignment<TenantsTable>[]): Promise<TenantFull>;
+  insertMany(ds: readonly TenantDraft[], ...as: Assignment<TenantsTable>[]): Promise<TenantFull[]>;
+  insertOrIgnore(d: TenantDraft, ...as: Assignment<TenantsTable>[]): Promise<TenantFull | undefined>;
+  upsert(d: TenantDraft, ...as: Assignment<TenantsTable>[]): Promise<TenantFull>;
+  upsertSet(d: TenantDraft, p: TenantPartial, ...as: Update<TenantsTable>[]): Promise<TenantFull>;
+  patch(k: TenantKey, p: TenantPartial, ...as: Update<TenantsTable>[]): Promise<TenantFull>;
+  updateWhere(where: Pred<TenantsTable>, p: TenantPartial, ...as: Update<TenantsTable>[]): Promise<number>;
   delete(k: TenantKey): Promise<void>;
+  deleteWhere(where: Pred<TenantsTable>): Promise<number>;
 }
