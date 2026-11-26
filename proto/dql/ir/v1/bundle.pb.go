@@ -77,6 +77,62 @@ func (Dialect) EnumDescriptor() ([]byte, []int) {
 	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{0}
 }
 
+// How a write gets back the rows it wrote (§20.1).
+type ReturnedRows int32
+
+const (
+	ReturnedRows_RETURNED_ROWS_UNSPECIFIED ReturnedRows = 0
+	// A clause of the write returns them: RETURNING or OUTPUT. The fragment
+	// table has a returning fragment for each Full.
+	ReturnedRows_RETURNED_ROWS_CLAUSE ReturnedRows = 1
+	// The runtime re-reads each row by its key in the write's transaction,
+	// labelled emulated. A single auto-increment key column comes back as the
+	// last insert ID; a key column filled by any other default must be set by
+	// the Draft (decided 2026-11-26).
+	ReturnedRows_RETURNED_ROWS_REREAD ReturnedRows = 2
+)
+
+// Enum value maps for ReturnedRows.
+var (
+	ReturnedRows_name = map[int32]string{
+		0: "RETURNED_ROWS_UNSPECIFIED",
+		1: "RETURNED_ROWS_CLAUSE",
+		2: "RETURNED_ROWS_REREAD",
+	}
+	ReturnedRows_value = map[string]int32{
+		"RETURNED_ROWS_UNSPECIFIED": 0,
+		"RETURNED_ROWS_CLAUSE":      1,
+		"RETURNED_ROWS_REREAD":      2,
+	}
+)
+
+func (x ReturnedRows) Enum() *ReturnedRows {
+	p := new(ReturnedRows)
+	*p = x
+	return p
+}
+
+func (x ReturnedRows) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ReturnedRows) Descriptor() protoreflect.EnumDescriptor {
+	return file_dql_ir_v1_bundle_proto_enumTypes[1].Descriptor()
+}
+
+func (ReturnedRows) Type() protoreflect.EnumType {
+	return &file_dql_ir_v1_bundle_proto_enumTypes[1]
+}
+
+func (x ReturnedRows) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ReturnedRows.Descriptor instead.
+func (ReturnedRows) EnumDescriptor() ([]byte, []int) {
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{1}
+}
+
 // How a driver sends statements (§26.4).
 type StatementMode int32
 
@@ -118,11 +174,11 @@ func (x StatementMode) String() string {
 }
 
 func (StatementMode) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_bundle_proto_enumTypes[1].Descriptor()
+	return file_dql_ir_v1_bundle_proto_enumTypes[2].Descriptor()
 }
 
 func (StatementMode) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_bundle_proto_enumTypes[1]
+	return &file_dql_ir_v1_bundle_proto_enumTypes[2]
 }
 
 func (x StatementMode) Number() protoreflect.EnumNumber {
@@ -131,7 +187,7 @@ func (x StatementMode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use StatementMode.Descriptor instead.
 func (StatementMode) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{1}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{2}
 }
 
 // The errors of the taxonomy a native error code maps to (§23.1). The
@@ -193,11 +249,11 @@ func (x ErrorKind) String() string {
 }
 
 func (ErrorKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_bundle_proto_enumTypes[2].Descriptor()
+	return file_dql_ir_v1_bundle_proto_enumTypes[3].Descriptor()
 }
 
 func (ErrorKind) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_bundle_proto_enumTypes[2]
+	return &file_dql_ir_v1_bundle_proto_enumTypes[3]
 }
 
 func (x ErrorKind) Number() protoreflect.EnumNumber {
@@ -206,7 +262,7 @@ func (x ErrorKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ErrorKind.Descriptor instead.
 func (ErrorKind) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{2}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{3}
 }
 
 // How a dialect writes the n-th placeholder.
@@ -249,11 +305,11 @@ func (x Placeholder) String() string {
 }
 
 func (Placeholder) Descriptor() protoreflect.EnumDescriptor {
-	return file_dql_ir_v1_bundle_proto_enumTypes[3].Descriptor()
+	return file_dql_ir_v1_bundle_proto_enumTypes[4].Descriptor()
 }
 
 func (Placeholder) Type() protoreflect.EnumType {
-	return &file_dql_ir_v1_bundle_proto_enumTypes[3]
+	return &file_dql_ir_v1_bundle_proto_enumTypes[4]
 }
 
 func (x Placeholder) Number() protoreflect.EnumNumber {
@@ -262,7 +318,7 @@ func (x Placeholder) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Placeholder.Descriptor instead.
 func (Placeholder) EnumDescriptor() ([]byte, []int) {
-	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{3}
+	return file_dql_ir_v1_bundle_proto_rawDescGZIP(), []int{4}
 }
 
 // The three IR layers travelling together at every plugin boundary (§2.2, §3.1).
@@ -477,8 +533,11 @@ type CapabilityProfile struct {
 	// The statement modes the dialect's drivers support, sorted; the first is
 	// the default (§26.4).
 	StatementModes []StatementMode `protobuf:"varint,10,rep,packed,name=statement_modes,json=statementModes,proto3,enum=dql.ir.v1.StatementMode" json:"statement_modes,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// How a write that returns a Full gets its rows back (§20.1, §14.5).
+	// Unspecified is a RETURNING clause, as on Postgres.
+	ReturnedRows  ReturnedRows `protobuf:"varint,11,opt,name=returned_rows,json=returnedRows,proto3,enum=dql.ir.v1.ReturnedRows" json:"returned_rows,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CapabilityProfile) Reset() {
@@ -579,6 +638,13 @@ func (x *CapabilityProfile) GetStatementModes() []StatementMode {
 		return x.StatementModes
 	}
 	return nil
+}
+
+func (x *CapabilityProfile) GetReturnedRows() ReturnedRows {
+	if x != nil {
+		return x.ReturnedRows
+	}
+	return ReturnedRows_RETURNED_ROWS_UNSPECIFIED
 }
 
 // The statements the runtime runs to route reads to replicas (§22.5).
@@ -1077,7 +1143,7 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\x05patch\x18\x03 \x01(\rH\x02R\x05patch\x88\x01\x01B\b\n" +
 	"\x06_majorB\b\n" +
 	"\x06_minorB\b\n" +
-	"\x06_patch\"\xbc\x04\n" +
+	"\x06_patch\"\xfa\x04\n" +
 	"\x11CapabilityProfile\x12,\n" +
 	"\adialect\x18\x01 \x01(\x0e2\x12.dql.ir.v1.DialectR\adialect\x128\n" +
 	"\toperators\x18\x02 \x03(\v2\x1a.dql.ir.v1.OperatorSupportR\toperators\x128\n" +
@@ -1093,7 +1159,8 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\x12consistency_levels\x18\b \x03(\x0e2\x1b.dql.ir.v1.ConsistencyLevelR\x11consistencyLevels\x12?\n" +
 	"\vreplication\x18\t \x01(\v2\x1d.dql.ir.v1.ReplicationQueriesR\vreplication\x12A\n" +
 	"\x0fstatement_modes\x18\n" +
-	" \x03(\x0e2\x18.dql.ir.v1.StatementModeR\x0estatementModes\"^\n" +
+	" \x03(\x0e2\x18.dql.ir.v1.StatementModeR\x0estatementModes\x12<\n" +
+	"\rreturned_rows\x18\v \x01(\x0e2\x17.dql.ir.v1.ReturnedRowsR\freturnedRows\"^\n" +
 	"\x12ReplicationQueries\x12\x1a\n" +
 	"\bposition\x18\x01 \x01(\tR\bposition\x12\x10\n" +
 	"\x03lag\x18\x02 \x01(\tR\x03lag\x12\x1a\n" +
@@ -1131,7 +1198,11 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\x10DIALECT_POSTGRES\x10\x01\x12\x11\n" +
 	"\rDIALECT_MYSQL\x10\x02\x12\x12\n" +
 	"\x0eDIALECT_SQLITE\x10\x03\x12\x15\n" +
-	"\x11DIALECT_SQLSERVER\x10\x04*\x83\x01\n" +
+	"\x11DIALECT_SQLSERVER\x10\x04*a\n" +
+	"\fReturnedRows\x12\x1d\n" +
+	"\x19RETURNED_ROWS_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14RETURNED_ROWS_CLAUSE\x10\x01\x12\x18\n" +
+	"\x14RETURNED_ROWS_REREAD\x10\x02*\x83\x01\n" +
 	"\rStatementMode\x12\x1e\n" +
 	"\x1aSTATEMENT_MODE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16STATEMENT_MODE_PREPARE\x10\x01\x12\x1b\n" +
@@ -1168,72 +1239,74 @@ func file_dql_ir_v1_bundle_proto_rawDescGZIP() []byte {
 	return file_dql_ir_v1_bundle_proto_rawDescData
 }
 
-var file_dql_ir_v1_bundle_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_dql_ir_v1_bundle_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_dql_ir_v1_bundle_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_dql_ir_v1_bundle_proto_goTypes = []any{
 	(Dialect)(0),               // 0: dql.ir.v1.Dialect
-	(StatementMode)(0),         // 1: dql.ir.v1.StatementMode
-	(ErrorKind)(0),             // 2: dql.ir.v1.ErrorKind
-	(Placeholder)(0),           // 3: dql.ir.v1.Placeholder
-	(*Bundle)(nil),             // 4: dql.ir.v1.Bundle
-	(*IrVersion)(nil),          // 5: dql.ir.v1.IrVersion
-	(*CapabilityProfile)(nil),  // 6: dql.ir.v1.CapabilityProfile
-	(*ReplicationQueries)(nil), // 7: dql.ir.v1.ReplicationQueries
-	(*ErrorCode)(nil),          // 8: dql.ir.v1.ErrorCode
-	(*ViolationReport)(nil),    // 9: dql.ir.v1.ViolationReport
-	(*ShapeLayer)(nil),         // 10: dql.ir.v1.ShapeLayer
-	(*QueryLayer)(nil),         // 11: dql.ir.v1.QueryLayer
-	(*FragmentTable)(nil),      // 12: dql.ir.v1.FragmentTable
-	(*Fragment)(nil),           // 13: dql.ir.v1.Fragment
-	(*Catalog)(nil),            // 14: dql.ir.v1.Catalog
-	(*Diagnostic)(nil),         // 15: dql.ir.v1.Diagnostic
-	(*Operator)(nil),           // 16: dql.ir.v1.Operator
-	(*OperatorSupport)(nil),    // 17: dql.ir.v1.OperatorSupport
-	(ConsistencyLevel)(0),      // 18: dql.ir.v1.ConsistencyLevel
-	(*QualifiedName)(nil),      // 19: dql.ir.v1.QualifiedName
-	(*Shape)(nil),              // 20: dql.ir.v1.Shape
-	(*RelationUnion)(nil),      // 21: dql.ir.v1.RelationUnion
-	(*Conversion)(nil),         // 22: dql.ir.v1.Conversion
-	(*Upsert)(nil),             // 23: dql.ir.v1.Upsert
-	(*KeyMerge)(nil),           // 24: dql.ir.v1.KeyMerge
-	(*Query)(nil),              // 25: dql.ir.v1.Query
-	(Fidelity)(0),              // 26: dql.ir.v1.Fidelity
+	(ReturnedRows)(0),          // 1: dql.ir.v1.ReturnedRows
+	(StatementMode)(0),         // 2: dql.ir.v1.StatementMode
+	(ErrorKind)(0),             // 3: dql.ir.v1.ErrorKind
+	(Placeholder)(0),           // 4: dql.ir.v1.Placeholder
+	(*Bundle)(nil),             // 5: dql.ir.v1.Bundle
+	(*IrVersion)(nil),          // 6: dql.ir.v1.IrVersion
+	(*CapabilityProfile)(nil),  // 7: dql.ir.v1.CapabilityProfile
+	(*ReplicationQueries)(nil), // 8: dql.ir.v1.ReplicationQueries
+	(*ErrorCode)(nil),          // 9: dql.ir.v1.ErrorCode
+	(*ViolationReport)(nil),    // 10: dql.ir.v1.ViolationReport
+	(*ShapeLayer)(nil),         // 11: dql.ir.v1.ShapeLayer
+	(*QueryLayer)(nil),         // 12: dql.ir.v1.QueryLayer
+	(*FragmentTable)(nil),      // 13: dql.ir.v1.FragmentTable
+	(*Fragment)(nil),           // 14: dql.ir.v1.Fragment
+	(*Catalog)(nil),            // 15: dql.ir.v1.Catalog
+	(*Diagnostic)(nil),         // 16: dql.ir.v1.Diagnostic
+	(*Operator)(nil),           // 17: dql.ir.v1.Operator
+	(*OperatorSupport)(nil),    // 18: dql.ir.v1.OperatorSupport
+	(ConsistencyLevel)(0),      // 19: dql.ir.v1.ConsistencyLevel
+	(*QualifiedName)(nil),      // 20: dql.ir.v1.QualifiedName
+	(*Shape)(nil),              // 21: dql.ir.v1.Shape
+	(*RelationUnion)(nil),      // 22: dql.ir.v1.RelationUnion
+	(*Conversion)(nil),         // 23: dql.ir.v1.Conversion
+	(*Upsert)(nil),             // 24: dql.ir.v1.Upsert
+	(*KeyMerge)(nil),           // 25: dql.ir.v1.KeyMerge
+	(*Query)(nil),              // 26: dql.ir.v1.Query
+	(Fidelity)(0),              // 27: dql.ir.v1.Fidelity
 }
 var file_dql_ir_v1_bundle_proto_depIdxs = []int32{
-	5,  // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
+	6,  // 0: dql.ir.v1.Bundle.version:type_name -> dql.ir.v1.IrVersion
 	0,  // 1: dql.ir.v1.Bundle.dialect:type_name -> dql.ir.v1.Dialect
-	14, // 2: dql.ir.v1.Bundle.catalogs:type_name -> dql.ir.v1.Catalog
-	6,  // 3: dql.ir.v1.Bundle.capabilities:type_name -> dql.ir.v1.CapabilityProfile
-	10, // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
-	11, // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
-	15, // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
-	16, // 7: dql.ir.v1.Bundle.operators:type_name -> dql.ir.v1.Operator
+	15, // 2: dql.ir.v1.Bundle.catalogs:type_name -> dql.ir.v1.Catalog
+	7,  // 3: dql.ir.v1.Bundle.capabilities:type_name -> dql.ir.v1.CapabilityProfile
+	11, // 4: dql.ir.v1.Bundle.shapes:type_name -> dql.ir.v1.ShapeLayer
+	12, // 5: dql.ir.v1.Bundle.queries:type_name -> dql.ir.v1.QueryLayer
+	16, // 6: dql.ir.v1.Bundle.diagnostics:type_name -> dql.ir.v1.Diagnostic
+	17, // 7: dql.ir.v1.Bundle.operators:type_name -> dql.ir.v1.Operator
 	0,  // 8: dql.ir.v1.CapabilityProfile.dialect:type_name -> dql.ir.v1.Dialect
-	17, // 9: dql.ir.v1.CapabilityProfile.operators:type_name -> dql.ir.v1.OperatorSupport
-	8,  // 10: dql.ir.v1.CapabilityProfile.error_codes:type_name -> dql.ir.v1.ErrorCode
-	9,  // 11: dql.ir.v1.CapabilityProfile.violations:type_name -> dql.ir.v1.ViolationReport
-	18, // 12: dql.ir.v1.CapabilityProfile.consistency_levels:type_name -> dql.ir.v1.ConsistencyLevel
-	7,  // 13: dql.ir.v1.CapabilityProfile.replication:type_name -> dql.ir.v1.ReplicationQueries
-	1,  // 14: dql.ir.v1.CapabilityProfile.statement_modes:type_name -> dql.ir.v1.StatementMode
-	2,  // 15: dql.ir.v1.ErrorCode.kind:type_name -> dql.ir.v1.ErrorKind
-	2,  // 16: dql.ir.v1.ViolationReport.kind:type_name -> dql.ir.v1.ErrorKind
-	19, // 17: dql.ir.v1.ViolationReport.object:type_name -> dql.ir.v1.QualifiedName
-	20, // 18: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
-	21, // 19: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
-	22, // 20: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
-	23, // 21: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
-	24, // 22: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
-	25, // 23: dql.ir.v1.QueryLayer.queries:type_name -> dql.ir.v1.Query
-	12, // 24: dql.ir.v1.QueryLayer.fragments:type_name -> dql.ir.v1.FragmentTable
-	0,  // 25: dql.ir.v1.FragmentTable.dialect:type_name -> dql.ir.v1.Dialect
-	3,  // 26: dql.ir.v1.FragmentTable.placeholder:type_name -> dql.ir.v1.Placeholder
-	13, // 27: dql.ir.v1.FragmentTable.fragments:type_name -> dql.ir.v1.Fragment
-	26, // 28: dql.ir.v1.Fragment.fidelity:type_name -> dql.ir.v1.Fidelity
-	29, // [29:29] is the sub-list for method output_type
-	29, // [29:29] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	18, // 9: dql.ir.v1.CapabilityProfile.operators:type_name -> dql.ir.v1.OperatorSupport
+	9,  // 10: dql.ir.v1.CapabilityProfile.error_codes:type_name -> dql.ir.v1.ErrorCode
+	10, // 11: dql.ir.v1.CapabilityProfile.violations:type_name -> dql.ir.v1.ViolationReport
+	19, // 12: dql.ir.v1.CapabilityProfile.consistency_levels:type_name -> dql.ir.v1.ConsistencyLevel
+	8,  // 13: dql.ir.v1.CapabilityProfile.replication:type_name -> dql.ir.v1.ReplicationQueries
+	2,  // 14: dql.ir.v1.CapabilityProfile.statement_modes:type_name -> dql.ir.v1.StatementMode
+	1,  // 15: dql.ir.v1.CapabilityProfile.returned_rows:type_name -> dql.ir.v1.ReturnedRows
+	3,  // 16: dql.ir.v1.ErrorCode.kind:type_name -> dql.ir.v1.ErrorKind
+	3,  // 17: dql.ir.v1.ViolationReport.kind:type_name -> dql.ir.v1.ErrorKind
+	20, // 18: dql.ir.v1.ViolationReport.object:type_name -> dql.ir.v1.QualifiedName
+	21, // 19: dql.ir.v1.ShapeLayer.shapes:type_name -> dql.ir.v1.Shape
+	22, // 20: dql.ir.v1.ShapeLayer.unions:type_name -> dql.ir.v1.RelationUnion
+	23, // 21: dql.ir.v1.ShapeLayer.conversions:type_name -> dql.ir.v1.Conversion
+	24, // 22: dql.ir.v1.ShapeLayer.upserts:type_name -> dql.ir.v1.Upsert
+	25, // 23: dql.ir.v1.ShapeLayer.merges:type_name -> dql.ir.v1.KeyMerge
+	26, // 24: dql.ir.v1.QueryLayer.queries:type_name -> dql.ir.v1.Query
+	13, // 25: dql.ir.v1.QueryLayer.fragments:type_name -> dql.ir.v1.FragmentTable
+	0,  // 26: dql.ir.v1.FragmentTable.dialect:type_name -> dql.ir.v1.Dialect
+	4,  // 27: dql.ir.v1.FragmentTable.placeholder:type_name -> dql.ir.v1.Placeholder
+	14, // 28: dql.ir.v1.FragmentTable.fragments:type_name -> dql.ir.v1.Fragment
+	27, // 29: dql.ir.v1.Fragment.fidelity:type_name -> dql.ir.v1.Fidelity
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_dql_ir_v1_bundle_proto_init() }
@@ -1254,7 +1327,7 @@ func file_dql_ir_v1_bundle_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dql_ir_v1_bundle_proto_rawDesc), len(file_dql_ir_v1_bundle_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
