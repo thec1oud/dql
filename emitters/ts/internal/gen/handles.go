@@ -38,6 +38,8 @@ type variant struct {
 	scope        *scopeGroup
 	unscoped     bool
 	entities     []*entity
+	// queries names the variant's queriers, when it has query-file queries.
+	queries *querierNames
 }
 
 // handleMembers are the members every handle class has, which no store
@@ -87,6 +89,9 @@ func (g *generator) handles(es []*entity) {
 	if len(groups) > 0 {
 		variants = append(variants, &variant{db: "UnscopedDb", wtx: "UnscopedDbWriteTx", rtx: "UnscopedDbReadTx", unscoped: true, entities: es})
 	}
+	for v, n := range g.queriers(g.impl, variants, groups) {
+		v.queries = &n
+	}
 	for _, v := range variants {
 		g.variant(f, v, v == root, groups)
 	}
@@ -134,12 +139,30 @@ func (g *generator) variant(f *file, v *variant, root bool, groups []*scopeGroup
 		for _, e := range v.entities {
 			f.printf("  readonly %s: %s;\n", e.member, g.ref(f, storeIface(e, v, h.write), false))
 		}
+		if q := v.queries; q != nil {
+			iface := q.read
+			if h.write {
+				iface = q.write
+			}
+			f.printf("  /** queries runs the query files' queries (§17). */\n  readonly queries: %s;\n", g.ref(f, iface, false))
+		}
 		f.printf("\n  constructor(%s: %s%s) {\n    this.%s = %s;\n", h.held, h.typ, scopeParam, h.held, h.held)
 		if v.scope != nil {
 			f.printf("    this.scope = scope;\n")
 		}
 		for _, e := range v.entities {
 			f.printf("    this.%s = %s;\n", e.member, g.storeValue(f, e, v, h.held, h.write))
+		}
+		if q := v.queries; q != nil {
+			impl := q.readImpl
+			if h.write {
+				impl = q.writeImpl
+			}
+			scope := ""
+			if v.scope != nil {
+				scope = ", scope"
+			}
+			f.printf("    this.queries = new %s(%s%s);\n", g.ref(f, impl, true), h.held, scope)
 		}
 		f.printf("  }\n\n")
 		// The raw escape hatch, typed by the handle's capability (§17,

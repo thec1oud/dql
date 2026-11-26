@@ -6,7 +6,8 @@
 
 import "./dql-version.dql.ts";
 import { type Executor, type RawReader, type RawWriter, type ReadTx, type TxOptions, type WriteTx, raw, rawWrite } from "@dql/runtime";
-import { PostTagsReads, PostTagsWrites, PostsReads, PostsWrites, ProfilesReads, ProfilesWrites, PublishedPostsReads, TagsReads, TagsWrites, TenantsReads, TenantsWrites, UsersReads, UsersUnscopedReads, UsersUnscopedWrites, UsersWrites } from "./dql-stores.dql.ts";
+import type { UnscopedQuerier, UnscopedReadQuerier, UserScopedQuerier, UserScopedReadQuerier } from "./dql-queries.dql.ts";
+import { PostTagsReads, PostTagsWrites, PostsReads, PostsWrites, ProfilesReads, ProfilesWrites, PublishedPostsReads, TagsReads, TagsWrites, TenantsReads, TenantsWrites, UnscopedQueries, UnscopedReadQueries, UserScopedQueries, UserScopedReadQueries, UsersReads, UsersUnscopedReads, UsersUnscopedWrites, UsersWrites } from "./dql-stores.dql.ts";
 import type { PostsReadStore, PostsStore } from "./post.dql.ts";
 import type { PostTagsReadStore, PostTagsStore } from "./post_tag.dql.ts";
 import type { ProfilesReadStore, ProfilesStore } from "./profile.dql.ts";
@@ -182,6 +183,8 @@ export class UserScoped {
   readonly tags: TagsStore;
   readonly tenants: TenantsStore;
   readonly users: UsersStore;
+  /** queries runs the query files' queries (§17). */
+  readonly queries: UserScopedQuerier;
 
   constructor(executor: Executor, scope: UserScope) {
     this.executor = executor;
@@ -193,6 +196,7 @@ export class UserScoped {
     this.tags = new TagsWrites(executor);
     this.tenants = new TenantsWrites(executor);
     this.users = new UsersWrites(executor, { tenantId: scope.tenantId });
+    this.queries = new UserScopedQueries(executor, scope);
   }
 
   /**
@@ -241,6 +245,8 @@ export class UserScopedWriteTx {
   readonly tags: TagsStore;
   readonly tenants: TenantsStore;
   readonly users: UsersStore;
+  /** queries runs the query files' queries (§17). */
+  readonly queries: UserScopedQuerier;
 
   constructor(tx: WriteTx, scope: UserScope) {
     this.tx = tx;
@@ -252,6 +258,7 @@ export class UserScopedWriteTx {
     this.tags = new TagsWrites(tx);
     this.tenants = new TenantsWrites(tx);
     this.users = new UsersWrites(tx, { tenantId: scope.tenantId });
+    this.queries = new UserScopedQueries(tx, scope);
   }
 
   /**
@@ -292,6 +299,8 @@ export class UserScopedReadTx {
   readonly tags: TagsReadStore;
   readonly tenants: TenantsReadStore;
   readonly users: UsersReadStore;
+  /** queries runs the query files' queries (§17). */
+  readonly queries: UserScopedReadQuerier;
 
   constructor(tx: ReadTx, scope: UserScope) {
     this.tx = tx;
@@ -303,6 +312,7 @@ export class UserScopedReadTx {
     this.tags = new TagsReads(tx);
     this.tenants = new TenantsReads(tx);
     this.users = new UsersReads(tx, { tenantId: scope.tenantId });
+    this.queries = new UserScopedReadQueries(tx, scope);
   }
 
   /**
@@ -341,6 +351,8 @@ export class UnscopedDb {
   readonly tags: TagsStore;
   readonly tenants: TenantsStore;
   readonly users: UsersUnscopedStore;
+  /** queries runs the query files' queries (§17). */
+  readonly queries: UnscopedQuerier;
 
   constructor(executor: Executor) {
     this.executor = executor;
@@ -351,6 +363,7 @@ export class UnscopedDb {
     this.tags = new TagsWrites(executor);
     this.tenants = new TenantsWrites(executor);
     this.users = new UsersUnscopedWrites(executor);
+    this.queries = new UnscopedQueries(executor);
   }
 
   /**
@@ -397,6 +410,8 @@ export class UnscopedDbWriteTx {
   readonly tags: TagsStore;
   readonly tenants: TenantsStore;
   readonly users: UsersUnscopedStore;
+  /** queries runs the query files' queries (§17). */
+  readonly queries: UnscopedQuerier;
 
   constructor(tx: WriteTx) {
     this.tx = tx;
@@ -407,6 +422,7 @@ export class UnscopedDbWriteTx {
     this.tags = new TagsWrites(tx);
     this.tenants = new TenantsWrites(tx);
     this.users = new UsersUnscopedWrites(tx);
+    this.queries = new UnscopedQueries(tx);
   }
 
   /**
@@ -445,6 +461,8 @@ export class UnscopedDbReadTx {
   readonly tags: TagsReadStore;
   readonly tenants: TenantsReadStore;
   readonly users: UsersUnscopedReadStore;
+  /** queries runs the query files' queries (§17). */
+  readonly queries: UnscopedReadQuerier;
 
   constructor(tx: ReadTx) {
     this.tx = tx;
@@ -455,6 +473,7 @@ export class UnscopedDbReadTx {
     this.tags = new TagsReads(tx);
     this.tenants = new TenantsReads(tx);
     this.users = new UsersUnscopedReads(tx);
+    this.queries = new UnscopedReadQueries(tx);
   }
 
   /**

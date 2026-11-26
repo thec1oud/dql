@@ -6,6 +6,7 @@
 
 export * from "./dql-db.dql.ts";
 export * from "./dql-dialect.dql.ts";
+export * from "./dql-queries.dql.ts";
 export * from "./dql-select.dql.ts";
 export * from "./dql-types.dql.ts";
 export * from "./dql-version.dql.ts";

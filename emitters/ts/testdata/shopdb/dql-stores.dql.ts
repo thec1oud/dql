@@ -5,8 +5,9 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Args, type Builder, type Query, type Reader, type Shape, type Writer, arg, count, execByKey, exists, list, newBuilder, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
+import { type Args, type Builder, Consistency, type Query, type Reader, type Shape, type Statement, type Writer, allOf, arg, count, execByKey, execute, exists, list, newBuilder, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
 import { fragments } from "./dql-fragments.dql.ts";
+import { type AuthorPostCountsRow, type UnscopedQuerier, type UnscopedReadQuerier, type UserScopedQuerier, type UserScopedReadQuerier, decodeAuthorPostCountsRow } from "./dql-queries.dql.ts";
 import type { EmailAddress, SlugText } from "./dql-types.dql.ts";
 import { type PostDraft, type PostFull, type PostKey, type PostPartial, type PostsReadStore, type PostsStore, type PostsTable, decodePostFull, validatePostDraft, validatePostPartial } from "./post.dql.ts";
 import { type PostTagDraft, type PostTagFull, type PostTagKey, type PostTagsReadStore, type PostTagsStore, type PostTagsTable, decodePostTagFull, validatePostTagDraft } from "./post_tag.dql.ts";
@@ -1661,5 +1662,127 @@ export class UsersUnscopedWrites extends UsersUnscopedReads implements UsersUnsc
   /** delete runs user.delete in scope (§21.2). */
   delete(scope: UserScope, k: UserKey): Promise<void> {
     return new UsersWrites(this.w, scope).delete(k);
+  }
+}
+
+/** UserScopedReadQueries implements UserScopedReadQuerier on a handle that reads. */
+export class UserScopedReadQueries implements UserScopedReadQuerier {
+  readonly h: Reader;
+  readonly scope: UserScope;
+
+  constructor(h: Reader, scope: UserScope) {
+    this.h = h;
+    this.scope = scope;
+  }
+
+  /** authorPostCounts runs query AuthorPostCounts of queries.sql:10 (§17). */
+  async authorPostCounts(): Promise<AuthorPostCountsRow[]> {
+    const st: Statement = {
+      query: "AuthorPostCounts",
+      catalog: "shop",
+      kind: "select",
+      sql: "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts\nFROM app.users u\nLEFT JOIN app.posts p ON p.author_id = u.id\nWHERE u.tenant_id = $1\nGROUP BY u.id, u.display_name",
+      args: [this.scope.tenantId],
+      types: ["pg_catalog.uuid"],
+      consistency: Consistency.any,
+    };
+    return allOf(this.h, st, decodeAuthorPostCountsRow);
+  }
+
+  /** getUserByEmail runs query GetUserByEmail of queries.sql:4 (§17). */
+  async getUserByEmail(email: EmailAddress): Promise<UserFull> {
+    const st: Statement = {
+      query: "GetUserByEmail",
+      catalog: "shop",
+      kind: "select",
+      sql: "SELECT id, tenant_id, email, display_name, created_at, updated_at, version\nFROM app.users\nWHERE tenant_id = $2 AND email = $1",
+      args: [email, this.scope.tenantId],
+      types: ["pg_catalog.text", "pg_catalog.uuid"],
+    };
+    return oneOf(this.h, st, decodeUserFull);
+  }
+}
+
+/** UserScopedQueries implements UserScopedQuerier on a handle that writes. */
+export class UserScopedQueries extends UserScopedReadQueries implements UserScopedQuerier {
+  readonly w: Writer;
+
+  constructor(w: Writer, scope: UserScope) {
+    super(w, scope);
+    this.w = w;
+  }
+
+  /** renameUser runs query RenameUser of queries.sql:18 (§17). */
+  async renameUser(displayName: string | null, id: bigint, version: number): Promise<number> {
+    const st: Statement = {
+      query: "RenameUser",
+      catalog: "shop",
+      kind: "update",
+      sql: "UPDATE app.users\nSET display_name = $1, version = version + 1\nWHERE tenant_id = $4 AND id = $2 AND version = $3",
+      args: [displayName, id, version, this.scope.tenantId],
+      types: ["pg_catalog.varchar", "pg_catalog.int8", "pg_catalog.int4", "pg_catalog.uuid"],
+      writes: true,
+    };
+    return execute(this.w, st);
+  }
+}
+
+/** UnscopedReadQueries implements UnscopedReadQuerier on a handle that reads. */
+export class UnscopedReadQueries implements UnscopedReadQuerier {
+  readonly h: Reader;
+
+  constructor(h: Reader) {
+    this.h = h;
+  }
+
+  /** authorPostCounts runs query AuthorPostCounts of queries.sql:10 (§17). */
+  async authorPostCounts(scope: UserScope): Promise<AuthorPostCountsRow[]> {
+    const st: Statement = {
+      query: "AuthorPostCounts",
+      catalog: "shop",
+      kind: "select",
+      sql: "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts\nFROM app.users u\nLEFT JOIN app.posts p ON p.author_id = u.id\nWHERE u.tenant_id = $1\nGROUP BY u.id, u.display_name",
+      args: [scope.tenantId],
+      types: ["pg_catalog.uuid"],
+      consistency: Consistency.any,
+    };
+    return allOf(this.h, st, decodeAuthorPostCountsRow);
+  }
+
+  /** getUserByEmail runs query GetUserByEmail of queries.sql:4 (§17). */
+  async getUserByEmail(scope: UserScope, email: EmailAddress): Promise<UserFull> {
+    const st: Statement = {
+      query: "GetUserByEmail",
+      catalog: "shop",
+      kind: "select",
+      sql: "SELECT id, tenant_id, email, display_name, created_at, updated_at, version\nFROM app.users\nWHERE tenant_id = $2 AND email = $1",
+      args: [email, scope.tenantId],
+      types: ["pg_catalog.text", "pg_catalog.uuid"],
+    };
+    return oneOf(this.h, st, decodeUserFull);
+  }
+}
+
+/** UnscopedQueries implements UnscopedQuerier on a handle that writes. */
+export class UnscopedQueries extends UnscopedReadQueries implements UnscopedQuerier {
+  readonly w: Writer;
+
+  constructor(w: Writer) {
+    super(w);
+    this.w = w;
+  }
+
+  /** renameUser runs query RenameUser of queries.sql:18 (§17). */
+  async renameUser(scope: UserScope, displayName: string | null, id: bigint, version: number): Promise<number> {
+    const st: Statement = {
+      query: "RenameUser",
+      catalog: "shop",
+      kind: "update",
+      sql: "UPDATE app.users\nSET display_name = $1, version = version + 1\nWHERE tenant_id = $4 AND id = $2 AND version = $3",
+      args: [displayName, id, version, scope.tenantId],
+      types: ["pg_catalog.varchar", "pg_catalog.int8", "pg_catalog.int4", "pg_catalog.uuid"],
+      writes: true,
+    };
+    return execute(this.w, st);
   }
 }

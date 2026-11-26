@@ -8,6 +8,7 @@ import { Consistency, type Executor, classOf, isViolation, not, or, parseUuid } 
 import {
   Db,
   type EmailAddress,
+  type UnscopedDbReadTx,
   type UserScopedReadTx,
   type UserScopedWriteTx,
   UserFull,
@@ -214,4 +215,26 @@ test("select", async () => {
   }
   expect(n).toBe(2);
   expect(await h.users.select(shapes.userFull).forShare().skipLocked().all()).toHaveLength(2);
+});
+
+test("queries", async () => {
+  const db = new Db(await database());
+  const acme = await db.tenants.insert({ name: "acme" });
+  const other = await db.tenants.insert({ name: "other" });
+  const h = db.withScope({ tenantId: acme.id });
+  const a = await h.users.insert({ email: parseEmailAddress("ann@acme.com"), passwordHash: "x" });
+  await h.posts.insert({ authorId: a.id, title: "One" });
+  await h.posts.insert({ authorId: a.id, title: "Two" });
+
+  // The handle's scope fills @scope.tenant_id.
+  expect(await h.queries.getUserByEmail(parseEmailAddress("ann@acme.com"))).toEqual(a);
+  expect(await failure(db.withScope({ tenantId: other.id }).queries.getUserByEmail(parseEmailAddress("ann@acme.com")))).toBe("NotFound");
+  expect(await h.queries.authorPostCounts()).toEqual([{ authorId: a.id, displayName: null, posts: 2n }]);
+  expect(await h.queries.renameUser("Ann", a.id, a.version)).toBe(1);
+
+  // Across scopes the scope is an argument; a read transaction reads.
+  const all = unscoped(h);
+  expect(await all.queries.renameUser({ tenantId: acme.id }, null, a.id, a.version)).toBe(0);
+  const u = await all.read((tx: UnscopedDbReadTx) => tx.queries.getUserByEmail({ tenantId: acme.id }, parseEmailAddress("ann@acme.com")));
+  expect([u.displayName, u.version]).toEqual(["Ann", a.version + 1]);
 });
