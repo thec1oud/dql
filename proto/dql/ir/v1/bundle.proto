@@ -82,6 +82,22 @@ message CapabilityProfile {
   // The statement modes the dialect's drivers support, sorted; the first is
   // the default (§26.4).
   repeated StatementMode statement_modes = 10;
+  // How a write that returns a Full gets its rows back (§20.1, §14.5).
+  // Unspecified is a RETURNING clause, as on Postgres.
+  ReturnedRows returned_rows = 11;
+}
+
+// How a write gets back the rows it wrote (§20.1).
+enum ReturnedRows {
+  RETURNED_ROWS_UNSPECIFIED = 0;
+  // A clause of the write returns them: RETURNING or OUTPUT. The fragment
+  // table has a returning fragment for each Full.
+  RETURNED_ROWS_CLAUSE = 1;
+  // The runtime re-reads each row by its key in the write's transaction,
+  // labelled emulated. A single auto-increment key column comes back as the
+  // last insert ID; a key column filled by any other default must be set by
+  // the Draft (decided 2026-11-26).
+  RETURNED_ROWS_REREAD = 2;
 }
 
 // The statements the runtime runs to route reads to replicas (§22.5).
