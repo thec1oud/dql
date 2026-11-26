@@ -10,13 +10,14 @@ import * as mysql from "./mysql.ts";
 import * as postgres from "./postgres.ts";
 import { root, schemas } from "./schemas.ts";
 
-/** Dialect is how the scenarios run on one dialect: its name in messages, the variable naming its server, the statement modes they run in, the features its schemas hold, and how to create a database on its server. */
+/** Dialect is how the scenarios run on one dialect: its name in messages, the variable naming its server, the statement modes they run in, the features its schemas hold, how to create a database on its server, and, where it has one, the variable naming a replica of the server and how to find a database's copy there. */
 export interface Dialect {
   readonly label: string;
   readonly env: string;
   readonly modes: readonly StatementMode[];
   readonly features: readonly string[];
   database(base: string, ddl: readonly string[]): Promise<{ dsn: string; drop: () => Promise<void> }>;
+  readonly replica?: { readonly env: string; of(dsn: string, base: string): Promise<string> };
 }
 
 /**
@@ -33,13 +34,15 @@ export const dialects: Readonly<Record<string, Dialect>> = {
     modes: ["prepare", "describe"],
     features: ["arrays", "composites", "regex-match", "replica", "returning", "serialization-failure"],
     database: postgres.database,
+    replica: { env: "DQL_TEST_POSTGRES_REPLICA_URL", of: (dsn, base) => postgres.replicaOf(dsn, base) },
   },
   mysql: {
     label: "MySQL",
     env: "DQL_TEST_MYSQL_URL",
     modes: ["prepare", "simple"],
-    features: ["tinyint-bool"],
+    features: ["replica", "tinyint-bool"],
     database: mysql.database,
+    replica: { env: "DQL_TEST_MYSQL_REPLICA_URL", of: (dsn, base) => mysql.replicaOf(dsn, base) },
   },
   mariadb: {
     label: "MariaDB",
@@ -79,8 +82,8 @@ export interface Opened {
 /**
  * open creates a database of the named schema of dialect on the server its
  * variable names, such as DQL_TEST_POSTGRES_URL, and opens its handle, with
- * the database's copy on the server of DQL_TEST_POSTGRES_REPLICA_URL, a
- * streaming replica of it, as its replica when replica is set, and at most
+ * the database's copy on the dialect's replica of that server, such as
+ * DQL_TEST_POSTGRES_REPLICA_URL's, as its replica when replica is set, and at most
  * maxConns connections to the primary, 0 meaning the schema's default,
  * sending statements in mode.
  */
@@ -90,9 +93,13 @@ export async function open(name: string, mode: StatementMode, replica: boolean, 
   if (base === "") {
     throw new Error(`${d.env} is not set`);
   }
-  const replicaBase = env("DQL_TEST_POSTGRES_REPLICA_URL");
+  const rep = d.replica;
+  if (replica && rep === undefined) {
+    throw new Error(`${d.label} has no replica`);
+  }
+  const replicaBase = rep === undefined ? "" : env(rep.env);
   if (replica && replicaBase === "") {
-    throw new Error("DQL_TEST_POSTGRES_REPLICA_URL is not set");
+    throw new Error(`${rep?.env} is not set`);
   }
   const s = (await schemas(dialect))[name];
   if (s === undefined) {
@@ -103,7 +110,7 @@ export async function open(name: string, mode: StatementMode, replica: boolean, 
     s.ddl.map((f) => join(root, f)),
   );
   try {
-    const replicas = replica ? [await postgres.replicaOf(dsn, replicaBase)] : [];
+    const replicas = replica && rep !== undefined ? [await rep.of(dsn, replicaBase)] : [];
     const events = new Recorder();
     const { db, exec } = await s.open(dsn, replicas, maxConns, mode, events.hooks());
     return {

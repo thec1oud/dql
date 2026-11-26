@@ -657,7 +657,8 @@ type ReplicationQueries struct {
 	// float, or NULL when the server is not a replica.
 	Lag string `protobuf:"bytes,2,opt,name=lag,proto3" json:"lag,omitempty"`
 	// Runs on a replica with one parameter, a list of positions as text, and
-	// returns whether it has replayed every one.
+	// returns whether it has replayed every one: true, or 1 on a server
+	// without a boolean type, such as MySQL.
 	Replayed      string `protobuf:"bytes,3,opt,name=replayed,proto3" json:"replayed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -42,12 +42,13 @@ jobs:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_MYSQL_REPLICA_URL: root:root@tcp(localhost:3308)/
       DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres with a streaming replica
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
-      - name: start MySQL and MariaDB
+      - name: start MySQL with a replica, and MariaDB
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
@@ -80,6 +81,7 @@ jobs:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_MYSQL_REPLICA_URL: root:root@tcp(localhost:3308)/
       DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +89,7 @@ jobs:
         env:
           POSTGRES_VERSION: ${{ matrix.postgres }}
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
-      - name: start MySQL and MariaDB
+      - name: start MySQL with a replica, and MariaDB
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
@@ -115,12 +117,13 @@ jobs:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_MYSQL_REPLICA_URL: root:root@tcp(localhost:3308)/
       DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres with a streaming replica
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
-      - name: start MySQL and MariaDB ${{ matrix.mariadb }}
+      - name: start MySQL with a replica, and MariaDB ${{ matrix.mariadb }}
         env:
           MARIADB_VERSION: ${{ matrix.mariadb }}
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
@@ -177,6 +180,7 @@ jobs:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_MYSQL_REPLICA_URL: root:root@tcp(localhost:3308)/
       DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
     defaults:
       run:
@@ -186,7 +190,7 @@ jobs:
       - name: start Postgres with a streaming replica
         working-directory: .
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
-      - name: start MySQL and MariaDB
+      - name: start MySQL with a replica, and MariaDB
         working-directory: .
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2

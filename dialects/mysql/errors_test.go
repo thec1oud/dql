@@ -2,6 +2,7 @@ package mysql_test
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/thec1oud/dql/dialects/mysql"
@@ -92,8 +93,11 @@ func TestViolations(t *testing.T) {
 
 func TestLimits(t *testing.T) {
 	p := mysql.Profile()
-	if p.GetMaxParams() != 65535 || p.GetReplication() != nil ||
-		!slices.Equal(p.GetConsistencyLevels(), []irv1.ConsistencyLevel{irv1.ConsistencyLevel_CONSISTENCY_PRIMARY, irv1.ConsistencyLevel_CONSISTENCY_ANY}) ||
+	if p.GetMaxParams() != 65535 || !strings.HasPrefix(p.GetReplication().GetReplayed(), "SELECT NOT EXISTS") ||
+		!slices.Equal(p.GetConsistencyLevels(), []irv1.ConsistencyLevel{
+			irv1.ConsistencyLevel_CONSISTENCY_PRIMARY, irv1.ConsistencyLevel_CONSISTENCY_ANY,
+			irv1.ConsistencyLevel_CONSISTENCY_BOUNDED_STALENESS, irv1.ConsistencyLevel_CONSISTENCY_READ_YOUR_WRITES,
+		}) ||
 		!slices.Equal(p.GetStatementModes(), []irv1.StatementMode{irv1.StatementMode_STATEMENT_MODE_PREPARE, irv1.StatementMode_STATEMENT_MODE_SIMPLE}) {
 		t.Errorf("profile %v", p)
 	}

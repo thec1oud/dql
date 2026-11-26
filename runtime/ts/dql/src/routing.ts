@@ -71,7 +71,7 @@ export interface Replication {
   readonly position: string;
   /** Runs on a replica and returns how far behind it is in seconds, or NULL when the server is not a replica. */
   readonly lag: string;
-  /** Runs on a replica with one argument, a list of positions, and returns whether it has replayed every one. */
+  /** Runs on a replica with one argument, a list of positions, and returns whether it has replayed every one: true, or 1 on a server without a boolean type, such as MySQL. */
   readonly replayed: string;
 }
 

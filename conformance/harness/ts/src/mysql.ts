@@ -71,6 +71,24 @@ TRUNCATE conformance_injected;`,
   );
 }
 
+/** replay stops or starts the applier of the replica at dsn, which stops or resumes its replay of what it receives. */
+export async function replay(dsn: string, pause: boolean): Promise<void> {
+  await run(dsn, pause ? "STOP REPLICA SQL_THREAD" : "START REPLICA SQL_THREAD");
+}
+
+/** replicaOf returns the DSN of the database at dsn on the MySQL replica at base, once the replica has applied everything the primary had executed when it was called: the database's creation and its DDL. */
+export async function replicaOf(dsn: string, base: string, timeout = 10): Promise<string> {
+  const [row] = await query(dsn, "SELECT @@GLOBAL.gtid_executed AS executed");
+  const executed = String(row?.["executed"]);
+  const replica = withDatabase(base, dsn.slice(dsn.lastIndexOf("/") + 1));
+  // Not on the database, which the replica may not have created yet.
+  const [r] = await query(base, `SELECT WAIT_FOR_EXECUTED_GTID_SET('${executed}', ${timeout}) AS timed_out`);
+  if (Number(r?.["timed_out"]) !== 0) {
+    throw new Error(`the replica has not applied ${executed}`);
+  }
+  return replica;
+}
+
 /** terminate ends every other connection to the database at dsn, as a server shutting them down would. */
 export async function terminate(dsn: string): Promise<void> {
   const rows = await query(dsn, "SELECT id FROM information_schema.processlist WHERE db = DATABASE() AND id <> CONNECTION_ID()");

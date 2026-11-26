@@ -11,6 +11,7 @@ import { root, rotationWait, schemas } from "../src/schemas.ts";
 
 const base = process.env["DQL_TEST_POSTGRES_URL"] ?? "";
 const mysqlBase = process.env["DQL_TEST_MYSQL_URL"] ?? "";
+const mysqlReplica = process.env["DQL_TEST_MYSQL_REPLICA_URL"] ?? "";
 const saved = { ...process.env };
 
 afterEach(() => {
@@ -72,8 +73,19 @@ test("MySQL", async () => {
   const ddl = join(await mkdtemp(join(tmpdir(), "ddl-")), "bad.sql");
   await writeFile(ddl, "NOT SQL");
   await expect(mysql.database(mysqlBase, [ddl])).rejects.toThrow("SQL syntax");
-  const shop = (await schemas("mysql"))["shop"];
-  await expect(shop?.replay("", true) as Promise<void>).rejects.toThrow("the MySQL schemas have no replica");
+  // A replica that has not applied the primary's writes in time fails.
+  const table = join(await mkdtemp(join(tmpdir(), "ddl-")), "t.sql");
+  await writeFile(table, "CREATE TABLE t (id INT PRIMARY KEY)");
+  await mysql.replay(mysqlReplica, true);
+  const { dsn, drop } = await mysql.database(mysqlBase, [table]);
+  try {
+    await expect(mysql.replicaOf(dsn, mysqlReplica, 0.1)).rejects.toThrow("the replica has not applied");
+  } finally {
+    await mysql.replay(mysqlReplica, false);
+    await drop();
+  }
+  // MariaDB has no replica.
+  await expect(open("shop", "prepare", true, 0, "mariadb")).rejects.toThrow("MariaDB has no replica");
 });
 
 test("scenarios", async () => {

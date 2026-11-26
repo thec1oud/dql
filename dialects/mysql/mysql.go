@@ -62,6 +62,12 @@ func (*Plugin) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, e
 		return nil, err
 	}
 	p := Profile()
+	if flavor == MariaDB {
+		// MariaDB's GTIDs and replica status are its own: replicas serve
+		// reads at any staleness, and the rest go to the primary.
+		p.ConsistencyLevels = p.ConsistencyLevels[:2]
+		p.Replication = nil
+	}
 	p.Violations = Violations(in.GetBundle().GetCatalogs())
 	return &irv1.InvokeResult{Bundle: &irv1.Bundle{Capabilities: p, Queries: &irv1.QueryLayer{Fragments: Fragments(in.GetBundle(), p, flavor)}}}, nil
 }
@@ -89,7 +95,7 @@ func flavorOf(cats []*irv1.Catalog) (Flavor, error) {
 	return MySQL, nil
 }
 
-// Profile returns the capability profile, which MySQL and MariaDB share.
+// Profile returns MySQL's capability profile, which MariaDB's narrows.
 //
 // The text operators need a deterministic collation, so that they mean the
 // same as on Postgres: MySQL compares text by its collation, which is case
@@ -102,7 +108,9 @@ func flavorOf(cats []*irv1.Catalog) (Flavor, error) {
 //
 // Every connection runs in UTC in strict mode (§22.7), and the server's
 // error numbers map into the taxonomy (§23.1). A statement binds at most
-// 65,535 parameters (§25.2). Replicas serve reads at any staleness. A
+// 65,535 parameters (§25.2). Replicas serve reads at any staleness, within
+// a bound, and after a session's writes, by MySQL's GTIDs; Invoke leaves
+// MariaDB only the first. A
 // write's rows come back by re-reading them (§20.1). go-sql-driver/mysql
 // prepares statements on the server, or interpolates values client-side
 // in its simple mode (§26.4).
@@ -122,12 +130,35 @@ func Profile() *irv1.CapabilityProfile {
 	}
 	return &irv1.CapabilityProfile{
 		Dialect: irv1.Dialect_DIALECT_MYSQL, Operators: ops, SessionSetup: slices.Clone(sessionSetup), ErrorCodes: codes,
-		MaxParams:         65535,
-		ConsistencyLevels: []irv1.ConsistencyLevel{irv1.ConsistencyLevel_CONSISTENCY_PRIMARY, irv1.ConsistencyLevel_CONSISTENCY_ANY},
-		StatementModes:    []irv1.StatementMode{irv1.StatementMode_STATEMENT_MODE_PREPARE, irv1.StatementMode_STATEMENT_MODE_SIMPLE},
-		ReturnedRows:      irv1.ReturnedRows_RETURNED_ROWS_REREAD,
+		MaxParams: 65535,
+		ConsistencyLevels: []irv1.ConsistencyLevel{
+			irv1.ConsistencyLevel_CONSISTENCY_PRIMARY, irv1.ConsistencyLevel_CONSISTENCY_ANY,
+			irv1.ConsistencyLevel_CONSISTENCY_BOUNDED_STALENESS, irv1.ConsistencyLevel_CONSISTENCY_READ_YOUR_WRITES,
+		},
+		Replication:    &irv1.ReplicationQueries{Position: position, Lag: lag, Replayed: replayed},
+		StatementModes: []irv1.StatementMode{irv1.StatementMode_STATEMENT_MODE_PREPARE, irv1.StatementMode_STATEMENT_MODE_SIMPLE},
+		ReturnedRows:   irv1.ReturnedRows_RETURNED_ROWS_REREAD,
 	}
 }
+
+// MySQL's replication queries (§22.5), on GTIDs. A commit's position is
+// the primary's executed GTID set, which holds it. A replica has replayed
+// a position once that set is a subset of its own executed set. Its lag is
+// 0 when it has applied every transaction it has received, and otherwise
+// the time since the last one it applied was committed on the primary, as
+// Postgres measures it; on a server that replicates nothing, NULL. The
+// queries read performance_schema, which a connection's user must be
+// allowed to.
+const (
+	position = "SELECT @@GLOBAL.gtid_executed"
+	lag      = "SELECT CAST(CASE WHEN c.SERVICE_STATE IS NULL THEN NULL " +
+		"WHEN GTID_SUBSET(c.RECEIVED_TRANSACTION_SET, @@GLOBAL.gtid_executed) THEN 0 " +
+		"ELSE TIMESTAMPDIFF(MICROSECOND, (SELECT MAX(w.LAST_APPLIED_TRANSACTION_ORIGINAL_COMMIT_TIMESTAMP) " +
+		"FROM performance_schema.replication_applier_status_by_worker w), NOW(6)) / 1000000 END AS DOUBLE) " +
+		"FROM (SELECT 1) one LEFT JOIN performance_schema.replication_connection_status c ON c.CHANNEL_NAME = ''"
+	replayed = "SELECT NOT EXISTS (SELECT 1 FROM JSON_TABLE(?, '$[*]' COLUMNS (p TEXT PATH '$')) j " +
+		"WHERE NOT GTID_SUBSET(j.p, @@GLOBAL.gtid_executed))"
+)
 
 // operatorFidelity is an operator's fidelity: exact unless listed.
 func operatorFidelity(name string) irv1.Fidelity {

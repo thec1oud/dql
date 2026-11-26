@@ -69,7 +69,8 @@ type Replication struct {
 	// a float, or NULL when the server is not a replica.
 	Lag string
 	// Replayed runs on a replica with one argument, a list of positions as
-	// []string, and returns whether it has replayed every one.
+	// []string, and returns whether it has replayed every one: true, or 1
+	// on a server without a boolean type, such as MySQL.
 	Replayed string
 }
 
@@ -210,7 +211,7 @@ func (e *Executor) replicaConn(ctx context.Context, s *sourcePool, c Consistency
 			return conn
 		}
 		v, err := queryOne(ctx, conn, e.dialect.Replication.Replayed, []any{positions})
-		if err == nil && v == true {
+		if err == nil && (v == true || v == int64(1)) {
 			return conn
 		}
 		conn.Release()
