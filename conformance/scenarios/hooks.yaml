@@ -1,5 +1,6 @@
 scenario: hooks
 schema: shop
+requires: [returning, serialization-failure]
 steps:
   # A query's end names the query and counts its rows (§24).
   - op: tenants.insert

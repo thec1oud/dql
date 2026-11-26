@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,29 +19,29 @@ import (
 // root is the repository root, which schemas' DDL paths are relative to.
 var root = filepath.Join("..", "..", "..")
 
-// open creates a database of the schema and opens its handle, with the
-// database's copy on the server of DQL_TEST_POSTGRES_REPLICA_URL, a
-// streaming replica of DQL_TEST_POSTGRES_URL's, as its replica when replica
-// is set, and at most maxConns connections to the primary, 0 meaning the
-// schema's default, sending statements in mode. Without that server, a
-// test that needs it is skipped.
-func open(t *testing.T, name string, replica bool, maxConns int, mode dql.StatementMode) Target {
+// open creates a database of the schema on the server its URLEnv names and
+// opens its handle, with the database's copy on the server of
+// DQL_TEST_POSTGRES_REPLICA_URL, a streaming replica of
+// DQL_TEST_POSTGRES_URL's, as its replica when replica is set, and at most
+// maxConns connections to the primary, 0 meaning the schema's default,
+// sending statements in mode. Without that server, a test that needs it is
+// skipped.
+func open(t *testing.T, s Schema, replica bool, maxConns int, mode dql.StatementMode) Target {
 	t.Helper()
 	ctx := context.Background()
-	base := os.Getenv("DQL_TEST_POSTGRES_URL")
+	base := os.Getenv(s.URLEnv)
 	if base == "" {
-		t.Fatal("DQL_TEST_POSTGRES_URL is not set")
+		t.Fatal(s.URLEnv + " is not set")
 	}
 	replicaBase := os.Getenv("DQL_TEST_POSTGRES_REPLICA_URL")
 	if replica && replicaBase == "" {
 		t.Skip("DQL_TEST_POSTGRES_REPLICA_URL is not set")
 	}
-	s := Schemas[name]
 	var ddl []string
 	for _, f := range s.DDL {
 		ddl = append(ddl, filepath.Join(root, f))
 	}
-	dsn, drop, err := Database(ctx, base, ddl...)
+	dsn, drop, err := s.Database(ctx, base, ddl...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,10 +104,13 @@ func query(ctx context.Context, dsn, sql string, dest any) error {
 	return c.QueryRow(ctx, sql).Scan(dest)
 }
 
-// Every scenario passes on Postgres for Go (guide M4), in each statement
-// mode (§26.4). With DQL_CONFORMANCE_OUTCOMES set, each scenario's outcomes
-// are written there, as <mode>/<scenario>.json, for CI to compare with the
-// TypeScript harness's (guide M5).
+// Every scenario passes on every dialect for Go (guide M4, M6), in each
+// statement mode its dialect offers (§26.4), except that a scenario
+// requiring a feature a dialect's schema lacks is skipped there, and named
+// with the missing features. With DQL_CONFORMANCE_OUTCOMES set, each
+// scenario's outcomes are written there, as <mode>/<scenario>.json for
+// Postgres and <dialect>/<mode>/<scenario>.json for the others, for CI to
+// compare with the TypeScript harness's (guide M5).
 func TestScenarios(t *testing.T) {
 	out := os.Getenv("DQL_CONFORMANCE_OUTCOMES")
 	scs, err := Load(filepath.Join("..", "..", "scenarios"))
@@ -115,22 +120,39 @@ func TestScenarios(t *testing.T) {
 	if len(scs) == 0 {
 		t.Fatal("no scenarios")
 	}
-	for _, mode := range []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple} {
-		for _, sc := range scs {
-			t.Run(mode.String()+"/"+sc.Name, func(t *testing.T) {
-				if _, ok := Schemas[sc.Schema]; !ok {
-					t.Fatalf("%s: no schema %s", sc.File, sc.Schema)
+	for _, dialect := range []string{"postgres", "mysql"} {
+		for _, mode := range []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple} {
+			for _, sc := range scs {
+				name := mode.String() + "/" + sc.Name
+				dir := filepath.Join(out, mode.String())
+				if dialect != "postgres" {
+					name, dir = dialect+"/"+name, filepath.Join(out, dialect, mode.String())
 				}
-				target := open(t, sc.Schema, sc.Replica, sc.MaxConns, mode)
-				outcomes := []Outcome{}
-				target.Record = func(o Outcome) { outcomes = append(outcomes, o) }
-				for _, p := range Run(context.Background(), sc, target) {
-					t.Error(p)
-				}
-				if out != "" {
-					writeOutcomes(t, filepath.Join(out, mode.String(), sc.Name+".json"), outcomes)
-				}
-			})
+				t.Run(name, func(t *testing.T) {
+					s, ok := Matrix[dialect][sc.Schema]
+					if !ok && dialect == "postgres" {
+						t.Fatalf("%s: no schema %s", sc.File, sc.Schema)
+					}
+					if !ok {
+						t.Skipf("%s has no schema %s", dialect, sc.Schema)
+					}
+					if !slices.Contains(s.Modes, mode) {
+						t.Skipf("%s has no %s mode", dialect, mode)
+					}
+					if missing := Missing(sc, s); len(missing) > 0 {
+						t.Skipf("%s lacks %s", dialect, strings.Join(missing, ", "))
+					}
+					target := open(t, s, sc.Replica, sc.MaxConns, mode)
+					outcomes := []Outcome{}
+					target.Record = func(o Outcome) { outcomes = append(outcomes, o) }
+					for _, p := range Run(context.Background(), sc, target) {
+						t.Error(p)
+					}
+					if out != "" {
+						writeOutcomes(t, filepath.Join(dir, sc.Name+".json"), outcomes)
+					}
+				})
+			}
 		}
 	}
 }

@@ -1,5 +1,6 @@
 scenario: retries
 schema: shop
+requires: [serialization-failure]
 steps:
   # A serialization failure or a deadlock reruns the closure, which then
   # commits once (§22.4).

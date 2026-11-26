@@ -1,5 +1,6 @@
 scenario: leaked-transactions
 schema: shop
+requires: [returning]
 steps:
   # A pair-form transaction left open when its operation ends is rolled back
   # and reported (§22.3).

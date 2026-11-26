@@ -17,7 +17,7 @@ import (
 
 // Each way a step can go wrong is reported, and nothing else is.
 func TestRunProblems(t *testing.T) {
-	target := open(t, "shop", false, 0, dql.ModePrepare)
+	target := open(t, Schemas["shop"], false, 0, dql.ModePrepare)
 	ctx := context.Background()
 	setup := `
 - op: tenants.insert
@@ -258,5 +258,61 @@ func TestGenerate(t *testing.T) {
 	got, err = generate(map[string]any{"generate": map[string]any{"count": 2, "value": "v-$i"}})
 	if err != nil || !reflect.DeepEqual(got, []any{"v-1", "v-2"}) {
 		t.Errorf("generated %v, %v", got, err)
+	}
+}
+
+// The MySQL schema's database, failure injection and termination fail as
+// Postgres's do, and a step that builds a list of Drafts fills them.
+func TestMySQL(t *testing.T) {
+	ctx := context.Background()
+	base := os.Getenv("DQL_TEST_MYSQL_URL")
+	if _, _, err := databaseMySQL(ctx, base, "nope.sql"); err == nil {
+		t.Error("missing DDL")
+	}
+	ddl := filepath.Join(t.TempDir(), "bad.sql")
+	os.WriteFile(ddl, []byte("NOT SQL"), 0o644)
+	if _, _, err := databaseMySQL(ctx, base, ddl); err == nil {
+		t.Error("bad DDL")
+	}
+	if _, _, err := databaseMySQL(ctx, "bad dsn", ddl); err == nil {
+		t.Error("bad DSN")
+	}
+	if _, _, err := databaseMySQL(ctx, "root@tcp(127.0.0.1:1)/", ddl); err == nil {
+		t.Error("no server")
+	}
+	if err := terminateMySQL(ctx, "bad dsn"); err == nil {
+		t.Error("bad DSN")
+	}
+	if err := terminateMySQL(ctx, "root@tcp(127.0.0.1:1)/"); err == nil {
+		t.Error("no server")
+	}
+	if err := runMySQL(ctx, "bad dsn", "SELECT 1"); err == nil {
+		t.Error("bad DSN")
+	}
+	target := open(t, MySQLSchemas["shop"], false, 0, dql.ModePrepare)
+	steps := `
+- op: tenants.insert_many
+  input: [{ name: a }, { name: b }]
+  expect: { count: 2 }
+- op: tenants.insert_many
+  input: [{ name: 1 }]
+- op: write
+  inject: { class: SerializationFailure, times: 1 }
+- op: tenants.count
+  inject: { delay: x, times: 1 }
+`
+	var sc Scenario
+	if err := yaml.Unmarshal([]byte("scenario: s\nsteps:"+steps), &sc); err != nil {
+		t.Fatal(err)
+	}
+	got := Run(ctx, sc, target)
+	want := []string{"s step 2 (tenants.insert_many): input: 0: ", "s step 3 (write): inject: no injected failure of class SerializationFailure", "s step 4 (tenants.count): inject: delay: time: invalid duration"}
+	if len(got) != len(want) {
+		t.Fatalf("problems %q", got)
+	}
+	for i := range want {
+		if !strings.HasPrefix(got[i], want[i]) {
+			t.Errorf("problem %d: %q, want %q", i, got[i], want[i])
+		}
 	}
 }

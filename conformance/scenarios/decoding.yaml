@@ -1,5 +1,6 @@
 scenario: decoding
 schema: shop
+requires: [arrays, composites]
 # Each case of design record §13 that Postgres can hold puts a value the
 # generated code rules out in place, and reading it is a DecodeError naming
 # the shape, the field and the reason. The rest need other schemas or

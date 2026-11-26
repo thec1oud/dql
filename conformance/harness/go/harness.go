@@ -43,11 +43,14 @@ import (
 )
 
 // Scenario is one scenario file: steps run in order against a fresh database
-// of the named schema, on a source with a replica when Replica is set.
+// of the named schema, on a source with a replica when Replica is set. On a
+// dialect whose schema lacks a feature the scenario requires, it is skipped
+// and listed (decided 2026-11-26).
 type Scenario struct {
-	Name    string `yaml:"scenario"`
-	Schema  string `yaml:"schema"`
-	Replica bool   `yaml:"replica"`
+	Name     string   `yaml:"scenario"`
+	Schema   string   `yaml:"schema"`
+	Replica  bool     `yaml:"replica"`
+	Requires []string `yaml:"requires"`
 	// MaxConns bounds the primary's pool; 0 is the schema's default.
 	MaxConns int    `yaml:"max_conns"`
 	Steps    []Step `yaml:"steps"`
@@ -202,10 +205,21 @@ type Assign struct {
 // handle and its executor on the database at dsn, with replicas of it at the
 // replicas' DSNs and at most maxConns connections to it, 0 meaning a default,
 // sending statements in mode, and Replay pauses or resumes the replay of the
-// replica at dsn.
+// replica at dsn. URLEnv names the environment variable that holds the
+// URL of its server, on which Database creates a database from the DDL
+// files; Modes are the statement modes its dialect offers (§26.4), and
+// Features what it holds that a scenario may require.
 type Schema struct {
-	DDL       []string
-	Dialect   string
+	DDL      []string
+	Dialect  string
+	URLEnv   string
+	Database func(ctx context.Context, base string, ddl ...string) (dsn string, drop func(), err error)
+	Modes    []dql.StatementMode
+	Features []string
+	// Fill gives a Draft field the dialect requires a value for when a
+	// step leaves it out, by type and normalized field name: on MySQL, a
+	// key filled by an expression default (STANDING-RULES, 2026-11-26).
+	Fill      map[string]map[string]func() any
 	Exec      func(ctx context.Context, dsn, sql string) error
 	Open      func(ctx context.Context, dsn string, replicas []string, maxConns int, mode dql.StatementMode, opts ...dql.Option) (db any, exec *dql.Executor, err error)
 	Replay    func(ctx context.Context, dsn string, pause bool) error
@@ -246,6 +260,17 @@ type Outcome struct {
 	Events []any          `json:"events"`
 }
 
+// Missing returns the features sc requires that s lacks.
+func Missing(sc Scenario, s Schema) []string {
+	var out []string
+	for _, f := range sc.Requires {
+		if !slices.Contains(s.Features, f) {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 // Load reads every scenario file in dir, sorted by file name.
 func Load(dir string) ([]Scenario, error) {
 	files, err := filepath.Glob(filepath.Join(dir, "*.yaml"))
@@ -283,7 +308,7 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 		base:      ctx,
 		changes:   map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
 		nested: map[reflect.Type]bool{}, shapes: reflect.ValueOf(s.Shapes), selects: map[string]reflect.Value{},
-		record: t.Record}
+		record: t.Record, fill: s.Fill}
 	for name, f := range s.Selects {
 		r.selects[norm(name)] = reflect.ValueOf(f)
 	}
@@ -313,6 +338,7 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 }
 
 type runner struct {
+	fill      map[string]map[string]func() any
 	ctx       context.Context
 	db        reflect.Value
 	tables    map[string]any
@@ -1181,6 +1207,28 @@ func (r *runner) decode(v any, t reflect.Type) (reflect.Value, error) {
 // build makes a value of type t from v: nested changes through the schema's
 // functions, the rest as JSON.
 func (r *runner) build(v any, t reflect.Type) (reflect.Value, error) {
+	if xs, ok := v.([]any); ok && t.Kind() == reflect.Slice && r.fill[t.Elem().Name()] != nil {
+		out := reflect.MakeSlice(t, len(xs), len(xs))
+		for i, x := range xs {
+			e, err := r.build(x, t.Elem())
+			if err != nil {
+				return reflect.Value{}, fmt.Errorf("%d: %w", i, err)
+			}
+			out.Index(i).Set(e)
+		}
+		return out, nil
+	}
+	if fills := r.fill[t.Name()]; fills != nil {
+		if m, ok := v.(map[string]any); ok {
+			m = maps.Clone(m)
+			for field, f := range fills {
+				if _, present := m[field]; !present {
+					m[field] = f()
+				}
+			}
+			v = m
+		}
+	}
 	if some, ok := r.some[t]; ok {
 		x, err := r.build(v, some.Type().In(0))
 		if err != nil {

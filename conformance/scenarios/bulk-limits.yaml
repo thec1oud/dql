@@ -1,5 +1,6 @@
 scenario: bulk-limits
 schema: shop
+requires: [returning]
 steps:
   # Postgres binds at most 65535 parameters in a statement, and a tenant
   # row binds 2: 32767 rows are the most one statement writes (§25.2).

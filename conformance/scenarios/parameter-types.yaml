@@ -1,5 +1,6 @@
 scenario: parameter-types
 schema: shop
+requires: [arrays]
 # Parameters whose database type a Go value alone does not give, written
 # and read back in each statement mode (§26.4): an enum, a list and an
 # empty list.

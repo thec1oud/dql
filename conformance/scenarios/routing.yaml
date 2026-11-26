@@ -1,5 +1,6 @@
 scenario: routing
 schema: shop
+requires: [replica]
 replica: true
 steps:
   - op: tenants.insert
