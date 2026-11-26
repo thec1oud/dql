@@ -205,7 +205,8 @@ func TestFragments(t *testing.T) {
 }
 
 // MariaDB has no row alias, so an upsert reads the proposed row through
-// VALUES().
+// VALUES(), and it spells regular expressions and list membership its own
+// way.
 func TestMariaDBFragments(t *testing.T) {
 	b := fixture()
 	b.Catalogs = []*irv1.Catalog{b.Catalogs[0]}
@@ -215,6 +216,9 @@ func TestMariaDBFragments(t *testing.T) {
 		"excluded.pets.id":    "VALUES(`id`)",
 		"upsert.pets.PRIMARY": "INSERT INTO `pets` ({cols}) VALUES {rows} ON DUPLICATE KEY UPDATE {sets}",
 		"lock.share":          " LOCK IN SHARE MODE",
+		"op.regex_match":      "{0} REGEXP CONCAT('(?-i)', {1})",
+		"op.in":               "JSON_CONTAINS({1}, JSON_ARRAY({0}))",
+		"op.eq":               "{0} = {1}",
 	} {
 		if got[id].GetTemplate() != want {
 			t.Errorf("%s\n got %q\nwant %q", id, got[id].GetTemplate(), want)
@@ -257,6 +261,29 @@ func TestListFragments(t *testing.T) {
 	for _, id := range []string{"op.in.shop.people.manager_id", "op.in.shop.pets.id"} {
 		if got[id] != nil {
 			t.Errorf("unexpected %s", id)
+		}
+	}
+}
+
+// MariaDB's JSON_TABLE has no enum or set columns, so a list compared with
+// one holds its items as text.
+func TestMariaDBListFragments(t *testing.T) {
+	b := fixture()
+	b.Catalogs = []*irv1.Catalog{b.Catalogs[0]}
+	b.Catalogs[0].Extensions = flavored("mariadb").Extensions
+	cols := b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[0].GetColumns()
+	for i, raw := range []string{"enum('a','b')", "set('a')", "bigint"} {
+		cols[i].Type = &irv1.Type{Kind: &irv1.Type_Text{Text: &irv1.Text{}}, Native: &irv1.NativeType{Raw: raw}}
+	}
+	cols[0].Collation = &irv1.Collation{Name: "utf8mb4_uca1400_ai_ci"}
+	got := table(t, b)
+	for id, want := range map[string]string{
+		"op.in.people.id":         "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v text CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci PATH '$')) AS dql_list)",
+		"op.in.people.manager_id": "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v text PATH '$')) AS dql_list)",
+		"op.in.people.email":      "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v bigint PATH '$')) AS dql_list)",
+	} {
+		if got[id].GetTemplate() != want {
+			t.Errorf("%s\n got %q\nwant %q", id, got[id].GetTemplate(), want)
 		}
 	}
 }
