@@ -28,7 +28,9 @@ func Upserts(catalogs []*irv1.Catalog) []*irv1.Upsert {
 // Upsert returns the upsert of e on conflict target u. It inserts the whole
 // Draft and, on conflict, updates the fields present in it except the
 // excluded columns: the conflict key's and the immutable, bound, version and
-// db-updated ones (§14.7). Every emitter and dialect uses these exclusions.
+// db-updated ones (§14.7), and an identity a Draft may leave out, whose
+// proposed value is then the number drawn for the row that was not
+// inserted. (An always-generated identity is in no Draft.) Every emitter and dialect uses these exclusions.
 func Upsert(e Entity, u *irv1.Uniqueness) *irv1.Upsert {
 	up := &irv1.Upsert{
 		Entity:         e.Name,
@@ -46,7 +48,7 @@ func Upsert(e Entity, u *irv1.Uniqueness) *irv1.Upsert {
 // exclude returns why the default update leaves c alone, or
 // EXCLUDE_UNSPECIFIED. A column several rules exclude takes the first reason
 // in the order of the forbidden rules: bound, version, immutable, db-updated,
-// then the conflict key.
+// identity, then the conflict key.
 func exclude(c *irv1.Column, conflictKey bool) irv1.ExcludeReason {
 	switch {
 	case has(c, keyBound):
@@ -57,6 +59,8 @@ func exclude(c *irv1.Column, conflictKey bool) irv1.ExcludeReason {
 		return irv1.ExcludeReason_EXCLUDE_IMMUTABLE
 	case dbUpdated(c):
 		return irv1.ExcludeReason_EXCLUDE_DB_UPDATED
+	case c.GetDefault().GetClass() == irv1.DefaultClass_DEFAULT_IDENTITY_BY_DEFAULT:
+		return irv1.ExcludeReason_EXCLUDE_IDENTITY
 	case conflictKey:
 		return irv1.ExcludeReason_EXCLUDE_CONFLICT_KEY
 	}

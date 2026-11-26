@@ -10368,6 +10368,10 @@
       },
       "defaultUpdateExcludes": [
         {
+          "column": "id",
+          "reason": "EXCLUDE_IDENTITY"
+        },
+        {
           "column": "slug",
           "reason": "EXCLUDE_CONFLICT_KEY"
         }
@@ -10392,7 +10396,7 @@
       "defaultUpdateExcludes": [
         {
           "column": "id",
-          "reason": "EXCLUDE_CONFLICT_KEY"
+          "reason": "EXCLUDE_IDENTITY"
         }
       ]
     },

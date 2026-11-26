@@ -7321,19 +7321,6 @@
                     "items": [
                       {
                         "fragment": {
-                          "fragment": "set.posts.id",
-                          "holes": [
-                            {
-                              "hole": "0",
-                              "fragment": {
-                                "fragment": "excluded.posts.id"
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      {
-                        "fragment": {
                           "fragment": "set.posts.author_id",
                           "holes": [
                             {
