@@ -11,6 +11,7 @@ use (
 	./proto
 	./querysources
 	./querysources/mysql
+	./querysources/sqlite
 	./runtime/go
 	./runtime/go/dqlmysql
 	./runtime/go/dqlotel
