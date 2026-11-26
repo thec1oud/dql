@@ -15,8 +15,9 @@
     "skipLibCheck": true,
     "paths": {
       "@dql/runtime": ["../../../runtime/ts/dql/dist/index"],
-      "@dql/pg": ["../../../runtime/ts/dqlpg/dist/index"]
+      "@dql/pg": ["../../../runtime/ts/dqlpg/dist/index"],
+      "@dql/mysql": ["../../../runtime/ts/dqlmysql/dist/index"]
     }
   },
-  "include": ["src", "test", "variantdb"]
+  "include": ["src", "test", "variantdb", "mysqlshopdb"]
 }

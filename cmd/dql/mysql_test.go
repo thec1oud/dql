@@ -44,9 +44,13 @@ func TestGenerateMySQL(t *testing.T) {
 	}
 }
 
-// goldenMysqlshopdb is the go emitter's golden output for the running
-// example on MySQL, which the conformance harness runs.
-var goldenMysqlshopdb = filepath.Join("..", "..", "conformance", "harness", "go", "testdata", "mysqlshopdb")
+// goldenMysqlshopdb and goldenMysqlshopdbTS are the go and ts emitters'
+// golden output for the running example on MySQL, which the conformance
+// harnesses run.
+var (
+	goldenMysqlshopdb   = filepath.Join("..", "..", "conformance", "harness", "go", "testdata", "mysqlshopdb")
+	goldenMysqlshopdbTS = filepath.Join("..", "..", "conformance", "harness", "ts", "mysqlshopdb")
+)
 
 // inputDigest is the digest of a catalog's input, which holds the name of
 // the database it was read from, fresh in each run.
@@ -56,7 +60,7 @@ var inputDigest = regexp.MustCompile(`sha256:[0-9a-f]{64}`)
 // definition holds.
 var databaseName = regexp.MustCompile(`dql_test_[0-9_]+`)
 
-// dql generate writes the conformance harness's mysqlshopdb package from
+// dql generate writes the conformance harnesses' mysqlshopdb packages from
 // conformance/schemas/mysql/shop.yaml.
 func TestGenerateConformanceMySQL(t *testing.T) {
 	ctx := context.Background()
@@ -95,16 +99,21 @@ func TestGenerateConformanceMySQL(t *testing.T) {
 		t.Fatal(err)
 	}
 	golden.Assert(t, filepath.Join("..", "..", "testdata", "mysqlshop", "catalog.json"), js, inputDigest, databaseName)
-	files, _ := filepath.Glob(filepath.Join(filepath.Dir(cfg), "mysqlshopdb", "*.dql.go"))
-	want, _ := filepath.Glob(filepath.Join(goldenMysqlshopdb, "*.dql.go"))
-	if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
-		t.Errorf("%d files, golden has %d", len(files), len(want))
-	}
-	for _, f := range files {
-		got, err := os.ReadFile(f)
-		if err != nil {
-			t.Fatal(err)
+	for _, pkg := range []struct{ out, glob, golden string }{
+		{"mysqlshopdb", "*.dql.go", goldenMysqlshopdb},
+		{filepath.Join("ts", "mysqlshopdb"), "*.dql.ts", goldenMysqlshopdbTS},
+	} {
+		files, _ := filepath.Glob(filepath.Join(filepath.Dir(cfg), pkg.out, pkg.glob))
+		want, _ := filepath.Glob(filepath.Join(pkg.golden, pkg.glob))
+		if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
+			t.Errorf("%s: %d files, golden has %d", pkg.out, len(files), len(want))
 		}
-		golden.Assert(t, filepath.Join(goldenMysqlshopdb, filepath.Base(f)), got, inputDigest)
+		for _, f := range files {
+			got, err := os.ReadFile(f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			golden.Assert(t, filepath.Join(pkg.golden, filepath.Base(f)), got, inputDigest)
+		}
 	}
 }
