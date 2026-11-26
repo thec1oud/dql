@@ -152,6 +152,11 @@ func (g *generator) conv(f *file, t *irv1.Type, at *irv1.QualifiedName, what str
 		return g.namedDecoder(firstName(k.Named.GetDomain(), k.Named.GetComposite()))
 	case *irv1.Type_Weak:
 		return dql + ".Weak(" + g.conv(f, k.Weak.GetAffinity(), at, what) + ")"
+	case *irv1.Type_Bit:
+		// A bit(n) holds exactly n bits, which MySQL sends padded to bytes.
+		if !k.Bit.GetVarying() && k.Bit.Length != nil {
+			return fmt.Sprintf("%s.FixedBits(%d)", dql, k.Bit.GetLength())
+		}
 	}
 	switch goType {
 	case "string":

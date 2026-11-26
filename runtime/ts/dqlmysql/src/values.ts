@@ -47,7 +47,7 @@ function attempt(parse: (s: string) => unknown): (v: unknown) => unknown {
 /** bytes copies a Buffer into a plain Uint8Array. */
 const bytes = (v: unknown) => Uint8Array.from(v as Buffer);
 
-/** bits writes a BIT's bytes as a bit string, every bit of every byte: a BIT(3) holding b'101' is 00000101, since the protocol does not send the length. */
+/** bits writes a BIT's bytes as a bit string, every bit of every byte: a BIT(3) holding b'101' is 00000101, since the protocol does not send the length; the generated decoder cuts it to the column's length (fixedBits). */
 const bits = (v: unknown) => [...(v as Buffer)].map((b) => b.toString(2).padStart(8, "0")).join("");
 
 /** dateTime parses a DATETIME as MySQL writes it, 2024-01-02 03:04:05.123456. */

@@ -236,6 +236,22 @@ export function asString<S extends string = string>(v: unknown): S {
   return typeof v === "string" ? (v as S) : fail("off_type");
 }
 
+/**
+ * fixedBits converts the bit string of a bit(n) column, which holds exactly
+ * n bits. MySQL sends a BIT(n) as whole bytes without its length, so a longer
+ * value whose extra leading bits are zero is cut to its last n bits; one with
+ * a leading bit set, or with fewer than n bits, is off type.
+ */
+export function fixedBits(n: number): Converter<string> {
+  return (v) => {
+    const s = asString(v);
+    if (s.length === n) {
+      return s;
+    }
+    return s.length > n && !s.slice(0, s.length - n).includes("1") ? s.slice(s.length - n) : fail("off_type");
+  };
+}
+
 /** asBytes converts a Uint8Array. */
 export const asBytes: Converter<Uint8Array> = (v) => (v instanceof Uint8Array ? v : fail("off_type"));
 

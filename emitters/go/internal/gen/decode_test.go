@@ -288,3 +288,36 @@ func TestNarrowedDecoder(t *testing.T) {
 		}
 	}
 }
+
+// A bit(n) field converts to exactly n bits; bit varying and a bit of no
+// known length take any.
+func TestFixedBitsDecoder(t *testing.T) {
+	three := uint32(3)
+	types := []*irv1.Type{
+		{Kind: &irv1.Type_Bit{Bit: &irv1.Bit{Length: &three}}},
+		{Kind: &irv1.Type_Bit{Bit: &irv1.Bit{Length: &three, Varying: true}}},
+		{Kind: &irv1.Type_Bit{Bit: &irv1.Bit{}}},
+	}
+	names := []string{"flags", "mask", "raw"}
+	var fields []*irv1.Field
+	cols := []*irv1.Column{attr("id", tInt, false)}
+	for i, n := range names {
+		fields = append(fields, fl(n, types[i], false, false))
+		cols = append(cols, attr(n, types[i], false))
+	}
+	b := gadgetsBundle(&irv1.ShapeLayer{Shapes: []*irv1.Shape{shp(userFull, "user full", "users", fields)}})
+	b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[1].Columns = cols
+	files, codes := generate(t, b, everyTypeOptions)
+	if len(codes) != 0 {
+		t.Fatalf("codes %q", codes)
+	}
+	for _, want := range []string{
+		"\tout.Flags = dql.Field(d, 0, \"flags\", \"\", dql.FixedBits(3))\n",
+		"\tout.Mask = dql.Field(d, 1, \"mask\", \"\", dql.As[dql.Bits])\n",
+		"\tout.Raw = dql.Field(d, 2, \"raw\", \"\", dql.As[dql.Bits])\n",
+	} {
+		if !strings.Contains(files["user.dql.go"], want) {
+			t.Errorf("user.dql.go lacks %q:\n%s", want, files["user.dql.go"])
+		}
+	}
+}
