@@ -15,6 +15,9 @@
       "dependencies": {
         "temporal-polyfill": "1.0.8",
       },
+      "devDependencies": {
+        "@types/node": "26.6.10",
+      },
     },
   },
   "packages": {
