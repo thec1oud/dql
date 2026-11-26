@@ -9,6 +9,8 @@ The TypeScript runtime that dql's generated TypeScript uses (design record §15,
 
 Hooks observe queries, transactions, pools and replicas (§24): pass them as `hooks` when opening the executor. `logHooks(logger)` logs the events to any logger with `debug`, `info`, `warn` and `error(message, attrs)`, such as `console` or a winston logger; wrap a pino logger to swap its arguments.
 
+Large reads stream with `iterate(h, statement)`, an `AsyncIterable` that holds its connection until the loop ends (§25.1); `@dql/pg` reads them through `pg-cursor`, 256 rows at a time. Bulk writes split within the dialect's parameter limit in one transaction with `executeBulk` and `queryBulk` (§25.2).
+
 The targets are Node (current LTS), Bun and Deno. The time types of §8.8 are Temporal's: native where the runtime has it, `temporal-polyfill` otherwise.
 
 The workspace uses Bun: `bun.lock` is committed, `tsc` type checks and builds, and `bun test` runs the unit tests with 100% coverage. Node and Deno run the TypeScript conformance suite.

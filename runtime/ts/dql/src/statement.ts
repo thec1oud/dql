@@ -45,19 +45,19 @@ export interface Statement {
   readonly [rawSource]?: string;
 }
 
-/** Bound is a statement's executor, frame and source. */
-interface Bound {
+/** @internal Bound is a statement's executor, frame and source. */
+export interface Bound {
   readonly e: Executor;
   readonly f: Frame | undefined;
   readonly src: SourcePool;
 }
 
 /**
- * observed runs a statement on h, firing the query hooks around it unless the
+ * @internal observed runs a statement on h, firing the query hooks around it unless the
  * statement opts out (§24): fn runs on the statement's connection, and count
  * says how many rows its result holds.
  */
-function observed<T>(h: Reader, s: Statement, writes: boolean, count: (r: T) => number, fn: (b: Bound, c: Conn) => Promise<T>): Promise<T> {
+export function observed<T>(h: Reader, s: Statement, writes: boolean, count: (r: T) => number, fn: (b: Bound, c: Conn) => Promise<T>): Promise<T> {
   return noLog(s.noLog, async () => {
     const { executor: e, frame } = h[bind]();
     const f = frame ?? ambient().frame;
@@ -167,8 +167,8 @@ async function withConn<T>(b: Bound, s: Statement, writes: boolean, fn: (c: Conn
   }
 }
 
-/** sent is a statement as the driver runs it. */
-function sent(s: Statement): Sent {
+/** @internal sent is a statement as the driver runs it. */
+export function sent(s: Statement): Sent {
   const signal = ambient().signal;
   return {
     query: s.query,
