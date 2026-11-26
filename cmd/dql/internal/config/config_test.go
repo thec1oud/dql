@@ -219,8 +219,13 @@ sources:
     connection: env:SHOP_DATABASE_URL
   - plugin: dpg-snapshot
     snapshot: shop.json
-  - plugin: mysql-live
+  - plugin: acme-live
     snapshot: shop.json
+  - plugin: mysql-live
+    catalog: shop
+    connection: env:SHOP_DATABASE_URL
+    namespaces: [app]
+    default-namespace: app
 `))
 	var msgs []string
 	for _, d := range c.Validate() {
@@ -232,6 +237,8 @@ sources:
 		"config-setting-unused: sources[0] (pg-live) sets snapshot, which pg-live does not read; remove it",
 		"config-setting-missing: sources[1] (dpg-snapshot) has no snapshot; set snapshot:",
 		"config-setting-unused: sources[1] (dpg-snapshot) sets connection, which dpg-snapshot does not read; remove it",
+		"config-setting-unused: sources[4] (mysql-live) sets namespaces, which mysql-live does not read; remove it",
+		"config-setting-unused: sources[4] (mysql-live) sets default-namespace, which mysql-live does not read; remove it",
 	}, "\n")
 	if got := strings.Join(msgs, "\n"); got != want {
 		t.Errorf("settings:\n%s\nwant:\n%s", got, want)
@@ -285,9 +292,9 @@ sources:
   - plugin: pg-live
     catalog: shop
     connection: env:SHOP_DATABASE_URL
-  - plugin: mysql-live
-    path: bin/dql-plugin-mysql-live
-    dsn: env:MYSQL_URL
+  - plugin: acme-live
+    path: bin/dql-plugin-acme-live
+    dsn: env:ACME_URL
     since: 2001-12-14
     cert: !!binary aGVsbG8=
     retries: 3
@@ -311,14 +318,14 @@ emit:
 	}
 	want := []string{
 		"map[catalog:shop connection:env:SHOP_DATABASE_URL plugin:pg-live]",
-		"map[cert:aGVsbG8= dsn:env:MYSQL_URL path:bin/dql-plugin-mysql-live plugin:mysql-live pool:map[size:4] " +
+		"map[cert:aGVsbG8= dsn:env:ACME_URL path:bin/dql-plugin-acme-live plugin:acme-live pool:map[size:4] " +
 			"ports:map[1:primary true:on] replica:map[size:4] retries:3 since:2001-12-14 timeout:<nil>]",
 		"map[dialect:postgres nullable:[map[boxed:true]] out:gen plugin:kotlin]",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("settings:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
-	if c.Sources[1].Path != "bin/dql-plugin-mysql-live" || c.Emit[0].Out != "gen" {
+	if c.Sources[1].Path != "bin/dql-plugin-acme-live" || c.Emit[0].Out != "gen" {
 		t.Errorf("known keys: %+v %+v", c.Sources[1], c.Emit[0])
 	}
 	if ds := c.Validate(); len(ds) != 0 {
@@ -328,10 +335,10 @@ emit:
 	for _, e := range []struct{ config, want string }{
 		{"sources:\n  - plugin: pg-live\n    catalog: shop\n    dsn: x\n    pool: 4\n",
 			"line 4: field dsn not found in type config.Source\n  line 5: field pool not found in type config.Source"},
-		{"sources:\n  - plugin: mysql-live\n    pool:\n      ? [a, b]\n      : 4\n", "line 4: a key in a plugin's settings must be a scalar"},
+		{"sources:\n  - plugin: acme-live\n    pool:\n      ? [a, b]\n      : 4\n", "line 4: a key in a plugin's settings must be a scalar"},
 		{"emit:\n  - plugin: kotlin\n    out: [gen]\n", "line 3: cannot unmarshal !!seq into string"},
 		{"emit:\n  - plugin: go\n    out: gen\n    tags: [json]\n", "line 4: field tags not found in type config.Emit"},
-		{"sources:\n  - mysql-live\n", "line 2: cannot unmarshal !!str `mysql-live` into config.entry"},
+		{"sources:\n  - acme-live\n", "line 2: cannot unmarshal !!str `acme-live` into config.entry"},
 	} {
 		if _, err := Parse([]byte(e.config)); err == nil || !strings.Contains(err.Error(), e.want) {
 			t.Errorf("%q: %v; want %q", e.config, err, e.want)
