@@ -20,6 +20,7 @@ import (
 	"github.com/thec1oud/dql/core/shapes"
 	"github.com/thec1oud/dql/dialects/mysql"
 	"github.com/thec1oud/dql/dialects/postgres"
+	"github.com/thec1oud/dql/dialects/sqlite"
 	goemit "github.com/thec1oud/dql/emitters/go"
 	tsemit "github.com/thec1oud/dql/emitters/ts"
 	"github.com/thec1oud/dql/plugin"
@@ -62,6 +63,7 @@ var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 var dialects = map[irv1.Dialect]func() plugin.Plugin{
 	irv1.Dialect_DIALECT_POSTGRES: func() plugin.Plugin { return postgres.New() },
 	irv1.Dialect_DIALECT_MYSQL:    func() plugin.Plugin { return mysql.New() },
+	irv1.Dialect_DIALECT_SQLITE:   func() plugin.Plugin { return sqlite.New() },
 }
 
 // querySources are the shipped query-source plugins, by the dialect whose

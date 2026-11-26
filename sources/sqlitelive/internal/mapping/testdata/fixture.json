@@ -392,6 +392,12 @@
                     "columns": [
                       "label"
                     ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "length(label) \u003c= 40"
+                      }
+                    ],
                     "kind": "CONSTRAINT_KIND_CHECK",
                     "name": "loose_label_check",
                     "opaque": {
@@ -402,6 +408,12 @@
                     "columns": [
                       "n"
                     ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "n \u003e 0"
+                      }
+                    ],
                     "kind": "CONSTRAINT_KIND_CHECK",
                     "name": "loose_n_check",
                     "opaque": {
@@ -411,6 +423,12 @@
                   {
                     "columns": [
                       "n"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "n \u003c 100"
+                      }
                     ],
                     "kind": "CONSTRAINT_KIND_CHECK",
                     "name": "loose_n_check1",
@@ -1060,7 +1078,7 @@
         ],
         "provenance": {
           "fidelity": "SOURCE_FIDELITY_FULL",
-          "inputFingerprint": "sha256:5e863c96a0d95f8afb7779b5a6989415ef9d00585bd09aa362b1a616f0370b95",
+          "inputFingerprint": "sha256:f62a6e88a6df8a3c048c70ff4f57d07f55f8188c9858bd79a749f1dc9494ebbe",
           "source": "sqlite-live",
           "sourceVersion": "1.0.0"
         }
