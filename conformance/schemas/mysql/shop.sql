@@ -22,6 +22,7 @@ CREATE TABLE users (
   updated_at    TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   version       INT NOT NULL DEFAULT 1 COMMENT '@version',
   PRIMARY KEY (id),
+  CONSTRAINT users_email_check CHECK (CHAR_LENGTH(email) <= 320),
   CONSTRAINT users_tenant_email_key UNIQUE (tenant_id, email),
   CONSTRAINT users_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants (id)
 );

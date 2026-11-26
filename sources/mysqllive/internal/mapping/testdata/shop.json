@@ -1416,6 +1416,22 @@
                     }
                   }
                 ],
+                "constraints": [
+                  {
+                    "clientValidated": true,
+                    "columns": [
+                      "email"
+                    ],
+                    "kind": "CONSTRAINT_KIND_CHECK",
+                    "name": "users_email_check",
+                    "portable": {
+                      "length": {
+                        "max": 320,
+                        "unit": "LENGTH_UNIT_CHARACTERS"
+                      }
+                    }
+                  }
+                ],
                 "extensions": [
                   {
                     "@type": "type.dql.dev/dql.ext.mysql.v1.TableOptions",
@@ -1503,7 +1519,7 @@
         ],
         "provenance": {
           "fidelity": "SOURCE_FIDELITY_FULL",
-          "inputFingerprint": "sha256:0ddc18f3b69366da13068de6adead1c85326f780f39a136eaf4b36dadf9d82cf",
+          "inputFingerprint": "sha256:0d9c68ce876d154813a619e13ff33657eb8a09b598036cd7319375cf7c8e762f",
           "source": "mysql-live",
           "sourceVersion": "1.0.0"
         }

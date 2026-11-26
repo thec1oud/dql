@@ -131,8 +131,8 @@ test("a scenario on a schema a dialect lacks is skipped there", async () => {
   expect(lines).toEqual([
     "ok prepare/v",
     "ok describe/v",
-    "skip mysql/prepare/v: MySQL has no schema shop_variants",
-    "skip mysql/simple/v: MySQL has no schema shop_variants",
+    "ok mysql/prepare/v",
+    "ok mysql/simple/v",
     "skip mariadb/prepare/v: MariaDB has no schema shop_variants",
     "skip mariadb/simple/v: MariaDB has no schema shop_variants",
   ]);

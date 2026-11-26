@@ -461,6 +461,13 @@
           "comment": "@version"
         }
       ],
+      "checks": [
+        {
+          "name": "users_email_check",
+          "clause": "(char_length(`email`) \u003c= 320)",
+          "enforced": true
+        }
+      ],
       "indexes": [
         {
           "name": "PRIMARY",
