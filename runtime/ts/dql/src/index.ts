@@ -18,3 +18,44 @@ export {
   unbounded,
 } from "./range.js";
 export { OffsetTime } from "./offset-time.js";
+export {
+  Canceled,
+  CheckViolation,
+  ConcurrentModification,
+  ConnectionError,
+  type Constraint,
+  type ConstraintKind,
+  DatabaseError,
+  Deadlock,
+  DecodeError,
+  type DecodeFailure,
+  type DecodeReason,
+  DqlError,
+  type ErrorClass,
+  ExclusionViolation,
+  ForeignKeyViolation,
+  LockTimeout,
+  NotFound,
+  NotNullViolation,
+  type Origin,
+  PoolExhausted,
+  ReplicaUnavailable,
+  SerializationFailure,
+  Timeout,
+  TooManyRows,
+  UniqueViolation,
+  Violation,
+  classOf,
+  isViolation,
+} from "./errors.js";
+export {
+  type IssueKind,
+  type LengthUnit,
+  ValidationError,
+  type ValidationIssue,
+  describeIssue,
+  issuesAt,
+  throwIfIssues,
+} from "./validation.js";
+export { DigitsCheck, LengthCheck, MembershipCheck, NotEmptyCheck, PatternCheck, type RangeBounds, RangeCheck, length } from "./checks.js";
+export { type Keyed, UnmatchedKeyError, foldAscii } from "./collections.js";
