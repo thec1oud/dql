@@ -75,6 +75,8 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 	g.types()
 	g.shapes()
 	g.validators()
+	g.decoders()
+	g.redaction()
 	g.conversions()
 	g.companions()
 	g.merges()
@@ -110,6 +112,10 @@ type generator struct {
 	checkFile  *file
 	checks     map[string]string
 	checkNames map[string]bool
+	// decodeFile is dql-decoders.dql.ts, and namedDecoders names the
+	// decoder of each domain and composite type it declares.
+	decodeFile    *file
+	namedDecoders map[key]string
 }
 
 // decl is a module-level name: what declares it, for diagnostics, and the
@@ -136,21 +142,24 @@ type named struct {
 	base        *irv1.Type
 	q           *irv1.QualifiedName
 	constraints []*irv1.Constraint
+	// composite is a composite type's declaration, which its decoder reads
+	// (§13).
+	composite *irv1.Composite
 }
 
 // reserved are the names generated code takes from the runtime and from
 // TypeScript's globals, which no declaration may take (§4.3).
 var reserved = []string{
 	// @dql/runtime
-	"Cidr", "Decimal", "DecodeError", "Inet", "JsonValue", "Keyed", "MacAddr", "OffsetTime", "Range", "Temporal",
-	"UnmatchedKeyError", "Uuid", "Weak",
+	"Cidr", "Decimal", "DecodeError", "Decoder", "Inet", "JsonValue", "Keyed", "MacAddr", "OffsetTime", "Range", "Row",
+	"Temporal", "UnmatchedKeyError", "Uuid", "Weak",
 	// TypeScript globals
 	"Array", "BigInt", "Boolean", "Date", "Error", "JSON", "Number", "Object", "Promise", "ReadonlyArray",
 	"Record", "String", "Symbol", "Uint8Array",
 }
 
 func newGenerator(b *irv1.Bundle, o Options) *generator {
-	g := &generator{b: b, o: o, named: map[key]named{}, decls: map[string]decl{}, checks: map[string]string{}, checkNames: map[string]bool{}}
+	g := &generator{b: b, o: o, named: map[key]named{}, decls: map[string]decl{}, checks: map[string]string{}, checkNames: map[string]bool{}, namedDecoders: map[key]string{}}
 	for _, r := range reserved {
 		what := "the TypeScript global " + r
 		if slices.Contains(runtimeNames, r) {
@@ -166,7 +175,7 @@ func newGenerator(b *irv1.Bundle, o Options) *generator {
 			g.named[keyOf(q(d.GetName().GetStored()))] = named{words: d.GetHostName().GetWords(), base: d.GetBase(), q: q(d.GetName().GetStored()), constraints: d.GetConstraints()}
 		}
 		for _, c := range ns.GetComposites() {
-			g.named[keyOf(q(c.GetName().GetStored()))] = named{words: c.GetHostName().GetWords()}
+			g.named[keyOf(q(c.GetName().GetStored()))] = named{words: c.GetHostName().GetWords(), q: q(c.GetName().GetStored()), composite: c}
 		}
 	})
 	g.indexShapes()
@@ -174,7 +183,7 @@ func newGenerator(b *irv1.Bundle, o Options) *generator {
 }
 
 // runtimeNames are the reserved names that come from the runtime.
-var runtimeNames = reserved[:13]
+var runtimeNames = reserved[:15]
 
 // eachNamespace calls fn for every namespace in IR order, with a function
 // qualifying an object name in it.

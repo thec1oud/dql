@@ -5,8 +5,8 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Keyed, type Temporal, type ValidationIssue, issuesAt } from "@dql/runtime";
-import { type UserFull, type UserPartial, type UserRef, validateUserPartial, validateUserRef } from "./user.dql.ts";
+import { Decoder, type Keyed, type Row, Temporal, type ValidationIssue, asInstanceOf, asInt64, asString, issuesAt, nest } from "@dql/runtime";
+import { type UserFull, type UserPartial, type UserRef, decodeUserFull, redactUserPartial, redactUserRef, validateUserPartial, validateUserRef } from "./user.dql.ts";
 
 /** ProfileDraft is the shape profile.draft.flat of shop.app.profiles. */
 export interface ProfileDraft {
@@ -187,6 +187,116 @@ export function validateProfileChangeForUser(u: ProfileChangeForUser): Validatio
 export function validateProfileUserChange(c: ProfileUserChange): ValidationIssue[] {
   if (c.kind === "update") return validateUserPartial(c.partial);
   return [];
+}
+
+/**
+ * decodeProfileFull decodes r, a row of profile.full.flat.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeProfileFull(r: Row): ProfileFull {
+  const d = new Decoder("profile.full.flat", r, 3);
+  return {
+    userId: d.field(0, "user_id", "", asInt64),
+    bio: d.nullable(1, "bio", asString),
+    birthday: d.nullable(2, "birthday", asInstanceOf(Temporal.PlainDate)),
+  };
+}
+
+/**
+ * decodeProfileFullNested decodes r, a row of profile.full.nested.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeProfileFullNested(r: Row): ProfileFullNested {
+  const d = new Decoder("profile.full.nested", r, 4);
+  return {
+    userId: d.field(0, "user_id", "", asInt64),
+    bio: d.nullable(1, "bio", asString),
+    birthday: d.nullable(2, "birthday", asInstanceOf(Temporal.PlainDate)),
+    user: d.field(3, "user", "", nest(decodeUserFull)),
+  };
+}
+
+/**
+ * decodeProfileFullNests decodes r, a row of profile.full.nests.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeProfileFullNests(r: Row): ProfileFullNests {
+  const d = new Decoder("profile.full.nests", r, 1);
+  return {
+    user: d.field(0, "user", "", nest(decodeUserFull)),
+  };
+}
+
+/**
+ * decodeProfileKey decodes r, a row of profile.key.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeProfileKey(r: Row): ProfileKey {
+  const d = new Decoder("profile.key", r, 1);
+  return {
+    userId: d.field(0, "user_id", "", asInt64),
+  };
+}
+
+/**
+ * redactProfileDraftNested returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactProfileDraftNested(n: ProfileDraftNested): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.user === undefined ? {} : { user: redactUserRef(n.user) }),
+  };
+}
+
+/**
+ * redactProfileDraftNests returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactProfileDraftNests(n: ProfileDraftNests): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.user === undefined ? {} : { user: redactUserRef(n.user) }),
+  };
+}
+
+/**
+ * redactProfilePartialNested returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactProfilePartialNested(n: ProfilePartialNested): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.user === undefined ? {} : { user: redactProfileUserChange(n.user) }),
+  };
+}
+
+/**
+ * redactProfilePartialNests returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactProfilePartialNests(n: ProfilePartialNests): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.user === undefined ? {} : { user: redactProfileUserChange(n.user) }),
+  };
+}
+
+/**
+ * redactProfileUserChange returns c with the key and payload it holds
+ * redacted, for logging hooks to print (§7.5).
+ */
+export function redactProfileUserChange(c: ProfileUserChange): Record<string, unknown> {
+  if (c.kind === "update") return { ...c, partial: redactUserPartial(c.partial) };
+  return { ...c };
 }
 
 /** ProfileDraft converts ProfileDraft values to other shapes (§14.9). */

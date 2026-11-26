@@ -5,9 +5,9 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Keyed, type ValidationIssue, issuesAt } from "@dql/runtime";
-import { type PostFull, type PostPartial, type PostRef, validatePostPartial, validatePostRef } from "./post.dql.ts";
-import { type TagFull, type TagPartial, type TagRef, validateTagPartial, validateTagRef } from "./tag.dql.ts";
+import { Decoder, type Keyed, type Row, type ValidationIssue, asInt64, issuesAt, nest } from "@dql/runtime";
+import { type PostFull, type PostPartial, type PostRef, decodePostFull, validatePostPartial, validatePostRef } from "./post.dql.ts";
+import { type TagFull, type TagPartial, type TagRef, decodeTagFull, validateTagPartial, validateTagRef } from "./tag.dql.ts";
 
 /** PostTagDraft is the shape post_tag.draft.flat of shop.app.post_tags. */
 export interface PostTagDraft {
@@ -252,6 +252,64 @@ export function validatePostTagPostChange(c: PostTagPostChange): ValidationIssue
 export function validatePostTagTagChange(c: PostTagTagChange): ValidationIssue[] {
   if (c.kind === "update") return validateTagPartial(c.partial);
   return [];
+}
+
+/**
+ * decodePostTagFull decodes r, a row of post_tag.full.flat.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePostTagFull(r: Row): PostTagFull {
+  const d = new Decoder("post_tag.full.flat", r, 2);
+  return {
+    postId: d.field(0, "post_id", "", asInt64),
+    tagId: d.field(1, "tag_id", "", asInt64),
+  };
+}
+
+/**
+ * decodePostTagFullNested decodes r, a row of post_tag.full.nested.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePostTagFullNested(r: Row): PostTagFullNested {
+  const d = new Decoder("post_tag.full.nested", r, 4);
+  return {
+    postId: d.field(0, "post_id", "", asInt64),
+    tagId: d.field(1, "tag_id", "", asInt64),
+    post: d.field(2, "post", "", nest(decodePostFull)),
+    tag: d.field(3, "tag", "", nest(decodeTagFull)),
+  };
+}
+
+/**
+ * decodePostTagFullNests decodes r, a row of post_tag.full.nests.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePostTagFullNests(r: Row): PostTagFullNests {
+  const d = new Decoder("post_tag.full.nests", r, 2);
+  return {
+    post: d.field(0, "post", "", nest(decodePostFull)),
+    tag: d.field(1, "tag", "", nest(decodeTagFull)),
+  };
+}
+
+/**
+ * decodePostTagKey decodes r, a row of post_tag.key.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePostTagKey(r: Row): PostTagKey {
+  const d = new Decoder("post_tag.key", r, 2);
+  return {
+    postId: d.field(0, "post_id", "", asInt64),
+    tagId: d.field(1, "tag_id", "", asInt64),
+  };
 }
 
 /** PostTagDraft converts PostTagDraft values to other shapes (§14.9). */

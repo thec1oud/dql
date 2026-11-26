@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Temporal } from "@dql/runtime";
+import { Decoder, type Row, Temporal, asInstanceOf, asInt64, asString } from "@dql/runtime";
 
 /** PublishedPostFull is the shape published_post.full.flat of shop.app.published_posts. */
 export interface PublishedPostFull {
@@ -26,6 +26,62 @@ export interface PublishedPostFullNests {
 /** PublishedPostKey is the shape published_post.key of shop.app.published_posts. */
 export interface PublishedPostKey {
   id: bigint; // asserted non-null; checked when decoding
+}
+
+/**
+ * decodePublishedPostFull decodes r, a row of published_post.full.flat.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePublishedPostFull(r: Row): PublishedPostFull {
+  const d = new Decoder("published_post.full.flat", r, 4);
+  return {
+    id: d.field(0, "id", "core.nonnull from COMMENT ON COLUMN app.published_posts.id", asInt64),
+    title: d.field(1, "title", "core.nonnull from COMMENT ON COLUMN app.published_posts.title", asString),
+    authorId: d.nullable(2, "author_id", asInt64),
+    publishedAt: d.nullable(3, "published_at", asInstanceOf(Temporal.Instant)),
+  };
+}
+
+/**
+ * decodePublishedPostFullNested decodes r, a row of published_post.full.nested.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePublishedPostFullNested(r: Row): PublishedPostFullNested {
+  const d = new Decoder("published_post.full.nested", r, 4);
+  return {
+    id: d.field(0, "id", "core.nonnull from COMMENT ON COLUMN app.published_posts.id", asInt64),
+    title: d.field(1, "title", "core.nonnull from COMMENT ON COLUMN app.published_posts.title", asString),
+    authorId: d.nullable(2, "author_id", asInt64),
+    publishedAt: d.nullable(3, "published_at", asInstanceOf(Temporal.Instant)),
+  };
+}
+
+/**
+ * decodePublishedPostFullNests decodes r, a row of published_post.full.nests.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePublishedPostFullNests(r: Row): PublishedPostFullNests {
+  const d = new Decoder("published_post.full.nests", r, 0);
+  return {};
+}
+
+/**
+ * decodePublishedPostKey decodes r, a row of published_post.key.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodePublishedPostKey(r: Row): PublishedPostKey {
+  const d = new Decoder("published_post.key", r, 1);
+  return {
+    id: d.field(0, "id", "core.nonnull from COMMENT ON COLUMN app.published_posts.id", asInt64),
+  };
 }
 
 /** PublishedPostFull converts PublishedPostFull values to other shapes (§14.9). */

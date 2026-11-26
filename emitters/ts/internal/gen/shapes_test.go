@@ -75,7 +75,7 @@ func TestShopShapes(t *testing.T) {
 		names = append(names, name)
 	}
 	slices.Sort(names)
-	want := []string{"dql-checks.dql.ts", "dql-shapes.dql.ts", "dql-types.dql.ts", "dql-version.dql.ts", "index.dql.ts", "post.dql.ts", "post_tag.dql.ts",
+	want := []string{"dql-checks.dql.ts", "dql-decoders.dql.ts", "dql-shapes.dql.ts", "dql-types.dql.ts", "dql-version.dql.ts", "index.dql.ts", "post.dql.ts", "post_tag.dql.ts",
 		"profile.dql.ts", "published_post.dql.ts", "tag.dql.ts", "tenant.dql.ts", "user.dql.ts"}
 	if !slices.Equal(names, want) {
 		t.Fatalf("files %q", names)
@@ -242,7 +242,7 @@ func TestShapeWithoutForms(t *testing.T) {
 	for _, want := range []string{
 		"/** PostFullNested is the shape post.full.nested of shop.app.posts. */\nexport interface PostFullNested {\n  id: bigint;\n  author: UserFull | null;\n}",
 		"/** PostKey is the shape post.key of shop.app.posts. */\nexport interface PostKey {\n  id: bigint;\n}",
-		"import type { UserFull } from \"./user.dql.ts\";",
+		"import { type UserFull, decodeUserFull } from \"./user.dql.ts\";",
 	} {
 		if !strings.Contains(files["post.dql.ts"], want) {
 			t.Errorf("post.dql.ts lacks %q:\n%s", want, files["post.dql.ts"])

@@ -5,11 +5,12 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Keyed, type ValidationIssue, issuesAt } from "@dql/runtime";
+import { Decoder, type Keyed, type Row, type ValidationIssue, asInt64, issuesAt } from "@dql/runtime";
 import { dqlSlugTextCheck } from "./dql-checks.dql.ts";
+import { dqlDecodeSlugText } from "./dql-decoders.dql.ts";
 import type { SlugText } from "./dql-types.dql.ts";
-import { type PostDraft, type PostFull, type PostKey, type PostLink, validatePostDraft, validatePostLink } from "./post.dql.ts";
-import { type PostTagChangeForTag, type PostTagDraftForTag, type PostTagFull, validatePostTagChangeForTag, validatePostTagDraftForTag } from "./post_tag.dql.ts";
+import { type PostDraft, type PostFull, type PostKey, type PostLink, decodePostFull, validatePostDraft, validatePostLink } from "./post.dql.ts";
+import { type PostTagChangeForTag, type PostTagDraftForTag, type PostTagFull, decodePostTagFull, validatePostTagChangeForTag, validatePostTagDraftForTag } from "./post_tag.dql.ts";
 
 /** TagDraft is the shape tag.draft.flat of shop.app.tags. */
 export interface TagDraft {
@@ -199,6 +200,63 @@ export function validateTagPostsChange(c: TagPostsChange): ValidationIssue[] {
 export function validateTagRef(r: TagRef): ValidationIssue[] {
   if (r.kind === "create") return validateTagDraft(r.draft);
   return [];
+}
+
+/**
+ * decodeTagFull decodes r, a row of tag.full.flat.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeTagFull(r: Row): TagFull {
+  const d = new Decoder("tag.full.flat", r, 2);
+  return {
+    id: d.field(0, "id", "", asInt64),
+    name: d.field(1, "name", "", dqlDecodeSlugText),
+  };
+}
+
+/**
+ * decodeTagFullNested decodes r, a row of tag.full.nested.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeTagFullNested(r: Row): TagFullNested {
+  const d = new Decoder("tag.full.nested", r, 4);
+  return {
+    id: d.field(0, "id", "", asInt64),
+    name: d.field(1, "name", "", dqlDecodeSlugText),
+    postTags: d.many(2, "post_tags", decodePostTagFull),
+    posts: d.many(3, "posts", decodePostFull),
+  };
+}
+
+/**
+ * decodeTagFullNests decodes r, a row of tag.full.nests.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeTagFullNests(r: Row): TagFullNests {
+  const d = new Decoder("tag.full.nests", r, 2);
+  return {
+    postTags: d.many(0, "post_tags", decodePostTagFull),
+    posts: d.many(1, "posts", decodePostFull),
+  };
+}
+
+/**
+ * decodeTagKey decodes r, a row of tag.key.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeTagKey(r: Row): TagKey {
+  const d = new Decoder("tag.key", r, 1);
+  return {
+    id: d.field(0, "id", "", asInt64),
+  };
 }
 
 /** TagDraft converts TagDraft values to other shapes (§14.9). */

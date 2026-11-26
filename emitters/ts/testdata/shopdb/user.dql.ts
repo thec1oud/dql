@@ -5,12 +5,13 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import { type Keyed, type Temporal, type Uuid, type ValidationIssue, issuesAt } from "@dql/runtime";
+import { Decoder, type Keyed, type Row, Temporal, type Uuid, type ValidationIssue, asInstanceOf, asInt32, asInt64, asString, issuesAt, nest } from "@dql/runtime";
 import { dqlEmailAddressCheck } from "./dql-checks.dql.ts";
+import { dqlDecodeEmailAddress } from "./dql-decoders.dql.ts";
 import type { EmailAddress } from "./dql-types.dql.ts";
-import { type PostChangeForAuthor, type PostChangeForEditor, type PostDraftForAuthor, type PostDraftForEditor, type PostFull, validatePostChangeForAuthor, validatePostChangeForEditor, validatePostDraftForAuthor, validatePostDraftForEditor } from "./post.dql.ts";
-import { type ProfileChangeForUser, type ProfileDraftForUser, type ProfileFull, validateProfileChangeForUser, validateProfileDraftForUser } from "./profile.dql.ts";
-import type { TenantFull } from "./tenant.dql.ts";
+import { type PostChangeForAuthor, type PostChangeForEditor, type PostDraftForAuthor, type PostDraftForEditor, type PostFull, decodePostFull, validatePostChangeForAuthor, validatePostChangeForEditor, validatePostDraftForAuthor, validatePostDraftForEditor } from "./post.dql.ts";
+import { type ProfileChangeForUser, type ProfileDraftForUser, type ProfileFull, decodeProfileFull, validateProfileChangeForUser, validateProfileDraftForUser } from "./profile.dql.ts";
+import { type TenantFull, decodeTenantFull } from "./tenant.dql.ts";
 
 /** UserDraft is the shape user.draft.flat of shop.app.users. */
 export interface UserDraft {
@@ -211,6 +212,144 @@ export function validateUserPartialNests(n: UserPartialNests): ValidationIssue[]
 export function validateUserRef(r: UserRef): ValidationIssue[] {
   if (r.kind === "create") return validateUserDraft(r.draft);
   return [];
+}
+
+/**
+ * decodeUserFull decodes r, a row of user.full.flat.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeUserFull(r: Row): UserFull {
+  const d = new Decoder("user.full.flat", r, 7);
+  return {
+    id: d.field(0, "id", "", asInt64),
+    tenantId: d.field(1, "tenant_id", "", asString<Uuid>),
+    email: d.field(2, "email", "", dqlDecodeEmailAddress),
+    displayName: d.nullable(3, "display_name", asString),
+    createdAt: d.field(4, "created_at", "", asInstanceOf(Temporal.Instant)),
+    updatedAt: d.field(5, "updated_at", "", asInstanceOf(Temporal.Instant)),
+    version: d.field(6, "version", "", asInt32),
+  };
+}
+
+/**
+ * decodeUserFullNested decodes r, a row of user.full.nested.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeUserFullNested(r: Row): UserFullNested {
+  const d = new Decoder("user.full.nested", r, 11);
+  return {
+    id: d.field(0, "id", "", asInt64),
+    tenantId: d.field(1, "tenant_id", "", asString<Uuid>),
+    email: d.field(2, "email", "", dqlDecodeEmailAddress),
+    displayName: d.nullable(3, "display_name", asString),
+    createdAt: d.field(4, "created_at", "", asInstanceOf(Temporal.Instant)),
+    updatedAt: d.field(5, "updated_at", "", asInstanceOf(Temporal.Instant)),
+    version: d.field(6, "version", "", asInt32),
+    postsToAuthor: d.many(7, "posts_to_author", decodePostFull),
+    postsToEditor: d.many(8, "posts_to_editor", decodePostFull),
+    profile: d.nullable(9, "profile", nest(decodeProfileFull)),
+    tenant: d.field(10, "tenant", "", nest(decodeTenantFull)),
+  };
+}
+
+/**
+ * decodeUserFullNests decodes r, a row of user.full.nests.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeUserFullNests(r: Row): UserFullNests {
+  const d = new Decoder("user.full.nests", r, 4);
+  return {
+    postsToAuthor: d.many(0, "posts_to_author", decodePostFull),
+    postsToEditor: d.many(1, "posts_to_editor", decodePostFull),
+    profile: d.nullable(2, "profile", nest(decodeProfileFull)),
+    tenant: d.field(3, "tenant", "", nest(decodeTenantFull)),
+  };
+}
+
+/**
+ * decodeUserKey decodes r, a row of user.key.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeUserKey(r: Row): UserKey {
+  const d = new Decoder("user.key", r, 2);
+  return {
+    id: d.field(0, "id", "", asInt64),
+    version: d.field(1, "version", "", asInt32),
+  };
+}
+
+/**
+ * decodeUserScope decodes r, a row of user.scope.
+ * The row holds the shape's fields in order, then its nests. A value that
+ * breaks what a field declares or asserts throws a DecodeError, never a
+ * default (§13).
+ */
+export function decodeUserScope(r: Row): UserScope {
+  const d = new Decoder("user.scope", r, 1);
+  return {
+    tenantId: d.field(0, "tenant_id", "", asString<Uuid>),
+  };
+}
+
+/**
+ * redactUserDraft returns d with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactUserDraft(d: UserDraft): Record<string, unknown> {
+  return {
+    ...d,
+    passwordHash: "[REDACTED]",
+  };
+}
+
+/**
+ * redactUserDraftNested returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactUserDraftNested(n: UserDraftNested): Record<string, unknown> {
+  return {
+    ...n,
+    passwordHash: "[REDACTED]",
+  };
+}
+
+/**
+ * redactUserPartial returns p with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactUserPartial(p: UserPartial): Record<string, unknown> {
+  return {
+    ...p,
+    ...(p.passwordHash === undefined ? {} : { passwordHash: "[REDACTED]" }),
+  };
+}
+
+/**
+ * redactUserPartialNested returns n with its sensitive fields as
+ * "[REDACTED]", for logging hooks to print (§7.5).
+ */
+export function redactUserPartialNested(n: UserPartialNested): Record<string, unknown> {
+  return {
+    ...n,
+    ...(n.passwordHash === undefined ? {} : { passwordHash: "[REDACTED]" }),
+  };
+}
+
+/**
+ * redactUserRef returns r with the key and payload it holds
+ * redacted, for logging hooks to print (§7.5).
+ */
+export function redactUserRef(r: UserRef): Record<string, unknown> {
+  if (r.kind === "create") return { ...r, draft: redactUserDraft(r.draft) };
+  return { ...r };
 }
 
 /** UserDraft converts UserDraft values to other shapes (§14.9). */
