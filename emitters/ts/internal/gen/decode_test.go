@@ -222,3 +222,37 @@ func TestNarrowedDecoder(t *testing.T) {
 	}
 	typecheck(t, files)
 }
+
+// A bit(n) field converts to exactly n bits; bit varying and a bit of no
+// known length take any bit string.
+func TestFixedBitsDecoder(t *testing.T) {
+	three := uint32(3)
+	types := []*irv1.Type{
+		{Kind: &irv1.Type_Bit{Bit: &irv1.Bit{Length: &three}}},
+		{Kind: &irv1.Type_Bit{Bit: &irv1.Bit{Length: &three, Varying: true}}},
+		{Kind: &irv1.Type_Bit{Bit: &irv1.Bit{}}},
+	}
+	names := []string{"flags", "mask", "raw"}
+	var fields []*irv1.Field
+	b := decodeBundle(nil)
+	items := b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[0]
+	for i, n := range names {
+		fields = append(fields, fl(n, types[i], false, false))
+		items.Columns = append(items.Columns, col(n, types[i]))
+	}
+	b.Shapes = &irv1.ShapeLayer{Shapes: []*irv1.Shape{shp(customID("item_bits"), "item bits", "items", fields)}}
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatalf("codes %q", codes)
+	}
+	for _, part := range []string{
+		`    flags: d.field(0, "flags", "", fixedBits(3)),`,
+		`    mask: d.field(1, "mask", "", asString),`,
+		`    raw: d.field(2, "raw", "", asString),`,
+	} {
+		if !strings.Contains(files["dql-shapes.dql.ts"], part) {
+			t.Errorf("dql-shapes.dql.ts lacks %q:\n%s", part, files["dql-shapes.dql.ts"])
+		}
+	}
+	typecheck(t, files)
+}

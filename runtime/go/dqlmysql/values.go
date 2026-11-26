@@ -19,7 +19,8 @@ import (
 // bytes, which the type tells apart.
 //
 // A BIT comes as its bytes without its length, so it decodes as dql.Bits
-// of every bit of those bytes: a BIT(3) holding b'101' is 00000101.
+// of every bit of those bytes: a BIT(3) holding b'101' is 00000101, which
+// the generated decoder cuts to the column's length (dql.FixedBits).
 func decode(typ string, v any) (any, error) {
 	switch x := v.(type) {
 	case nil:

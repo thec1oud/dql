@@ -100,3 +100,35 @@ func TestBitsText(t *testing.T) {
 		t.Error("x decoded")
 	}
 }
+
+func TestFixedBits(t *testing.T) {
+	conv := dql.FixedBits(3)
+	for _, c := range []struct {
+		in   any
+		want string
+		ok   bool
+	}{
+		{mustBits(t, "101"), "101", true},
+		{mustBits(t, "00000101"), "101", true},
+		{mustBits(t, "00001101"), "", false},
+		{mustBits(t, "01"), "", false},
+		{"101", "", false},
+	} {
+		got, err := conv(c.in)
+		if (err == nil) != c.ok || (c.ok && got.String() != c.want) {
+			t.Errorf("%v: %v %v", c.in, got, err)
+		}
+		if err != nil && err.(*dql.DecodeError).Reason != dql.OffType {
+			t.Errorf("%v: %v", c.in, err)
+		}
+	}
+}
+
+func mustBits(t *testing.T, s string) dql.Bits {
+	t.Helper()
+	b, err := dql.ParseBits(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
+}

@@ -2,6 +2,7 @@ package gen
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -135,6 +136,10 @@ func (g *generator) conv(f *file, t *irv1.Type, at *irv1.QualifiedName, what str
 		return f.rt("unchecked", true)
 	}
 	name := string(kind.Name())
+	if b := t.GetBit(); b != nil && !b.GetVarying() && b.Length != nil {
+		// A bit(n) holds exactly n bits, which MySQL sends padded to bytes.
+		return f.rt("fixedBits", true) + "(" + strconv.Itoa(int(b.GetLength())) + ")"
+	}
 	if c, ok := scalarConverters[name]; ok {
 		return f.rt(c, true)
 	}

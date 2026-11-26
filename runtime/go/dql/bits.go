@@ -3,6 +3,7 @@ package dql
 import (
 	"bytes"
 	"fmt"
+	"strings"
 )
 
 // Bits is a bit string, the host type of the logical type bit (design record
@@ -91,4 +92,24 @@ func (b *Bits) UnmarshalText(text []byte) error {
 	}
 	*b = v
 	return nil
+}
+
+// FixedBits converts the value of a bit(n) column, which holds exactly n
+// bits. MySQL sends a BIT(n) as whole bytes without its length, so a longer
+// value whose extra leading bits are zero is cut to its last n bits; one
+// with a leading bit set, or with fewer than n bits, is off type.
+func FixedBits(n int) func(any) (Bits, error) {
+	return func(v any) (Bits, error) {
+		b, err := As[Bits](v)
+		if err != nil || b.n == n {
+			return b, err
+		}
+		s := b.String()
+		if b.n < n || strings.ContainsRune(s[:b.n-n], '1') {
+			return Bits{}, Fail(OffType)
+		}
+		// The rest of s is 0 and 1 characters, which parse.
+		out, _ := ParseBits(s[b.n-n:])
+		return out, nil
+	}
 }

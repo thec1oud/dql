@@ -89,6 +89,7 @@ export {
   asUint64,
   asUint8,
   elem,
+  fixedBits,
   nest,
   nullableElem,
   unchecked,

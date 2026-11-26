@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   DecodeError,
+  fixedBits,
   Decimal,
   Decoder,
   Row,
@@ -277,4 +278,13 @@ describe("converters", () => {
       })({ class: "integer", value: 1n }),
     ).toThrow(RangeError);
   });
+});
+
+test("fixedBits cuts MySQL's whole bytes to the column's length", () => {
+  const conv = fixedBits(3);
+  expect(conv("101")).toBe("101");
+  expect(conv("00000101")).toBe("101");
+  for (const bad of ["00001101", "01", 5]) {
+    expect(failure(() => conv(bad))).toEqual(offType);
+  }
 });
