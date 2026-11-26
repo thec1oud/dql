@@ -112,6 +112,10 @@ type assembler struct {
 	out       []any
 	sens      []bool
 	typ       []string
+	// column is the table and column of the set.<table>.<column> fragment
+	// being rendered, whose default stands for value.default on a dialect
+	// without it.
+	column string
 }
 
 // mark and reset let a list drop an item that renders partly before
@@ -191,6 +195,16 @@ func (a *assembler) list(l List) error {
 }
 
 func (a *assembler) use(u Use) error {
+	if _, ok := a.t.Templates[u.Fragment]; !ok && u.Fragment == "value.default" && a.column != "" {
+		// SQLite has no SET column = DEFAULT, so the column's default
+		// expression stands for it.
+		u = Use{Fragment: "default." + a.column}
+	}
+	if col, ok := strings.CutPrefix(u.Fragment, "set."); ok {
+		outer := a.column
+		a.column = col
+		defer func() { a.column = outer }()
+	}
 	tmpl, ok := a.t.Templates[u.Fragment]
 	if !ok {
 		return fmt.Errorf("dql: the fragment table has no %s", u.Fragment)

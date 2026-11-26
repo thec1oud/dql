@@ -201,7 +201,28 @@ class Assembler {
     }
   }
 
+  /** The table and column of the set.<table>.<column> fragment being rendered, whose default stands for value.default on a dialect without it. */
+  private column = "";
+
   private use(u: Use): void {
+    if (u.fragment === "value.default" && this.column !== "" && !Object.hasOwn(this.t.templates, u.fragment)) {
+      // SQLite has no SET column = DEFAULT, so the column's default expression stands for it.
+      u = use(`default.${this.column}`);
+    }
+    if (u.fragment.startsWith("set.")) {
+      const outer = this.column;
+      this.column = u.fragment.slice("set.".length);
+      try {
+        this.render(u);
+      } finally {
+        this.column = outer;
+      }
+      return;
+    }
+    this.render(u);
+  }
+
+  private render(u: Use): void {
     if (!Object.hasOwn(this.t.templates, u.fragment)) {
       throw new Error(`dql: the fragment table has no ${u.fragment}`);
     }

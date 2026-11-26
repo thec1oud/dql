@@ -56,8 +56,17 @@ func TestGenerateSQLite(t *testing.T) {
 	}
 }
 
+// goldenSqliteshopdb and goldenSqliteshopdbTS are the go and ts emitters'
+// golden output for the running example on SQLite, which the conformance
+// harnesses run.
+var (
+	goldenSqliteshopdb   = filepath.Join("..", "..", "conformance", "harness", "go", "testdata", "sqliteshopdb")
+	goldenSqliteshopdbTS = filepath.Join("..", "..", "conformance", "harness", "ts", "sqliteshopdb")
+)
+
 // dql generate types conformance/schemas/sqlite/queries.sql against
-// shop.sql through shop.yaml, and the catalog layer is
+// shop.sql through shop.yaml, and writes the conformance harnesses'
+// sqliteshopdb packages. The catalog layer is
 // testdata/sqliteshop/catalog.json, which the SQLite query source's tests
 // type against.
 func TestGenerateConformanceSQLite(t *testing.T) {
@@ -104,4 +113,21 @@ func TestGenerateConformanceSQLite(t *testing.T) {
 		t.Fatal(err)
 	}
 	golden.Assert(t, filepath.Join("..", "..", "testdata", "sqliteshop", "catalog.json"), js, inputDigest)
+	for _, pkg := range []struct{ out, glob, golden string }{
+		{"sqliteshopdb", "*.dql.go", goldenSqliteshopdb},
+		{filepath.Join("ts", "sqliteshopdb"), "*.dql.ts", goldenSqliteshopdbTS},
+	} {
+		files, _ := filepath.Glob(filepath.Join(filepath.Dir(cfg), pkg.out, pkg.glob))
+		want, _ := filepath.Glob(filepath.Join(pkg.golden, pkg.glob))
+		if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
+			t.Errorf("%s: %d files, golden has %d", pkg.out, len(files), len(want))
+		}
+		for _, f := range files {
+			got, err := os.ReadFile(f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			golden.Assert(t, filepath.Join(pkg.golden, filepath.Base(f)), got, inputDigest)
+		}
+	}
 }

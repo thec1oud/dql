@@ -43,7 +43,7 @@ func open(t *testing.T, s Schema, replica bool, maxConns int, mode dql.Statement
 	t.Helper()
 	ctx := context.Background()
 	base := os.Getenv(s.URLEnv)
-	if base == "" {
+	if base == "" && s.URLEnv != "" {
 		t.Fatal(s.URLEnv + " is not set")
 	}
 	rep := replicas[s.URLEnv]
@@ -134,7 +134,7 @@ func TestScenarios(t *testing.T) {
 	if len(scs) == 0 {
 		t.Fatal("no scenarios")
 	}
-	for _, dialect := range []string{"postgres", "mysql", "mariadb"} {
+	for _, dialect := range []string{"postgres", "mysql", "mariadb", "sqlite"} {
 		for _, mode := range []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple} {
 			for _, sc := range scs {
 				name := mode.String() + "/" + sc.Name

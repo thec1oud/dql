@@ -215,7 +215,8 @@ jobs:
         run: bun run coverage
       - name: Go's outcomes
         working-directory: conformance/harness/go
-        # Postgres, MySQL and MariaDB, which the TypeScript harness runs.
+        # Postgres, MySQL and MariaDB, which the TypeScript harness runs, and
+        # SQLite, which it does not run yet.
         run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/go" go test -count=1 -run 'TestScenarios' .
       - name: every scenario on Node
         run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/node" node --import ./src/node.ts src/main.ts

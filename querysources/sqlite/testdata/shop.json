@@ -199,7 +199,7 @@
               {
                 "name": "created_at",
                 "type": {
-                  "localDatetime": {},
+                  "instant": {},
                   "native": {
                     "name": {
                       "object": "text"
@@ -230,7 +230,7 @@
               {
                 "name": "updated_at",
                 "type": {
-                  "localDatetime": {},
+                  "instant": {},
                   "native": {
                     "name": {
                       "object": "text"

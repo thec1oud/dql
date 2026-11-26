@@ -18,7 +18,7 @@ var MariaDBSchemas = map[string]Schema{
 		URLEnv:   "DQL_TEST_MARIADB_URL",
 		Database: databaseMariaDB,
 		Modes:    []dql.StatementMode{dql.ModePrepare, dql.ModeSimple},
-		Features: []string{"tinyint-bool"},
+		Features: []string{"named-foreign-keys", "params-65535", "pattern-checks", "stall", "tinyint-bool"},
 		Exec:     runMySQL,
 		Open:     opener(func() dql.Driver { return dqlmysql.New() }, mariadbshopdb.NewExecutor, mariadbshopdb.New),
 		Tables: map[string]any{

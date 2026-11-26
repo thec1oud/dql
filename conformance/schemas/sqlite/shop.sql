@@ -23,8 +23,8 @@ CREATE TABLE users (
   email         TEXT NOT NULL,
   display_name  TEXT,
   password_hash TEXT NOT NULL, -- @write-only @sensitive
-  created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f', 'now')), -- @immutable @as(local_datetime)
-  updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f', 'now')), -- @db-updated @as(local_datetime)
+  created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), -- @immutable @as(instant)
+  updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), -- @db-updated @as(instant)
   version       INTEGER NOT NULL DEFAULT 1, -- @version
   CONSTRAINT users_email_check CHECK (length(email) <= 320),
   CONSTRAINT users_display_name_check CHECK (length(display_name) <= 80),
@@ -35,7 +35,7 @@ CREATE TABLE users (
 CREATE TRIGGER users_updated_at AFTER UPDATE ON users FOR EACH ROW
   WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-  UPDATE users SET updated_at = strftime('%Y-%m-%dT%H:%M:%f', 'now') WHERE id = NEW.id;
+  UPDATE users SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = NEW.id;
 END;
 
 -- user_id is INT, not INTEGER, so it is no rowid alias that SQLite would

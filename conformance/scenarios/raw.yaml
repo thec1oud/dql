@@ -12,6 +12,7 @@ steps:
     sql:
       postgres: SELECT name FROM app.tenants WHERE id = $1
       mysql: SELECT name FROM tenants WHERE id = ?
+      sqlite: SELECT name FROM tenants WHERE id = ?
     args: [$acme.id]
     expect:
       value: [[acme]]
@@ -22,6 +23,7 @@ steps:
     sql:
       postgres: UPDATE app.tenants SET name = $1 WHERE id = $2
       mysql: UPDATE tenants SET name = ? WHERE id = ?
+      sqlite: UPDATE tenants SET name = ? WHERE id = ?
     args: [Acme, $acme.id]
     expect:
       value: 1
@@ -41,6 +43,7 @@ steps:
         sql:
           postgres: DELETE FROM app.tenants WHERE name = 'Acme'
           mysql: DELETE FROM tenants WHERE name = 'Acme'
+          sqlite: DELETE FROM tenants WHERE name = 'Acme'
         expect: { value: 1 }
   - op: tenants.count
     expect: { value: 1 }
@@ -51,6 +54,7 @@ steps:
     sql:
       postgres: INSERT INTO app.tenants (id, name) VALUES ($1, $2)
       mysql: INSERT INTO tenants (id, name) VALUES (?, ?)
+      sqlite: INSERT INTO tenants (id, name) VALUES (?, ?)
     args: [$acme.id, secret-name]
     expect:
       error: { class: UniqueViolation, hides: secret-name }
@@ -59,5 +63,6 @@ steps:
     sql:
       postgres: SELECT 1
       mysql: SELECT 1
+      sqlite: SELECT 1
     expect:
       error: { misuse: UnknownSource }

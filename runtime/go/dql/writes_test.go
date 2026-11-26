@@ -158,6 +158,18 @@ func TestInsertManyWithoutDefault(t *testing.T) {
 		t.Error(s.SQL, err)
 	}
 
+	// DEFAULT in a SET renders the column's default, as SQLite has no
+	// DEFAULT there; elsewhere it still needs value.default.
+	lite.Templates["set.users.a"] = `"a" = {0}`
+	lite.Templates["default.users.a"] = `(0)`
+	patch := &Query{Name: "user.patch", Plan: []Node{Use{Fragment: "set.users.a", Holes: map[string]Node{"0": Param("a")}}, Param("b")}}
+	if s, err := patch.Statement(lite, Args{"a": expression{defaultExpr{}.expr()}, "b": expression{defaultExpr{}.expr()}}); err == nil {
+		t.Error("rendered value.default outside a SET:", s.SQL)
+	}
+	if s, err := patch.Statement(lite, Args{"a": expression{defaultExpr{}.expr()}, "b": 1}); err != nil || s.SQL != `"a" = (0)$1` {
+		t.Error(s.SQL, err)
+	}
+
 	// A group that fails rolls back them all.
 	sqls, fail = nil, 3
 	if _, err := InsertMany(ctx, e, lite, q, drafts, decodeInt); err == nil || !strings.Contains(strings.Join(d.log, "\n"), "rollback") {

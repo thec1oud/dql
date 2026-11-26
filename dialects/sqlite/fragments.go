@@ -101,7 +101,8 @@ func (f *fragments) add(id, template string) *irv1.Fragment {
 // SQLite reads as none. SQLite has no row locks, as a writer locks the
 // whole database, so no lock fragments; nor DISTINCT ON. It takes no
 // DEFAULT inside VALUES, so there is no value.default: the runtime groups
-// a multi-row insert's rows by the columns they set (§25.2). value.now is
+// a multi-row insert's rows by the columns they set (§25.2), and renders
+// an update's DEFAULT as the column's default.<table>.<column>. value.now is
 // an instant as dql writes one to SQLite: RFC 3339 text in UTC.
 func (f *fragments) static() {
 	for id, t := range map[string]string{
@@ -178,7 +179,19 @@ func (f *fragments) table(tb *table) {
 		f.add("name."+suffix, col)
 		f.add("set."+suffix, col+" = {0}")
 		f.add("excluded."+suffix, "excluded."+col)
+		f.add("default."+suffix, defaultOf(c))
 	}
+}
+
+// defaultOf is the SQL of a column's default, which an update's DEFAULT
+// renders, as SQLite has no SET column = DEFAULT: its expression, or NULL
+// for a column with none and for a rowid, which SQLite numbers only on
+// insert.
+func defaultOf(c *irv1.Column) string {
+	if n := c.GetDefault().GetNative(); n != "" {
+		return "(" + n + ")"
+	}
+	return "NULL"
 }
 
 // relation adds a relation predicate: EXISTS over the related rows,

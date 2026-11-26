@@ -136,28 +136,40 @@ func table(t *testing.T, b *irv1.Bundle) map[string]*irv1.Fragment {
 }
 
 func TestFragments(t *testing.T) {
-	got := table(t, fixture())
+	b := fixture()
+	for _, tb := range b.GetCatalogs()[0].GetNamespaces()[0].GetTables() {
+		for _, c := range tb.GetColumns() {
+			if tb.GetName().GetStored() == "people" && c.GetName().GetStored() == "email" {
+				c.Default = &irv1.Default{Class: irv1.DefaultClass_DEFAULT_CONSTANT, Native: "''"}
+			}
+		}
+	}
+	got := table(t, b)
 	for id, want := range map[string]string{
 		// Ids carry the catalog, as the bundle has two. Tables go
 		// unqualified and are their own aliases.
-		"from.shop.people":                      `"people"`,
-		"from.other.people":                     `"people"`,
-		"col.shop.people.email":                 `"people"."email"`,
-		"col.shop.pets.we`ird":                  `"pets"."we` + "`" + `ird"`,
-		"count.shop.pets":                       `SELECT count(*) FROM "pets"{where}`,
-		"exists.shop.pets":                      `SELECT EXISTS (SELECT 1 FROM "pets"{where})`,
-		"rel.shop.people.manager":               `EXISTS (SELECT 1 FROM "people" AS "people_r" WHERE "people_r"."id" = "people"."manager_id"{and})`,
-		"col_r.shop.people.email":               `"people_r"."email"`,
-		"rel.shop.people.pets":                  `EXISTS (SELECT 1 FROM "people_pets" JOIN "pets" ON "pets"."id" = "people_pets"."pet_id" WHERE "people_pets"."person_id" = "people"."id"{and})`,
-		"select.person.full.flat":               `SELECT "people"."id", "people"."email" FROM "people"`,
-		"returning.person.full.flat":            ` RETURNING "people"."id", "people"."email"`,
-		"select.person_brief":                   `SELECT "people"."email" FROM "people"`,
-		"insert.shop.pets":                      `INSERT INTO "pets" ({cols}) VALUES {rows}{returning}`,
-		"update.shop.pets":                      `UPDATE "pets" SET {sets}{where}{returning}`,
-		"delete.shop.pets":                      `DELETE FROM "pets"{where}{returning}`,
-		"set.shop.pets.id":                      `"id" = {0}`,
-		"name.shop.pets.id":                     `"id"`,
-		"excluded.shop.pets.id":                 `excluded."id"`,
+		"from.shop.people":           `"people"`,
+		"from.other.people":          `"people"`,
+		"col.shop.people.email":      `"people"."email"`,
+		"col.shop.pets.we`ird":       `"pets"."we` + "`" + `ird"`,
+		"count.shop.pets":            `SELECT count(*) FROM "pets"{where}`,
+		"exists.shop.pets":           `SELECT EXISTS (SELECT 1 FROM "pets"{where})`,
+		"rel.shop.people.manager":    `EXISTS (SELECT 1 FROM "people" AS "people_r" WHERE "people_r"."id" = "people"."manager_id"{and})`,
+		"col_r.shop.people.email":    `"people_r"."email"`,
+		"rel.shop.people.pets":       `EXISTS (SELECT 1 FROM "people_pets" JOIN "pets" ON "pets"."id" = "people_pets"."pet_id" WHERE "people_pets"."person_id" = "people"."id"{and})`,
+		"select.person.full.flat":    `SELECT "people"."id", "people"."email" FROM "people"`,
+		"returning.person.full.flat": ` RETURNING "people"."id", "people"."email"`,
+		"select.person_brief":        `SELECT "people"."email" FROM "people"`,
+		"insert.shop.pets":           `INSERT INTO "pets" ({cols}) VALUES {rows}{returning}`,
+		"update.shop.pets":           `UPDATE "pets" SET {sets}{where}{returning}`,
+		"delete.shop.pets":           `DELETE FROM "pets"{where}{returning}`,
+		"set.shop.pets.id":           `"id" = {0}`,
+		"name.shop.pets.id":          `"id"`,
+		"excluded.shop.pets.id":      `excluded."id"`,
+		// SQLite has no SET column = DEFAULT, so DEFAULT is the column's
+		// default, or NULL.
+		"default.shop.pets.id":                  "NULL",
+		"default.shop.people.email":             "('')",
 		"upsert.shop.pets.pets_pkey":            `INSERT INTO "pets" ({cols}) VALUES {rows} ON CONFLICT ("id") DO UPDATE SET {sets}{returning}`,
 		"ignore.shop.pets.pets_pkey":            `INSERT INTO "pets" ({cols}) VALUES {rows} ON CONFLICT ("id") DO NOTHING{returning}`,
 		"upsert.shop.pets.pets_live":            `INSERT INTO "pets" ({cols}) VALUES {rows} ON CONFLICT ("we` + "`" + `ird", abs(id), "id") WHERE id > 0 DO UPDATE SET {sets}{returning}`,
