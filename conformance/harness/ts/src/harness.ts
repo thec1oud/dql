@@ -40,6 +40,8 @@ import { Decoder, type Json, encode, isObject, normalize, show } from "./values.
 export interface Scenario {
   readonly scenario: string;
   readonly schema: string;
+  /** The features the scenario needs its schema to hold, as conformance/harness/go's Scenario documents. */
+  readonly requires?: readonly string[];
   readonly replica?: boolean;
   /** Bounds the primary's pool; absent is the schema's default. */
   readonly max_conns?: number;

@@ -443,6 +443,28 @@ func TestArrayElementsNonNull(t *testing.T) {
 		"ERROR annotation-wrong-target shop.app.t.name")
 }
 
+// §8.7: bool maps a column the source reports as storing booleans, MySQL
+// TINYINT(1), to the boolean type and keeps its native type; any other
+// integer column stays as it is and the annotation fails.
+func TestBool(t *testing.T) {
+	tiny := func(boolean bool) *irv1.Type {
+		return &irv1.Type{Kind: &irv1.Type_Int8{Int8: empty()},
+			Native: &irv1.NativeType{Name: &irv1.QualifiedName{Object: "tinyint"}, Raw: "tinyint(1)", BooleanStorage: boolean}}
+	}
+	tb := table("t", col("on", tiny(true)), col("off", tiny(true)))
+	tb.Columns[0].Annotations = []*irv1.Annotation{comment("bool", "COMMENT ON COLUMN app.t.on", nil)}
+	b := assembleOK(t, Options{}, output(irv1.Dialect_DIALECT_MYSQL, small("shop", "app", tb)))
+	cols := b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[0].GetColumns()
+	if cols[0].GetType().GetBool() == nil || cols[0].GetType().GetNative().GetRaw() != "tinyint(1)" || cols[1].GetType().GetInt8() == nil {
+		t.Errorf("columns = %v", cols)
+	}
+
+	tb = table("t", col("on", tiny(false)))
+	tb.Columns[0].Annotations = []*irv1.Annotation{comment("bool", "COMMENT ON COLUMN app.t.on", nil)}
+	wantLines(t, assembleFails(t, Options{}, output(irv1.Dialect_DIALECT_MYSQL, small("shop", "app", tb))),
+		"ERROR annotation-wrong-target shop.app.t.on")
+}
+
 // §7.2: nonnull on a function narrows its one result value; on a function
 // returning a table it fails, since its result columns are narrowed instead.
 func TestFunctionResultNonNull(t *testing.T) {

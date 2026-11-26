@@ -133,6 +133,13 @@
           "dataType": "timestamp",
           "columnType": "timestamp(6)",
           "nullable": true
+        },
+        {
+          "name": "featured",
+          "dataType": "tinyint",
+          "columnType": "tinyint(1)",
+          "default": "0",
+          "comment": "@bool"
         }
       ],
       "checks": [

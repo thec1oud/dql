@@ -20,6 +20,7 @@ const (
 	keyName                 = "core.name"
 	keyNonNull              = "core.nonnull"
 	keyArrayElementsNonNull = "core.array-elements-nonnull"
+	keyBool                 = "core.bool"
 )
 
 // site is one object annotations can be on, with the facts its checks need.
@@ -57,6 +58,9 @@ func sites(b *irv1.Bundle) []*site {
 					NotNull:   !col.GetNullable(),
 					Generated: col.GetGeneration().GetKind() != irv1.GenerationKind_GENERATION_UNSPECIFIED,
 					OnUpdate:  col.GetDefault().GetOnUpdate(),
+					// The source reports the types that store booleans by
+					// convention, so the core holds no dialect knowledge.
+					TinyIntOne: col.GetType().GetNative().GetBooleanStorage(),
 				}}
 			}
 			object := func(kind annotate.Kind, name *irv1.Identifier, anns *[]*irv1.Annotation) *site {
@@ -235,6 +239,12 @@ func narrow(s *site) {
 	// array-elements-nonnull narrows the elements of an array column (§8.6).
 	if arr := s.col.GetType().GetArray(); arr != nil && find(*s.anns, keyArrayElementsNonNull) {
 		arr.ElementNullable = false
+	}
+	// bool maps a type that stores booleans by convention, MySQL
+	// TINYINT(1), to the boolean type; the native type is kept, and
+	// decoding fails on a value other than 0 or 1 (§8.7, §13).
+	if t := s.col.GetType(); t.GetNative().GetBooleanStorage() && find(*s.anns, keyBool) {
+		t.Kind = &irv1.Type_Bool{Bool: &irv1.Empty{}}
 	}
 }
 

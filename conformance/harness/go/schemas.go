@@ -182,7 +182,7 @@ var Schemas = map[string]Schema{
 var Matrix = map[string]map[string]Schema{"postgres": Schemas, "mysql": MySQLSchemas}
 
 // postgresFeatures are the features Postgres's schemas hold: every one a
-// scenario requires.
+// scenario requires but tinyint-bool, a MySQL type.
 var postgresFeatures = []string{"arrays", "composites", "regex-match", "replica", "returning", "serialization-failure"}
 
 // opener opens a schema's handle, made by newDB on the executor newExec

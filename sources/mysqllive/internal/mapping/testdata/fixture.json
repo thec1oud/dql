@@ -578,6 +578,7 @@
                     "type": {
                       "int8": {},
                       "native": {
+                        "booleanStorage": true,
                         "modifiers": [
                           {
                             "int": 1
@@ -1436,7 +1437,7 @@
         ],
         "provenance": {
           "fidelity": "SOURCE_FIDELITY_FULL",
-          "inputFingerprint": "sha256:bed02b0db8409334621277d6d0fdffa39e8811e7c05c1122d1f0cedca5d87566",
+          "inputFingerprint": "sha256:9631eaeabed75c787e1798728642f9bd84f015b2ef2b15543ea45bbf424f3192",
           "source": "mysql-live",
           "sourceVersion": "1.0.0"
         }

@@ -239,3 +239,29 @@ func TestDecodeFailures(t *testing.T) {
 		}
 	}
 }
+
+// §8.7, §13: a TINYINT(1) annotated bool decodes with dql.Bool, and an
+// integer other than 0 or 1 names the annotation, by its location when the
+// origin records one.
+func TestBoolDecoder(t *testing.T) {
+	tiny := &irv1.Type{Kind: &irv1.Type_Bool{Bool: &irv1.Empty{}},
+		Native: &irv1.NativeType{Name: &irv1.QualifiedName{Object: "tinyint"}, Raw: "tinyint(1)", BooleanStorage: true}}
+	full := shp(userFull, "user full", "users", []*irv1.Field{fl("id", tInt, false, false), fl("admin", tiny, false, false), fl("on", tiny, false, true)})
+	b := gadgetsBundle(&irv1.ShapeLayer{Shapes: []*irv1.Shape{full}})
+	users := b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[1]
+	admin, on := attr("admin", tiny, false), attr("on", tiny, true)
+	admin.Annotations = []*irv1.Annotation{{Key: "core.bool", Origin: &irv1.Origin{Kind: irv1.OriginKind_ORIGIN_DB_COMMENT, Location: "COMMENT ON COLUMN app.users.admin"}}}
+	users.Columns = []*irv1.Column{attr("id", tInt, false), admin, on}
+	files, codes := generate(t, b, everyTypeOptions)
+	if len(codes) != 0 {
+		t.Fatalf("codes %q", codes)
+	}
+	for _, want := range []string{
+		"\tout.Admin = dql.Field(d, 1, \"admin\", \"\", dql.Asserted(dql.Bool, \"core.bool from COMMENT ON COLUMN app.users.admin\"))\n",
+		"\tout.On = dql.Nullable(d, 2, \"on\", dql.Asserted(dql.Bool, \"core.bool on shop.app.users.on\"))\n",
+	} {
+		if !strings.Contains(files["user.dql.go"], want) {
+			t.Errorf("user.dql.go lacks %q:\n%s", want, files["user.dql.go"])
+		}
+	}
+}

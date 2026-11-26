@@ -176,6 +176,20 @@ export const asBoolean: Converter<boolean> = (v) => {
   return fail("off_type");
 };
 
+/** asserted wraps the converter of a field whose type an annotation narrows, such as bool on a TINYINT(1), so an off-type value names where the assertion came from (§13). */
+export function asserted<T>(conv: Converter<T>, assertion: string): Converter<T> {
+  return (v) => {
+    try {
+      return conv(v);
+    } catch (e) {
+      if (!(e instanceof DecodeError)) {
+        throw e;
+      }
+      throw new DecodeError({ shape: e.shape, field: e.field, reason: e.reason, assertion });
+    }
+  };
+}
+
 /** asString converts a string, typed as S: a branded string such as Uuid when the column's type is one. */
 export function asString<S extends string = string>(v: unknown): S {
   return typeof v === "string" ? (v as S) : fail("off_type");

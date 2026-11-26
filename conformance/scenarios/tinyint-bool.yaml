@@ -1,0 +1,40 @@
+scenario: tinyint-bool
+schema: shop
+requires: [tinyint-bool]
+# A TINYINT(1) annotated bool (design record §8.7) reads and writes as a
+# boolean, and any other integer in it is a DecodeError naming the
+# annotation (§13). MySQL's shop has posts.featured; other dialects have
+# booleans of their own.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: untitled, featured: true }
+    save: post
+    expect:
+      row: { featured: true }
+  - op: posts.patch
+    scope: { tenant_id: $acme.id }
+    key: { id: $post.id }
+    input: { featured: false }
+    expect:
+      row: { featured: false }
+  - op: sql
+    sql:
+      mysql: UPDATE posts SET featured = 2
+  - op: posts.get
+    scope: { tenant_id: $acme.id }
+    key: { id: $post.id }
+    expect:
+      error:
+        class: DecodeError
+        shape: post.full.flat
+        field: featured
+        reason: off_type
+        assertion: core.bool from the comment of column posts.featured

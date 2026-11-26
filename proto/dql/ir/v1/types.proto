@@ -151,6 +151,10 @@ message NativeType {
   repeated TypeModifier modifiers = 2;
   // The original text, for debugging and round trips.
   string raw = 3;
+  // Set by the source plugin for a type that stores booleans by convention,
+  // MySQL TINYINT(1), which the bool annotation maps to the boolean type
+  // (§8.7).
+  bool boolean_storage = 4;
 }
 
 message TypeModifier {

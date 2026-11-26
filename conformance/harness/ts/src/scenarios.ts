@@ -11,6 +11,14 @@ import { root, schemas } from "./schemas.ts";
 /** modes are the statement modes the TypeScript driver has; simple needs a protocol node-postgres does not offer. */
 export const modes: readonly StatementMode[] = ["prepare", "describe"];
 
+/** features are the features the Postgres schemas hold, as conformance/harness/go's postgresFeatures lists them. */
+export const features: readonly string[] = ["arrays", "composites", "regex-match", "replica", "returning", "serialization-failure"];
+
+/** missing returns the features sc requires that the Postgres schemas lack: such a scenario is skipped. */
+export function missing(sc: Scenario): string[] {
+  return (sc.requires ?? []).filter((f) => !features.includes(f));
+}
+
 /** env returns an environment variable, or the empty string. */
 function env(name: string): string {
   return process.env[name] ?? "";

@@ -140,6 +140,21 @@ func Fail(reason DecodeReason) error {
 	return &DecodeError{Reason: reason}
 }
 
+// Asserted wraps the converter of a field whose type an annotation narrows,
+// such as bool on a TINYINT(1), so an off-type value names where the
+// assertion came from (§13).
+func Asserted[T any](conv func(any) (T, error), assertion string) func(any) (T, error) {
+	return func(v any) (T, error) {
+		x, err := conv(v)
+		if err != nil {
+			e := *err.(*DecodeError)
+			e.Assertion = assertion
+			return x, &e
+		}
+		return x, nil
+	}
+}
+
 // The converters below turn one non-null value into a field's Go type, or
 // fail with OffType.
 

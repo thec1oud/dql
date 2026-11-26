@@ -16,7 +16,7 @@
       "provenance": {
         "source": "mysql-live",
         "sourceVersion": "1.0.0",
-        "inputFingerprint": "sha256:74113beade6857ff6f2ec63cdd5b21d602199555013b48d31ae61535a82d59d9",
+        "inputFingerprint": "sha256:24dae193f38d23cd943df48055cc5532c820ca7c5d1e35f73c6fbc64b5b70840",
         "fidelity": "SOURCE_FIDELITY_FULL"
       },
       "namespaces": [
@@ -1040,6 +1040,81 @@
                     },
                     {
                       "name": "lt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "ne",
+                      "fidelity": "FIDELITY_EXACT"
+                    }
+                  ]
+                },
+                {
+                  "name": {
+                    "stored": "featured",
+                    "words": [
+                      "featured"
+                    ]
+                  },
+                  "hostName": {
+                    "words": [
+                      "featured"
+                    ]
+                  },
+                  "ordinal": 8,
+                  "type": {
+                    "bool": {},
+                    "native": {
+                      "name": {
+                        "object": "tinyint"
+                      },
+                      "modifiers": [
+                        {
+                          "int": 1
+                        }
+                      ],
+                      "raw": "tinyint(1)",
+                      "booleanStorage": true
+                    }
+                  },
+                  "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                  "default": {
+                    "class": "DEFAULT_CONSTANT",
+                    "native": "0",
+                    "value": {
+                      "int": "0"
+                    }
+                  },
+                  "annotations": [
+                    {
+                      "key": "core.bool",
+                      "origin": {
+                        "kind": "ORIGIN_DB_COMMENT",
+                        "plugin": "mysql-live",
+                        "location": "the comment of column posts.featured"
+                      }
+                    }
+                  ],
+                  "extensions": [
+                    {
+                      "@type": "type.dql.dev/dql.ext.mysql.v1.Comment",
+                      "text": "@bool"
+                    }
+                  ],
+                  "operators": [
+                    {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "eq",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "is_distinct_from",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2164,7 +2239,7 @@
               "extensions": [
                 {
                   "@type": "type.dql.dev/dql.ext.mysql.v1.ViewDefinition",
-                  "definition": "select `dql_test_5741_84357_1`.`posts`.`id` AS `id`,`dql_test_5741_84357_1`.`posts`.`title` AS `title`,`dql_test_5741_84357_1`.`posts`.`author_id` AS `author_id`,`dql_test_5741_84357_1`.`posts`.`published_at` AS `published_at` from `dql_test_5741_84357_1`.`posts` where (`dql_test_5741_84357_1`.`posts`.`status` = 'published')",
+                  "definition": "select `dql_test_14969_913255_1`.`posts`.`id` AS `id`,`dql_test_14969_913255_1`.`posts`.`title` AS `title`,`dql_test_14969_913255_1`.`posts`.`author_id` AS `author_id`,`dql_test_14969_913255_1`.`posts`.`published_at` AS `published_at` from `dql_test_14969_913255_1`.`posts` where (`dql_test_14969_913255_1`.`posts`.`status` = 'published')",
                   "updatable": true,
                   "securityType": "DEFINER",
                   "checkOption": "NONE"
@@ -4401,6 +4476,15 @@
           "catalog": "shop",
           "object": "posts"
         },
+        "reported": "featured",
+        "rule": "featured"
+      },
+      {
+        "kind": "ERROR_KIND_NOT_NULL_VIOLATION",
+        "object": {
+          "catalog": "shop",
+          "object": "posts"
+        },
         "reported": "id",
         "rule": "id"
       },
@@ -5398,6 +5482,25 @@
             },
             "nullable": true,
             "optional": true
+          },
+          {
+            "name": "featured",
+            "type": {
+              "bool": {},
+              "native": {
+                "name": {
+                  "object": "tinyint"
+                },
+                "modifiers": [
+                  {
+                    "int": 1
+                  }
+                ],
+                "raw": "tinyint(1)",
+                "booleanStorage": true
+              }
+            },
+            "optional": true
           }
         ],
         "result": {
@@ -5450,6 +5553,11 @@
                         "fragment": {
                           "fragment": "name.posts.published_at"
                         }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.featured"
+                        }
                       }
                     ],
                     "separator": ", "
@@ -5481,6 +5589,9 @@
                             },
                             {
                               "param": "published_at"
+                            },
+                            {
+                              "param": "featured"
                             }
                           ],
                           "separator": ", "
@@ -5640,6 +5751,25 @@
             },
             "nullable": true,
             "optional": true
+          },
+          {
+            "name": "featured",
+            "type": {
+              "bool": {},
+              "native": {
+                "name": {
+                  "object": "tinyint"
+                },
+                "modifiers": [
+                  {
+                    "int": 1
+                  }
+                ],
+                "raw": "tinyint(1)",
+                "booleanStorage": true
+              }
+            },
+            "optional": true
           }
         ],
         "result": {
@@ -5692,6 +5822,11 @@
                         "fragment": {
                           "fragment": "name.posts.published_at"
                         }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.featured"
+                        }
                       }
                     ],
                     "separator": ", "
@@ -5723,6 +5858,9 @@
                             },
                             {
                               "param": "published_at"
+                            },
+                            {
+                              "param": "featured"
                             }
                           ],
                           "separator": ", "
@@ -5873,6 +6011,25 @@
             "optional": true
           },
           {
+            "name": "featured",
+            "type": {
+              "bool": {},
+              "native": {
+                "name": {
+                  "object": "tinyint"
+                },
+                "modifiers": [
+                  {
+                    "int": 1
+                  }
+                ],
+                "raw": "tinyint(1)",
+                "booleanStorage": true
+              }
+            },
+            "optional": true
+          },
+          {
             "name": "key.id",
             "type": {
               "int64": {},
@@ -5957,6 +6114,17 @@
                             {
                               "hole": "0",
                               "param": "published_at"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.featured",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "featured"
                             }
                           ]
                         }
@@ -6131,6 +6299,25 @@
             },
             "nullable": true,
             "optional": true
+          },
+          {
+            "name": "featured",
+            "type": {
+              "bool": {},
+              "native": {
+                "name": {
+                  "object": "tinyint"
+                },
+                "modifiers": [
+                  {
+                    "int": 1
+                  }
+                ],
+                "raw": "tinyint(1)",
+                "booleanStorage": true
+              }
+            },
+            "optional": true
           }
         ],
         "writes": true,
@@ -6195,6 +6382,17 @@
                             {
                               "hole": "0",
                               "param": "published_at"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.featured",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "featured"
                             }
                           ]
                         }
@@ -6321,6 +6519,25 @@
             },
             "nullable": true,
             "optional": true
+          },
+          {
+            "name": "featured",
+            "type": {
+              "bool": {},
+              "native": {
+                "name": {
+                  "object": "tinyint"
+                },
+                "modifiers": [
+                  {
+                    "int": 1
+                  }
+                ],
+                "raw": "tinyint(1)",
+                "booleanStorage": true
+              }
+            },
+            "optional": true
           }
         ],
         "result": {
@@ -6373,6 +6590,11 @@
                         "fragment": {
                           "fragment": "name.posts.published_at"
                         }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.featured"
+                        }
                       }
                     ],
                     "separator": ", "
@@ -6404,6 +6626,9 @@
                             },
                             {
                               "param": "published_at"
+                            },
+                            {
+                              "param": "featured"
                             }
                           ],
                           "separator": ", "
@@ -6476,6 +6701,19 @@
                               "hole": "0",
                               "fragment": {
                                 "fragment": "excluded.posts.published_at"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.featured",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "fragment": {
+                                "fragment": "excluded.posts.featured"
                               }
                             }
                           ]
@@ -6638,6 +6876,25 @@
             "optional": true
           },
           {
+            "name": "featured",
+            "type": {
+              "bool": {},
+              "native": {
+                "name": {
+                  "object": "tinyint"
+                },
+                "modifiers": [
+                  {
+                    "int": 1
+                  }
+                ],
+                "raw": "tinyint(1)",
+                "booleanStorage": true
+              }
+            },
+            "optional": true
+          },
+          {
             "name": "set.author_id",
             "type": {
               "int64": {},
@@ -6726,6 +6983,25 @@
             },
             "nullable": true,
             "optional": true
+          },
+          {
+            "name": "set.featured",
+            "type": {
+              "bool": {},
+              "native": {
+                "name": {
+                  "object": "tinyint"
+                },
+                "modifiers": [
+                  {
+                    "int": 1
+                  }
+                ],
+                "raw": "tinyint(1)",
+                "booleanStorage": true
+              }
+            },
+            "optional": true
           }
         ],
         "result": {
@@ -6778,6 +7054,11 @@
                         "fragment": {
                           "fragment": "name.posts.published_at"
                         }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "name.posts.featured"
+                        }
                       }
                     ],
                     "separator": ", "
@@ -6809,6 +7090,9 @@
                             },
                             {
                               "param": "published_at"
+                            },
+                            {
+                              "param": "featured"
                             }
                           ],
                           "separator": ", "
@@ -6872,6 +7156,17 @@
                             {
                               "hole": "0",
                               "param": "set.published_at"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "fragment": {
+                          "fragment": "set.posts.featured",
+                          "holes": [
+                            {
+                              "hole": "0",
+                              "param": "set.featured"
                             }
                           ]
                         }
@@ -15985,6 +16280,10 @@
           "template": "`posts`.`editor_id`"
         },
         {
+          "id": "col.posts.featured",
+          "template": "`posts`.`featured`"
+        },
+        {
           "id": "col.posts.id",
           "template": "`posts`.`id`"
         },
@@ -16147,6 +16446,10 @@
         {
           "id": "excluded.posts.editor_id",
           "template": "`dql_new`.`editor_id`"
+        },
+        {
+          "id": "excluded.posts.featured",
+          "template": "`dql_new`.`featured`"
         },
         {
           "id": "excluded.posts.id",
@@ -16389,6 +16692,10 @@
           "template": "`editor_id`"
         },
         {
+          "id": "name.posts.featured",
+          "template": "`featured`"
+        },
+        {
           "id": "name.posts.id",
           "template": "`id`"
         },
@@ -16493,6 +16800,10 @@
         {
           "id": "op.any.posts.editor_id",
           "template": "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v bigint PATH '$')) AS dql_list)"
+        },
+        {
+          "id": "op.any.posts.featured",
+          "template": "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v tinyint(1) PATH '$')) AS dql_list)"
         },
         {
           "id": "op.any.posts.id",
@@ -16645,6 +16956,10 @@
         {
           "id": "op.in.posts.editor_id",
           "template": "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v bigint PATH '$')) AS dql_list)"
+        },
+        {
+          "id": "op.in.posts.featured",
+          "template": "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v tinyint(1) PATH '$')) AS dql_list)"
         },
         {
           "id": "op.in.posts.id",
@@ -16887,7 +17202,7 @@
         },
         {
           "id": "select.post.full.flat",
-          "template": "SELECT `posts`.`id`, `posts`.`author_id`, `posts`.`editor_id`, `posts`.`title`, `posts`.`slug`, `posts`.`status`, `posts`.`published_at` FROM `posts`"
+          "template": "SELECT `posts`.`id`, `posts`.`author_id`, `posts`.`editor_id`, `posts`.`title`, `posts`.`slug`, `posts`.`status`, `posts`.`published_at`, `posts`.`featured` FROM `posts`"
         },
         {
           "id": "select.post_tag.full.flat",
@@ -16928,6 +17243,10 @@
         {
           "id": "set.posts.editor_id",
           "template": "`editor_id` = {0}"
+        },
+        {
+          "id": "set.posts.featured",
+          "template": "`featured` = {0}"
         },
         {
           "id": "set.posts.id",
