@@ -264,7 +264,7 @@ bind password_hash
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, ds, err := shapes.Layer(b.GetCatalogs(), c.CustomShapes())
+	_, ds, err := shapes.Layer(b.GetCatalogs(), c.CustomShapes(), shapes.Options{})
 	if err != nil || len(ds) != 1 {
 		t.Fatalf("%v %v", err, ds)
 	}

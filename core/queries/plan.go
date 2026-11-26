@@ -58,8 +58,16 @@ func TableID(cats []*irv1.Catalog, q *irv1.QualifiedName) string {
 // Every query filters on the entity's scope and leaves out soft-deleted
 // rows. A versioned write compares the Key's expected version and bumps it
 // (§20.4). Queries are sorted by name.
+//
+// On a dialect that re-reads written rows (returned_rows REREAD), a write
+// that returns the Full has no returning clause and carries the read of its
+// row by key instead (§20.1): an insert's by the primary key, an upsert's by
+// its conflict target and a patch's by the Key. A key column the call does
+// not give comes back as the last insert ID when it is an identity; a write
+// whose row has no such key has no query.
 func Plan(b *irv1.Bundle) []*irv1.Query {
-	p := &planner{b: b, fragments: map[string]bool{}, tables: map[string]*entity{}}
+	p := &planner{b: b, fragments: map[string]bool{}, tables: map[string]*entity{},
+		readBack: b.GetCapabilities().GetReturnedRows() == irv1.ReturnedRows_RETURNED_ROWS_REREAD}
 	for _, f := range b.GetQueries().GetFragments().GetFragments() {
 		p.fragments[f.GetId()] = true
 	}
@@ -104,9 +112,12 @@ func Plan(b *irv1.Bundle) []*irv1.Query {
 type planner struct {
 	b         *irv1.Bundle
 	fragments map[string]bool
-	tables    map[string]*entity
-	order     []*entity
-	out       []*irv1.Query
+	// readBack: the dialect re-reads written rows rather than returning
+	// them from the write (§20.1).
+	readBack bool
+	tables   map[string]*entity
+	order    []*entity
+	out      []*irv1.Query
 }
 
 // entity is a table or view with what its queries need.
@@ -302,7 +313,7 @@ func (p *planner) entity(e *entity) {
 	if e.t.GetKind() != irv1.TableKind_RELATION_KIND_TABLE {
 		return
 	}
-	returning := fill("returning", use("returning."+e.shapeID(full)))
+	returning := p.returning(e, full)
 	for _, s := range e.shapes {
 		if s.GetId().GetForRelation() != "" || len(s.GetLineage()) == 0 {
 			continue
@@ -317,17 +328,27 @@ func (p *planner) entity(e *entity) {
 		switch s.GetLineage()[0].GetPreset() {
 		case irv1.Preset_PRESET_DRAFT:
 			cols, row, params := e.values(s)
-			p.add(e, e.spelling+".insert"+suffix, irv1.Cardinality_CARDINALITY_ONE, true, params, full,
-				use("insert."+e.id, cols, row, returning))
+			ok := true
+			var rr *irv1.Reread
+			if p.readBack {
+				rr, ok = e.reread(full, e.keyColumns(), e.draftValues(s))
+			}
+			if ok {
+				p.withReread(p.add(e, e.spelling+".insert"+suffix, irv1.Cardinality_CARDINALITY_ONE, true, params, full,
+					use("insert."+e.id, cols, row, returning)), rr)
+			}
 			if custom != "" {
 				break
 			}
 			// An insert that skips a row conflicting on a uniqueness fact
 			// returns no row.
 			for _, u := range e.t.GetUniqueness() {
+				if !ok {
+					break
+				}
 				cols, row, params := e.values(s)
-				p.add(e, e.spelling+".insert_or_ignore"+suffix+".by_"+keyName(u), irv1.Cardinality_CARDINALITY_OPTIONAL, true, params, full,
-					use("ignore."+e.id+"."+u.GetName(), cols, row, returning))
+				p.withReread(p.add(e, e.spelling+".insert_or_ignore"+suffix+".by_"+keyName(u), irv1.Cardinality_CARDINALITY_OPTIONAL, true, params, full,
+					use("ignore."+e.id+"."+u.GetName(), cols, row, returning)), rr)
 			}
 		case irv1.Preset_PRESET_PARTIAL:
 			p.patch(e, s, suffix, full, returning)
@@ -447,8 +468,16 @@ func (p *planner) patch(e *entity, s *irv1.Shape, suffix string, full *irv1.Shap
 	if !ok {
 		return
 	}
-	if q := p.add(e, e.spelling+".patch"+suffix, irv1.Cardinality_CARDINALITY_ONE, true, append(params, keyParams...), full,
-		use("update."+e.id, list("sets", sets), where(append(e.visible(), preds...)), returning)); q != nil {
+	var rr *irv1.Reread
+	if p.readBack {
+		values := map[string]string{}
+		for _, c := range e.keyColumns() {
+			values[c] = "key." + c
+		}
+		rr, _ = e.reread(full, e.keyColumns(), values)
+	}
+	if q := p.withReread(p.add(e, e.spelling+".patch"+suffix, irv1.Cardinality_CARDINALITY_ONE, true, append(params, keyParams...), full,
+		use("update."+e.id, list("sets", sets), where(append(e.visible(), preds...)), returning)), rr); q != nil {
 		q.AtMostOne = true
 	}
 }
@@ -513,10 +542,14 @@ func (p *planner) upsert(e *entity, u *irv1.Upsert) {
 	if len(sets) == 0 {
 		return
 	}
+	rr, ok := p.upsertReread(e, k, s, full)
+	if !ok {
+		return
+	}
 	cols, row, params := e.values(s)
-	p.add(e, e.spelling+".upsert.by_"+keyName(e.t.GetUniqueness()[k]), irv1.Cardinality_CARDINALITY_ONE, true, params, full,
-		use("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), fill("returning", use("returning."+e.shapeID(full)))))
-	p.upsertSet(e, u, k, s, full)
+	p.withReread(p.add(e, e.spelling+".upsert.by_"+keyName(e.t.GetUniqueness()[k]), irv1.Cardinality_CARDINALITY_ONE, true, params, full,
+		use("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), p.returning(e, full))), rr)
+	p.upsertSet(e, u, k, s, full, rr)
 }
 
 // upsertSet adds the upsert of one conflict target whose update side is a
@@ -525,7 +558,7 @@ func (p *planner) upsert(e *entity, u *irv1.Upsert) {
 // nothing still returns the row: a versioned entity's bump writes, and
 // otherwise a Draft column the Partial leaves out is set to itself; with
 // neither there is no query.
-func (p *planner) upsertSet(e *entity, u *irv1.Upsert, k int, s, full *irv1.Shape) {
+func (p *planner) upsertSet(e *entity, u *irv1.Upsert, k int, s, full *irv1.Shape, rr *irv1.Reread) {
 	part := e.preset(irv1.Preset_PRESET_PARTIAL)
 	if part == nil {
 		return
@@ -547,11 +580,116 @@ func (p *planner) upsertSet(e *entity, u *irv1.Upsert, k int, s, full *irv1.Shap
 		return
 	}
 	cols, row, params := e.values(s)
-	p.add(e, e.spelling+".upsert_set.by_"+keyName(e.t.GetUniqueness()[k]), irv1.Cardinality_CARDINALITY_ONE, true, append(params, setParams...), full,
-		use("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), fill("returning", use("returning."+e.shapeID(full)))))
+	p.withReread(p.add(e, e.spelling+".upsert_set.by_"+keyName(e.t.GetUniqueness()[k]), irv1.Cardinality_CARDINALITY_ONE, true, append(params, setParams...), full,
+		use("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), p.returning(e, full))), rr)
 }
 
 func shapeEqual(a, b *irv1.ShapeId) bool {
 	return diagnostics.CompareNames(a.GetEntity(), b.GetEntity()) == 0 && a.GetCustom() == b.GetCustom() &&
 		a.GetPreset() == b.GetPreset() && a.GetForm() == b.GetForm() && a.GetForRelation() == b.GetForRelation()
+}
+
+// returning is the returning clause of a write that returns full, or nil
+// on a dialect that re-reads the row.
+func (p *planner) returning(e *entity, full *irv1.Shape) *irv1.HoleFill {
+	if p.readBack {
+		return nil
+	}
+	return fill("returning", use("returning."+e.shapeID(full)))
+}
+
+// withReread attaches rr to q, a write that returns its row, and drops q
+// when the dialect lacks one of rr's fragments.
+func (p *planner) withReread(q *irv1.Query, rr *irv1.Reread) *irv1.Query {
+	if q == nil || rr == nil {
+		return q
+	}
+	for _, u := range rr.GetPlan().GetParts() {
+		if !p.renders(u) {
+			p.out = p.out[:len(p.out)-1]
+			return nil
+		}
+	}
+	q.Reread = rr
+	return q
+}
+
+// upsertReread is the read of an upserted row, by the conflict target's
+// columns from the Draft, or nil on a dialect with returning clauses. ok is
+// false when the row cannot be read back: a conflict target with
+// expressions has no columns to read it by.
+func (p *planner) upsertReread(e *entity, k int, s, full *irv1.Shape) (*irv1.Reread, bool) {
+	if !p.readBack {
+		return nil, true
+	}
+	u := e.t.GetUniqueness()[k]
+	if len(u.GetExpressions()) > 0 {
+		return nil, false
+	}
+	return e.reread(full, u.GetColumns(), e.draftValues(s))
+}
+
+// keyColumns are the columns of the entity's Key, without its expected
+// version.
+func (e *entity) keyColumns() []string {
+	var cols []string
+	for _, f := range e.preset(irv1.Preset_PRESET_KEY).GetFields() {
+		if f.GetRole() != irv1.FieldRole_FIELD_ROLE_EXPECTED_VERSION {
+			cols = append(cols, f.GetColumn())
+		}
+	}
+	return cols
+}
+
+// draftValues names the parameter of an insert of s that always holds each
+// column's value: its required fields and its bind columns. An optional
+// field may be left out.
+func (e *entity) draftValues(s *irv1.Shape) map[string]string {
+	out := map[string]string{}
+	for _, f := range s.GetFields() {
+		if f.GetPresence() != irv1.Presence_PRESENCE_OPTIONAL {
+			out[f.GetColumn()] = f.GetColumn()
+		}
+	}
+	for _, c := range s.GetBind() {
+		out[c] = c
+	}
+	return out
+}
+
+// identity reports whether the database numbers c, so that the last insert
+// ID holds its value.
+func (e *entity) identity(c string) bool {
+	class := e.column(c).GetDefault().GetClass()
+	return class == irv1.DefaultClass_DEFAULT_IDENTITY_BY_DEFAULT || class == irv1.DefaultClass_DEFAULT_IDENTITY_ALWAYS
+}
+
+// reread is the read of the row whose key columns cols hold the values the
+// parameters values names: the Full's select filtered on them, with the
+// scope's and the soft delete's filters. A column without a value that is
+// an identity is read through its own parameter, which the call may set
+// and the last insert ID fills otherwise; ok is false for one that is not,
+// or for no key.
+func (e *entity) reread(full *irv1.Shape, cols []string, values map[string]string) (*irv1.Reread, bool) {
+	if len(cols) == 0 {
+		return nil, false
+	}
+	rr := &irv1.Reread{}
+	preds := e.visible()
+	for _, c := range cols {
+		if slices.Contains(e.scope, c) {
+			continue
+		}
+		v, ok := values[c]
+		switch {
+		case ok:
+		case e.identity(c) && rr.Generated == "":
+			v, rr.Generated = c, c
+		default:
+			return nil, false
+		}
+		preds = append(preds, eq(e, c, v))
+	}
+	rr.Plan = &irv1.FragmentPlan{Parts: []*irv1.FragmentUse{use("select." + e.shapeID(full)), where(preds).GetFragment()}}
+	return rr, true
 }

@@ -380,3 +380,87 @@ func TestPlanTableWords(t *testing.T) {
 		t.Errorf("queries %s", names(qs))
 	}
 }
+
+// On a dialect that re-reads written rows, a write that returns the Full
+// has no returning clause and reads its row back by key (§20.1).
+func TestPlanReadBack(t *testing.T) {
+	b := shop(t)
+	b.Capabilities = &irv1.CapabilityProfile{ReturnedRows: irv1.ReturnedRows_RETURNED_ROWS_REREAD}
+	qs := planned(b)
+	scope := "op.eq(0=col.users.tenant_id, 1=$scope.tenant_id)"
+	for name, want := range map[string]struct {
+		plan, generated string
+	}{
+		// users.id is an identity: the last insert ID fills it.
+		"user.insert": {"select.user.full.flat + clause.where(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.id, 1=$id)))", "id"},
+		// The patch reads its row by the Key, without the bumped version.
+		"user.patch": {"select.user.full.flat + clause.where(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.id, 1=$key.id)))", ""},
+		// An upsert reads by its conflict target; the scope gives tenant_id.
+		"user.upsert.by_tenant_id_and_email":     {"select.user.full.flat + clause.where(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.email, 1=$email)))", ""},
+		"user.upsert_set.by_tenant_id_and_email": {"select.user.full.flat + clause.where(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.email, 1=$email)))", ""},
+		"user.insert_or_ignore.by_primary":       {"select.user.full.flat + clause.where(0=bool.and(0=" + scope + ", 1=op.eq(0=col.users.id, 1=$id)))", "id"},
+		// A composite key the Draft holds needs no generated value.
+		"post_tag.insert": {"select.post_tag.full.flat + clause.where(0=bool.and(0=op.eq(0=col.post_tags.post_id, 1=$post_id), 1=op.eq(0=col.post_tags.tag_id, 1=$tag_id)))", ""},
+	} {
+		q := qs[name]
+		if got := describe(q.GetReread().GetPlan().GetParts()); got != want.plan || q.GetReread().GetGenerated() != want.generated {
+			t.Errorf("%s\n got %s (%q)\nwant %s (%q)", name, got, q.GetReread().GetGenerated(), want.plan, want.generated)
+		}
+		if strings.Contains(describe(q.GetPlan().GetParts()), "returning") {
+			t.Errorf("%s returns: %s", name, describe(q.GetPlan().GetParts()))
+		}
+	}
+	// tenants.id defaults to gen_random_uuid(), which this Draft leaves
+	// optional, so no read can find the row: there is no insert. The shape
+	// layer makes such a key required on these dialects.
+	for _, name := range []string{"tenant.insert", "tenant.insert_or_ignore.by_primary"} {
+		if qs[name] != nil {
+			t.Errorf("%s is planned", name)
+		}
+	}
+	// A conflict target with expressions has no columns to read by.
+	if qs["post.upsert.by_posts_one_published_slug"] != nil || qs["post.upsert_set.by_posts_one_published_slug"] != nil {
+		t.Error("an upsert on an expression key is planned")
+	}
+	// Reads and writes returning nothing are unchanged.
+	for _, name := range []string{"user.get.by_primary", "user.update_where", "user.delete"} {
+		if qs[name].GetReread() != nil {
+			t.Errorf("%s re-reads", name)
+		}
+	}
+	// A bound key column is read by its own parameter (§14.8).
+	b2 := shop(t)
+	b2.Capabilities = b.Capabilities
+	for _, sh := range b2.GetShapes().GetShapes() {
+		id := sh.GetId()
+		if sh.GetEntity().GetObject() == "post_tags" && id.GetPreset() == irv1.Preset_PRESET_DRAFT && id.GetForm() == irv1.Form_FORM_FLAT && id.GetForRelation() == "" {
+			tag := proto.Clone(sh).(*irv1.Shape)
+			tag.Id = &irv1.ShapeId{Base: &irv1.ShapeId_Custom{Custom: "tagging"}}
+			tag.Fields, tag.Bind = tag.Fields[:1], []string{"tag_id"}
+			b2.Shapes.Shapes = append(b2.Shapes.Shapes, tag)
+			break
+		}
+	}
+	// An entity without a Key has no row to read; an expression key has
+	// no columns to read it by.
+	b2.Shapes.Shapes = slices.DeleteFunc(b2.GetShapes().GetShapes(), func(s *irv1.Shape) bool {
+		return s.GetEntity().GetObject() == "posts" && s.GetId().GetPreset() == irv1.Preset_PRESET_KEY
+	})
+	for _, u := range table(b2, "users").GetUniqueness() {
+		if u.GetName() == "users_tenant_email_key" {
+			u.Expressions = []*irv1.IndexExpression{{Position: 2, Native: "lower(email)"}}
+		}
+	}
+	qs = planned(b2)
+	if got := describe(qs["post_tag.insert.tagging"].GetReread().GetPlan().GetParts()); !strings.Contains(got, "1=$tag_id") {
+		t.Errorf("tagging reread: %s", got)
+	}
+	if qs["post.insert"] != nil || qs["user.upsert.by_tenant_id_and_email"] != nil || qs["user.upsert.by_primary"] == nil {
+		t.Errorf("keyless or expression writes: %s", names(qs))
+	}
+	// A reread the dialect cannot render drops its write.
+	dropFragments(b, "select.post_tag.full.flat")
+	if qs := planned(b); qs["post_tag.insert"] != nil || qs["post_tag.get.by_primary"] != nil {
+		t.Error("post_tag writes without a select")
+	}
+}

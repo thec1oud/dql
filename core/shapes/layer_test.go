@@ -16,7 +16,7 @@ import (
 // shapes of §14.8, failing on any diagnostic.
 func layerOf(t *testing.T, catalogs []*irv1.Catalog) *irv1.ShapeLayer {
 	t.Helper()
-	layer, ds, err := Layer(catalogs, customRecord())
+	layer, ds, err := Layer(catalogs, customRecord(), Options{})
 	if err != nil || len(ds) != 0 {
 		t.Fatalf("Layer: %v %v", err, ds)
 	}
@@ -69,11 +69,11 @@ func TestLayer(t *testing.T) {
 // forms already have; the layer lists each once.
 func TestLayerListsSharedUnionsOnce(t *testing.T) {
 	catalogs := shop(t)
-	plain, _, err := Layer(catalogs, nil)
+	plain, _, err := Layer(catalogs, nil, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	nested, ds, err := Layer(catalogs, []Custom{{Name: "post_by_author", From: "post.draft", Nest: map[string]string{"author": "user.draft"}}})
+	nested, ds, err := Layer(catalogs, []Custom{{Name: "post_by_author", From: "post.draft", Nest: map[string]string{"author": "user.draft"}}}, Options{})
 	if err != nil || len(ds) != 0 {
 		t.Fatalf("Layer: %v %v", err, ds)
 	}
@@ -86,7 +86,7 @@ func TestLayerListsSharedUnionsOnce(t *testing.T) {
 }
 
 func TestLayerReportsCustomShapes(t *testing.T) {
-	layer, ds, err := Layer(shop(t), []Custom{{Name: "quick_invite", From: "user.draft", Pick: []string{"email"}}})
+	layer, ds, err := Layer(shop(t), []Custom{{Name: "quick_invite", From: "user.draft", Pick: []string{"email"}}}, Options{})
 	if err != nil || len(ds) != 1 || ds[0].GetCode() != CodeWriteShapeIncomplete {
 		t.Fatalf("%v %v", err, ds)
 	}
@@ -99,7 +99,7 @@ func TestLayerFailsOnUnassembledCatalogs(t *testing.T) {
 	catalogs := customCatalogs()
 	// posts' relations name users, which these catalogs lack.
 	catalogs[0].Namespaces[0].Tables = catalogs[0].Namespaces[0].Tables[1:2]
-	if _, _, err := Layer(catalogs, nil); err == nil || !strings.Contains(err.Error(), "without a flat Full") {
+	if _, _, err := Layer(catalogs, nil, Options{}); err == nil || !strings.Contains(err.Error(), "without a flat Full") {
 		t.Errorf("err %v", err)
 	}
 }
@@ -172,7 +172,7 @@ func TestLayerHostNameCollisions(t *testing.T) {
 	ns.Enums = append(ns.Enums, &irv1.Enum{Name: &irv1.Identifier{Stored: "user_full"}, HostName: &irv1.Identifier{Words: []string{"user", "full"}}})
 	ns.Domains = append(ns.Domains, &irv1.Domain{Name: &irv1.Identifier{Stored: "tlk"}, HostName: &irv1.Identifier{Words: []string{"tag", "link", "key"}}})
 	ns.Composites = append(ns.Composites, &irv1.Composite{Name: &irv1.Identifier{Stored: "pr"}, HostName: &irv1.Identifier{Words: []string{"post", "ref"}}})
-	_, ds, err := Layer(catalogs, nil)
+	_, ds, err := Layer(catalogs, nil, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,5 +192,51 @@ func TestLayerHostNameCollisions(t *testing.T) {
 	slices.Sort(want)
 	if !slices.Equal(got, want) {
 		t.Errorf("diagnostics:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+// On a dialect that reads written rows back by key, a Draft must set each
+// key column the database fills, except an auto-increment identity, whose
+// value comes back as the last insert ID (§20.1).
+func TestLayerReadBack(t *testing.T) {
+	presence := func(layer *irv1.ShapeLayer, entity, column string) irv1.Presence {
+		for _, s := range layer.GetShapes() {
+			id := s.GetId()
+			if id.GetEntity().GetObject() == entity && id.GetPreset() == irv1.Preset_PRESET_DRAFT && id.GetForm() == irv1.Form_FORM_FLAT && id.GetForRelation() == "" {
+				for _, f := range s.GetFields() {
+					if f.GetColumn() == column {
+						return f.GetPresence()
+					}
+				}
+			}
+		}
+		return irv1.Presence_PRESENCE_UNSPECIFIED
+	}
+	catalogs := shop(t)
+	plain, _, err := Layer(catalogs, nil, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, _, err := Layer(catalogs, nil, Options{ReadBack: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		entity, column  string
+		plain, readBack irv1.Presence
+	}{
+		// tenants.id defaults to gen_random_uuid().
+		{"tenants", "id", irv1.Presence_PRESENCE_OPTIONAL, irv1.Presence_PRESENCE_REQUIRED},
+		// posts.id is an identity by default.
+		{"posts", "id", irv1.Presence_PRESENCE_OPTIONAL, irv1.Presence_PRESENCE_OPTIONAL},
+		// A column outside the key keeps its presence.
+		{"users", "created_at", irv1.Presence_PRESENCE_OPTIONAL, irv1.Presence_PRESENCE_OPTIONAL},
+	} {
+		if got := presence(plain, c.entity, c.column); got != c.plain {
+			t.Errorf("%s.%s: %v, want %v", c.entity, c.column, got, c.plain)
+		}
+		if got := presence(back, c.entity, c.column); got != c.readBack {
+			t.Errorf("%s.%s read back: %v, want %v", c.entity, c.column, got, c.readBack)
+		}
 	}
 }

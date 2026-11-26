@@ -10,6 +10,8 @@ import (
 // name.
 type index struct {
 	domains map[qn]*irv1.Domain
+	// readBack is Options.ReadBack.
+	readBack bool
 }
 
 // qn is a qualified name as a map key.
