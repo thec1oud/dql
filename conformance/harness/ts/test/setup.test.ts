@@ -34,7 +34,8 @@ test("a server that is no replica", async () => {
     // A replica that cannot be reached fails with the error it gave.
     const down = new URL(base);
     down.port = "1";
-    await expect(replicaOf(dsn, down.toString(), 100)).rejects.toThrow("ECONNREFUSED");
+    down.hostname = "localhost";
+    await expect(replicaOf(dsn, down.toString(), 100)).rejects.toThrow(/has not replayed \S+: \w*Error/);
     rotationWait.ms = 100;
     await expect(shop?.open(dsn, [dsn], 0, "prepare", {}) as Promise<unknown>).rejects.toThrow("the replica did not enter rotation");
   } finally {
