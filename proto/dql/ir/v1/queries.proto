@@ -50,6 +50,11 @@ message Query {
   // (returned_rows REREAD), how a builder write that returns rows reads
   // them back (§20.1).
   Reread reread = 16;
+  // On a dialect whose placeholders are positional, such as MySQL's ?, the
+  // value each placeholder of a query file's text takes, in order: an index
+  // into params, or past them into scope.columns. Empty where the n-th
+  // placeholder is $n.
+  repeated uint32 placeholders = 17;
 }
 
 // The read that returns a written row on a dialect without RETURNING

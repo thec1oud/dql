@@ -475,3 +475,14 @@ func TestColumnOperatorFragment(t *testing.T) {
 		`return dql.Compare[PostsTable]("op.in.posts.id", "col.posts.id", `,
 		`return dql.Compare[PostsTable]("op.in", "col.posts.author_id", `)
 }
+
+func TestPositional(t *testing.T) {
+	args, types := positional(nil, []string{"a", "b"}, []string{"x", "y"})
+	if !slices.Equal(args, []string{"a", "b"}) || !slices.Equal(types, []string{"x", "y"}) {
+		t.Fatalf("no placeholders: %v %v", args, types)
+	}
+	args, types = positional([]uint32{1, 0, 1}, []string{"a", "b"}, []string{"x", "y"})
+	if !slices.Equal(args, []string{"b", "a", "b"}) || !slices.Equal(types, []string{"y", "x", "y"}) {
+		t.Fatalf("placeholders: %v %v", args, types)
+	}
+}

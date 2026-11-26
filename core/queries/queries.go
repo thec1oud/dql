@@ -47,6 +47,7 @@ func Check(b *irv1.Bundle) []*irv1.Diagnostic {
 			continue
 		}
 		c.writeOnly(q)
+		c.placeholders(q)
 		c.scope(q)
 		c.count(q)
 		if q.GetReturns() != "" {
@@ -81,6 +82,17 @@ func (c *checker) writeOnly(q *irv1.Query) {
 	for _, f := range q.GetResult().GetAnonymous().GetFields() {
 		if o := f.GetOrigin(); o != nil && has(c.columns[diagnostics.Name(o)], keyWriteOnly) {
 			c.errorf(q, "query-write-only", o, "query %s selects %s, which is write-only; leave it out of the result", q.GetName().GetStored(), diagnostics.Name(o))
+		}
+	}
+}
+
+// placeholders reports a positional placeholder that takes no parameter
+// or scope column.
+func (c *checker) placeholders(q *irv1.Query) {
+	n := len(q.GetParams()) + len(q.GetScope().GetColumns())
+	for i, p := range q.GetPlaceholders() {
+		if int(p) >= n {
+			c.errorf(q, "query-placeholder", nil, "placeholder %d of query %s takes value %d, but the query has %d parameters and scope columns", i+1, q.GetName().GetStored(), p, n)
 		}
 	}
 }

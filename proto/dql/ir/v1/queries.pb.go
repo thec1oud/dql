@@ -242,7 +242,12 @@ type Query struct {
 	// On a dialect that returns written rows by re-reading them
 	// (returned_rows REREAD), how a builder write that returns rows reads
 	// them back (§20.1).
-	Reread        *Reread `protobuf:"bytes,16,opt,name=reread,proto3" json:"reread,omitempty"`
+	Reread *Reread `protobuf:"bytes,16,opt,name=reread,proto3" json:"reread,omitempty"`
+	// On a dialect whose placeholders are positional, such as MySQL's ?, the
+	// value each placeholder of a query file's text takes, in order: an index
+	// into params, or past them into scope.columns. Empty where the n-th
+	// placeholder is $n.
+	Placeholders  []uint32 `protobuf:"varint,17,rep,packed,name=placeholders,proto3" json:"placeholders,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -396,6 +401,13 @@ func (x *Query) GetAtMostOne() bool {
 func (x *Query) GetReread() *Reread {
 	if x != nil {
 		return x.Reread
+	}
+	return nil
+}
+
+func (x *Query) GetPlaceholders() []uint32 {
+	if x != nil {
+		return x.Placeholders
 	}
 	return nil
 }
@@ -1245,7 +1257,7 @@ var File_dql_ir_v1_queries_proto protoreflect.FileDescriptor
 
 const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\n" +
-	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\x8c\x05\n" +
+	"\x17dql/ir/v1/queries.proto\x12\tdql.ir.v1\x1a\x15dql/ir/v1/names.proto\x1a\x17dql/ir/v1/objects.proto\x1a\x16dql/ir/v1/shapes.proto\x1a\x15dql/ir/v1/types.proto\x1a\x1egoogle/protobuf/duration.proto\"\xb0\x05\n" +
 	"\x05Query\x12)\n" +
 	"\x04name\x18\x01 \x01(\v2\x15.dql.ir.v1.IdentifierR\x04name\x12.\n" +
 	"\x06source\x18\x02 \x01(\x0e2\x16.dql.ir.v1.QuerySourceR\x06source\x128\n" +
@@ -1263,7 +1275,8 @@ const file_dql_ir_v1_queries_proto_rawDesc = "" +
 	"\areturns\x18\r \x01(\tR\areturns\x120\n" +
 	"\x06tables\x18\x0e \x03(\v2\x18.dql.ir.v1.QualifiedNameR\x06tables\x12\x1e\n" +
 	"\vat_most_one\x18\x0f \x01(\bR\tatMostOne\x12)\n" +
-	"\x06reread\x18\x10 \x01(\v2\x11.dql.ir.v1.RereadR\x06rereadB\x05\n" +
+	"\x06reread\x18\x10 \x01(\v2\x11.dql.ir.v1.RereadR\x06reread\x12\"\n" +
+	"\fplaceholders\x18\x11 \x03(\rR\fplaceholdersB\x05\n" +
 	"\x03sql\"S\n" +
 	"\x06Reread\x12+\n" +
 	"\x04plan\x18\x01 \x01(\v2\x17.dql.ir.v1.FragmentPlanR\x04plan\x12\x1c\n" +
