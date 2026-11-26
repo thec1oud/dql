@@ -179,7 +179,7 @@ var Schemas = map[string]Schema{
 }
 
 // Matrix holds each dialect's schemas, which every scenario runs on.
-var Matrix = map[string]map[string]Schema{"postgres": Schemas, "mysql": MySQLSchemas}
+var Matrix = map[string]map[string]Schema{"postgres": Schemas, "mysql": MySQLSchemas, "mariadb": MariaDBSchemas}
 
 // postgresFeatures are the features Postgres's schemas hold: every one a
 // scenario requires but tinyint-bool, a MySQL type.

@@ -81,8 +81,8 @@ test("scenarios", async () => {
   process.env["DQL_CONFORMANCE_OUTCOMES"] = out;
   const lines: string[] = [];
   expect(await scenarios(["raw"], (l) => lines.push(l))).toBe(0);
-  expect(lines).toEqual(["ok prepare/raw", "ok describe/raw", "ok mysql/prepare/raw", "ok mysql/simple/raw"]);
-  expect((await readdir(out)).sort()).toEqual(["describe", "mysql", "prepare"]);
+  expect(lines).toEqual(["ok prepare/raw", "ok describe/raw", "ok mysql/prepare/raw", "ok mysql/simple/raw", "ok mariadb/prepare/raw", "ok mariadb/simple/raw"]);
+  expect((await readdir(out)).sort()).toEqual(["describe", "mariadb", "mysql", "prepare"]);
   expect((await readdir(join(out, "mysql"))).sort()).toEqual(["prepare", "simple"]);
   expect(JSON.parse(await readFile(join(out, "prepare", "raw.json"), "utf8"))[0].op).toBe("tenants.insert");
   expect(JSON.parse(await readFile(join(out, "mysql", "simple", "raw.json"), "utf8"))[0].op).toBe("tenants.insert");
@@ -92,9 +92,9 @@ test("scenarios with problems", async () => {
   const dir = await mkdtemp(join(tmpdir(), "scenarios-"));
   await writeFile(join(dir, "s.yaml"), "scenario: s\nschema: shop\nsteps:\n  - op: tenants.count\n    expect: { value: 1 }\n");
   const lines: string[] = [];
-  expect(await scenarios([], (l) => lines.push(l), dir)).toBe(4);
+  expect(await scenarios([], (l) => lines.push(l), dir)).toBe(6);
   expect(lines).toEqual(
-    ["prepare", "describe", "mysql/prepare", "mysql/simple"].flatMap((m) => [`${m}/s step 1 (tenants.count): want value 1, got 0`, `FAIL ${m}/s`]),
+    ["prepare", "describe", "mysql/prepare", "mysql/simple", "mariadb/prepare", "mariadb/simple"].flatMap((m) => [`${m}/s step 1 (tenants.count): want value 1, got 0`, `FAIL ${m}/s`]),
   );
 });
 
@@ -106,6 +106,8 @@ test("a scenario needing a feature a dialect lacks is skipped there", async () =
     "skip describe/tinyint-bool: Postgres lacks tinyint-bool",
     "ok mysql/prepare/tinyint-bool",
     "ok mysql/simple/tinyint-bool",
+    "ok mariadb/prepare/tinyint-bool",
+    "ok mariadb/simple/tinyint-bool",
   ]);
 });
 
@@ -114,5 +116,12 @@ test("a scenario on a schema a dialect lacks is skipped there", async () => {
   await writeFile(join(dir, "v.yaml"), "scenario: v\nschema: shop_variants\nsteps:\n  - op: tenants.count\n    expect: { value: 0 }\n");
   const lines: string[] = [];
   expect(await scenarios([], (l) => lines.push(l), dir)).toBe(0);
-  expect(lines).toEqual(["ok prepare/v", "ok describe/v", "skip mysql/prepare/v: MySQL has no schema shop_variants", "skip mysql/simple/v: MySQL has no schema shop_variants"]);
+  expect(lines).toEqual([
+    "ok prepare/v",
+    "ok describe/v",
+    "skip mysql/prepare/v: MySQL has no schema shop_variants",
+    "skip mysql/simple/v: MySQL has no schema shop_variants",
+    "skip mariadb/prepare/v: MariaDB has no schema shop_variants",
+    "skip mariadb/simple/v: MariaDB has no schema shop_variants",
+  ]);
 });

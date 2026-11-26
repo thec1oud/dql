@@ -23,8 +23,8 @@ export interface Dialect {
  * dialects are the dialects the scenarios run on, in order, as
  * conformance/harness/go runs them. On Postgres the modes are those the
  * TypeScript driver has, simple needing a protocol node-postgres does not
- * offer; on MySQL they are Go's, whose outcomes the TypeScript ones are
- * compared with.
+ * offer; on MySQL and MariaDB they are Go's, whose outcomes the TypeScript
+ * ones are compared with.
  */
 export const dialects: Readonly<Record<string, Dialect>> = {
   postgres: {
@@ -40,6 +40,13 @@ export const dialects: Readonly<Record<string, Dialect>> = {
     modes: ["prepare", "simple"],
     features: ["tinyint-bool"],
     database: mysql.database,
+  },
+  mariadb: {
+    label: "MariaDB",
+    env: "DQL_TEST_MARIADB_URL",
+    modes: ["prepare", "simple"],
+    features: ["tinyint-bool"],
+    database: mysql.mariadbDatabase,
   },
 };
 

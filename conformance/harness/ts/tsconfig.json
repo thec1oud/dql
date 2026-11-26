@@ -19,5 +19,5 @@
       "@dql/mysql": ["../../../runtime/ts/dqlmysql/dist/index"]
     }
   },
-  "include": ["src", "test", "variantdb", "mysqlshopdb"]
+  "include": ["src", "test", "variantdb", "mysqlshopdb", "mariadbshopdb"]
 }
