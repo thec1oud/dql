@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -222,6 +223,21 @@ func TestDatabase(t *testing.T) {
 	}
 	if _, _, err := Schemas["shop"].Open(ctx, "postgres://%zz", []string{"postgres://%zz"}, 0, dql.ModePrepare); err == nil {
 		t.Error("bad DSN opened")
+	}
+	// A primary is no replica, so it never enters rotation.
+	defer func(d time.Duration) { rotationWait = d }(rotationWait)
+	rotationWait = 100 * time.Millisecond
+	var shop []string
+	for _, f := range Schemas["shop"].DDL {
+		shop = append(shop, filepath.Join(root, f))
+	}
+	dsn, drop, err := Database(ctx, base, shop...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer drop()
+	if _, _, err := Schemas["shop"].Open(ctx, dsn, []string{dsn}, 0, dql.ModePrepare); err == nil || err.Error() != "the replica did not enter rotation" {
+		t.Errorf("a replica out of rotation: %v", err)
 	}
 }
 

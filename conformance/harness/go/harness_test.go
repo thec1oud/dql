@@ -2,6 +2,7 @@ package harness
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -102,8 +103,11 @@ func query(ctx context.Context, dsn, sql string, dest any) error {
 }
 
 // Every scenario passes on Postgres for Go (guide M4), in each statement
-// mode (§26.4).
+// mode (§26.4). With DQL_CONFORMANCE_OUTCOMES set, each scenario's outcomes
+// are written there, as <mode>/<scenario>.json, for CI to compare with the
+// TypeScript harness's (guide M5).
 func TestScenarios(t *testing.T) {
+	out := os.Getenv("DQL_CONFORMANCE_OUTCOMES")
 	scs, err := Load(filepath.Join("..", "..", "scenarios"))
 	if err != nil {
 		t.Fatal(err)
@@ -117,10 +121,31 @@ func TestScenarios(t *testing.T) {
 				if _, ok := Schemas[sc.Schema]; !ok {
 					t.Fatalf("%s: no schema %s", sc.File, sc.Schema)
 				}
-				for _, p := range Run(context.Background(), sc, open(t, sc.Schema, sc.Replica, sc.MaxConns, mode)) {
+				target := open(t, sc.Schema, sc.Replica, sc.MaxConns, mode)
+				outcomes := []Outcome{}
+				target.Record = func(o Outcome) { outcomes = append(outcomes, o) }
+				for _, p := range Run(context.Background(), sc, target) {
 					t.Error(p)
+				}
+				if out != "" {
+					writeOutcomes(t, filepath.Join(out, mode.String(), sc.Name+".json"), outcomes)
 				}
 			})
 		}
+	}
+}
+
+// writeOutcomes writes a scenario's outcomes to file as JSON.
+func writeOutcomes(t *testing.T, file string, outcomes []Outcome) {
+	t.Helper()
+	raw, err := json.MarshalIndent(outcomes, "", " ")
+	if err == nil {
+		err = os.MkdirAll(filepath.Dir(file), 0o755)
+	}
+	if err == nil {
+		err = os.WriteFile(file, append(raw, '\n'), 0o644)
+	}
+	if err != nil {
+		t.Fatal(err)
 	}
 }

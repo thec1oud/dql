@@ -2,9 +2,11 @@ package harness
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -183,16 +185,41 @@ func opener[DB any](
 		for _, r := range replicas {
 			src.Replicas = append(src.Replicas, dql.ConnConfig{DSN: r, MaxConns: 4})
 		}
-		e, err := newExec(ctx, dqlpgx.New(), dql.Config{
+		// A scenario starts with its replica in rotation. The tracker's
+		// first poll opens the replica's first connection, which can take
+		// longer than the poll may, so the replica can join only on a later
+		// poll.
+		in := make(chan struct{})
+		var once sync.Once
+		rotation := dql.WithHooks(dql.Hooks{Rotation: func(ev dql.RotationEvent) {
+			if ev.In {
+				once.Do(func() { close(in) })
+			}
+		}})
+		// The driver registers the schemas' composite type, as dqlpgx
+		// documents, so that its values decode into their attributes.
+		e, err := newExec(ctx, dqlpgx.New("app.money_amount"), dql.Config{
 			Sources:  map[string]dql.SourceConfig{"main": src},
 			Catalogs: map[string]string{"shop": "main"},
-		}, append([]dql.Option{dql.WithTrackInterval(trackInterval)}, opts...)...)
+		}, append([]dql.Option{dql.WithTrackInterval(trackInterval), rotation}, opts...)...)
 		if err != nil {
 			return nil, nil, err
+		}
+		if len(replicas) > 0 {
+			select {
+			case <-in:
+			case <-time.After(rotationWait):
+				e.Close()
+				return nil, nil, errors.New("the replica did not enter rotation")
+			}
 		}
 		return newDB(e), e, nil
 	}
 }
+
+// rotationWait is how long a scenario's executor waits for its replica to
+// enter rotation.
+var rotationWait = 10 * time.Second
 
 // A replica leaves rotation 1s behind, which the tracker sees within 20ms,
 // so that the routing scenario need not wait out the 2s default. Less than
