@@ -7,4 +7,4 @@ timeout = 120000
 coverageThreshold = 1.0
 coverageSkipTestFiles = true
 coverageReporter = ["text"]
-coveragePathIgnorePatterns = ["**/dist/**", "**/shopdb/**", "**/variantdb/**", "**/mysqlshopdb/**", "**/mariadbshopdb/**"]
+coveragePathIgnorePatterns = ["**/dist/**", "**/shopdb/**", "**/variantdb/**", "**/mysqlshopdb/**", "**/mysqlvariantdb/**", "**/mariadbshopdb/**"]

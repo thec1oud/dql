@@ -3,7 +3,8 @@ schema: shop_variants
 # Custom write shapes (design record §14.8): a shape derived from the Draft
 # inserts through Insert<Shape>, with its bound fields as parameters, and one
 # derived from the Partial patches through Patch<Shape>. Each returns the
-# Full and validates its payload first.
+# Full and validates its payload first. The hook events of these inserts are
+# in custom-write-shapes-events.yaml.
 steps:
   - op: tenants.insert
     input: { name: acme }
@@ -15,8 +16,6 @@ steps:
     save: ann
     expect:
       row: { email: a@acme.com, display_name: null, version: 1 }
-      events:
-        - { query: user.insert.signup, rows: 1, redacted: 1 }
   # quick_invite binds password_hash: it is passed beside the payload, and
   # stays redacted in hooks.
   - op: users.insert_quick_invite
@@ -26,8 +25,6 @@ steps:
     save: bob
     expect:
       row: { email: b@acme.com }
-      events:
-        - { query: user.insert.quick_invite, rows: 1, redacted: 1 }
   # password_hash is write-only, so the Full leaves it out: the database
   # holds the bound value.
   - op: sql
@@ -38,6 +35,10 @@ steps:
             RAISE EXCEPTION 'quick_invite did not write the bound password_hash';
           END IF;
         END $$
+      # MySQL raises only in stored programs: a subquery of two rows fails.
+      mysql: |
+        SELECT IF(EXISTS (SELECT 1 FROM users WHERE email = 'b@acme.com' AND password_hash = 'invited'),
+                  1, (SELECT 1 UNION SELECT 2))
   # The payload is validated before anything is sent.
   - op: users.insert_quick_invite
     scope: { tenant_id: $acme.id }

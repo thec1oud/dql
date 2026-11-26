@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/thec1oud/dql/conformance/harness/go/testdata/mysqlshopdb"
+	"github.com/thec1oud/dql/conformance/harness/go/testdata/mysqlvariantdb"
 	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/dqlmysql"
 	"github.com/thec1oud/dql/runtime/go/opt"
@@ -19,7 +20,9 @@ import (
 
 // MySQLSchemas are the schemas scenarios name on MySQL: shop is the running
 // example on MySQL (conformance/schemas/mysql/shop.sql), generated into
-// testdata/mysqlshopdb.
+// testdata/mysqlshopdb, and shop_variants the running example with the
+// design record's variants of it (conformance/schemas/mysql/variants.yaml),
+// generated into testdata/mysqlvariantdb.
 var MySQLSchemas = map[string]Schema{
 	"shop": {
 		DDL:      []string{"conformance/schemas/mysql/shop.sql", "conformance/schemas/mysql/inject.sql"},
@@ -97,6 +100,86 @@ var MySQLSchemas = map[string]Schema{
 			"tag_full":            mysqlshopdb.Select[mysqlshopdb.TagFull, mysqlshopdb.TagsTable],
 			"tenant_full":         mysqlshopdb.Select[mysqlshopdb.TenantFull, mysqlshopdb.TenantsTable],
 			"user_full":           mysqlshopdb.Select[mysqlshopdb.UserFull, mysqlshopdb.UsersTable],
+		},
+	},
+	"shop_variants": {
+		DDL:      []string{"conformance/schemas/mysql/shop.sql", "conformance/schemas/mysql/variants.sql", "conformance/schemas/mysql/inject.sql"},
+		Dialect:  "mysql",
+		URLEnv:   "DQL_TEST_MYSQL_URL",
+		Database: databaseMySQL,
+		Modes:    []dql.StatementMode{dql.ModePrepare, dql.ModeSimple},
+		Features: []string{"replica", "tinyint-bool"},
+		Exec:     runMySQL,
+		Open:     opener(func() dql.Driver { return dqlmysql.New() }, mysqlvariantdb.NewExecutor, mysqlvariantdb.New),
+		Tables: map[string]any{
+			"tenants": mysqlvariantdb.Tenants, "users": mysqlvariantdb.Users, "profiles": mysqlvariantdb.Profiles,
+			"posts": mysqlvariantdb.Posts, "tags": mysqlvariantdb.Tags, "post_tags": mysqlvariantdb.PostTags,
+		},
+		Changes: []any{
+			mysqlvariantdb.PostAuthorCreate, mysqlvariantdb.PostAuthorLink, mysqlvariantdb.PostAuthorUpdate,
+			mysqlvariantdb.PostCreateForAuthor, mysqlvariantdb.PostDeleteForAuthor, mysqlvariantdb.PostUpdateForAuthor,
+			mysqlvariantdb.PostCreateForEditor, mysqlvariantdb.PostDeleteForEditor, mysqlvariantdb.PostUpdateForEditor,
+			mysqlvariantdb.PostEditorCreate, mysqlvariantdb.PostEditorLink, mysqlvariantdb.PostEditorUpdate,
+			mysqlvariantdb.PostLinkCreate, mysqlvariantdb.PostLinkKey, mysqlvariantdb.PostRefCreate, mysqlvariantdb.PostRefLink,
+			mysqlvariantdb.PostTagCreateForPost, mysqlvariantdb.PostTagDeleteForPost, mysqlvariantdb.PostTagUpdateForPost,
+			mysqlvariantdb.PostTagCreateForTag, mysqlvariantdb.PostTagDeleteForTag, mysqlvariantdb.PostTagUpdateForTag,
+			mysqlvariantdb.PostTagPostUpdate, mysqlvariantdb.PostTagTagUpdate,
+			mysqlvariantdb.PostTagsCreate, mysqlvariantdb.PostTagsLink, mysqlvariantdb.PostTagsUnlink,
+			mysqlvariantdb.ProfileCreateForUser, mysqlvariantdb.ProfileDeleteForUser, mysqlvariantdb.ProfileUpdateForUser,
+			mysqlvariantdb.ProfileUserUpdate,
+			mysqlvariantdb.TagLinkCreate, mysqlvariantdb.TagLinkKey, mysqlvariantdb.TagPostsCreate, mysqlvariantdb.TagPostsLink, mysqlvariantdb.TagPostsUnlink,
+			mysqlvariantdb.TagRefCreate, mysqlvariantdb.TagRefLink, mysqlvariantdb.UserRefCreate, mysqlvariantdb.UserRefLink,
+			opt.Some[mysqlvariantdb.PostAuthorChange], opt.Some[mysqlvariantdb.PostEditorChange], opt.Some[mysqlvariantdb.PostRef],
+			opt.Some[mysqlvariantdb.PostTagPostChange], opt.Some[mysqlvariantdb.PostTagTagChange],
+			opt.Some[mysqlvariantdb.ProfileChangeForUser], opt.Some[mysqlvariantdb.ProfileUserChange],
+			opt.Some[mysqlvariantdb.TagRef], opt.Some[mysqlvariantdb.UserRef],
+			opt.Some[[]mysqlvariantdb.PostChangeForAuthor], opt.Some[[]mysqlvariantdb.PostChangeForEditor],
+			opt.Some[[]mysqlvariantdb.PostTagChangeForPost], opt.Some[[]mysqlvariantdb.PostTagChangeForTag],
+			opt.Some[[]mysqlvariantdb.PostTagsChange], opt.Some[[]mysqlvariantdb.TagPostsChange],
+		},
+		Fill: map[string]map[string]func() any{
+			"TenantDraft": {"id": newUUID}, "TenantDraftNested": {"id": newUUID},
+		},
+		Inject:    injectMySQL,
+		Terminate: terminateMySQL,
+		Replay:    replayMySQL,
+		Shapes:    mysqlvariantdb.Shapes,
+		Types: []any{
+			mysqlvariantdb.PostDraft{}, mysqlvariantdb.PostDraftNested{}, mysqlvariantdb.PostDraftNests{}, mysqlvariantdb.PostFull{},
+			mysqlvariantdb.PostFullNested{}, mysqlvariantdb.PostFullNests{}, mysqlvariantdb.PostKey{}, mysqlvariantdb.PostPartial{},
+			mysqlvariantdb.PostPartialNested{}, mysqlvariantdb.PostPartialNests{}, mysqlvariantdb.PostTagDraft{},
+			mysqlvariantdb.PostTagDraftNested{}, mysqlvariantdb.PostTagDraftNests{}, mysqlvariantdb.PostTagFull{},
+			mysqlvariantdb.PostTagFullNested{}, mysqlvariantdb.PostTagFullNests{}, mysqlvariantdb.PostTagKey{}, mysqlvariantdb.PostTagPartial{},
+			mysqlvariantdb.PostTagPartialNested{}, mysqlvariantdb.PostTagPartialNests{}, mysqlvariantdb.ProfileDraft{},
+			mysqlvariantdb.ProfileDraftNested{}, mysqlvariantdb.ProfileDraftNests{}, mysqlvariantdb.ProfileFull{},
+			mysqlvariantdb.ProfileFullNested{}, mysqlvariantdb.ProfileFullNests{}, mysqlvariantdb.ProfileKey{}, mysqlvariantdb.ProfilePartial{},
+			mysqlvariantdb.ProfilePartialNested{}, mysqlvariantdb.ProfilePartialNests{}, mysqlvariantdb.PublishedPostFull{},
+			mysqlvariantdb.PublishedPostFullNested{}, mysqlvariantdb.PublishedPostFullNests{},
+			mysqlvariantdb.TagDraft{}, mysqlvariantdb.TagDraftNested{}, mysqlvariantdb.TagDraftNests{}, mysqlvariantdb.TagFull{},
+			mysqlvariantdb.TagFullNested{}, mysqlvariantdb.TagFullNests{}, mysqlvariantdb.TagKey{}, mysqlvariantdb.TagPartial{},
+			mysqlvariantdb.TagPartialNested{}, mysqlvariantdb.TagPartialNests{}, mysqlvariantdb.TenantDraft{},
+			mysqlvariantdb.TenantDraftNested{}, mysqlvariantdb.TenantDraftNests{}, mysqlvariantdb.TenantFull{},
+			mysqlvariantdb.TenantFullNested{}, mysqlvariantdb.TenantFullNests{}, mysqlvariantdb.TenantKey{}, mysqlvariantdb.TenantPartial{},
+			mysqlvariantdb.TenantPartialNested{}, mysqlvariantdb.TenantPartialNests{}, mysqlvariantdb.UserDraft{},
+			mysqlvariantdb.UserDraftNested{}, mysqlvariantdb.UserDraftNests{}, mysqlvariantdb.UserFull{}, mysqlvariantdb.UserFullNested{},
+			mysqlvariantdb.UserFullNests{}, mysqlvariantdb.UserKey{}, mysqlvariantdb.UserPartial{}, mysqlvariantdb.UserPartialNested{},
+			mysqlvariantdb.UserPartialNests{}, mysqlvariantdb.UserScope{}, mysqlvariantdb.UserSummary{}, mysqlvariantdb.UserSummaryNamed{}, mysqlvariantdb.PostWithTags{},
+		},
+		Funcs: map[string]any{
+			"merge_post_by_key": mysqlvariantdb.MergePostByKey, "merge_post_tag_by_key": mysqlvariantdb.MergePostTagByKey,
+			"merge_profile_by_key": mysqlvariantdb.MergeProfileByKey, "merge_tag_by_key": mysqlvariantdb.MergeTagByKey,
+			"merge_tenant_by_key": mysqlvariantdb.MergeTenantByKey, "merge_user_by_key": mysqlvariantdb.MergeUserByKey,
+		},
+		Selects: map[string]any{
+			"post_full":           mysqlvariantdb.Select[mysqlvariantdb.PostFull, mysqlvariantdb.PostsTable],
+			"post_tag_full":       mysqlvariantdb.Select[mysqlvariantdb.PostTagFull, mysqlvariantdb.PostTagsTable],
+			"profile_full":        mysqlvariantdb.Select[mysqlvariantdb.ProfileFull, mysqlvariantdb.ProfilesTable],
+			"published_post_full": mysqlvariantdb.Select[mysqlvariantdb.PublishedPostFull, mysqlvariantdb.PublishedPostsTable],
+			"tag_full":            mysqlvariantdb.Select[mysqlvariantdb.TagFull, mysqlvariantdb.TagsTable],
+			"tenant_full":         mysqlvariantdb.Select[mysqlvariantdb.TenantFull, mysqlvariantdb.TenantsTable],
+			"user_full":           mysqlvariantdb.Select[mysqlvariantdb.UserFull, mysqlvariantdb.UsersTable],
+			"user_summary":        mysqlvariantdb.Select[mysqlvariantdb.UserSummary, mysqlvariantdb.UsersTable],
+			"user_summary_named":  mysqlvariantdb.Select[mysqlvariantdb.UserSummaryNamed, mysqlvariantdb.UsersTable],
 		},
 	},
 }
