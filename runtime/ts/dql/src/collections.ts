@@ -32,3 +32,12 @@ export class UnmatchedKeyError extends Error {
     super(`dql: change ${index} for ${entity} matches no row exactly, and its key's collation may match one the client cannot compare`);
   }
 }
+
+/** bytesEqual reports whether two byte arrays hold the same bytes, as generated merges compare bytea keys (§8.9). */
+export function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}

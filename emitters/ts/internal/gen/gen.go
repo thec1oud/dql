@@ -74,6 +74,9 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 	g.version()
 	g.types()
 	g.shapes()
+	g.conversions()
+	g.companions()
+	g.merges()
 	if g.failed() {
 		sortDiagnostics(g.diags)
 		return nil, g.diags
@@ -120,13 +123,16 @@ func keyOf(q *irv1.QualifiedName) key {
 // named is an enum, domain or composite type a type can reference.
 type named struct {
 	words []string
+	// base is a domain's base type, which merges compare by (§8.9).
+	base *irv1.Type
 }
 
 // reserved are the names generated code takes from the runtime and from
 // TypeScript's globals, which no declaration may take (§4.3).
 var reserved = []string{
 	// @dql/runtime
-	"Cidr", "Decimal", "Inet", "JsonValue", "MacAddr", "OffsetTime", "Range", "Temporal", "Uuid", "Weak",
+	"Cidr", "Decimal", "DecodeError", "Inet", "JsonValue", "Keyed", "MacAddr", "OffsetTime", "Range", "Temporal",
+	"UnmatchedKeyError", "Uuid", "Weak",
 	// TypeScript globals
 	"Array", "BigInt", "Boolean", "Date", "Error", "JSON", "Number", "Object", "Promise", "ReadonlyArray",
 	"Record", "String", "Symbol", "Uint8Array",
@@ -146,7 +152,7 @@ func newGenerator(b *irv1.Bundle, o Options) *generator {
 			g.named[keyOf(q(e.GetName().GetStored()))] = named{words: e.GetHostName().GetWords()}
 		}
 		for _, d := range ns.GetDomains() {
-			g.named[keyOf(q(d.GetName().GetStored()))] = named{words: d.GetHostName().GetWords()}
+			g.named[keyOf(q(d.GetName().GetStored()))] = named{words: d.GetHostName().GetWords(), base: d.GetBase()}
 		}
 		for _, c := range ns.GetComposites() {
 			g.named[keyOf(q(c.GetName().GetStored()))] = named{words: c.GetHostName().GetWords()}
@@ -157,7 +163,7 @@ func newGenerator(b *irv1.Bundle, o Options) *generator {
 }
 
 // runtimeNames are the reserved names that come from the runtime.
-var runtimeNames = reserved[:10]
+var runtimeNames = reserved[:13]
 
 // eachNamespace calls fn for every namespace in IR order, with a function
 // qualifying an object name in it.

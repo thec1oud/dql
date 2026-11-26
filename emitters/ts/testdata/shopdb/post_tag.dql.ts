@@ -5,6 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
+import type { Keyed } from "@dql/runtime";
 import type { PostFull, PostPartial, PostRef } from "./post.dql.ts";
 import type { TagFull, TagPartial, TagRef } from "./tag.dql.ts";
 
@@ -102,3 +103,113 @@ export type PostTagPostChange =
 /** PostTagTagChange holds one change to a related shop.app.tags: update (§14.5, §14.6). */
 export type PostTagTagChange =
   | { kind: "update"; partial: TagPartial };
+
+/** PostTagDraft converts PostTagDraft values to other shapes (§14.9). */
+export const PostTagDraft = {
+  /** toPartial converts d to PostTagPartial (§14.9). */
+  toPartial(d: PostTagDraft): PostTagPartial {
+    return {};
+  },
+} as const;
+
+/** PostTagDraftNested converts PostTagDraftNested values to other shapes (§14.9). */
+export const PostTagDraftNested = {
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: PostTagDraftNested): PostTagDraftNests {
+    const n2: PostTagDraftNests = {};
+    if (n.post !== undefined) n2.post = n.post;
+    if (n.tag !== undefined) n2.tag = n.tag;
+    return n2;
+  },
+} as const;
+
+/** PostTagFull converts PostTagFull values to other shapes (§14.9). */
+export const PostTagFull = {
+  /** toDraft converts f to PostTagDraft (§14.9). */
+  toDraft(f: PostTagFull): PostTagDraft {
+    return {
+      postId: f.postId,
+      tagId: f.tagId,
+    };
+  },
+  /** key converts f to PostTagKey (§14.9). */
+  key(f: PostTagFull): PostTagKey {
+    return {
+      postId: f.postId,
+      tagId: f.tagId,
+    };
+  },
+  /** toPartial converts f to PostTagPartial (§14.9). */
+  toPartial(f: PostTagFull): PostTagPartial {
+    return {};
+  },
+} as const;
+
+/** PostTagFullNested converts PostTagFullNested values to other shapes (§14.9). */
+export const PostTagFullNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: PostTagFullNested): PostTagFull {
+    return {
+      postId: n.postId,
+      tagId: n.tagId,
+    };
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: PostTagFullNested): PostTagFullNests {
+    return {
+      post: n.post,
+      tag: n.tag,
+    };
+  },
+} as const;
+
+/** PostTagPartial converts PostTagPartial values to other shapes (§14.9). */
+export const PostTagPartial = {
+  /** applyToDraft returns a copy of d with the fields p holds set; fields PostTagDraft cannot hold are ignored (§14.9). */
+  applyToDraft(p: PostTagPartial, d: PostTagDraft): PostTagDraft {
+    return { ...d };
+  },
+  /** applyTo returns a copy of f with the fields p holds set; fields PostTagFull cannot hold are ignored (§14.9). */
+  applyTo(p: PostTagPartial, f: PostTagFull): PostTagFull {
+    return { ...f };
+  },
+} as const;
+
+/** PostTagPartialNested converts PostTagPartialNested values to other shapes (§14.9). */
+export const PostTagPartialNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: PostTagPartialNested): PostTagPartial {
+    return {};
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: PostTagPartialNested): PostTagPartialNests {
+    const n2: PostTagPartialNests = {};
+    if (n.post !== undefined) n2.post = n.post;
+    if (n.tag !== undefined) n2.tag = n.tag;
+    return n2;
+  },
+} as const;
+
+/**
+ * mergePostTagByKey applies each change to the rows its key matches and
+ * returns them, with the keys of changes that matched no row. Keys compare
+ * exactly, or after a certified fold (§8.9, §14.9).
+ */
+export function mergePostTagByKey(
+  rows: readonly PostTagFull[],
+  changes: readonly Keyed<PostTagKey, PostTagPartial>[],
+): { merged: PostTagFull[]; unmatched: PostTagKey[] } {
+  const merged = [...rows];
+  const unmatched: PostTagKey[] = [];
+  for (const c of changes) {
+    let matched = false;
+    for (const [i, r] of merged.entries()) {
+      if (r.postId === c.key.postId && r.tagId === c.key.tagId) {
+        merged[i] = PostTagPartial.applyTo(c.value, r);
+        matched = true;
+      }
+    }
+    if (!matched) unmatched.push(c.key);
+  }
+  return { merged, unmatched };
+}

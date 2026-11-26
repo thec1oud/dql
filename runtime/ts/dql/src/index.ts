@@ -58,4 +58,4 @@ export {
   throwIfIssues,
 } from "./validation.js";
 export { DigitsCheck, LengthCheck, MembershipCheck, NotEmptyCheck, PatternCheck, type RangeBounds, RangeCheck, length } from "./checks.js";
-export { type Keyed, UnmatchedKeyError, foldAscii } from "./collections.js";
+export { type Keyed, UnmatchedKeyError, bytesEqual, foldAscii } from "./collections.js";

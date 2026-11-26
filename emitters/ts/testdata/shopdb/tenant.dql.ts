@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Uuid } from "@dql/runtime";
+import type { Keyed, Uuid } from "@dql/runtime";
 import type { UserFull } from "./user.dql.ts";
 
 /** TenantDraft is the shape tenant.draft.flat of shop.app.tenants. */
@@ -52,4 +52,124 @@ export interface TenantPartialNested extends TenantPartial {
 
 /** TenantPartialNests is the shape tenant.partial.nests of shop.app.tenants. */
 export interface TenantPartialNests {
+}
+
+/** TenantDraft converts TenantDraft values to other shapes (§14.9). */
+export const TenantDraft = {
+  /** toPartial converts d to TenantPartial (§14.9). */
+  toPartial(d: TenantDraft): TenantPartial {
+    return {
+      name: d.name,
+    };
+  },
+} as const;
+
+/** TenantDraftNested converts TenantDraftNested values to other shapes (§14.9). */
+export const TenantDraftNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: TenantDraftNested): TenantDraft {
+    const d: TenantDraft = {
+      name: n.name,
+    };
+    if (n.id !== undefined) d.id = n.id;
+    return d;
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: TenantDraftNested): TenantDraftNests {
+    return {};
+  },
+} as const;
+
+/** TenantFull converts TenantFull values to other shapes (§14.9). */
+export const TenantFull = {
+  /** toDraft converts f to TenantDraft (§14.9). */
+  toDraft(f: TenantFull): TenantDraft {
+    return {
+      id: f.id,
+      name: f.name,
+    };
+  },
+  /** key converts f to TenantKey (§14.9). */
+  key(f: TenantFull): TenantKey {
+    return {
+      id: f.id,
+    };
+  },
+  /** toPartial converts f to TenantPartial (§14.9). */
+  toPartial(f: TenantFull): TenantPartial {
+    return {
+      name: f.name,
+    };
+  },
+} as const;
+
+/** TenantFullNested converts TenantFullNested values to other shapes (§14.9). */
+export const TenantFullNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: TenantFullNested): TenantFull {
+    return {
+      id: n.id,
+      name: n.name,
+    };
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: TenantFullNested): TenantFullNests {
+    return {
+      users: n.users,
+    };
+  },
+} as const;
+
+/** TenantPartial converts TenantPartial values to other shapes (§14.9). */
+export const TenantPartial = {
+  /** applyToDraft returns a copy of d with the fields p holds set; fields TenantDraft cannot hold are ignored (§14.9). */
+  applyToDraft(p: TenantPartial, d: TenantDraft): TenantDraft {
+    const out: TenantDraft = { ...d };
+    if (p.name !== undefined) out.name = p.name;
+    return out;
+  },
+  /** applyTo returns a copy of f with the fields p holds set; fields TenantFull cannot hold are ignored (§14.9). */
+  applyTo(p: TenantPartial, f: TenantFull): TenantFull {
+    const out: TenantFull = { ...f };
+    if (p.name !== undefined) out.name = p.name;
+    return out;
+  },
+} as const;
+
+/** TenantPartialNested converts TenantPartialNested values to other shapes (§14.9). */
+export const TenantPartialNested = {
+  /** flat returns n's own fields, without its relations (§14.4, §14.9). */
+  flat(n: TenantPartialNested): TenantPartial {
+    const p: TenantPartial = {};
+    if (n.name !== undefined) p.name = n.name;
+    return p;
+  },
+  /** nests returns n's relations, without its own fields (§14.4, §14.9). */
+  nests(n: TenantPartialNested): TenantPartialNests {
+    return {};
+  },
+} as const;
+
+/**
+ * mergeTenantByKey applies each change to the rows its key matches and
+ * returns them, with the keys of changes that matched no row. Keys compare
+ * exactly, or after a certified fold (§8.9, §14.9).
+ */
+export function mergeTenantByKey(
+  rows: readonly TenantFull[],
+  changes: readonly Keyed<TenantKey, TenantPartial>[],
+): { merged: TenantFull[]; unmatched: TenantKey[] } {
+  const merged = [...rows];
+  const unmatched: TenantKey[] = [];
+  for (const c of changes) {
+    let matched = false;
+    for (const [i, r] of merged.entries()) {
+      if (r.id === c.key.id) {
+        merged[i] = TenantPartial.applyTo(c.value, r);
+        matched = true;
+      }
+    }
+    if (!matched) unmatched.push(c.key);
+  }
+  return { merged, unmatched };
 }
