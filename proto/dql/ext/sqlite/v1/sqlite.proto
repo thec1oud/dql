@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+// SQLite objects the core does not model, carried losslessly as typed
+// extensions in google.protobuf.Any (design record §6.2, §6.3). Their type
+// URLs use the prefix "type.dql.dev/". The core passes them through
+// unchanged.
+package dql.ext.sqlite.v1;
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ext/sqlite/v1;sqliteextv1";
+
+// The library a catalog was read with, and the database's text encoding.
+message Database {
+  // sqlite_version(), such as 3.50.4.
+  string version = 1;
+  // PRAGMA encoding: UTF-8, UTF-16le or UTF-16be.
+  string encoding = 2;
+}
+
+// The raw text of a comment, kept beside the annotations read from it (§7.5).
+message Comment {
+  string text = 1;
+}
+
+// A table's definition and options.
+message TableDefinition {
+  // The CREATE TABLE statement as sqlite_schema stores it.
+  string sql = 1;
+  // STRICT: each column holds its declared storage class only.
+  bool strict = 2;
+  // WITHOUT ROWID.
+  bool without_rowid = 3;
+}
+
+// A view's definition.
+message ViewDefinition {
+  // The CREATE VIEW statement as sqlite_schema stores it.
+  string sql = 1;
+}
+
+// An index that is not a uniqueness fact, or the index a uniqueness fact
+// is enforced by.
+message Index {
+  string name = 1;
+  bool unique = 2;
+  // c for CREATE INDEX, u for a UNIQUE constraint, pk for the primary key.
+  string origin = 3;
+  // The WHERE clause of a partial index, as written.
+  string where = 4;
+  repeated IndexPart parts = 5;
+  // The CREATE INDEX statement, empty for one a constraint creates.
+  string sql = 6;
+}
+
+// One element of an index.
+message IndexPart {
+  // Empty for an expression.
+  string column = 1;
+  string expression = 2;
+  bool descending = 3;
+  string collation = 4;
+}
+
+// A table's trigger.
+message Trigger {
+  string name = 1;
+  // The CREATE TRIGGER statement as sqlite_schema stores it.
+  string sql = 2;
+}
