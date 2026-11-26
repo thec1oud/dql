@@ -28,7 +28,11 @@ func Fragments(b *irv1.Bundle, p *irv1.CapabilityProfile, flavor Flavor) *irv1.F
 	f := &fragments{byName: map[string]*table{}, flavor: flavor}
 	f.static()
 	for _, s := range p.GetOperators() {
-		if t, ok := operatorTemplates[s.GetName()]; ok {
+		t, ok := operatorTemplates[s.GetName()]
+		if m, mariadb := mariadbTemplates[s.GetName()]; mariadb && flavor == MariaDB {
+			t = m
+		}
+		if ok {
 			f.add("op."+s.GetName(), t).Fidelity = s.GetFidelity()
 		}
 	}
@@ -80,6 +84,16 @@ var operatorTemplates = map[string]string{
 	"regex_match":      "REGEXP_LIKE({0}, {1}, 'c')",
 	"starts_with":      "{0} LIKE CONCAT(REPLACE(REPLACE(REPLACE({1}, '!', '!!'), '%', '!%'), '_', '!_'), '%') ESCAPE '!'",
 	"sub":              "({0} - {1})",
+}
+
+// mariadbTemplates are MariaDB's spellings of operators MySQL writes
+// otherwise. MariaDB has no REGEXP_LIKE: its REGEXP is PCRE's, which
+// matches case sensitively under (?-i) whatever the collation. Nor has it
+// MEMBER OF: JSON_CONTAINS finds the value as an item of the list.
+var mariadbTemplates = map[string]string{
+	"any":         "JSON_CONTAINS({1}, JSON_ARRAY({0}))",
+	"in":          "JSON_CONTAINS({1}, JSON_ARRAY({0}))",
+	"regex_match": "{0} REGEXP CONCAT('(?-i)', {1})",
 }
 
 type fragments struct {
@@ -168,7 +182,7 @@ func (f *fragments) table(tb *table) {
 	self := false
 	for _, c := range tb.t.GetColumns() {
 		f.add("col."+tb.id+"."+c.GetName().GetStored(), tb.quoted+"."+quote(c.GetName().GetStored()))
-		if t := listType(c); t != "" {
+		if t := f.listType(c); t != "" {
 			for _, op := range []string{"any", "in"} {
 				f.add("op."+op+"."+tb.id+"."+c.GetName().GetStored(), "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v "+t+" PATH '$')) AS dql_list)")
 			}
@@ -204,11 +218,16 @@ func (f *fragments) table(tb *table) {
 // listType is the type a list compared with column c holds its items as:
 // the column's own, in its character set and collation, so that items
 // compare as the column's values do. An opaque column has none.
-func listType(c *irv1.Column) string {
+func (f *fragments) listType(c *irv1.Column) string {
 	if c.GetType().GetOpaque() != nil || c.GetType().GetNative().GetRaw() == "" {
 		return ""
 	}
 	t := c.GetType().GetNative().GetRaw()
+	// MariaDB's JSON_TABLE has no enum or set columns; their items compare
+	// with the column as text.
+	if f.flavor == MariaDB && (strings.HasPrefix(t, "enum(") || strings.HasPrefix(t, "set(")) {
+		t = "text"
+	}
 	if co := c.GetCollation().GetName(); co != "" {
 		cs, _, _ := strings.Cut(co, "_")
 		t += " CHARACTER SET " + cs + " COLLATE " + co

@@ -80,21 +80,29 @@ export async function terminate(dsn: string): Promise<void> {
 
 let made = 0;
 
-/** database creates a database from the DDL files, in order, on the server base names, a DSN without a database, and returns its DSN and how to drop it. */
-export async function database(base: string, ddl: readonly string[]): Promise<{ dsn: string; drop: () => Promise<void> }> {
-  let schema = "";
-  for (const f of ddl) {
-    schema += `${await readFile(f, "utf8")}\n`;
-  }
-  const name = `conformance_ts_${process.pid}_${Date.now()}_${made++}`;
-  await run(base, `CREATE DATABASE ${name} CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci`);
-  const drop = () => run(base, `DROP DATABASE IF EXISTS ${name}`);
-  const dsn = withDatabase(base, name);
-  try {
-    await run(dsn, schema);
-  } catch (e) {
-    await drop();
-    throw e;
-  }
-  return { dsn, drop };
+/** databaseIn returns how to create a database in collation from the DDL files, in order, on the server base names, a DSN without a database, returning its DSN and how to drop it. */
+function databaseIn(collation: string) {
+  return async (base: string, ddl: readonly string[]): Promise<{ dsn: string; drop: () => Promise<void> }> => {
+    let schema = "";
+    for (const f of ddl) {
+      schema += `${await readFile(f, "utf8")}\n`;
+    }
+    const name = `conformance_ts_${process.pid}_${Date.now()}_${made++}`;
+    await run(base, `CREATE DATABASE ${name} CHARACTER SET utf8mb4 COLLATE ${collation}`);
+    const drop = () => run(base, `DROP DATABASE IF EXISTS ${name}`);
+    const dsn = withDatabase(base, name);
+    try {
+      await run(dsn, schema);
+    } catch (e) {
+      await drop();
+      throw e;
+    }
+    return { dsn, drop };
+  };
 }
+
+/** database creates a database from the DDL files on the MySQL server base names, as databaseIn does. */
+export const database = databaseIn("utf8mb4_0900_ai_ci");
+
+/** mariadbDatabase creates one on a MariaDB server, in the UCA 14.0 collation of the same meaning. */
+export const mariadbDatabase = databaseIn("utf8mb4_uca1400_ai_ci");

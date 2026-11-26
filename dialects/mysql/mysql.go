@@ -1,5 +1,5 @@
 // Package mysql is the mysql dialect plugin: it publishes the capability
-// profile of MySQL 8.4 and MariaDB 11.4 and newer (design record §2.3,
+// profile of MySQL 8.4 and MariaDB 10.11 and newer (design record §2.3,
 // §9.2). Both speak the same protocol and most of the same SQL, so MariaDB
 // is a profile of this plugin, chosen by the flavor mysql-live records on
 // the catalog. It runs in-process through the plugin.Plugin interface, and

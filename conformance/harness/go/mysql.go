@@ -152,9 +152,21 @@ WHERE db = DATABASE() AND id <> CONNECTION_ID()`).Scan(&ids); err != nil {
 }
 
 // databaseMySQL creates a database from the DDL files, in order, on the
-// server base names, a DSN without a database, and returns its DSN and how
-// to drop it.
+// MySQL server base names, a DSN without a database, and returns its DSN
+// and how to drop it.
 func databaseMySQL(ctx context.Context, base string, ddl ...string) (string, func(), error) {
+	return database(ctx, "utf8mb4_0900_ai_ci", base, ddl...)
+}
+
+// databaseMariaDB is databaseMySQL on a MariaDB server, whose databases
+// take the UCA 14.0 collation of the same meaning.
+func databaseMariaDB(ctx context.Context, base string, ddl ...string) (string, func(), error) {
+	return database(ctx, "utf8mb4_uca1400_ai_ci", base, ddl...)
+}
+
+// database creates a database in collation from the DDL files on the
+// server base names.
+func database(ctx context.Context, collation, base string, ddl ...string) (string, func(), error) {
 	var schema []byte
 	for _, f := range ddl {
 		b, err := os.ReadFile(f)
@@ -168,7 +180,7 @@ func databaseMySQL(ctx context.Context, base string, ddl ...string) (string, fun
 		return "", nil, err
 	}
 	name := fmt.Sprintf("conformance_%d_%d", os.Getpid(), time.Now().UnixNano())
-	if err := runMySQL(ctx, base, "CREATE DATABASE "+name+" CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"); err != nil {
+	if err := runMySQL(ctx, base, "CREATE DATABASE "+name+" CHARACTER SET utf8mb4 COLLATE "+collation); err != nil {
 		return "", nil, err
 	}
 	drop := func() { runMySQL(ctx, base, "DROP DATABASE IF EXISTS "+name) }
