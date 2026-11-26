@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs every workspace module's tests and fails unless hand-written code is at
-# 100% statement coverage. Generated protobuf code (*.pb.go) is excluded.
+# 100% statement coverage. Generated code is excluded: protobuf's (*.pb.go)
+# and the SQLite grammar ANTLR generates (querysources/sqlite/grammar).
 #
 # The pg-live tests run against a real Postgres 16 server named by
 # DQL_TEST_POSTGRES_URL, a role that may create roles and databases (such as
@@ -34,7 +35,7 @@ echo "mode: set" > "$out/all.out"
 for mod in $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1/p'); do
   (cd "$mod" && go test -count=1 -coverprofile="$out/mod.out" ./...)
   if [ -f "$out/mod.out" ]; then
-    tail -n +2 "$out/mod.out" | grep -v '\.pb\.go:' >> "$out/all.out" || true
+    tail -n +2 "$out/mod.out" | grep -v -e '\.pb\.go:' -e '/querysources/sqlite/grammar/' >> "$out/all.out" || true
     rm "$out/mod.out"
   fi
 done
