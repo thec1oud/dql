@@ -350,3 +350,18 @@ func TestDBType(t *testing.T) {
 		}
 	}
 }
+
+// A dialect's own fragment for an operator on a column, such as MySQL's
+// typed list for in (§25.3), takes the place of the operator's.
+func TestColumnOperatorFragment(t *testing.T) {
+	b := shopShapes(t)
+	ft := b.GetQueries().GetFragments()
+	ft.Fragments = append(ft.Fragments, &irv1.Fragment{Id: "op.in.posts.id", Template: "{0} IN ({1})"})
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatal(codes)
+	}
+	contains(t, files, "post.dql.ts",
+		`return compare<PostsTable>("op.in.posts.id", "col.posts.id", `,
+		`return compare<PostsTable>("op.in", "col.posts.author_id", `)
+}

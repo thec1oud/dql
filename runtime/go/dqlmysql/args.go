@@ -5,77 +5,57 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
+	"time"
 
 	"github.com/thec1oud/dql/runtime/go/civil"
 	"github.com/thec1oud/dql/runtime/go/dec"
 	"github.com/thec1oud/dql/runtime/go/dql"
 )
 
-// statement returns a statement's text and arguments as the driver takes
-// them. MySQL has no array parameter, so the dialect writes a list as one
-// placeholder (§9.1), which statement expands into one placeholder for
-// each item, or into NULL for an empty list, so that x IN (NULL) holds for
-// no row.
-func statement(q string, args []any) (string, []any, error) {
-	lists := false
-	for _, a := range args {
-		lists = lists || isList(a)
-	}
-	if !lists {
-		out := make([]any, len(args))
-		for i, a := range args {
-			v, err := encode(a)
-			if err != nil {
-				return "", nil, err
-			}
-			out[i] = v
-		}
-		return q, out, nil
-	}
-	var b strings.Builder
-	var out []any
-	n := 0
-	var failed error
-	scan(q, func(text string, placeholder bool) {
-		if !placeholder {
-			b.WriteString(text)
-			return
-		}
-		if n >= len(args) {
-			b.WriteString(text)
-			return
-		}
-		a := args[n]
-		n++
-		items := []any{a}
+// arguments returns a statement's arguments as the driver takes them. MySQL
+// has no array parameter, so a list is one placeholder holding a JSON array
+// (§25.3), which the dialect expands with JSON_TABLE: each item is encoded
+// as a parameter would be, and written as JSON, a value the driver would
+// send as text as a JSON string.
+func arguments(args []any) ([]any, error) {
+	out := make([]any, len(args))
+	for i, a := range args {
+		var err error
 		if isList(a) {
-			r := reflect.ValueOf(a)
-			items = make([]any, r.Len())
-			for i := range items {
-				items[i] = r.Index(i).Interface()
-			}
-			if len(items) == 0 {
-				b.WriteString("NULL")
-				return
-			}
+			out[i], err = list(a)
+		} else {
+			out[i], err = encode(a)
 		}
-		for i, it := range items {
-			if i > 0 {
-				b.WriteString(", ")
-			}
-			b.WriteByte('?')
-			v, err := encode(it)
-			if err != nil && failed == nil {
-				failed = err
-			}
-			out = append(out, v)
+		if err != nil {
+			return nil, err
 		}
-	})
-	if failed != nil {
-		return "", nil, failed
 	}
-	return b.String(), out, nil
+	return out, nil
+}
+
+// list writes a list argument as a JSON array.
+func list(a any) (string, error) {
+	r := reflect.ValueOf(a)
+	items := make([]any, r.Len())
+	for i := range items {
+		v, err := encode(r.Index(i).Interface())
+		if err != nil {
+			return "", err
+		}
+		switch x := v.(type) {
+		case []byte:
+			v = string(x)
+		case time.Time:
+			v = x.UTC().Format("2006-01-02 15:04:05.999999")
+		case string:
+			if raw, ok := r.Index(i).Interface().(json.RawMessage); ok {
+				v = raw
+			}
+		}
+		items[i] = v
+	}
+	b, err := json.Marshal(items)
+	return string(b), err
 }
 
 // isList reports whether a is a list argument: a slice other than bytes
@@ -87,56 +67,6 @@ func isList(a any) bool {
 	}
 	r := reflect.ValueOf(a)
 	return r.Kind() == reflect.Slice && r.Type().Elem().Kind() != reflect.Uint8
-}
-
-// scan splits q into text and placeholders, calling f with each in order.
-// A ? in a string, a quoted identifier or a comment is text. Strings may
-// escape with a backslash or a doubled quote, so either is read as an
-// escape, which is right under every sql_mode for the statements the
-// dialect writes.
-func scan(q string, f func(text string, placeholder bool)) {
-	start := 0
-	for i := 0; i < len(q); i++ {
-		switch c := q[i]; {
-		case c == '?':
-			f(q[start:i], false)
-			f("?", true)
-			start = i + 1
-		case c == '\'' || c == '"' || c == '`':
-			i = quoted(q, i, c)
-		case c == '#' || c == '-' && strings.HasPrefix(q[i:], "-- "):
-			if j := strings.IndexByte(q[i:], '\n'); j >= 0 {
-				i += j
-			} else {
-				i = len(q)
-			}
-		case c == '/' && strings.HasPrefix(q[i:], "/*"):
-			if j := strings.Index(q[i+2:], "*/"); j >= 0 {
-				i += j + 3
-			} else {
-				i = len(q)
-			}
-		}
-	}
-	f(q[start:], false)
-}
-
-// quoted returns the index of the quote that closes the quoted text
-// starting at q[i], or the end of q.
-func quoted(q string, i int, quote byte) int {
-	for i++; i < len(q); i++ {
-		switch {
-		case q[i] == '\\' && quote != '`':
-			i++
-		case q[i] == quote:
-			if i+1 < len(q) && q[i+1] == quote {
-				i++
-				continue
-			}
-			return i
-		}
-	}
-	return len(q)
 }
 
 // ErrMonths is the error for an interval with months, which a MySQL TIME

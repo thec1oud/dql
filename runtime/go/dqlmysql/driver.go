@@ -124,7 +124,7 @@ type conn struct {
 }
 
 func (c *conn) Query(ctx context.Context, q string, args []any, _ []string) (dql.Rows, error) {
-	q, vals, err := statement(q, args)
+	vals, err := arguments(args)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (c *conn) Exec(ctx context.Context, q string, args []any, types []string) (
 // ExecID runs a statement and returns how many rows it matched and the
 // last insert ID.
 func (c *conn) ExecID(ctx context.Context, q string, args []any, _ []string) (int64, int64, error) {
-	q, vals, err := statement(q, args)
+	vals, err := arguments(args)
 	if err != nil {
 		return 0, 0, err
 	}

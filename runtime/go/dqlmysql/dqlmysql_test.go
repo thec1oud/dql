@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"os"
 	"reflect"
@@ -181,56 +182,63 @@ func mustBits(t *testing.T, s string) dql.Bits {
 	return b
 }
 
+// inList is how the dialect compares a column with a list (§25.3).
+func inList(col, typ string) string {
+	return col + " IN (SELECT dql_list.v FROM JSON_TABLE(?, '$[*]' COLUMNS (v " + typ + " PATH '$')) AS dql_list)"
+}
+
 func TestLists(t *testing.T) {
 	dsn := database(t)
 	for _, mode := range []dql.StatementMode{dql.ModePrepare, dql.ModeSimple} {
 		_, c := open(t, dsn, mode)
 		exec(t, c, "DELETE FROM users")
-		exec(t, c, "INSERT INTO users (email, name) VALUES ('a', 'x?'), ('b', 'y'), ('c', 'z')")
-		got := query(t, c, "SELECT email /* ? */ FROM users WHERE email IN (?) AND name <> 'it''s ?' AND name <> \"\\\" ?\" # ?\n AND id > ? ORDER BY email", []string{"a", "c"}, int64(0))
-		if !reflect.DeepEqual(got, []dql.Row{{"a"}, {"c"}}) {
-			t.Errorf("mode %v: list %v", mode, got)
+		exec(t, c, "INSERT INTO users (id, email, name) VALUES (1, 'a', 'x'), (2, 'B', 'y'), (3, 'c', 'z')")
+		text := "varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
+		got := query(t, c, "SELECT email FROM users WHERE "+inList("email", text)+" ORDER BY email", []string{"a", "b"})
+		if !reflect.DeepEqual(got, []dql.Row{{"a"}, {"B"}}) {
+			t.Errorf("mode %v: list under the collation %v", mode, got)
 		}
-		if got := query(t, c, "SELECT email FROM users WHERE email IN (?)", []string{}); len(got) != 0 {
+		if got := query(t, c, "SELECT email FROM users WHERE "+inList("email", text), []string{}); len(got) != 0 {
 			t.Errorf("mode %v: empty list %v", mode, got)
 		}
-		if got := query(t, c, "SELECT email FROM users WHERE email NOT IN (?) -- ?\n ORDER BY email", []mood{"b"}); !reflect.DeepEqual(got, []dql.Row{{"a"}, {"c"}}) {
+		if got := query(t, c, "SELECT id FROM users WHERE "+inList("id", "bigint")+" ORDER BY id", []int64{3, 1, 9}); !reflect.DeepEqual(got, []dql.Row{{int64(1)}, {int64(3)}}) {
+			t.Errorf("mode %v: integers %v", mode, got)
+		}
+		if got := query(t, c, "SELECT email FROM users WHERE "+inList("email", text), []mood{"c"}); !reflect.DeepEqual(got, []dql.Row{{"c"}}) {
 			t.Errorf("mode %v: enum list %v", mode, got)
 		}
 		c.Release()
 	}
 }
 
-func TestStatement(t *testing.T) {
+func TestList(t *testing.T) {
+	ts := time.Date(2024, 5, 6, 7, 8, 9, 500000000, time.FixedZone("", 3600))
 	for _, tc := range []struct {
-		q    string
-		args []any
+		in   any
 		want string
-		vals []any
 	}{
-		{"a ? b", []any{int64(1)}, "a ? b", []any{int64(1)}},
-		{"a IN (?)", []any{[]int64{1, 2}}, "a IN (?, ?)", []any{int64(1), int64(2)}},
-		{"a IN (?) ?", []any{[]int64{}}, "a IN (NULL) ?", nil},
-		{"'?' `?` \"?\" ? -- ?", []any{[]int64{1}}, "'?' `?` \"?\" ? -- ?", []any{int64(1)}},
-		{"/* ? ? IN (?)", []any{[]int64{1}}, "/* ? ? IN (?)", nil},
-		{"# ? ? IN (?)", []any{[]int64{1}}, "# ? ? IN (?)", nil},
-		{"'a\\'?' ``?`` ?", []any{[]int64{1}}, "'a\\'?' ``?`` ?", []any{int64(1)}},
-		{"x--? ?", []any{[]int64{1}}, "x--? ?", []any{int64(1)}},
-		{"'?", []any{[]int64{1}}, "'?", nil},
+		{[]int64{1, 2}, "[1,2]"},
+		{[]string{}, "[]"},
+		{[]*int64{nil}, "[null]"},
+		{[]any{dec.MustParse("1.50"), civil.Date{Year: 2024, Month: 1, Day: 2}, ts, []byte("ab"), json.RawMessage(`{"a":1}`), mustBits(t, "101")},
+			`["1.50","2024-01-02","2024-05-06 06:08:09.5","ab",{"a":1},5]`},
 	} {
-		q, vals, err := statement(tc.q, tc.args)
-		if err != nil || q != tc.want || !reflect.DeepEqual(vals, tc.vals) {
-			t.Errorf("%q: %q %v %v", tc.q, q, vals, err)
+		got, err := arguments([]any{tc.in})
+		if err != nil || got[0] != tc.want {
+			t.Errorf("%v: %v %v", tc.in, got, err)
 		}
 	}
 	big := mustBits(t, strings.Repeat("1", 65))
-	for _, args := range [][]any{{dql.Interval{Months: 1}}, {[]any{big}}} {
-		if _, _, err := statement("?", args); err == nil {
+	for _, args := range [][]any{{dql.Interval{Months: 1}}, {[]any{big}}, {[]float64{math.NaN()}}} {
+		if _, err := arguments(args); err == nil {
 			t.Errorf("%v encoded", args)
 		}
 	}
-	if _, _, err := statement("?", []any{dql.Interval{Months: 1}}); !errors.Is(err, ErrMonths) {
+	if _, err := arguments([]any{dql.Interval{Months: 1}}); !errors.Is(err, ErrMonths) {
 		t.Error(err)
+	}
+	if got, _ := arguments([]any{[]byte("x"), json.RawMessage("1")}); !reflect.DeepEqual(got, []any{[]byte("x"), "1"}) {
+		t.Errorf("bytes and JSON are no lists: %v", got)
 	}
 }
 

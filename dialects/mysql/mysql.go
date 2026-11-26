@@ -94,8 +94,8 @@ func flavorOf(cats []*irv1.Catalog) (Flavor, error) {
 // The text operators need a deterministic collation, so that they mean the
 // same as on Postgres: MySQL compares text by its collation, which is case
 // and accent insensitive by default. There are no arrays or ranges. in and
-// any take one list placeholder, which the driver adapter expands into one
-// placeholder per item (§9.2). Division, whose result on integers is a
+// any take one list placeholder, a JSON array (§25.3), which a column's
+// own fragment expands into items of its type, exactly. Division, whose result on integers is a
 // decimal rather than a truncated integer, and regular expressions, which
 // are ICU's rather than POSIX's, are approximate. JSON paths are not
 // SQL/JSON paths, so json_path is left out.
