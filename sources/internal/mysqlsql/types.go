@@ -31,7 +31,7 @@ func ParseType(c Column) (*irv1.Type, []string, error) {
 		return nil, nil, err
 	}
 	unsigned := strings.Contains(rest, "unsigned")
-	native := &irv1.NativeType{Name: &irv1.QualifiedName{Object: c.DataType}, Raw: c.ColumnType}
+	native := &irv1.NativeType{Name: &irv1.QualifiedName{Object: c.DataType}, Raw: c.ColumnType, BooleanStorage: TinyIntOne(c.ColumnType)}
 	t := &irv1.Type{Native: native}
 	var labels []string
 	if base == "enum" || base == "set" {

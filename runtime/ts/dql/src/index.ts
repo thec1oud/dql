@@ -66,6 +66,7 @@ export {
   array,
   asBigint,
   asBoolean,
+  asserted,
   asBytes,
   asDate,
   asEnum,

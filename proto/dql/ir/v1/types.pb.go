@@ -1530,9 +1530,13 @@ type NativeType struct {
 	Name      *QualifiedName         `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Modifiers []*TypeModifier        `protobuf:"bytes,2,rep,name=modifiers,proto3" json:"modifiers,omitempty"`
 	// The original text, for debugging and round trips.
-	Raw           string `protobuf:"bytes,3,opt,name=raw,proto3" json:"raw,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Raw string `protobuf:"bytes,3,opt,name=raw,proto3" json:"raw,omitempty"`
+	// Set by the source plugin for a type that stores booleans by convention,
+	// MySQL TINYINT(1), which the bool annotation maps to the boolean type
+	// (§8.7).
+	BooleanStorage bool `protobuf:"varint,4,opt,name=boolean_storage,json=booleanStorage,proto3" json:"boolean_storage,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *NativeType) Reset() {
@@ -1584,6 +1588,13 @@ func (x *NativeType) GetRaw() string {
 		return x.Raw
 	}
 	return ""
+}
+
+func (x *NativeType) GetBooleanStorage() bool {
+	if x != nil {
+		return x.BooleanStorage
+	}
+	return false
 }
 
 type TypeModifier struct {
@@ -1761,12 +1772,13 @@ const file_dql_ir_v1_types_proto_rawDesc = "" +
 	"\bfallback\x18\x01 \x01(\x0e2\x19.dql.ir.v1.OpaqueFallbackR\bfallback\"u\n" +
 	"\x04Weak\x12+\n" +
 	"\baffinity\x18\x01 \x01(\v2\x0f.dql.ir.v1.TypeR\baffinity\x12@\n" +
-	"\x0fstorage_classes\x18\x02 \x03(\x0e2\x17.dql.ir.v1.StorageClassR\x0estorageClasses\"\x83\x01\n" +
+	"\x0fstorage_classes\x18\x02 \x03(\x0e2\x17.dql.ir.v1.StorageClassR\x0estorageClasses\"\xac\x01\n" +
 	"\n" +
 	"NativeType\x12,\n" +
 	"\x04name\x18\x01 \x01(\v2\x18.dql.ir.v1.QualifiedNameR\x04name\x125\n" +
 	"\tmodifiers\x18\x02 \x03(\v2\x17.dql.ir.v1.TypeModifierR\tmodifiers\x12\x10\n" +
-	"\x03raw\x18\x03 \x01(\tR\x03raw\"D\n" +
+	"\x03raw\x18\x03 \x01(\tR\x03raw\x12'\n" +
+	"\x0fboolean_storage\x18\x04 \x01(\bR\x0ebooleanStorage\"D\n" +
 	"\fTypeModifier\x12\x12\n" +
 	"\x03int\x18\x01 \x01(\x05H\x00R\x03int\x12\x18\n" +
 	"\x06string\x18\x02 \x01(\tH\x00R\x06stringB\x06\n" +

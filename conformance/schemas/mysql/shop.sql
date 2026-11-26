@@ -4,6 +4,7 @@
 -- no domains (email and slug checks sit on their columns), no composite
 -- (price is left out), no arrays (labels is left out), no partial index,
 -- and uuid is CHAR(36) narrowed by as(uuid). The function bodies return 0.
+-- posts.featured is not in the record: a TINYINT(1) annotated bool (§8.7).
 
 CREATE TABLE tenants (
   id   CHAR(36) NOT NULL DEFAULT (uuid()) COMMENT '@as(uuid)',
@@ -41,6 +42,7 @@ CREATE TABLE posts (
   slug         TEXT GENERATED ALWAYS AS (lower(replace(title, ' ', '-'))) STORED,
   status       ENUM('draft', 'published', 'archived') NOT NULL DEFAULT 'draft',
   published_at TIMESTAMP(6) NULL,
+  featured     TINYINT(1) NOT NULL DEFAULT 0 COMMENT '@bool',
   PRIMARY KEY (id),
   CONSTRAINT posts_title_check CHECK (char_length(title) BETWEEN 1 AND 200),
   CONSTRAINT posts_published_check CHECK (published_at IS NULL OR status <> 'draft'),

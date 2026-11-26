@@ -433,6 +433,51 @@
                         "raw": "timestamp(6)"
                       }
                     }
+                  },
+                  {
+                    "annotations": [
+                      {
+                        "key": "core.bool",
+                        "origin": {
+                          "kind": "ORIGIN_DB_COMMENT",
+                          "location": "the comment of column posts.featured",
+                          "plugin": "mysql-live"
+                        }
+                      }
+                    ],
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "0",
+                      "value": {
+                        "int": "0"
+                      }
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Comment",
+                        "text": "@bool"
+                      }
+                    ],
+                    "name": {
+                      "stored": "featured"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 8,
+                    "type": {
+                      "int8": {},
+                      "native": {
+                        "booleanStorage": true,
+                        "modifiers": [
+                          {
+                            "int": 1
+                          }
+                        ],
+                        "name": {
+                          "object": "tinyint"
+                        },
+                        "raw": "tinyint(1)"
+                      }
+                    }
                   }
                 ],
                 "constraints": [
@@ -1458,7 +1503,7 @@
         ],
         "provenance": {
           "fidelity": "SOURCE_FIDELITY_FULL",
-          "inputFingerprint": "sha256:234a5dc1178ee88306022c2f41853cb2e8be84e7bb41f0c438da2d6f5fb61a97",
+          "inputFingerprint": "sha256:0ddc18f3b69366da13068de6adead1c85326f780f39a136eaf4b36dadf9d82cf",
           "source": "mysql-live",
           "sourceVersion": "1.0.0"
         }

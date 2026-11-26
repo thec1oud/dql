@@ -173,3 +173,30 @@ func TestDecodeFailures(t *testing.T) {
 		})
 	}
 }
+
+// §8.7, §13: a TINYINT(1) annotated bool decodes with asBoolean, and an
+// integer other than 0 or 1 names the annotation, by its location when the
+// origin records one.
+func TestBoolDecoder(t *testing.T) {
+	tiny := &irv1.Type{Kind: &irv1.Type_Bool{Bool: &irv1.Empty{}},
+		Native: &irv1.NativeType{Name: &irv1.QualifiedName{Object: "tinyint"}, Raw: "tinyint(1)", BooleanStorage: true}}
+	s := shp(customID("item_flags"), "item flags", "items", []*irv1.Field{fl("on", tiny, false, false), fl("off", tiny, false, true)})
+	b := decodeBundle([]*irv1.Shape{s})
+	items := b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[0]
+	on := col("on", tiny)
+	on.Annotations = []*irv1.Annotation{{Key: "core.bool", Origin: &irv1.Origin{Kind: irv1.OriginKind_ORIGIN_DB_COMMENT, Location: "COMMENT ON COLUMN app.items.on"}}}
+	items.Columns = append(items.Columns, on, col("off", tiny))
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatalf("codes %q", codes)
+	}
+	for _, part := range []string{
+		`    on: d.field(0, "on", "", asserted(asBoolean, "core.bool from COMMENT ON COLUMN app.items.on")),`,
+		`    off: d.nullable(1, "off", asserted(asBoolean, "core.bool on shop.app.items.off")),`,
+	} {
+		if !strings.Contains(files["dql-shapes.dql.ts"], part) {
+			t.Errorf("dql-shapes.dql.ts lacks %q:\n%s", part, files["dql-shapes.dql.ts"])
+		}
+	}
+	typecheck(t, files)
+}

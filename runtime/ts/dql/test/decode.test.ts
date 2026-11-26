@@ -26,6 +26,7 @@ import {
   asUint32,
   asUint64,
   asUint8,
+  asserted,
   elem,
   nest,
   nullableElem,
@@ -147,6 +148,16 @@ describe("converters", () => {
     expect([asBoolean(true), asBoolean(false), asBoolean(0), asBoolean(1), asBoolean(0n), asBoolean(1n)]).toEqual([true, false, false, true, false, true]);
     expect(failure(() => asBoolean(2))).toEqual(offType);
     expect(failure(() => asBoolean("true"))).toEqual(offType);
+  });
+
+  test("asserted names the annotation that narrows a type (§13)", () => {
+    const conv = asserted(asBoolean, "core.bool on shop.app.t.on");
+    expect(conv(1)).toBe(true);
+    expect(failure(() => conv(2))).toEqual({ ...offType, assertion: "core.bool on shop.app.t.on" });
+    const broken = asserted(() => {
+      throw new RangeError("broken");
+    }, "core.bool on shop.app.t.on");
+    expect(() => broken(1)).toThrow(RangeError);
   });
 
   test("strings, bytes, JSON and instances", () => {

@@ -12,7 +12,8 @@ var typingCases = []struct{ body, want string }{
 	{"SELECT t.* FROM tags t", "id:int64 name:varchar"},
 	{"SELECT id, title FROM published_posts", "id:int64? title:text?"},
 	{"SELECT id, title FROM posts JOIN tags USING (id)", "id:int64 title:text"},
-	{"SELECT * FROM posts JOIN tags USING (id)", "id:int64 author_id:int64 editor_id:int64? title:text slug:text? status:enum:posts_status published_at:instant? name:varchar"},
+	{"SELECT * FROM posts JOIN tags USING (id)", "id:int64 author_id:int64 editor_id:int64? title:text slug:text? status:enum:posts_status published_at:instant? featured:bool name:varchar"},
+	{"SELECT featured FROM posts WHERE featured", "featured:bool"},
 	{"SELECT id FROM posts RIGHT JOIN tags USING (id)", "id:int64"},
 	{"SELECT status, published_at FROM posts", "status:enum:posts_status published_at:instant?"},
 	// Literals.

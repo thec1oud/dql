@@ -37,6 +37,10 @@ func (g *generator) decoder(s *irv1.Shape) {
 	for i, fld := range s.GetFields() {
 		at := &irv1.QualifiedName{Catalog: q.GetCatalog(), Namespace: q.GetNamespace(), Object: q.GetObject(), Member: fld.GetColumn()}
 		conv := g.conv(f, fld.GetType(), at, "field "+fld.GetColumn()+" of shape "+shape)
+		if c := column(t, fld.GetColumn()); fld.GetType().GetBool() != nil && fld.GetType().GetNative().GetBooleanStorage() {
+			// bool narrows a TINYINT(1); an integer other than 0 or 1 names it.
+			conv = fmt.Sprintf("%s.Asserted(%s, %q)", dql, conv, annotated(c.GetAnnotations(), "core.bool", at))
+		}
 		get := fmt.Sprintf("%s.Field(d, %d, %q, %q, %s)", dql, i, fld.GetColumn(), g.assertion(s, fld, column(t, fld.GetColumn())), conv)
 		if fld.GetNullable() {
 			get = fmt.Sprintf("%s.Nullable(d, %d, %q, %s)", dql, i, fld.GetColumn(), conv)

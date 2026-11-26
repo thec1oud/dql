@@ -195,6 +195,14 @@ func TestConverters(t *testing.T) {
 		_, err := dql.Bool(v) // 2 in a TINYINT(1) annotated bool
 		check("Bool", nil, err, nil, true)
 	}
+	asserted := dql.Asserted(dql.Bool, "core.bool on shop.app.t.on")
+	if b, err := asserted(int64(1)); !b || err != nil {
+		t.Errorf("Asserted(1) = %v, %v", b, err)
+	}
+	var de *dql.DecodeError
+	if _, err := asserted(int64(2)); !errors.As(err, &de) || de.Reason != dql.OffType || de.Assertion != "core.bool on shop.app.t.on" {
+		t.Errorf("Asserted(2) = %v", err)
+	}
 	s, err := dql.String("a")
 	check("String", s, err, "a", false)
 	_, err = dql.String([]byte("a"))

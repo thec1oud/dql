@@ -27,7 +27,7 @@ var MySQLSchemas = map[string]Schema{
 		URLEnv:   "DQL_TEST_MYSQL_URL",
 		Database: databaseMySQL,
 		Modes:    []dql.StatementMode{dql.ModePrepare, dql.ModeSimple},
-		Features: []string{},
+		Features: []string{"tinyint-bool"},
 		Exec:     runMySQL,
 		Open:     opener(func() dql.Driver { return dqlmysql.New() }, mysqlshopdb.NewExecutor, mysqlshopdb.New),
 		Tables: map[string]any{

@@ -49,6 +49,10 @@ func (g *generator) decoder(s *irv1.Shape) {
 		if timeType(col) == "date" && fld.GetType().GetInstant() != nil {
 			conv = f.rt("asDate", true)
 		}
+		if fld.GetType().GetBool() != nil && fld.GetType().GetNative().GetBooleanStorage() {
+			// bool narrows a TINYINT(1); an integer other than 0 or 1 names it.
+			conv = fmt.Sprintf("%s(%s, %s)", f.rt("asserted", true), conv, jsString(annotated(col.GetAnnotations(), "core.bool", at)))
+		}
 		get := fmt.Sprintf("d.field(%d, %s, %s, %s)", i, jsString(fld.GetColumn()), jsString(g.assertion(s, fld, col)), conv)
 		if fld.GetNullable() {
 			get = fmt.Sprintf("d.nullable(%d, %s, %s)", i, jsString(fld.GetColumn()), conv)
