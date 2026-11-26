@@ -80,6 +80,17 @@ func Generate(b *irv1.Bundle, o Options) ([]File, []*irv1.Diagnostic) {
 	g.conversions()
 	g.companions()
 	g.merges()
+	if !g.failed() && g.b.GetCapabilities() != nil {
+		// The query surface reads the shapes, so it waits for shapes
+		// without errors.
+		g.dialect()
+		if g.b.GetQueries().GetFragments() != nil {
+			es := g.entities()
+			g.stores(es)
+			g.handles(es)
+		}
+	}
+	g.checkImports()
 	if g.failed() {
 		sortDiagnostics(g.diags)
 		return nil, g.diags
@@ -116,6 +127,8 @@ type generator struct {
 	// decoder of each domain and composite type it declares.
 	decodeFile    *file
 	namedDecoders map[key]string
+	// fragmentIDs holds the ids of the fragment table (§16.2).
+	fragmentIDs map[string]bool
 }
 
 // decl is a module-level name: what declares it, for diagnostics, and the
@@ -367,6 +380,24 @@ func (g *generator) version() {
 // generated-code version %[1]d (§26.5).
 %[2]s(%[1]d);
 `, CodeVersion, f.rt("enforceVersion", true))
+}
+
+// checkImports fails a name a file takes from the runtime and also
+// declares or imports from another module (§4.3, §15.2): generated code
+// imports the runtime's names unqualified.
+func (g *generator) checkImports() {
+	for _, f := range g.files {
+		for _, n := range slices.Sorted(maps.Keys(f.runtime)) {
+			if d := g.decls[n]; d.file == f {
+				g.errorf(CodeNameCollision, nil, "%s gets the TypeScript name %s, which %s takes from the runtime (§4.3, §15.2); give it a name annotation", d.what, n, f.name)
+			}
+			for _, m := range slices.Sorted(maps.Keys(f.modules)) {
+				if _, ok := f.modules[m][n]; ok {
+					g.errorf(CodeNameCollision, nil, "%s imports %s from the runtime and from %s (§4.3, §15.2); give the declaration a name annotation", f.name, n, m)
+				}
+			}
+		}
+	}
 }
 
 // index re-exports every other module: the package's entry point.

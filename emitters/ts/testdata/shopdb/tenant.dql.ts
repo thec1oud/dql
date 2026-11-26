@@ -288,3 +288,20 @@ export function mergeTenantByKey(
   }
   return { merged, unmatched };
 }
+
+/** TenantsReadStore reads shop.app.tenants (§26.3). */
+export interface TenantsReadStore {
+  get(k: TenantKey): Promise<TenantFull>;
+  find(k: TenantKey): Promise<TenantFull | undefined>;
+  count(): Promise<bigint>;
+  exists(): Promise<boolean>;
+}
+
+/** TenantsStore reads and writes shop.app.tenants (§26.3). */
+export interface TenantsStore extends TenantsReadStore {
+  insert(d: TenantDraft): Promise<TenantFull>;
+  insertOrIgnore(d: TenantDraft): Promise<TenantFull | undefined>;
+  upsert(d: TenantDraft): Promise<TenantFull>;
+  patch(k: TenantKey, p: TenantPartial): Promise<TenantFull>;
+  delete(k: TenantKey): Promise<void>;
+}

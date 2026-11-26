@@ -505,3 +505,45 @@ export function mergeUserByKey(
   }
   return { merged, unmatched };
 }
+
+/** UsersReadStore reads shop.app.users (§26.3). */
+export interface UsersReadStore {
+  get(k: UserKey): Promise<UserFull>;
+  getByTenantIdAndEmail(email: EmailAddress): Promise<UserFull>;
+  find(k: UserKey): Promise<UserFull | undefined>;
+  findByTenantIdAndEmail(email: EmailAddress): Promise<UserFull | undefined>;
+  count(): Promise<bigint>;
+  exists(): Promise<boolean>;
+}
+
+/** UsersStore reads and writes shop.app.users (§26.3). */
+export interface UsersStore extends UsersReadStore {
+  insert(d: UserDraft): Promise<UserFull>;
+  insertOrIgnore(d: UserDraft): Promise<UserFull | undefined>;
+  insertOrIgnoreByTenantIdAndEmail(d: UserDraft): Promise<UserFull | undefined>;
+  upsert(d: UserDraft): Promise<UserFull>;
+  upsertByTenantIdAndEmail(d: UserDraft): Promise<UserFull>;
+  patch(k: UserKey, p: UserPartial): Promise<UserFull>;
+  delete(k: UserKey): Promise<void>;
+}
+
+/** UsersUnscopedReadStore reads, across scopes, shop.app.users (§26.3). */
+export interface UsersUnscopedReadStore {
+  get(scope: UserScope, k: UserKey): Promise<UserFull>;
+  getByTenantIdAndEmail(scope: UserScope, email: EmailAddress): Promise<UserFull>;
+  find(scope: UserScope, k: UserKey): Promise<UserFull | undefined>;
+  findByTenantIdAndEmail(scope: UserScope, email: EmailAddress): Promise<UserFull | undefined>;
+  count(scope: UserScope): Promise<bigint>;
+  exists(scope: UserScope): Promise<boolean>;
+}
+
+/** UsersUnscopedStore reads and writes, across scopes, shop.app.users (§26.3). */
+export interface UsersUnscopedStore extends UsersUnscopedReadStore {
+  insert(scope: UserScope, d: UserDraft): Promise<UserFull>;
+  insertOrIgnore(scope: UserScope, d: UserDraft): Promise<UserFull | undefined>;
+  insertOrIgnoreByTenantIdAndEmail(scope: UserScope, d: UserDraft): Promise<UserFull | undefined>;
+  upsert(scope: UserScope, d: UserDraft): Promise<UserFull>;
+  upsertByTenantIdAndEmail(scope: UserScope, d: UserDraft): Promise<UserFull>;
+  patch(scope: UserScope, k: UserKey, p: UserPartial): Promise<UserFull>;
+  delete(scope: UserScope, k: UserKey): Promise<void>;
+}

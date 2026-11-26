@@ -421,3 +421,19 @@ export function mergePostTagByKey(
   }
   return { merged, unmatched };
 }
+
+/** PostTagsReadStore reads shop.app.post_tags (§26.3). */
+export interface PostTagsReadStore {
+  get(k: PostTagKey): Promise<PostTagFull>;
+  find(k: PostTagKey): Promise<PostTagFull | undefined>;
+  count(): Promise<bigint>;
+  exists(): Promise<boolean>;
+}
+
+/** PostTagsStore reads and writes shop.app.post_tags (§26.3). */
+export interface PostTagsStore extends PostTagsReadStore {
+  insert(d: PostTagDraft): Promise<PostTagFull>;
+  insertOrIgnore(d: PostTagDraft): Promise<PostTagFull | undefined>;
+  upsert(d: PostTagDraft): Promise<PostTagFull>;
+  delete(k: PostTagKey): Promise<void>;
+}

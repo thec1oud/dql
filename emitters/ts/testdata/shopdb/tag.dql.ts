@@ -382,3 +382,24 @@ export function mergeTagByKey(
   }
   return { merged, unmatched };
 }
+
+/** TagsReadStore reads shop.app.tags (§26.3). */
+export interface TagsReadStore {
+  getByName(name: SlugText): Promise<TagFull>;
+  get(k: TagKey): Promise<TagFull>;
+  findByName(name: SlugText): Promise<TagFull | undefined>;
+  find(k: TagKey): Promise<TagFull | undefined>;
+  count(): Promise<bigint>;
+  exists(): Promise<boolean>;
+}
+
+/** TagsStore reads and writes shop.app.tags (§26.3). */
+export interface TagsStore extends TagsReadStore {
+  insert(d: TagDraft): Promise<TagFull>;
+  insertOrIgnoreByName(d: TagDraft): Promise<TagFull | undefined>;
+  insertOrIgnore(d: TagDraft): Promise<TagFull | undefined>;
+  upsertByName(d: TagDraft): Promise<TagFull>;
+  upsert(d: TagDraft): Promise<TagFull>;
+  patch(k: TagKey, p: TagPartial): Promise<TagFull>;
+  delete(k: TagKey): Promise<void>;
+}

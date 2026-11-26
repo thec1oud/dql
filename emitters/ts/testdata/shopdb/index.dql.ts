@@ -4,6 +4,8 @@
 // Input: catalog shop from pg-live 1.0.0, sha256:a06d8854fb2fa4bbe9c789ec8c8b8cce0ad8e7e6b7f9b897fa020e28f71e579f
 // Runtime: @dql/runtime, generated-code version 1
 
+export * from "./dql-db.dql.ts";
+export * from "./dql-dialect.dql.ts";
 export * from "./dql-types.dql.ts";
 export * from "./dql-version.dql.ts";
 export * from "./post.dql.ts";
