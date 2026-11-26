@@ -147,22 +147,56 @@ func (r recognizer) portable(e ast.ExprNode) *irv1.PortableConstraint {
 		return r.membership(e.Expr, e.List)
 	case *ast.FuncCallExpr:
 		return r.pattern(e)
+	case *ast.PatternRegexpExpr:
+		if e.Not {
+			return nil
+		}
+		return r.regex(e.Expr, e.Pattern, false)
 	}
 	return nil
 }
 
-// pattern recognizes regexp_like(x, 're', 'c').
+// caseSensitive is the inline flag that makes a pattern case sensitive in
+// both MySQL's ICU and MariaDB's PCRE, whatever the column's collation.
+const caseSensitive = "(?-i)"
+
+// pattern recognizes regexp_like(x, 're', 'c') and regexp_like(x,
+// '(?-i)re'), which MySQL prints for x REGEXP '(?-i)re'.
 func (r recognizer) pattern(f *ast.FuncCallExpr) *irv1.PortableConstraint {
-	if f.FnName.L != "regexp_like" || len(f.Args) != 3 {
+	if f.FnName.L != "regexp_like" || len(f.Args) < 2 || len(f.Args) > 3 {
 		return nil
 	}
-	s, ok := r.column(f.Args[0])
+	matchCase := false
+	if len(f.Args) == 3 {
+		mt, ok := stringOf(f.Args[2])
+		if !ok || mt != "c" {
+			return nil
+		}
+		matchCase = true
+	}
+	return r.regex(f.Args[0], f.Args[1], matchCase)
+}
+
+// regex recognizes a text column matched against a pattern, as a portable
+// pattern when the match is case sensitive: by a match type of c, or by
+// the pattern's leading (?-i), as MariaDB, which has no regexp_like, writes
+// x REGEXP '(?-i)re'.
+func (r recognizer) regex(x, pattern ast.ExprNode, matchCase bool) *irv1.PortableConstraint {
+	s, ok := r.column(x)
 	if !ok || family(s.col.Type) != famText {
 		return nil
 	}
-	re, ok1 := stringOf(f.Args[1])
-	mt, ok2 := stringOf(f.Args[2])
-	if !ok1 || !ok2 || mt != "c" || !pgsql.PortableRegex(re) {
+	re, ok := stringOf(pattern)
+	if !ok {
+		return nil
+	}
+	if !matchCase {
+		var found bool
+		if re, found = strings.CutPrefix(re, caseSensitive); !found {
+			return nil
+		}
+	}
+	if !pgsql.PortableRegex(re) {
 		return nil
 	}
 	return &irv1.PortableConstraint{Kind: &irv1.PortableConstraint_Pattern{Pattern: &irv1.PatternConstraint{Regex: re}}}

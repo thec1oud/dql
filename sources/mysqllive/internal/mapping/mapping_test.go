@@ -33,7 +33,7 @@ func snapshot(t *testing.T, name string) *introspect.Snapshot {
 
 // The catalogs of the shop and the fixture match their golden files.
 func TestMap(t *testing.T) {
-	for _, name := range []string{"shop.json", "fixture.json"} {
+	for _, name := range []string{"shop.json", "fixture.json", "shop-mariadb.json", "fixture-mariadb.json"} {
 		t.Run(name, func(t *testing.T) {
 			c, diags, err := Map(snapshot(t, name), Options{Catalog: "shop", Database: "DATABASE"})
 			if err != nil {

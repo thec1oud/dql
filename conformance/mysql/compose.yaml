@@ -1,8 +1,11 @@
-# A MySQL server on port 3306 for the tests of mysql-live and of the MySQL
-# dialect (guide M6). MYSQL_VERSION picks the release, 8.4 by default.
+# A MySQL server on port 3306 and a MariaDB server on port 3307, for the
+# tests of mysql-live and of the MySQL dialect (guide M6). MYSQL_VERSION
+# picks MySQL's release, 8.4 by default, and MARIADB_VERSION MariaDB's,
+# 11.8 by default; dql supports MariaDB 10.11 and newer.
 #
 #   docker compose -f conformance/mysql/compose.yaml up -d --wait
 #   DQL_TEST_MYSQL_URL='root:root@tcp(localhost:3306)/'
+#   DQL_TEST_MARIADB_URL='root:root@tcp(localhost:3307)/'
 services:
   mysql:
     image: mysql:${MYSQL_VERSION:-8.4}
@@ -12,6 +15,16 @@ services:
     healthcheck:
       # Over TCP, which the server initialization starts does not listen on.
       test: mysqladmin ping -h 127.0.0.1 -uroot -proot
+      interval: 2s
+      timeout: 5s
+      retries: 60
+  mariadb:
+    image: mariadb:${MARIADB_VERSION:-11.8}
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+    ports: ["3307:3306"]
+    healthcheck:
+      test: healthcheck.sh --connect --innodb_initialized
       interval: 2s
       timeout: 5s
       retries: 60

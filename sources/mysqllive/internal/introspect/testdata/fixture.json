@@ -87,6 +87,13 @@
           "event": "INSERT",
           "order": 1,
           "statement": "SET NEW.id = NEW.id;"
+        },
+        {
+          "name": "children_bu",
+          "timing": "BEFORE",
+          "event": "UPDATE",
+          "order": 1,
+          "statement": "SET NEW.id = NEW.id;"
         }
       ]
     },

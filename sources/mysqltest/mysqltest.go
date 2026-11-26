@@ -8,33 +8,46 @@ package mysqltest
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
 )
 
-// URLEnv names the server the tests run against.
-const URLEnv = "DQL_TEST_MYSQL_URL"
+// URLEnv names the MySQL server the tests run against, and MariaDBURLEnv
+// the MariaDB server.
+const (
+	URLEnv        = "DQL_TEST_MYSQL_URL"
+	MariaDBURLEnv = "DQL_TEST_MARIADB_URL"
+)
 
-// ErrNoServer reports that URLEnv is not set. The tests fail rather than
-// skip without a server: they are what keeps the packages at full coverage.
-var ErrNoServer = errors.New("mysqltest: " + URLEnv + " is not set. These tests need a MySQL 8.4 server, for example\n" +
-	"  " + URLEnv + "=root:root@tcp(localhost:3306)/\n" +
-	"and create fresh databases on it")
+// ErrNoServer reports that URLEnv or MariaDBURLEnv is not set. The tests
+// fail rather than skip without a server: they are what keeps the packages
+// at full coverage.
+type ErrNoServer struct{ Env string }
 
-// Config returns the parsed DSN of the server URLEnv names.
-func Config() (*mysql.Config, error) {
-	dsn := os.Getenv(URLEnv)
+func (e ErrNoServer) Error() string {
+	server, port := "a MySQL 8.4", "3306"
+	if e.Env == MariaDBURLEnv {
+		server, port = "a MariaDB 10.11 or newer", "3307"
+	}
+	return "mysqltest: " + e.Env + " is not set. These tests need " + server + " server, for example\n" +
+		"  " + e.Env + "=root:root@tcp(localhost:" + port + ")/\n" +
+		"and create fresh databases on it"
+}
+
+// Config returns the parsed DSN of the server env names.
+func Config(env string) (*mysql.Config, error) {
+	dsn := os.Getenv(env)
 	if dsn == "" {
-		return nil, ErrNoServer
+		return nil, ErrNoServer{env}
 	}
 	cfg, err := mysql.ParseDSN(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("mysqltest: %s: %w", URLEnv, err)
+		return nil, fmt.Errorf("mysqltest: %s: %w", env, err)
 	}
 	return cfg, nil
 }
@@ -45,15 +58,23 @@ type Database struct {
 	DB *sql.DB
 	// Name is the database's name and DSN a DSN naming it.
 	Name, DSN string
-	admin     *sql.DB
+	// MariaDB is set when the server is MariaDB rather than MySQL.
+	MariaDB bool
+	admin   *sql.DB
 }
 
 var seq atomic.Int64
 
-// Create creates a fresh database and runs the statements of each of
-// files in it, in order. A file may hold several statements.
+// Create creates a fresh database on the MySQL server and runs the
+// statements of each of files in it, in order. A file may hold several
+// statements.
 func Create(ctx context.Context, files ...string) (*Database, error) {
-	cfg, err := Config()
+	return CreateOn(ctx, URLEnv, files...)
+}
+
+// CreateOn is Create on the server env names: URLEnv or MariaDBURLEnv.
+func CreateOn(ctx context.Context, env string, files ...string) (*Database, error) {
+	cfg, err := Config(env)
 	if err != nil {
 		return nil, err
 	}
@@ -64,11 +85,17 @@ func Create(ctx context.Context, files ...string) (*Database, error) {
 		return nil, err
 	}
 	name := fmt.Sprintf("dql_test_%d_%d_%d", os.Getpid(), time.Now().UnixNano()%1e6, seq.Add(1))
-	if _, err := admin.ExecContext(ctx, "CREATE DATABASE "+name+" CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"); err != nil {
+	var version string
+	if err := admin.QueryRowContext(ctx, "SELECT VERSION()").Scan(&version); err != nil {
+		admin.Close()
+		return nil, fmt.Errorf("mysqltest: reading the server's version: %w", err)
+	}
+	mariadb, collation := server(version)
+	if _, err := admin.ExecContext(ctx, "CREATE DATABASE "+name+" CHARACTER SET utf8mb4 COLLATE "+collation); err != nil {
 		admin.Close()
 		return nil, fmt.Errorf("mysqltest: creating a database: %w", err)
 	}
-	d := &Database{Name: name, admin: admin}
+	d := &Database{Name: name, MariaDB: mariadb, admin: admin}
 	cfg.DBName = name
 	cfg.MultiStatements = true
 	d.DSN = cfg.FormatDSN()
@@ -114,4 +141,15 @@ func open(cfg *mysql.Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("mysqltest: %w", err)
 	}
 	return sql.OpenDB(c), nil
+}
+
+// server reports whether the server of version is MariaDB, and the
+// collation of its test databases: MySQL's default, utf8mb4_0900_ai_ci, or
+// on MariaDB, which has that only from 11.4, the UCA 14.0 collation of the
+// same meaning, which it has from 10.10.
+func server(version string) (mariadb bool, collation string) {
+	if strings.Contains(version, "MariaDB") {
+		return true, "utf8mb4_uca1400_ai_ci"
+	}
+	return false, "utf8mb4_0900_ai_ci"
 }

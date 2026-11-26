@@ -1,0 +1,489 @@
+{
+  "database": {
+    "flavor": "mariadb",
+    "characterSet": "utf8mb4",
+    "collation": "utf8mb4_uca1400_ai_ci",
+    "collations": [
+      {
+        "name": "utf8mb4_bin",
+        "padSpace": true
+      },
+      {
+        "name": "utf8mb4_uca1400_ai_ci",
+        "padSpace": true
+      },
+      {
+        "name": "utf8mb4_uca1400_as_cs",
+        "padSpace": true
+      }
+    ]
+  },
+  "tables": [
+    {
+      "name": "children",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_uca1400_ai_ci",
+      "columns": [
+        {
+          "name": "id",
+          "dataType": "int",
+          "columnType": "int"
+        },
+        {
+          "name": "kind_id",
+          "dataType": "int",
+          "columnType": "int unsigned",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "mood",
+          "dataType": "enum",
+          "columnType": "enum('calm','busy')",
+          "nullable": true,
+          "default": "NULL",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_uca1400_ai_ci"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "children_kind_fkey",
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "kind_id"
+            }
+          ]
+        },
+        {
+          "name": "PRIMARY",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "id"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "children_kind_fkey",
+          "columns": [
+            "kind_id"
+          ],
+          "refDb": "DATABASE",
+          "refTable": "kinds",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "SET NULL",
+          "onDelete": "CASCADE"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "children_bi",
+          "timing": "BEFORE",
+          "event": "INSERT",
+          "order": 1,
+          "statement": "SET NEW.id = NEW.id"
+        },
+        {
+          "name": "children_bu",
+          "timing": "BEFORE",
+          "event": "UPDATE",
+          "order": 1,
+          "statement": "SET NEW.id = NEW.id"
+        }
+      ]
+    },
+    {
+      "name": "kind_names",
+      "view": true,
+      "columns": [
+        {
+          "name": "id",
+          "dataType": "int",
+          "columnType": "int unsigned",
+          "comment": "The key. @name(kind_id)"
+        },
+        {
+          "name": "child",
+          "dataType": "int",
+          "columnType": "int"
+        }
+      ],
+      "viewDef": {
+        "definition": "select `k`.`id` AS `id`,`c`.`id` AS `child` from (`DATABASE`.`kinds` `k` join `DATABASE`.`children` `c` on(`c`.`kind_id` = `k`.`id`))",
+        "updatable": true,
+        "securityType": "DEFINER",
+        "checkOption": "NONE",
+        "reads": [
+          "DATABASE.children",
+          "DATABASE.kinds"
+        ]
+      }
+    },
+    {
+      "name": "kinds",
+      "comment": "Every type. @name(kind)",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_uca1400_ai_ci",
+      "columns": [
+        {
+          "name": "id",
+          "dataType": "int",
+          "columnType": "int unsigned",
+          "extra": "auto_increment",
+          "comment": "The key. @name(kind_id)"
+        },
+        {
+          "name": "t8",
+          "dataType": "tinyint",
+          "columnType": "tinyint",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "u8",
+          "dataType": "tinyint",
+          "columnType": "tinyint unsigned",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "flag",
+          "dataType": "tinyint",
+          "columnType": "tinyint(1)",
+          "default": "0"
+        },
+        {
+          "name": "i16",
+          "dataType": "smallint",
+          "columnType": "smallint",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "u16",
+          "dataType": "smallint",
+          "columnType": "smallint unsigned",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "i24",
+          "dataType": "mediumint",
+          "columnType": "mediumint",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "i32",
+          "dataType": "int",
+          "columnType": "int",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "u64",
+          "dataType": "bigint",
+          "columnType": "bigint unsigned",
+          "nullable": true,
+          "default": "7"
+        },
+        {
+          "name": "f32",
+          "dataType": "float",
+          "columnType": "float",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "f64",
+          "dataType": "double",
+          "columnType": "double",
+          "nullable": true,
+          "default": "1.5"
+        },
+        {
+          "name": "d",
+          "dataType": "decimal",
+          "columnType": "decimal(12,2)",
+          "nullable": true,
+          "default": "3.10"
+        },
+        {
+          "name": "dn",
+          "dataType": "decimal",
+          "columnType": "decimal(10,0)",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "c",
+          "dataType": "char",
+          "columnType": "char(2)",
+          "nullable": true,
+          "default": "NULL",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_bin"
+        },
+        {
+          "name": "vc",
+          "dataType": "varchar",
+          "columnType": "varchar(10)",
+          "nullable": true,
+          "default": "NULL",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_uca1400_as_cs"
+        },
+        {
+          "name": "tt",
+          "dataType": "tinytext",
+          "columnType": "tinytext",
+          "nullable": true,
+          "default": "NULL",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_uca1400_ai_ci"
+        },
+        {
+          "name": "lt",
+          "dataType": "longtext",
+          "columnType": "longtext",
+          "nullable": true,
+          "default": "NULL",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_uca1400_ai_ci"
+        },
+        {
+          "name": "b",
+          "dataType": "binary",
+          "columnType": "binary(4)",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "vb",
+          "dataType": "varbinary",
+          "columnType": "varbinary(8)",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "bl",
+          "dataType": "blob",
+          "columnType": "blob",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "dt",
+          "dataType": "datetime",
+          "columnType": "datetime(3)",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "ts",
+          "dataType": "timestamp",
+          "columnType": "timestamp",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "tm",
+          "dataType": "time",
+          "columnType": "time(2)",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "dd",
+          "dataType": "date",
+          "columnType": "date",
+          "nullable": true,
+          "default": "'2026-01-01'"
+        },
+        {
+          "name": "y",
+          "dataType": "year",
+          "columnType": "year",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "j",
+          "dataType": "json",
+          "columnType": "json",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "bits",
+          "dataType": "bit",
+          "columnType": "bit(3)",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "bit1",
+          "dataType": "bit",
+          "columnType": "bit(1)",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "s",
+          "dataType": "set",
+          "columnType": "set('a','b')",
+          "nullable": true,
+          "default": "NULL",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_uca1400_ai_ci"
+        },
+        {
+          "name": "g",
+          "dataType": "point",
+          "columnType": "point",
+          "nullable": true,
+          "default": "NULL"
+        },
+        {
+          "name": "e",
+          "dataType": "enum",
+          "columnType": "enum('x','it''s')",
+          "nullable": true,
+          "default": "'x'",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_uca1400_ai_ci"
+        },
+        {
+          "name": "v",
+          "dataType": "int",
+          "columnType": "int",
+          "nullable": true,
+          "default": "NULL",
+          "extra": "VIRTUAL GENERATED",
+          "generation": "`i32` + 1"
+        }
+      ],
+      "checks": [
+        {
+          "name": "kinds_membership",
+          "clause": "`c` in ('ab','cd')",
+          "enforced": true
+        },
+        {
+          "name": "kinds_range",
+          "clause": "`i32` between -5 and 10",
+          "enforced": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "kinds_desc",
+          "type": "BTREE",
+          "visible": true,
+          "comment": "A note @ignored",
+          "parts": [
+            {
+              "column": "i16",
+              "descending": true
+            }
+          ]
+        },
+        {
+          "name": "kinds_prefix",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "vc",
+              "prefix": 4
+            }
+          ]
+        },
+        {
+          "name": "PRIMARY",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "id"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "routines": [
+    {
+      "name": "hidden_one",
+      "type": "FUNCTION",
+      "comment": "internal @public-not",
+      "returns": "int",
+      "deterministic": true,
+      "dataAccess": "NO SQL",
+      "securityType": "DEFINER",
+      "definition": "RETURN 1"
+    },
+    {
+      "name": "pure",
+      "type": "FUNCTION",
+      "comment": "@public",
+      "returns": "int",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "int"
+        }
+      ],
+      "deterministic": true,
+      "dataAccess": "NO SQL",
+      "securityType": "DEFINER",
+      "definition": "RETURN x"
+    },
+    {
+      "name": "reads_data",
+      "type": "FUNCTION",
+      "comment": "@public",
+      "returns": "int",
+      "deterministic": true,
+      "dataAccess": "READS SQL DATA",
+      "securityType": "DEFINER",
+      "definition": "RETURN 1"
+    },
+    {
+      "name": "touch",
+      "type": "PROCEDURE",
+      "comment": "@public",
+      "parameters": [
+        {
+          "name": "a",
+          "mode": "IN",
+          "type": "int"
+        },
+        {
+          "name": "b",
+          "mode": "OUT",
+          "type": "int"
+        },
+        {
+          "name": "c",
+          "mode": "INOUT",
+          "type": "int"
+        }
+      ],
+      "dataAccess": "CONTAINS SQL",
+      "securityType": "DEFINER",
+      "definition": "SET b = a"
+    }
+  ]
+}

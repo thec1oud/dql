@@ -362,6 +362,14 @@
                     "order": 1,
                     "statement": "SET NEW.id = NEW.id;",
                     "timing": "BEFORE"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.Trigger",
+                    "event": "UPDATE",
+                    "name": "children_bu",
+                    "order": 1,
+                    "statement": "SET NEW.id = NEW.id;",
+                    "timing": "BEFORE"
                   }
                 ],
                 "foreignKeys": [
@@ -1437,7 +1445,7 @@
         ],
         "provenance": {
           "fidelity": "SOURCE_FIDELITY_FULL",
-          "inputFingerprint": "sha256:9631eaeabed75c787e1798728642f9bd84f015b2ef2b15543ea45bbf424f3192",
+          "inputFingerprint": "sha256:4ecdab647a8a754cd21b5329a7cea326f94c3a400b4bf432e829490e23ea907f",
           "source": "mysql-live",
           "sourceVersion": "1.0.0"
         }
