@@ -6,3 +6,10 @@
 
 export * from "./dql-types.dql.ts";
 export * from "./dql-version.dql.ts";
+export * from "./post.dql.ts";
+export * from "./post_tag.dql.ts";
+export * from "./profile.dql.ts";
+export * from "./published_post.dql.ts";
+export * from "./tag.dql.ts";
+export * from "./tenant.dql.ts";
+export * from "./user.dql.ts";
