@@ -125,3 +125,14 @@ func TestQueriers(t *testing.T) {
 		t.Error(codes)
 	}
 }
+
+func TestPositional(t *testing.T) {
+	args, types := positional(nil, []string{"a", "b"}, []string{"x", "y"})
+	if !slices.Equal(args, []string{"a", "b"}) || !slices.Equal(types, []string{"x", "y"}) {
+		t.Fatalf("no placeholders: %v %v", args, types)
+	}
+	args, types = positional([]uint32{1, 0, 1}, []string{"a", "b"}, []string{"x", "y"})
+	if !slices.Equal(args, []string{"b", "a", "b"}) || !slices.Equal(types, []string{"y", "x", "y"}) {
+		t.Fatalf("placeholders: %v %v", args, types)
+	}
+}

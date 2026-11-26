@@ -181,6 +181,7 @@ func (g *generator) fileQuery(f *file, q *irv1.Query, groups []*scopeGroup) *fil
 		}
 		types = append(types, g.dbType(typ, false))
 	}
+	fq.args, types = positional(q.GetPlaceholders(), fq.args, types)
 	g.declare(fq.method, "the method of query "+name, at)
 	var b strings.Builder
 	fmt.Fprintf(&b, "\tst := %s.Statement{\n\t\tQuery: %q,\n\t\tCatalog: %q,\n\t\tKind: %q,\n\t\tSQL: %s,\n", dql, name, q.GetCatalog(), kind(q.GetText()), quote(q.GetText()))
@@ -294,4 +295,19 @@ func (g *generator) resultType(f *file, q *irv1.Query) (string, string) {
 	f.printf("// %s decodes r, a row of query %s, as decoders of shapes do (§13).\nfunc %s(r %s.Row) (%s, error) {\n\td := %s.NewDecoder(%q, r, %d)\n\tvar out %s\n%s\treturn out, d.Err()\n}\n\n",
 		fn, name, fn, dql, typ, dql, name, len(q.GetResult().GetAnonymous().GetFields()), typ, strings.Join(body, ""))
 	return typ, fn
+}
+
+// positional orders args and types by placeholders, the value each of a
+// positional dialect's placeholders takes; with none, the n-th argument
+// is the n-th placeholder already.
+func positional(placeholders []uint32, args, types []string) ([]string, []string) {
+	if len(placeholders) == 0 {
+		return args, types
+	}
+	a := make([]string, len(placeholders))
+	t := make([]string, len(placeholders))
+	for n, i := range placeholders {
+		a[n], t[n] = args[i], types[i]
+	}
+	return a, t
 }

@@ -192,6 +192,7 @@ func (g *generator) fileQuery(f, impl *file, q *irv1.Query, groups []*scopeGroup
 		}
 		types = append(types, jsString(g.dbType(typ, false)))
 	}
+	fq.args, types = positional(q.GetPlaceholders(), fq.args, types)
 	var b strings.Builder
 	fmt.Fprintf(&b, "    const st: %s = {\n      query: %s,\n      catalog: %s,\n      kind: %s,\n      sql: %s,\n", impl.rt("Statement", false), jsString(name), jsString(q.GetCatalog()), jsString(kind(q.GetText())), jsString(q.GetText()))
 	if len(fq.args) > 0 {
@@ -328,4 +329,19 @@ func (g *generator) resultDecoder(impl *file, q *irv1.Query) string {
 	}
 	row := impl.rt("Row", true)
 	return fmt.Sprintf("(r: %s) => %s(new %s([%s]))", row, decode, row, strings.Join(order, ", "))
+}
+
+// positional orders args and types by placeholders, the value each of a
+// positional dialect's placeholders takes; with none, the n-th argument
+// is the n-th placeholder already.
+func positional(placeholders []uint32, args, types []string) ([]string, []string) {
+	if len(placeholders) == 0 {
+		return args, types
+	}
+	a := make([]string, len(placeholders))
+	t := make([]string, len(placeholders))
+	for n, i := range placeholders {
+		a[n], t[n] = args[i], types[i]
+	}
+	return a, t
 }

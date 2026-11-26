@@ -183,3 +183,19 @@ func TestCount(t *testing.T) {
 		t.Errorf("got\n%s", got)
 	}
 }
+
+// A positional placeholder takes a parameter or, past them, a scope
+// column.
+func TestPlaceholders(t *testing.T) {
+	b := shop(t)
+	q := query("ByEmail", field(t, b, "id"))
+	q.Params = []*irv1.Param{{Name: "email", Type: &irv1.Type{Kind: &irv1.Type_Text{Text: &irv1.Text{}}}}}
+	q.Placeholders = []uint32{1, 0, 0}
+	if got := check(b, q); got != "" {
+		t.Fatal(got)
+	}
+	q.Placeholders = []uint32{0, 2}
+	if got, want := check(b, q), "ByEmail query-placeholder: placeholder 2 of query ByEmail takes value 2, but the query has 2 parameters and scope columns"; got != want {
+		t.Errorf("got %s", got)
+	}
+}
