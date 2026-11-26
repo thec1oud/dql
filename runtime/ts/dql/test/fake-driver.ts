@@ -25,6 +25,10 @@ export class FakeDriver implements Driver {
   private log: string[] = [];
   readonly pools: FakePool[] = [];
   handle: (s: Sent) => Row[] = rows([1]);
+  /** Answers statements by the server's DSN, in place of handle, when set. */
+  serve: ((dsn: string, s: Sent) => Row[]) | undefined;
+  /** The DSNs whose acquire fails. */
+  readonly down = new Set<string>();
   openError: unknown;
   /** Errors of calls by name, such as acquire, begin or commit, each thrown once when set. */
   readonly fail = new Map<string, unknown>();
@@ -83,6 +87,9 @@ export class FakePool implements Pool {
   async acquire(signal?: AbortSignal): Promise<Conn> {
     await this.d.gate;
     this.d.failing("acquire");
+    if (this.d.down.has(this.cfg.dsn)) {
+      throw new Error(`${this.cfg.dsn} is down`);
+    }
     while (this.cfg.maxConns > 0 && this.out >= this.cfg.maxConns) {
       await new Promise<void>((resolve, reject) => {
         if (signal?.aborted) {
@@ -147,7 +154,8 @@ export class FakeConn implements Conn {
   async query(s: Sent): Promise<Rows> {
     await this.p.d.gate;
     this.call(`query ${s.sql} ${JSON.stringify(s.args)}`);
-    return new FakeRows(this.p.d.handle(s), this.p.d);
+    const d = this.p.d;
+    return new FakeRows(d.serve === undefined ? d.handle(s) : d.serve(this.p.cfg.dsn, s), d);
   }
 
   async exec(s: Sent): Promise<number> {

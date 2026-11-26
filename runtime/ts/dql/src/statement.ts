@@ -5,6 +5,7 @@ import type { Row } from "./decode.js";
 import type { Conn, Sent } from "./driver.js";
 import { NotFound, TooManyRows } from "./errors.js";
 import { type Executor, type Frame, type Reader, type SourcePool, type Writer, UsageError, bind } from "./executor.js";
+import { Consistency } from "./routing.js";
 
 /** rawSource is the key of the source a raw statement names in place of its catalog's (§22.1). */
 export const rawSource: unique symbol = Symbol("dql.rawSource");
@@ -31,6 +32,8 @@ export interface Statement {
   readonly writes?: boolean;
   /** The core proved the statement returns at most one row, so queryOne and queryOptional skip the extra-row check (§19). */
   readonly atMostOne?: boolean;
+  /** How fresh a read outside a write transaction must be: the call's option, else the query's default; absent takes the executor's (§22.5). */
+  readonly consistency?: Consistency;
   /** For hooks (§24): the kind of query, such as select or insert. */
   readonly kind?: string;
   /** For hooks (§24): which arguments hold sensitive values, by position. */
@@ -55,9 +58,11 @@ function bound(h: Reader, s: Statement): Bound {
 }
 
 /**
- * withConn runs fn on the connection a statement runs on: its transaction's, or a
- * pooled one, which it releases after fn. A statement whose context has
- * already aborted fails without running.
+ * withConn runs fn on the connection a statement runs on: its transaction's,
+ * or a pooled one, which a write takes from the primary and a read as its
+ * consistency routes it (§22.5), and which withConn releases after fn, once a
+ * write's position is recorded in the context's session. A statement whose
+ * context has already aborted fails without running.
  */
 async function withConn<T>(b: Bound, s: Statement, writes: boolean, fn: (c: Conn) => Promise<T>): Promise<T> {
   const signal = ambient().signal;
@@ -70,9 +75,19 @@ async function withConn<T>(b: Bound, s: Statement, writes: boolean, fn: (c: Conn
     }
     return fn(await b.f.conn(b.src, s.query));
   }
+  if (!writes) {
+    const [c] = await b.e.route(b.src, s.consistency, false, s.query);
+    try {
+      return await fn(c);
+    } finally {
+      c.release();
+    }
+  }
   const c = await b.e.conn(b.src, false, s.query);
   try {
-    return await fn(c);
+    const result = await fn(c);
+    await b.e.recordWrite(ambient().session, b.src, c);
+    return result;
   } finally {
     c.release();
   }
@@ -172,7 +187,7 @@ export class RawReader {
   }
 
   protected statement(sql: string, args: unknown[], writes: boolean): Statement {
-    return { query: RAW_QUERY, kind: RAW_QUERY, catalog: "", sql, args, writes, [rawSource]: this.source };
+    return { query: RAW_QUERY, kind: RAW_QUERY, catalog: "", sql, args, writes, consistency: Consistency.primary, [rawSource]: this.source };
   }
 }
 

@@ -95,17 +95,19 @@ jobs:
           go test $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
 
   # The TypeScript runtime: a build, type checks, and its unit tests on
-  # Bun with 100% coverage. @dql/pg's tests run against Postgres.
+  # Bun with 100% coverage. @dql/pg's tests run against Postgres and its
+  # streaming replica.
   ts:
     runs-on: ubuntu-latest
     env:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+      DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
     defaults:
       run:
         working-directory: runtime/ts
     steps:
       - uses: actions/checkout@v4
-      - name: start Postgres
+      - name: start Postgres with a streaming replica
         working-directory: .
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
