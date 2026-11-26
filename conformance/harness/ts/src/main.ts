@@ -1,6 +1,6 @@
-// main runs every scenario of conformance/scenarios on Postgres and MySQL,
-// in each statement mode it runs in there (§26.4), and prints each problem;
-// it exits 1 if there is any. With DQL_CONFORMANCE_OUTCOMES set, it writes
+// main runs every scenario of conformance/scenarios on Postgres, MySQL,
+// MariaDB and SQLite, in each statement mode it runs in there (§26.4), and
+// prints each problem; it exits 1 if there is any. With DQL_CONFORMANCE_OUTCOMES set, it writes
 // each scenario's outcomes there, for comparison with Go's.
 //
 //	node src/main.ts | bun src/main.ts | deno run -A src/main.ts [scenario...]

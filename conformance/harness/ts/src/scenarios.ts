@@ -9,8 +9,9 @@ import { type Outcome, type Scenario, type Target, load, run } from "./harness.t
 import * as mysql from "./mysql.ts";
 import * as postgres from "./postgres.ts";
 import { root, schemas } from "./schemas.ts";
+import * as sqlite from "./sqlite.ts";
 
-/** Dialect is how the scenarios run on one dialect: its name in messages, the variable naming its server, the statement modes they run in, the features its schemas hold, how to create a database on its server, and, where it has one, the variable naming a replica of the server and how to find a database's copy there. */
+/** Dialect is how the scenarios run on one dialect: its name in messages, the variable naming its server, empty for one that has none, the statement modes they run in, the features its schemas hold, how to create a database on its server, and, where it has one, the variable naming a replica of the server and how to find a database's copy there. */
 export interface Dialect {
   readonly label: string;
   readonly env: string;
@@ -25,7 +26,8 @@ export interface Dialect {
  * conformance/harness/go runs them. On Postgres the modes are those the
  * TypeScript driver has, simple needing a protocol node-postgres does not
  * offer; on MySQL and MariaDB they are Go's, whose outcomes the TypeScript
- * ones are compared with.
+ * ones are compared with. SQLite runs in the process, with no server, and
+ * prepares every statement.
  */
 export const dialects: Readonly<Record<string, Dialect>> = {
   postgres: {
@@ -50,6 +52,13 @@ export const dialects: Readonly<Record<string, Dialect>> = {
     modes: ["prepare", "simple"],
     features: ["named-foreign-keys", "params-65535", "pattern-checks", "stall", "tinyint-bool"],
     database: mysql.mariadbDatabase,
+  },
+  sqlite: {
+    label: "SQLite",
+    env: "",
+    modes: ["prepare"],
+    features: ["params-32766", "returning"],
+    database: sqlite.database,
   },
 };
 
@@ -81,7 +90,8 @@ export interface Opened {
 
 /**
  * open creates a database of the named schema of dialect on the server its
- * variable names, such as DQL_TEST_POSTGRES_URL, and opens its handle, with
+ * variable names, such as DQL_TEST_POSTGRES_URL, or in a file of its own on
+ * a dialect with no server, and opens its handle, with
  * the database's copy on the dialect's replica of that server, such as
  * DQL_TEST_POSTGRES_REPLICA_URL's, as its replica when replica is set, and at most
  * maxConns connections to the primary, 0 meaning the schema's default,
@@ -90,7 +100,7 @@ export interface Opened {
 export async function open(name: string, mode: StatementMode, replica: boolean, maxConns: number, dialect = "postgres"): Promise<Opened> {
   const d = dialectOf(dialect);
   const base = env(d.env);
-  if (base === "") {
+  if (d.env !== "" && base === "") {
     throw new Error(`${d.env} is not set`);
   }
   const rep = d.replica;
