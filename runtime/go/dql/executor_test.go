@@ -732,3 +732,40 @@ func TestHandles(t *testing.T) {
 	}
 	var _ Reader = &ReadTx{}
 }
+
+// MySQL names no table in a check or not-null violation, so its rule is
+// found by name when one rule of the class has it.
+func TestTranslateByName(t *testing.T) {
+	m := &ErrorMap{
+		Codes: map[string]Class{"3819": ClassCheckViolation, "1048": ClassNotNullViolation},
+		Violations: map[Reported]Constraint{
+			{Catalog: "shop", Object: "users", Class: ClassCheckViolation, Name: "users_chk_1"}:  {Name: "shop.users.users_chk_1", Kind: ConstraintCheck},
+			{Catalog: "shop", Object: "users", Class: ClassNotNullViolation, Name: "email"}:      {Name: "shop.users.email", Kind: ConstraintNotNull},
+			{Catalog: "shop", Object: "users", Class: ClassNotNullViolation, Name: "name"}:       {Name: "shop.users.name", Kind: ConstraintNotNull},
+			{Catalog: "shop", Object: "posts", Class: ClassNotNullViolation, Name: "name"}:       {Name: "shop.posts.name", Kind: ConstraintNotNull},
+			{Catalog: "other", Object: "users", Class: ClassCheckViolation, Name: "users_chk_1"}: {Name: "other.users.users_chk_1", Kind: ConstraintCheck},
+			{Catalog: "shop", Schema: "app", Object: "t", Class: ClassCheckViolation, Name: "c"}: {Name: "shop.app.t.c", Kind: ConstraintCheck},
+		},
+	}
+	tr := func(n NativeError) error {
+		return m.translate(&fakeDriver{}, "mysql", &fakeNative{n}, "shop", "q", "main")
+	}
+	var cv *CheckViolation
+	if err := tr(NativeError{Code: "3819", Constraint: "users_chk_1", Detail: "d"}); !errors.As(err, &cv) || cv.Constraint.Name != "shop.users.users_chk_1" || cv.Detail != "d" {
+		t.Errorf("check %v", err)
+	}
+	if err := tr(NativeError{Code: "3819", Schema: "app", Constraint: "c"}); !errors.As(err, &cv) || cv.Constraint.Name != "shop.app.t.c" {
+		t.Errorf("check in a schema %v", err)
+	}
+	var nv *NotNullViolation
+	if err := tr(NativeError{Code: "1048", Column: "email"}); !errors.As(err, &nv) || nv.Column != "shop.users.email" || nv.Constraint.Name != "" {
+		t.Errorf("not null %v", err)
+	}
+	// Two tables have a not-null column name: the rule is unknown.
+	if err := tr(NativeError{Code: "1048", Column: "name"}); !errors.As(err, &nv) || nv.Column != "shop.name" || !nv.Constraint.Sensitive {
+		t.Errorf("ambiguous not null %v", err)
+	}
+	if err := tr(NativeError{Code: "3819", Schema: "app", Constraint: "users_chk_1"}); !errors.As(err, &cv) || cv.Constraint.Name != "shop.app.users_chk_1" {
+		t.Errorf("unknown check %v", err)
+	}
+}

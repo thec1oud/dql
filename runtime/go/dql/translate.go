@@ -79,6 +79,12 @@ func (m *ErrorMap) violation(n NativeError, class Class, o Origin, catalog strin
 		name = n.Column
 	}
 	c, known := m.Violations[Reported{Catalog: catalog, Schema: n.Schema, Object: object, Class: class, Name: name}]
+	if !known && object == "" {
+		var r Reported
+		if r, c, known = m.byName(catalog, n.Schema, class, name); known {
+			n.Schema, object = r.Schema, r.Object
+		}
+	}
 	if !known {
 		c = Constraint{Name: join(join(join(catalog, n.Schema), object), name), Sensitive: true}
 	}
@@ -102,4 +108,24 @@ func (m *ErrorMap) violation(n NativeError, class Class, o Origin, catalog strin
 		e.Constraint.Name = ""
 	}
 	return e
+}
+
+// byName finds the rule of a violation whose error names no table, as
+// MySQL's check and not-null violations do: the one rule of the class with
+// that name on the catalog, in the schema when the error names one. It
+// reports false when no rule or more than one has the name.
+func (m *ErrorMap) byName(catalog, schema string, class Class, name string) (Reported, Constraint, bool) {
+	var found Reported
+	var c Constraint
+	n := 0
+	for r, rc := range m.Violations {
+		if r.Catalog == catalog && r.Class == class && r.Name == name && (schema == "" || r.Schema == schema) {
+			found, c = r, rc
+			n++
+		}
+	}
+	if n != 1 {
+		return Reported{}, Constraint{}, false
+	}
+	return found, c, true
 }
