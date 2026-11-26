@@ -182,8 +182,21 @@ func (c *conn) Begin(ctx context.Context, o dql.TxOptions) error {
 	return nil
 }
 
-func (c *conn) Commit(ctx context.Context) error   { return c.end(ctx, "COMMIT") }
-func (c *conn) Rollback(ctx context.Context) error { return c.end(ctx, "ROLLBACK") }
+func (c *conn) Commit(ctx context.Context) error { return c.end(ctx, "COMMIT") }
+
+// Rollback rolls the transaction back. When the connection has broken, as
+// the driver breaks it when a statement's context ends, the server has
+// rolled the transaction back with it, so the rollback succeeds, and the
+// connection is discarded on release. A Postgres connection stays open
+// after a canceled statement, so this keeps a timed-out transaction's
+// outcome the same on both.
+func (c *conn) Rollback(ctx context.Context) error {
+	err := c.end(ctx, "ROLLBACK")
+	if err != nil && (&Driver{}).Broken(err) {
+		return nil
+	}
+	return err
+}
 
 // end ends the transaction. When the statement fails the transaction may
 // still be open, so the connection is discarded on release.

@@ -385,6 +385,34 @@ func TestTransactions(t *testing.T) {
 	c.Release()
 }
 
+// A rollback on a connection that broke succeeds: the server rolled the
+// transaction back as the connection ended. The connection is discarded.
+func TestRollbackBroken(t *testing.T) {
+	p, c := open(t, database(t), dql.ModePrepare)
+	ctx := context.Background()
+	if err := c.Begin(ctx, dql.TxOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	id := connID(t, c)
+	admin, err := sql.Open("mysql", os.Getenv(urlEnv))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer admin.Close()
+	if _, err := admin.Exec(fmt.Sprintf("KILL %d", id)); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Rollback(ctx); err != nil {
+		t.Fatal(err)
+	}
+	c.Release()
+	c, _ = p.Acquire(ctx)
+	defer c.Release()
+	if connID(t, c) == id {
+		t.Error("a broken connection was kept")
+	}
+}
+
 func exec1(c dql.Conn, q string) error {
 	_, err := c.Exec(context.Background(), q, nil, nil)
 	return err
