@@ -16,6 +16,7 @@ use (
 	./runtime/go/dqlmysql
 	./runtime/go/dqlotel
 	./runtime/go/dqlpgx
+	./runtime/go/dqlsqlite
 	./sources
 	./testkit
 )

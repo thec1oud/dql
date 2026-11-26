@@ -259,7 +259,11 @@ type Query struct {
 
 // Statement assembles q with args into the statement the executor runs.
 func (q *Query) Statement(t *Fragments, args Args) (Statement, error) {
-	a, err := t.Assemble(q.Plan, args, q.Sensitive, q.Types)
+	plan := q.Plan
+	if _, ok := t.Templates["value.default"]; !ok {
+		plan = omitUnset(plan, args)
+	}
+	a, err := t.Assemble(plan, args, q.Sensitive, q.Types)
 	if err != nil {
 		return Statement{}, fmt.Errorf("%w in query %s", err, q.Name)
 	}
