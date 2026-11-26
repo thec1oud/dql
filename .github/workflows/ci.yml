@@ -120,6 +120,57 @@ jobs:
       - name: test with 100% coverage
         run: bun run coverage
 
+  # The conformance scenarios on TypeScript (guide M5): the harness's own
+  # tests on Bun with 100% coverage, then every scenario on Node, Bun and
+  # Deno, each runtime's outcomes compared with Go's for identity.
+  ts-conformance:
+    runs-on: ubuntu-latest
+    env:
+      DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+      DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
+    defaults:
+      run:
+        working-directory: conformance/harness/ts
+    steps:
+      - uses: actions/checkout@v4
+      - name: start Postgres with a streaming replica
+        working-directory: .
+        run: docker compose -f conformance/replica/compose.yaml up -d --wait
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "2.9.6"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: build the TypeScript runtime
+        working-directory: runtime/ts
+        run: bun install --frozen-lockfile && bun run build
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - name: test with 100% coverage
+        run: bun run coverage
+      - name: Go's outcomes
+        working-directory: conformance/harness/go
+        run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/go" go test -count=1 -run TestScenarios .
+      - name: every scenario on Node
+        run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/node" node --import ./src/node.ts src/main.ts
+      - name: every scenario on Bun
+        run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/bun" bun src/main.ts
+      - name: every scenario on Deno
+        run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/deno" deno run -A src/main.ts
+      - name: the outcomes are identical to Go's
+        run: |
+          for runtime in node bun deno; do
+            echo "$runtime:"
+            bun src/check.ts "$RUNNER_TEMP/outcomes/go" "$RUNNER_TEMP/outcomes/$runtime"
+          done
+
   rules:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'

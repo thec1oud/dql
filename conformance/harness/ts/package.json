@@ -1,0 +1,23 @@
+{
+  "name": "dql-conformance-ts",
+  "private": true,
+  "type": "module",
+  "description": "The conformance harness for the TypeScript emitter: it runs conformance/scenarios against generated TypeScript on Node, Bun and Deno",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "../../../runtime/ts/node_modules/.bin/tsc -p tsconfig.json",
+    "test": "bun test",
+    "coverage": "bun test --coverage"
+  },
+  "dependencies": {
+    "pg": "8.23.1",
+    "yaml": "2.8.1"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "@types/node": "26.6.10",
+    "@types/pg": "8.23.1"
+  }
+}

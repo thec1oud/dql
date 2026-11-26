@@ -70,7 +70,7 @@ steps:
     scope: { tenant_id: $acme.id }
     key: { id: $post.id }
     expect:
-      error: { class: DecodeError, shape: post.full.flat, field: price, reason: off_type }
+      error: { class: DecodeError, shape: post.full.flat, field: price.amount, reason: off_type }
   - op: sql
     sql:
       postgres: UPDATE app.posts SET price = NULL, status = 'published', published_at = 'infinity'

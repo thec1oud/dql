@@ -14,9 +14,12 @@ var (
 	// goldenVariantdb is the go emitter's golden output for the conformance
 	// variants of the running example, which the conformance harness runs.
 	goldenVariantdb = filepath.Join("..", "..", "conformance", "harness", "go", "testdata", "variantdb")
+	// goldenVariantdbTS is the ts emitter's, which the TypeScript harness
+	// runs.
+	goldenVariantdbTS = filepath.Join("..", "..", "conformance", "harness", "ts", "variantdb")
 )
 
-// dql generate writes the conformance harness's variantdb package from the
+// dql generate writes the conformance harnesses' variantdb packages from the
 // running example with the design record's variants of it: soft delete
 // (§21.3), non-null array elements (§8.6) and custom read shapes (§14.8).
 func TestGenerateConformanceVariants(t *testing.T) {
@@ -32,20 +35,25 @@ func TestGenerateConformanceVariants(t *testing.T) {
 	if code, _, stderr := dql("generate", "-config", cfg); code != 0 || stderr != warning {
 		t.Fatalf("%d %q", code, stderr)
 	}
-	out := filepath.Join(filepath.Dir(cfg), "variantdb")
-	files, err := filepath.Glob(filepath.Join(out, "*.dql.go"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	want, _ := filepath.Glob(filepath.Join(goldenVariantdb, "*.dql.go"))
-	if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
-		t.Errorf("%d files, golden has %d", len(files), len(want))
-	}
-	for _, f := range files {
-		got, err := os.ReadFile(f)
+	for _, pkg := range []struct{ out, glob, golden string }{
+		{"variantdb", "*.dql.go", goldenVariantdb},
+		{filepath.Join("ts", "variantdb"), "*.dql.ts", goldenVariantdbTS},
+	} {
+		out := filepath.Join(filepath.Dir(cfg), pkg.out)
+		files, err := filepath.Glob(filepath.Join(out, pkg.glob))
 		if err != nil {
 			t.Fatal(err)
 		}
-		golden.Assert(t, filepath.Join(goldenVariantdb, filepath.Base(f)), got, serverText...)
+		want, _ := filepath.Glob(filepath.Join(pkg.golden, pkg.glob))
+		if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
+			t.Errorf("%s: %d files, golden has %d", pkg.out, len(files), len(want))
+		}
+		for _, f := range files {
+			got, err := os.ReadFile(f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			golden.Assert(t, filepath.Join(pkg.golden, filepath.Base(f)), got, serverText...)
+		}
 	}
 }

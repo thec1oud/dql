@@ -221,7 +221,8 @@ type Schema struct {
 
 // Target is what a scenario runs on: a schema's handle and its executor,
 // open on the database at DSN and its replica at ReplicaDSN, if any, and the
-// recorder of the executor's hook events.
+// recorder of the executor's hook events. Record, if set, receives each
+// step's outcome.
 type Target struct {
 	Schema     Schema
 	DB         any
@@ -229,6 +230,20 @@ type Target struct {
 	DSN        string
 	ReplicaDSN string
 	Events     *Recorder
+	Record     func(Outcome)
+}
+
+// Outcome is what one step produced, which the Go and TypeScript harnesses
+// both write so that CI can compare them (guide §6.3): the step, as its
+// index and those of the steps that hold it, from 1, joined by dots, its
+// result, normalized, or its error's fields that expectations match, and
+// the hook events it fired.
+type Outcome struct {
+	Step   string         `json:"step"`
+	Op     string         `json:"op"`
+	Result any            `json:"result"`
+	Error  map[string]any `json:"error,omitempty"`
+	Events []any          `json:"events"`
 }
 
 // Load reads every scenario file in dir, sorted by file name.
@@ -267,7 +282,8 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 		replay:    func(pause bool) error { return s.Replay(ctx, t.ReplicaDSN, pause) },
 		base:      ctx,
 		changes:   map[reflect.Type]map[string]reflect.Value{}, some: map[reflect.Type]reflect.Value{},
-		nested: map[reflect.Type]bool{}, shapes: reflect.ValueOf(s.Shapes), selects: map[string]reflect.Value{}}
+		nested: map[reflect.Type]bool{}, shapes: reflect.ValueOf(s.Shapes), selects: map[string]reflect.Value{},
+		record: t.Record}
 	for name, f := range s.Selects {
 		r.selects[norm(name)] = reflect.ValueOf(f)
 	}
@@ -283,6 +299,7 @@ func Run(ctx context.Context, sc Scenario, t Target) []string {
 	}
 	var problems []string
 	for i, st := range sc.Steps {
+		r.path = []int{i + 1}
 		for _, p := range r.step(st) {
 			problems = append(problems, fmt.Sprintf("%s step %d (%s): %s", sc.Name, i+1, st.Op, p))
 		}
@@ -329,6 +346,9 @@ type runner struct {
 	// shapes holds the schema's read shapes, and selects their Selects.
 	shapes  reflect.Value
 	selects map[string]reflect.Value
+	// record receives each step's outcome, and path is the step's place.
+	record func(Outcome)
+	path   []int
 }
 
 // changer is what every nested change type implements.
@@ -561,19 +581,22 @@ func (r *runner) operate(st Step) []string {
 	r.ctx = outer
 	end()
 	r.fired = r.events.since(mark)
-	return append(problems, r.compare(Step{Expect: st.Expect}, nil, nil)...)
+	return append(problems, r.compare(Step{Op: st.Op, Expect: st.Expect}, nil, nil)...)
 }
 
 // steps runs steps in order and returns their problems, each prefixed with
 // its step.
 func (r *runner) steps(steps []Step) []string {
 	var problems []string
+	path := r.path
 	for i, s := range steps {
+		r.path = append(slices.Clip(path), i+1)
 		ps, _ := r.run(s)
 		for _, p := range ps {
 			problems = append(problems, fmt.Sprintf("step %d (%s): %s", i+1, s.Op, p))
 		}
 	}
+	r.path = path
 	return problems
 }
 
@@ -609,7 +632,7 @@ func (r *runner) begin(st Step) []string {
 		}
 	}
 	r.fired = r.events.since(mark)
-	return append(problems, r.compare(Step{Expect: st.Expect}, nil, err)...)
+	return append(problems, r.compare(Step{Op: st.Op, Expect: st.Expect}, nil, err)...)
 }
 
 // convert runs a convert step.
@@ -708,7 +731,7 @@ func (r *runner) convert(st Step) []string {
 		r.saved[st.Save] = result
 	}
 	r.fired = nil
-	return r.compare(Step{Expect: expect}, result, err)
+	return r.compare(Step{Op: st.Op, Expect: expect}, result, err)
 }
 
 // call calls the step's method and returns its result, normalized, or its
@@ -926,9 +949,11 @@ func (r *runner) transaction(st Step) ([]string, error) {
 		inner = nil
 		outer := r.ctx
 		r.ctx = ctx
-		defer func() { r.ctx = outer }()
+		path := r.path
+		defer func() { r.ctx, r.path = outer, path }()
 		var err error
 		for i, s := range st.Steps {
+			r.path = append(slices.Clip(path), i+1)
 			ps, e := r.run(s)
 			if e != nil {
 				err = e
@@ -985,7 +1010,7 @@ func (r *runner) transaction(st Step) ([]string, error) {
 		delete(expect, "attempts")
 	}
 	r.fired = r.events.since(mark)
-	return append(problems, r.compare(Step{Expect: expect}, nil, err)...), err
+	return append(problems, r.compare(Step{Op: st.Op, Expect: expect}, nil, err)...), err
 }
 
 // args builds the method's arguments after its context.
@@ -1309,8 +1334,17 @@ func normalize(v any) any {
 // the step ran), events (the hook events it fired, in order), and error
 // (class, constraint, kind, field, misuse, for the runtime's errors of
 // misuse, a decode error's shape, reason and assertion, and hides, a value
-// the error's text must not show).
+// the error's text must not show). It records the step's outcome.
 func (r *runner) compare(st Step, result any, err error) []string {
+	if r.record != nil {
+		o := Outcome{Step: joinPath(r.path), Op: st.Op, Events: r.fired}
+		if err != nil {
+			o.Error = errorFields(err)
+		} else {
+			o.Result = result
+		}
+		r.record(o)
+	}
 	want, ok := st.Expect["error"]
 	if err != nil {
 		if !ok {
@@ -1455,7 +1489,10 @@ var misuses = map[string]error{
 	"UnknownSource": dql.ErrUnknownSource,
 }
 
-func (r *runner) compareError(want any, err error) []string {
+// errorFields are the fields of an error that expectations match: its
+// class, the misuse, the violated constraint, the first validation issue's
+// kind and field, and a decode error's shape, field, reason and assertion.
+func errorFields(err error) map[string]any {
 	got := map[string]any{"class": string(dql.ClassOf(err))}
 	for name, m := range misuses {
 		if errors.Is(err, m) {
@@ -1475,6 +1512,20 @@ func (r *runner) compareError(want any, err error) []string {
 	if errors.As(err, &de) {
 		got["shape"], got["field"], got["reason"], got["assertion"] = de.Shape, de.Field, string(de.Reason), de.Assertion
 	}
+	return got
+}
+
+// joinPath spells a step's place, as 3.1.
+func joinPath(path []int) string {
+	parts := make([]string, len(path))
+	for i, n := range path {
+		parts[i] = strconv.Itoa(n)
+	}
+	return strings.Join(parts, ".")
+}
+
+func (r *runner) compareError(want any, err error) []string {
+	got := errorFields(err)
 	w, ok := want.(map[string]any)
 	if !ok {
 		return []string{fmt.Sprintf("error expectation %v is not a map", want)}

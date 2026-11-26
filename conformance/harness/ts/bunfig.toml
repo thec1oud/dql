@@ -1,0 +1,10 @@
+# The harness is held to 100% coverage, as the Go harness is
+# (scripts/coverage.sh). The generated packages are the emitter's output,
+# which its own tests cover, and the entry points only call into src.
+[test]
+root = "test"
+timeout = 120000
+coverageThreshold = 1.0
+coverageSkipTestFiles = true
+coverageReporter = ["text"]
+coveragePathIgnorePatterns = ["**/dist/**", "**/shopdb/**", "**/variantdb/**"]

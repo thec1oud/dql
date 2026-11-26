@@ -3,7 +3,8 @@
 # elements (§8.6), the custom shapes of §14.8, rename, a Partial-derived
 # shape for Patch<Shape>, and email_invite, whose bound field has a check.
 # Its Go package is
-# conformance/harness/go/testdata/variantdb.
+# conformance/harness/go/testdata/variantdb, and its TypeScript package
+# conformance/harness/ts/variantdb.
 sources:
   - plugin: pg-live
     catalog: shop
@@ -59,3 +60,6 @@ emit:
     dialect: postgres
     package: variantdb
     out: variantdb
+  - plugin: ts
+    dialect: postgres
+    out: ts/variantdb
