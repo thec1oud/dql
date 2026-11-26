@@ -194,7 +194,7 @@ func (e *Emit) UnmarshalYAML(n *yaml.Node) error {
 }
 
 // shippedEmitters are the emitter plugins that ship with dql.
-var shippedEmitters = map[string]bool{"go": true}
+var shippedEmitters = map[string]bool{"go": true, "ts": true}
 
 // entryPlugin is the plugin a sources or emit entry names, or "".
 func entryPlugin(n *yaml.Node) string {
@@ -350,8 +350,9 @@ func (c *Config) Validate() []*irv1.Diagnostic {
 			add("config-dialect-unknown", "emit[%d] targets dialect %q; use one of %v", i, e.Dialect, Dialects)
 		}
 		if shippedEmitters[e.Plugin] {
+			// Every shipped emitter writes to out; only go names a package.
 			for _, f := range [][2]string{{"package", e.Package}, {"out", e.Out}} {
-				if f[1] == "" {
+				if f[1] == "" && (f[0] != "package" || e.Plugin == "go") {
 					add("config-setting-missing", "emit[%d] (%s) has no %s; set %s:", i, e.Plugin, f[0], f[0])
 				}
 			}

@@ -6,6 +6,7 @@ use (
 	./core
 	./dialects
 	./emitters/go
+	./emitters/ts
 	./plugin
 	./proto
 	./querysources

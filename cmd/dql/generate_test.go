@@ -139,8 +139,7 @@ func TestGenerateWritesTheBundle(t *testing.T) {
 	t.Setenv("SHOP_DATABASE_URL", shopURL)
 	out := filepath.Join(t.TempDir(), "bundle.json")
 	code, _, stderr := dql("generate", "-config", shopConfig(t, ""), "-bundle", out)
-	want := "dql generate: wrote the bundle to " + out + "\n" +
-		"dql generate: skipped emit[1] (ts): the ts emitter arrives in a later milestone\n"
+	want := "dql generate: wrote the bundle to " + out + "\n"
 	if code != 0 || stderr != want {
 		t.Fatalf("%d %q", code, stderr)
 	}
@@ -237,7 +236,7 @@ func TestGenerateFailures(t *testing.T) {
 				t.Errorf("%s: %d %q; want %q", c.name, code, stderr, w)
 			}
 		}
-		if strings.Contains(stderr, "skipped") {
+		if strings.Contains(stderr, "emit[") {
 			t.Errorf("%s: emit entries reported after a failure: %q", c.name, stderr)
 		}
 	}
