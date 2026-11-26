@@ -1,12 +1,12 @@
 // Write expressions, filtered writes and writes by key (design record §20).
 
-import type { Pred } from "./builder.js";
+import { type Pred, oneOf } from "./builder.js";
 import type { Row } from "./decode.js";
 import { ConcurrentModification, NotFound } from "./errors.js";
 import { type Reader, type Writer, bind } from "./executor.js";
 import { type Args, Expression, type Fragments, type Node, type Query, type Use, list, statementOf, use } from "./fragments.js";
-import { atomic, queryBulk } from "./large.js";
-import { type Statement, execute, queryOptional } from "./statement.js";
+import { atomic, queryBulk, written } from "./large.js";
+import { type Statement, execute, queryOptional, reread } from "./statement.js";
 import { throwIfIssues, type ValidationIssue } from "./validation.js";
 
 /** entity brands an assignment with the entity it writes. */
@@ -140,6 +140,16 @@ export function filtered<E>(q: Query, p: Pred<E>): Query {
  * within the dialect's parameter limit, all in one transaction.
  */
 export async function insertMany<T>(h: Writer, t: Fragments, q: Query, rows: readonly Args[], decode: (r: Row) => T): Promise<T[]> {
+  if (q.reread !== undefined) {
+    // Without RETURNING each row is inserted and read back on its own, so that its key comes back as its own last insert ID (§20.1).
+    return atomic(h, async (w) => {
+      const out: T[] = [];
+      for (const r of rows) {
+        out.push(await oneOf(w, statementOf(q, t, r), decode));
+      }
+      return out;
+    });
+  }
   const per = q.plan.reduce((n, node) => n + placeholders(node, false), 0);
   const fetched = await queryBulk(h, {
     rows: rows.length,
@@ -236,7 +246,7 @@ export async function missing(h: Reader, query: string, exists: Statement): Prom
  */
 export function versionedOne<T>(h: Writer, write: Statement, exists: Statement, decode: (r: Row) => T): Promise<T> {
   return atomic(h, async (w) => {
-    const r = await queryOptional(w, write);
+    const r = write[reread] === undefined ? await queryOptional(w, write) : await written(w, write);
     if (r === undefined) {
       throw await missing(w, write.query, exists);
     }

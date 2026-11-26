@@ -14,7 +14,7 @@
 
 import { isDeepStrictEqual } from "node:util";
 import { Row } from "./decode.js";
-import type { Conn, Driver, NativeError, Pool, Rows, Sent } from "./driver.js";
+import type { Conn, Driver, InsertResult, NativeError, Pool, Rows, Sent } from "./driver.js";
 import { DatabaseError } from "./errors.js";
 import { type Dialect, Executor, type ExecutorOptions } from "./executor.js";
 
@@ -34,6 +34,8 @@ export class Expectation {
   rows: Row[] = [];
   /** @internal How many rows a statement affected. */
   n = 0;
+  /** @internal The last insert ID a write reports. */
+  id = 0n;
   /** @internal */
   error: unknown;
   /** @internal */
@@ -57,6 +59,12 @@ export class Expectation {
   /** affected answers a statement that returns no rows with n affected. */
   affected(n: number): this {
     this.n = n;
+    return this;
+  }
+
+  /** insertId answers a write with id as the last insert ID, as MySQL's driver reports it (§20.1). */
+  insertId(id: bigint): this {
+    this.id = id;
     return this;
   }
 
@@ -186,6 +194,11 @@ class FakeConn implements Conn {
 
   async exec(s: Sent): Promise<number> {
     return this.call(s).n;
+  }
+
+  async execId(s: Sent): Promise<InsertResult> {
+    const x = this.call(s);
+    return { affected: x.n, id: x.id };
   }
 
   async begin(): Promise<void> {

@@ -2,8 +2,8 @@
 
 import { within } from "./context.js";
 import type { Row } from "./decode.js";
-import { type Reader, type Writer, bind } from "./executor.js";
-import { type Statement, execute, observed, queryAll, sent } from "./statement.js";
+import { type Reader, UsageError, type Writer, bind, writes } from "./executor.js";
+import { type Statement, execute, executeId, observed, queryAll, queryOptional, reread, sent } from "./statement.js";
 
 /**
  * iterate runs s and yields its rows as they arrive, holding its connection
@@ -127,6 +127,24 @@ export function atomic<T>(h: Writer, fn: (w: Writer) => Promise<T>): Promise<T> 
   const { executor, frame } = h[bind]();
   const run = () => executor.write((tx) => fn(tx));
   return frame === undefined ? run() : within({ frame }, run);
+}
+
+/**
+ * written runs s, a write whose row comes back by re-reading it (§20.1), in
+ * one transaction: h's, the one the context carries, or a new one. A write
+ * that affects no row, such as an insert-or-ignore that skips, returns none;
+ * otherwise the read finds the row by its key, filled from the last insert
+ * ID where the call left it out. h must be a Writer.
+ */
+export function written(h: Reader, s: Statement): Promise<Row | undefined> {
+  const back = s[reread];
+  if (back === undefined || !(writes in h)) {
+    throw new UsageError("read_only");
+  }
+  return atomic(h as Writer, async (w) => {
+    const { affected, id } = await executeId(w, s);
+    return affected === 0 ? undefined : queryOptional(w, back(id));
+  });
 }
 
 /** Bulk is a write of many rows, which splits into statements that each stay within the dialect's parameter limit (§25.2). */

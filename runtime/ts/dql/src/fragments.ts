@@ -4,7 +4,7 @@
 // and never quotes anything.
 
 import type { Consistency } from "./routing.js";
-import type { Statement } from "./statement.js";
+import { type Statement, reread } from "./statement.js";
 
 /** Placeholder is how a dialect writes the n-th placeholder (§16.2): $1 as Postgres does, ? as MySQL, MariaDB and SQLite do, or @p1 as SQL Server does. */
 export type Placeholder = "dollar" | "question" | "at";
@@ -249,17 +249,36 @@ export interface Query {
   readonly sensitive?: Readonly<Record<string, boolean>>;
   /** The database types of the named parameters, as the dialect names them; a list parameter's is its array type. */
   readonly types?: Readonly<Record<string, string>>;
+  /** Reads back the row a write returns on a dialect without RETURNING, after the write and in its transaction (§20.1): a plan over the write's own parameters. */
+  readonly reread?: readonly Node[];
+  /** The parameter the last insert ID fills when the call leaves it out. */
+  readonly generated?: string;
+}
+
+/** assembled assembles plan, one of q's, with args. */
+function assembled(q: Query, t: Fragments, plan: readonly Node[], args: Args): Assembled {
+  try {
+    return assemble(t, plan, args, q.sensitive, q.types);
+  } catch (e) {
+    throw new Error(`${(e as Error).message} in query ${q.name}`);
+  }
 }
 
 /** statementOf assembles q with args into the statement the executor runs. */
 export function statementOf(q: Query, t: Fragments, args: Args = {}): Statement {
-  let a: Assembled;
-  try {
-    a = assemble(t, q.plan, args, q.sensitive, q.types);
-  } catch (e) {
-    throw new Error(`${(e as Error).message} in query ${q.name}`);
-  }
+  const a = assembled(q, t, q.plan, args);
+  const back = q.reread;
   return {
+    ...(back === undefined
+      ? {}
+      : {
+          // The read runs as a write, in the write's transaction on the primary.
+          [reread]: (id: bigint): Statement => {
+            const g = q.generated;
+            const r = assembled(q, t, back, g !== undefined && !(g in args) ? { ...args, [g]: id } : args);
+            return { query: q.name, catalog: q.catalog, sql: r.sql, args: r.args, writes: true, atMostOne: true, kind: "select", sensitive: r.sensitive, types: r.types };
+          },
+        }),
     query: q.name,
     catalog: q.catalog,
     sql: a.sql,

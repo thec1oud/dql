@@ -2,11 +2,14 @@
 
 import { ambient } from "./context.js";
 import type { Row } from "./decode.js";
-import type { Conn, Sent } from "./driver.js";
+import { type Conn, type InsertResult, type Sent, hasInsertId } from "./driver.js";
 import { NotFound, TooManyRows, classOf } from "./errors.js";
 import { type Executor, type Frame, type Reader, type SourcePool, type Writer, UsageError, bind } from "./executor.js";
 import { type QueryEvent, noLog, params } from "./hooks.js";
 import { Consistency } from "./routing.js";
+
+/** reread is the key of the read back of the row a write returns, on a dialect without RETURNING (§20.1): it assembles the read with the last insert ID. */
+export const reread: unique symbol = Symbol("dql.reread");
 
 /** rawSource is the key of the source a raw statement names in place of its catalog's (§22.1). */
 export const rawSource: unique symbol = Symbol("dql.rawSource");
@@ -43,6 +46,8 @@ export interface Statement {
   readonly noLog?: boolean;
   /** The source a raw statement runs on in place of the catalog's. */
   readonly [rawSource]?: string;
+  /** Reads back the row the write returns, given the last insert ID, on a dialect without RETURNING (§20.1). */
+  readonly [reread]?: (id: bigint) => Statement;
 }
 
 /** @internal Bound is a statement's executor, frame and source. */
@@ -231,6 +236,17 @@ export function execute(h: Writer, s: Statement): Promise<number> {
   return observed(h, s, true, (n) => n, async (b, c) => {
     try {
       return await c.exec(sent(s));
+    } catch (err) {
+      throw b.e.translate(err, s.catalog, s.query, b.src);
+    }
+  });
+}
+
+/** executeId runs s, which writes, and returns how many rows it affected and, on a connection that reports it, the last insert ID. */
+export function executeId(h: Writer, s: Statement): Promise<InsertResult> {
+  return observed(h, s, true, (r) => r.affected, async (b, c) => {
+    try {
+      return hasInsertId(c) ? await c.execId(sent(s)) : { affected: await c.exec(sent(s)), id: 0n };
     } catch (err) {
       throw b.e.translate(err, s.catalog, s.query, b.src);
     }
