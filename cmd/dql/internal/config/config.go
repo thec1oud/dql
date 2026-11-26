@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strings"
 
 	"google.golang.org/protobuf/types/known/structpb"
 	"gopkg.in/yaml.v3"
@@ -124,8 +125,9 @@ func (c *Config) CustomShapes() []shapes.Custom {
 }
 
 // Source is one source plugin invocation. Which settings apply depends on
-// the plugin: pg-live reads a database through connection, and dpg-snapshot
-// reads a snapshot file. A shipped plugin's entry holds only the keys below;
+// the plugin: pg-live and mysql-live read a database through connection,
+// and dpg-snapshot reads a snapshot file. A MySQL database is a catalog with
+// one namespace, so mysql-live reads no namespaces. A shipped plugin's entry holds only the keys below;
 // any other plugin's may hold keys of its own, which the plugin validates.
 type Source struct {
 	Plugin     string `yaml:"plugin"`
@@ -156,6 +158,7 @@ func (s *Source) UnmarshalYAML(n *yaml.Node) error {
 var shipped = map[string]struct{ required, unused []string }{
 	"pg-live":      {required: []string{"catalog", "connection"}, unused: []string{"snapshot"}},
 	"dpg-snapshot": {required: []string{"snapshot"}, unused: []string{"connection"}},
+	"mysql-live":   {required: []string{"catalog", "connection"}, unused: []string{"snapshot", "namespaces", "default-namespace"}},
 }
 
 // setting returns the value of the setting named as dql.yaml writes it.
@@ -165,6 +168,10 @@ func (s Source) setting(name string) string {
 		return s.Catalog
 	case "connection":
 		return s.Connection
+	case "namespaces":
+		return strings.Join(s.Namespaces, ",")
+	case "default-namespace":
+		return s.DefaultNamespace
 	default:
 		return s.Snapshot
 	}

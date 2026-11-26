@@ -1,0 +1,17 @@
+# A MySQL server on port 3306 for the tests of mysql-live and of the MySQL
+# dialect (guide M6). MYSQL_VERSION picks the release, 8.4 by default.
+#
+#   docker compose -f conformance/mysql/compose.yaml up -d --wait
+#   DQL_TEST_MYSQL_URL='root:root@tcp(localhost:3306)/'
+services:
+  mysql:
+    image: mysql:${MYSQL_VERSION:-8.4}
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports: ["3306:3306"]
+    healthcheck:
+      # Over TCP, which the server initialization starts does not listen on.
+      test: mysqladmin ping -h 127.0.0.1 -uroot -proot
+      interval: 2s
+      timeout: 5s
+      retries: 60

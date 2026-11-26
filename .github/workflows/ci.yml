@@ -41,10 +41,13 @@ jobs:
     env:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
+      DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres with a streaming replica
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
+      - name: start MySQL
+        run: docker compose -f conformance/mysql/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"
@@ -75,12 +78,15 @@ jobs:
     env:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
+      DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres ${{ matrix.postgres }} with a streaming replica
         env:
           POSTGRES_VERSION: ${{ matrix.postgres }}
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
+      - name: start MySQL
+        run: docker compose -f conformance/mysql/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"

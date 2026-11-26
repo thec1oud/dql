@@ -210,3 +210,10 @@ func (p *reParser) number() (int, bool) {
 	n, err := strconv.Atoi(string(p.src[start:p.pos]))
 	return n, err == nil && n <= 255
 }
+
+// PortableRegex reports whether a regular expression lies inside the
+// portable subset of §10.2, by the conservative rules of portableRegex,
+// which hold for MySQL's ICU expressions as well as Postgres's AREs: both
+// read the subset's constructs alike, and both match \d, \w and \s beyond
+// ASCII.
+func PortableRegex(re string) bool { return portableRegex(re) }

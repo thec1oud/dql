@@ -1,0 +1,519 @@
+{
+  "database": {
+    "flavor": "mysql",
+    "characterSet": "utf8mb4",
+    "collation": "utf8mb4_0900_ai_ci",
+    "collations": [
+      {
+        "name": "utf8mb4_0900_ai_ci"
+      }
+    ]
+  },
+  "tables": [
+    {
+      "name": "post_tags",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_0900_ai_ci",
+      "columns": [
+        {
+          "name": "post_id",
+          "dataType": "bigint",
+          "columnType": "bigint"
+        },
+        {
+          "name": "tag_id",
+          "dataType": "bigint",
+          "columnType": "bigint"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "post_tags_tag_id_fkey",
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "tag_id"
+            }
+          ]
+        },
+        {
+          "name": "PRIMARY",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "post_id"
+            },
+            {
+              "column": "tag_id"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "post_tags_post_id_fkey",
+          "columns": [
+            "post_id"
+          ],
+          "refDb": "DATABASE",
+          "refTable": "posts",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        },
+        {
+          "name": "post_tags_tag_id_fkey",
+          "columns": [
+            "tag_id"
+          ],
+          "refDb": "DATABASE",
+          "refTable": "tags",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ]
+    },
+    {
+      "name": "posts",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_0900_ai_ci",
+      "columns": [
+        {
+          "name": "id",
+          "dataType": "bigint",
+          "columnType": "bigint",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "author_id",
+          "dataType": "bigint",
+          "columnType": "bigint"
+        },
+        {
+          "name": "editor_id",
+          "dataType": "bigint",
+          "columnType": "bigint",
+          "nullable": true
+        },
+        {
+          "name": "title",
+          "dataType": "text",
+          "columnType": "text",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        },
+        {
+          "name": "slug",
+          "dataType": "text",
+          "columnType": "text",
+          "nullable": true,
+          "extra": "STORED GENERATED",
+          "generation": "lower(replace(`title`,_utf8mb4\\' \\',_utf8mb4\\'-\\'))",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        },
+        {
+          "name": "status",
+          "dataType": "enum",
+          "columnType": "enum('draft','published','archived')",
+          "default": "draft",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        },
+        {
+          "name": "published_at",
+          "dataType": "timestamp",
+          "columnType": "timestamp(6)",
+          "nullable": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "posts_published_check",
+          "clause": "((`published_at` is null) or (`status` \u003c\u003e _utf8mb4\\'draft\\'))",
+          "enforced": true
+        },
+        {
+          "name": "posts_title_check",
+          "clause": "(char_length(`title`) between 1 and 200)",
+          "enforced": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "posts_author_id_fkey",
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "author_id"
+            }
+          ]
+        },
+        {
+          "name": "posts_editor_id_fkey",
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "editor_id"
+            }
+          ]
+        },
+        {
+          "name": "PRIMARY",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "id"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "posts_author_id_fkey",
+          "columns": [
+            "author_id"
+          ],
+          "refDb": "DATABASE",
+          "refTable": "users",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        },
+        {
+          "name": "posts_editor_id_fkey",
+          "columns": [
+            "editor_id"
+          ],
+          "refDb": "DATABASE",
+          "refTable": "users",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ]
+    },
+    {
+      "name": "profiles",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_0900_ai_ci",
+      "columns": [
+        {
+          "name": "user_id",
+          "dataType": "bigint",
+          "columnType": "bigint"
+        },
+        {
+          "name": "bio",
+          "dataType": "text",
+          "columnType": "text",
+          "nullable": true,
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        },
+        {
+          "name": "birthday",
+          "dataType": "date",
+          "columnType": "date",
+          "nullable": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PRIMARY",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "user_id"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "profiles_user_id_fkey",
+          "columns": [
+            "user_id"
+          ],
+          "refDb": "DATABASE",
+          "refTable": "users",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ]
+    },
+    {
+      "name": "published_posts",
+      "view": true,
+      "columns": [
+        {
+          "name": "id",
+          "dataType": "bigint",
+          "columnType": "bigint"
+        },
+        {
+          "name": "title",
+          "dataType": "text",
+          "columnType": "text",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        },
+        {
+          "name": "author_id",
+          "dataType": "bigint",
+          "columnType": "bigint"
+        },
+        {
+          "name": "published_at",
+          "dataType": "timestamp",
+          "columnType": "timestamp(6)",
+          "nullable": true
+        }
+      ],
+      "viewDef": {
+        "definition": "select `DATABASE`.`posts`.`id` AS `id`,`DATABASE`.`posts`.`title` AS `title`,`DATABASE`.`posts`.`author_id` AS `author_id`,`DATABASE`.`posts`.`published_at` AS `published_at` from `DATABASE`.`posts` where (`DATABASE`.`posts`.`status` = 'published')",
+        "updatable": true,
+        "securityType": "DEFINER",
+        "checkOption": "NONE",
+        "reads": [
+          "DATABASE.posts"
+        ]
+      }
+    },
+    {
+      "name": "tags",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_0900_ai_ci",
+      "columns": [
+        {
+          "name": "id",
+          "dataType": "bigint",
+          "columnType": "bigint",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "name",
+          "dataType": "varchar",
+          "columnType": "varchar(200)",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        }
+      ],
+      "checks": [
+        {
+          "name": "tags_name_check",
+          "clause": "regexp_like(`name`,_utf8mb4\\'^[a-z0-9]+(-[a-z0-9]+)*$\\',_utf8mb4\\'c\\')",
+          "enforced": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PRIMARY",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "id"
+            }
+          ]
+        },
+        {
+          "name": "tags_name_key",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "name"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenants",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_0900_ai_ci",
+      "columns": [
+        {
+          "name": "id",
+          "dataType": "char",
+          "columnType": "char(36)",
+          "default": "uuid()",
+          "extra": "DEFAULT_GENERATED",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci",
+          "comment": "@as(uuid)"
+        },
+        {
+          "name": "name",
+          "dataType": "text",
+          "columnType": "text",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PRIMARY",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "id"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "users",
+      "engine": "InnoDB",
+      "collation": "utf8mb4_0900_ai_ci",
+      "columns": [
+        {
+          "name": "id",
+          "dataType": "bigint",
+          "columnType": "bigint",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "tenant_id",
+          "dataType": "char",
+          "columnType": "char(36)",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci",
+          "comment": "@bound @as(uuid)"
+        },
+        {
+          "name": "email",
+          "dataType": "varchar",
+          "columnType": "varchar(320)",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        },
+        {
+          "name": "display_name",
+          "dataType": "varchar",
+          "columnType": "varchar(80)",
+          "nullable": true,
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci"
+        },
+        {
+          "name": "password_hash",
+          "dataType": "text",
+          "columnType": "text",
+          "characterSet": "utf8mb4",
+          "collation": "utf8mb4_0900_ai_ci",
+          "comment": "@write-only @sensitive"
+        },
+        {
+          "name": "created_at",
+          "dataType": "timestamp",
+          "columnType": "timestamp(6)",
+          "default": "CURRENT_TIMESTAMP(6)",
+          "extra": "DEFAULT_GENERATED",
+          "comment": "@immutable"
+        },
+        {
+          "name": "updated_at",
+          "dataType": "timestamp",
+          "columnType": "timestamp(6)",
+          "default": "CURRENT_TIMESTAMP(6)",
+          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP(6)"
+        },
+        {
+          "name": "version",
+          "dataType": "int",
+          "columnType": "int",
+          "default": "1",
+          "comment": "@version"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "PRIMARY",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "id"
+            }
+          ]
+        },
+        {
+          "name": "users_tenant_email_key",
+          "unique": true,
+          "type": "BTREE",
+          "visible": true,
+          "parts": [
+            {
+              "column": "tenant_id"
+            },
+            {
+              "column": "email"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "name": "users_tenant_id_fkey",
+          "columns": [
+            "tenant_id"
+          ],
+          "refDb": "DATABASE",
+          "refTable": "tenants",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ]
+    }
+  ],
+  "routines": [
+    {
+      "name": "post_score",
+      "type": "FUNCTION",
+      "comment": "@public",
+      "returns": "decimal(65,30)",
+      "parameters": [
+        {
+          "name": "p_id",
+          "type": "bigint"
+        }
+      ],
+      "deterministic": true,
+      "dataAccess": "READS SQL DATA",
+      "securityType": "DEFINER",
+      "definition": "RETURN 0"
+    }
+  ]
+}

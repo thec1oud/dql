@@ -25,6 +25,7 @@ import (
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	pgqueries "github.com/thec1oud/dql/querysources/postgres"
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
+	"github.com/thec1oud/dql/sources/mysqllive"
 	"github.com/thec1oud/dql/sources/pglive"
 )
 
@@ -34,6 +35,9 @@ var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 	pglive.Name: func(_ *config.Config, s config.Source) plugin.Plugin {
 		return pglive.New(pglive.Settings{Catalog: s.Catalog, Connection: s.Connection,
 			Namespaces: s.Namespaces, DefaultNamespace: s.DefaultNamespace})
+	},
+	mysqllive.Name: func(_ *config.Config, s config.Source) plugin.Plugin {
+		return mysqllive.New(mysqllive.Settings{Catalog: s.Catalog, Connection: s.Connection})
 	},
 	dpgsnapshot.Name: func(c *config.Config, s config.Source) plugin.Plugin {
 		return dpgsnapshot.New(dpgsnapshot.Settings{Snapshot: c.Resolve(s.Snapshot), Catalog: s.Catalog,

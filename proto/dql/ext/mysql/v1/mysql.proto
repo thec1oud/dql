@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+// MySQL and MariaDB objects the core does not model, carried losslessly as
+// typed extensions in google.protobuf.Any (design record §6.2, §6.3). Their
+// type URLs use the prefix "type.dql.dev/". The core passes them through
+// unchanged.
+package dql.ext.mysql.v1;
+
+import "dql/ir/v1/names.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ext/mysql/v1;mysqlextv1";
+
+// The server a catalog was read from, and the database's defaults.
+message Database {
+  // "mysql" or "mariadb".
+  string flavor = 1;
+  string default_character_set = 2;
+  string default_collation = 3;
+}
+
+// The raw text of a comment, kept beside the annotations read from it (§7.5).
+message Comment {
+  string text = 1;
+}
+
+// A table's storage options.
+message TableOptions {
+  string engine = 1;
+  string collation = 2;
+  // CREATE_OPTIONS as information_schema prints it.
+  string create_options = 3;
+}
+
+// A view's definition and properties.
+message ViewDefinition {
+  string definition = 1;
+  // MERGE, TEMPTABLE or UNDEFINED.
+  string algorithm = 2;
+  bool updatable = 3;
+  // DEFINER or INVOKER.
+  string security_type = 4;
+  // NONE, LOCAL or CASCADED.
+  string check_option = 5;
+}
+
+// A column's character set, when the column has one.
+message ColumnCharset {
+  string character_set = 1;
+}
+
+// A non-unique index (§6.2), or the index behind a uniqueness fact.
+message Index {
+  string name = 1;
+  // BTREE, HASH, FULLTEXT or SPATIAL.
+  string type = 2;
+  repeated IndexPart parts = 3;
+  bool visible = 4;
+  string comment = 5;
+}
+
+// One element of an index: a column, a column prefix or an expression.
+message IndexPart {
+  string column = 1;
+  // The prefix length in characters or bytes, 0 for the whole column.
+  uint32 prefix = 2;
+  string expression = 3;
+  bool descending = 4;
+}
+
+message Trigger {
+  string name = 1;
+  // BEFORE or AFTER.
+  string timing = 2;
+  // INSERT, UPDATE or DELETE.
+  string event = 3;
+  uint32 order = 4;
+  string statement = 5;
+}
+
+// A routine that is not public (§6.5), carried whole.
+message Routine {
+  string name = 1;
+  // FUNCTION or PROCEDURE.
+  string type = 2;
+  string definition = 3;
+  string comment = 4;
+}
+
+// A function's properties beyond its signature.
+message RoutineProperties {
+  bool deterministic = 1;
+  // CONTAINS SQL, NO SQL, READS SQL DATA or MODIFIES SQL DATA.
+  string data_access = 2;
+  // DEFINER or INVOKER.
+  string security_type = 3;
+  string definition = 4;
+}
+
+// The privileges a grantee holds on an object.
+message Grant {
+  string grantee = 1;
+  string privilege = 2;
+  bool grantable = 3;
+}
+
+// The sequence-like counter of an AUTO_INCREMENT column.
+message AutoIncrement {
+  dql.ir.v1.QualifiedName column = 1;
+}

@@ -10,10 +10,16 @@
 # The routing tests also need a streaming replica of that server, named by
 # DQL_TEST_POSTGRES_REPLICA_URL; conformance/replica/compose.yaml starts
 # both. Without it they are skipped, and coverage falls short.
+#
+# The mysql-live tests run against a MySQL 8.4 server named by
+# DQL_TEST_MYSQL_URL, a go-sql-driver/mysql DSN without a database for a user
+# that may create and drop databases (such as root:root@tcp(localhost:3306)/);
+# conformance/mysql/compose.yaml starts one.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 : "${DQL_TEST_POSTGRES_URL:?set DQL_TEST_POSTGRES_URL to a Postgres 16 server URL; the pg-live tests need one}"
+: "${DQL_TEST_MYSQL_URL:?set DQL_TEST_MYSQL_URL to a MySQL 8.4 server DSN; the mysql-live tests need one}"
 
 out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
