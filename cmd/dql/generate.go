@@ -27,6 +27,7 @@ import (
 	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
 	myqueries "github.com/thec1oud/dql/querysources/mysql"
 	pgqueries "github.com/thec1oud/dql/querysources/postgres"
+	litequeries "github.com/thec1oud/dql/querysources/sqlite"
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
 	"github.com/thec1oud/dql/sources/mysqllive"
 	"github.com/thec1oud/dql/sources/pglive"
@@ -71,6 +72,7 @@ var dialects = map[irv1.Dialect]func() plugin.Plugin{
 var querySources = map[irv1.Dialect]func() plugin.Plugin{
 	irv1.Dialect_DIALECT_POSTGRES: func() plugin.Plugin { return pgqueries.New() },
 	irv1.Dialect_DIALECT_MYSQL:    func() plugin.Plugin { return myqueries.New() },
+	irv1.Dialect_DIALECT_SQLITE:   func() plugin.Plugin { return litequeries.New() },
 }
 
 // emitters are the shipped emitter plugins, which run in-process (ADR 0002).
