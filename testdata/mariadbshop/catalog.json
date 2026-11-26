@@ -16,7 +16,7 @@
       "provenance": {
         "source": "mysql-live",
         "sourceVersion": "1.0.0",
-        "inputFingerprint": "sha256:14e38a3d859eed5030f70bcf8f017f65d62682dcc63dccdc97183f49ba218ed0",
+        "inputFingerprint": "sha256:99b2056d6b0ff3abf67e37ee23139719ec34e79caaf3b7e7c8ca27458989ddd0",
         "fidelity": "SOURCE_FIDELITY_FULL"
       },
       "namespaces": [
@@ -2258,7 +2258,7 @@
               "extensions": [
                 {
                   "@type": "type.dql.dev/dql.ext.mysql.v1.ViewDefinition",
-                  "definition": "select `dql_test_1999_33361_3`.`posts`.`id` AS `id`,`dql_test_1999_33361_3`.`posts`.`title` AS `title`,`dql_test_1999_33361_3`.`posts`.`author_id` AS `author_id`,`dql_test_1999_33361_3`.`posts`.`published_at` AS `published_at` from `dql_test_1999_33361_3`.`posts` where `dql_test_1999_33361_3`.`posts`.`status` = 'published'",
+                  "definition": "select `dql_test_17261_1483_2`.`posts`.`id` AS `id`,`dql_test_17261_1483_2`.`posts`.`title` AS `title`,`dql_test_17261_1483_2`.`posts`.`author_id` AS `author_id`,`dql_test_17261_1483_2`.`posts`.`published_at` AS `published_at` from `dql_test_17261_1483_2`.`posts` where `dql_test_17261_1483_2`.`posts`.`status` = 'published'",
                   "updatable": true,
                   "securityType": "DEFINER",
                   "checkOption": "NONE"
@@ -17552,6 +17552,10 @@
         {
           "id": "rel.users.tenant",
           "template": "EXISTS (SELECT 1 FROM `tenants` WHERE `tenants`.`id` = `users`.`tenant_id`{and})"
+        },
+        {
+          "id": "reread.from",
+          "template": "{0} >= {1} AND MOD({0} - {2}, @@SESSION.auto_increment_increment) = 0"
         },
         {
           "id": "select.distinct",

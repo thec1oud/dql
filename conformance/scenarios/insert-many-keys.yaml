@@ -1,0 +1,46 @@
+scenario: insert-many-keys
+schema: shop
+# InsertMany returns each Draft's Full in order, with the key the database
+# generated (design record §20.1, §25.2). Where rows are re-read (MySQL),
+# a statement's rows come back at once by their generated keys, unless a
+# Draft sets its key, when each row is inserted and read on its own.
+# posts.id is an identity by default, which a Draft may set.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert_many
+    scope: { tenant_id: $acme.id }
+    input:
+      - { author_id: $ann.id, title: a }
+      - { author_id: $ann.id, title: b, status: published, published_at: "2026-01-01T00:00:00Z" }
+      - { author_id: $ann.id, title: c }
+    expect:
+      rows:
+        - { title: a, status: draft, published_at: null }
+        - { title: b, status: published }
+        - { title: c, status: draft }
+  # A Draft that sets its key keeps it, beside keys the database generates.
+  - op: posts.insert_many
+    scope: { tenant_id: $acme.id }
+    input:
+      - { author_id: $ann.id, title: d }
+      - { id: 900000, author_id: $ann.id, title: e }
+      - { author_id: $ann.id, title: f }
+    expect:
+      rows:
+        - { title: d }
+        - { id: 900000, title: e }
+        - { title: f }
+  # Rows past one statement's parameters split into several, each read back.
+  - op: posts.insert_many
+    scope: { tenant_id: $acme.id }
+    input: { generate: { count: 20000, row: { author_id: $ann.id, title: "p-$i" } } }
+    expect: { count: 20000 }
+  - op: posts.count
+    scope: { tenant_id: $acme.id }
+    expect: { value: 20006 }
