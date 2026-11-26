@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
 
 	"github.com/thec1oud/dql/runtime/go/dql"
@@ -19,10 +20,22 @@ import (
 // root is the repository root, which schemas' DDL paths are relative to.
 var root = filepath.Join("..", "..", "..")
 
+// replicas are, by the URLEnv of a schema's server, the variable naming a
+// replica of that server and how to find a database's copy there:
+// DQL_TEST_POSTGRES_REPLICA_URL's streaming replica of
+// DQL_TEST_POSTGRES_URL's server, and DQL_TEST_MYSQL_REPLICA_URL's GTID
+// replica of DQL_TEST_MYSQL_URL's.
+var replicas = map[string]struct {
+	env string
+	of  func(t *testing.T, dsn, base string) string
+}{
+	"DQL_TEST_POSTGRES_URL": {"DQL_TEST_POSTGRES_REPLICA_URL", replicaOf},
+	"DQL_TEST_MYSQL_URL":    {"DQL_TEST_MYSQL_REPLICA_URL", replicaOfMySQL},
+}
+
 // open creates a database of the schema on the server its URLEnv names and
-// opens its handle, with the database's copy on the server of
-// DQL_TEST_POSTGRES_REPLICA_URL, a streaming replica of
-// DQL_TEST_POSTGRES_URL's, as its replica when replica is set, and at most
+// opens its handle, with the database's copy on its server's replica (see
+// replicas) as its replica when replica is set, and at most
 // maxConns connections to the primary, 0 meaning the schema's default,
 // sending statements in mode. Without that server, a test that needs it is
 // skipped.
@@ -33,9 +46,10 @@ func open(t *testing.T, s Schema, replica bool, maxConns int, mode dql.Statement
 	if base == "" {
 		t.Fatal(s.URLEnv + " is not set")
 	}
-	replicaBase := os.Getenv("DQL_TEST_POSTGRES_REPLICA_URL")
+	rep := replicas[s.URLEnv]
+	replicaBase := os.Getenv(rep.env)
 	if replica && replicaBase == "" {
-		t.Skip("DQL_TEST_POSTGRES_REPLICA_URL is not set")
+		t.Skip(rep.env + " is not set")
 	}
 	var ddl []string
 	for _, f := range s.DDL {
@@ -46,19 +60,19 @@ func open(t *testing.T, s Schema, replica bool, maxConns int, mode dql.Statement
 		t.Fatal(err)
 	}
 	t.Cleanup(drop)
-	var replicas []string
+	var replicaDSNs []string
 	if replica {
-		replicas = append(replicas, replicaOf(t, dsn, replicaBase))
+		replicaDSNs = append(replicaDSNs, rep.of(t, dsn, replicaBase))
 	}
 	rec := &Recorder{}
-	db, exec, err := s.Open(ctx, dsn, replicas, maxConns, mode, dql.WithHooks(rec.Hooks()))
+	db, exec, err := s.Open(ctx, dsn, replicaDSNs, maxConns, mode, dql.WithHooks(rec.Hooks()))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(exec.Close)
 	target := Target{Schema: s, DB: db, Exec: exec, DSN: dsn, Events: rec}
 	if replica {
-		target.ReplicaDSN = replicas[0]
+		target.ReplicaDSN = replicaDSNs[0]
 	}
 	return target
 }
@@ -170,4 +184,41 @@ func writeOutcomes(t *testing.T, file string, outcomes []Outcome) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+// replicaOfMySQL returns the DSN of the database at dsn on the MySQL replica
+// at base, once the replica has applied everything the primary had executed
+// when it was called: the database's creation and its DDL.
+func replicaOfMySQL(t *testing.T, dsn, base string) string {
+	t.Helper()
+	ctx := context.Background()
+	d, err := mysql.ParseDSN(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := mysql.ParseDSN(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	primary, err := openMySQL(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer primary.Close()
+	var executed string
+	if err := primary.QueryRowContext(ctx, "SELECT @@GLOBAL.gtid_executed").Scan(&executed); err != nil {
+		t.Fatal(err)
+	}
+	// Not on the database, which the replica may not have created yet.
+	replica, err := openMySQL(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer replica.Close()
+	var timedOut int
+	if err := replica.QueryRowContext(ctx, "SELECT WAIT_FOR_EXECUTED_GTID_SET(?, 10)", executed).Scan(&timedOut); err != nil || timedOut != 0 {
+		t.Fatalf("the replica has not applied %s: %v", executed, err)
+	}
+	cfg.DBName = d.DBName
+	return cfg.FormatDSN()
 }

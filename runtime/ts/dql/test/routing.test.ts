@@ -168,6 +168,11 @@ describe("read consistency (§22.5)", () => {
       // One that has serves.
       c.replayed = { r3: true };
       expect(await served(e, ryw)).toBe("r3");
+      // A server without a boolean type says 1, as a bigint or a number.
+      c.replayed = { r3: 1n };
+      expect(await served(e, ryw)).toBe("r3");
+      c.replayed = { r3: 1 };
+      expect(await served(e, ryw)).toBe("r3");
       // A wait gives a replica time to replay.
       c.replayed = {};
       setTimeout(() => {

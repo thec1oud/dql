@@ -84,9 +84,7 @@ const mysqlServer: Server = {
   exec: mysql.run,
   inject: mysql.inject,
   terminate: mysql.terminate,
-  async replay() {
-    throw new Error("the MySQL schemas have no replica");
-  },
+  replay: mysql.replay,
 };
 
 /** newUuid makes a tenant's key, which MySQL's shop fills with an expression default that a Draft must give. */
@@ -119,7 +117,7 @@ async function schema(server: Server, ddl: string[], module: Record<string, unkn
           sources: {
             main: {
               primary: { dsn: server.url(dsn), maxConns: maxConns === 0 ? 4 : maxConns },
-              replicas: replicas.map((r) => ({ dsn: r, maxConns: 4 })),
+              replicas: replicas.map((r) => ({ dsn: server.url(r), maxConns: 4 })),
               maxLag,
               statementMode: mode,
             },

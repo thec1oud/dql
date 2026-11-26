@@ -120,6 +120,10 @@ func TestInvoke(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if p := res.GetBundle().GetCapabilities(); p.GetReplication() != nil || len(p.GetConsistencyLevels()) != 2 ||
+		p.GetConsistencyLevels()[1] != irv1.ConsistencyLevel_CONSISTENCY_ANY {
+		t.Errorf("MariaDB's replication: %v %v", p.GetReplication(), p.GetConsistencyLevels())
+	}
 	for _, f := range res.GetBundle().GetQueries().GetFragments().GetFragments() {
 		if f.GetId() == "lock.share" && f.GetTemplate() != " LOCK IN SHARE MODE" {
 			t.Errorf("lock.share on MariaDB: %q", f.GetTemplate())

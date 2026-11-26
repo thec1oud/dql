@@ -91,17 +91,20 @@ steps:
     or_fail: true
     expect: { error: { class: ReplicaUnavailable } }
   # Past the source's max lag, 1s here, the replica leaves rotation, and
-  # reads that would use it go to the primary.
+  # reads that would use it go to the primary. The rows are ordered, as a
+  # table keyed by UUIDs returns them in no fixed order on MySQL.
   - op: sleep
     duration: 2500ms
   - op: select
     from: tenants
     shape: tenant_full
+    order: [{ column: name }]
     consistency: any
     expect: { events: [{ replica: false }] }
   - op: select
     from: tenants
     shape: tenant_full
+    order: [{ column: name }]
     consistency: bounded
     bound: 10s
     expect: { events: [{ replica: false }] }
@@ -121,5 +124,6 @@ steps:
   - op: select
     from: tenants
     shape: tenant_full
+    order: [{ column: name }]
     consistency: any
     expect: { events: [{ replica: true }] }

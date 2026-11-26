@@ -525,7 +525,8 @@ export class Executor implements Writer {
         return conn;
       }
       try {
-        if ((await first(conn, (this.dialect.replication as Replication).replayed, [positions], signal)) === true) {
+        const replayed = await first(conn, (this.dialect.replication as Replication).replayed, [positions], signal);
+        if (replayed === true || replayed === 1n || replayed === 1) {
           return conn;
         }
       } catch {

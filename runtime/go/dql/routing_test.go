@@ -267,6 +267,11 @@ func TestReadYourWrites(t *testing.T) {
 		t.Errorf("caught up %s", got)
 	}
 	expect(t, d, "r1#5 query REPLAYED [[0/10]]; r1#5 query SELECT []; r1#5 put back")
+	// A server without a boolean type says 1.
+	c.replayed["r1"] = int64(1)
+	if got := served(t, ctx, e, ReadYourWrites); got != "r1" {
+		t.Errorf("caught up, as 1: %s", got)
+	}
 
 	// A failed write records nothing.
 	if _, err := Exec(ctx, e, stmt("FAIL 23505")); err == nil {

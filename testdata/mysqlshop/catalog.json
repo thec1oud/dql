@@ -16,7 +16,7 @@
       "provenance": {
         "source": "mysql-live",
         "sourceVersion": "1.0.0",
-        "inputFingerprint": "sha256:6fc7cda2f872aebc11361e7ff66c3c973301a4ea852a0e3ae2afa1e2e261eabb",
+        "inputFingerprint": "sha256:9dd940eb727dc7149cb7566eafa96f771ff689d859832b545f06fc8e79f39cce",
         "fidelity": "SOURCE_FIDELITY_FULL"
       },
       "namespaces": [
@@ -2258,7 +2258,7 @@
               "extensions": [
                 {
                   "@type": "type.dql.dev/dql.ext.mysql.v1.ViewDefinition",
-                  "definition": "select `dql_test_3885_475509_1`.`posts`.`id` AS `id`,`dql_test_3885_475509_1`.`posts`.`title` AS `title`,`dql_test_3885_475509_1`.`posts`.`author_id` AS `author_id`,`dql_test_3885_475509_1`.`posts`.`published_at` AS `published_at` from `dql_test_3885_475509_1`.`posts` where (`dql_test_3885_475509_1`.`posts`.`status` = 'published')",
+                  "definition": "select `dql_test_25633_174175_2`.`posts`.`id` AS `id`,`dql_test_25633_174175_2`.`posts`.`title` AS `title`,`dql_test_25633_174175_2`.`posts`.`author_id` AS `author_id`,`dql_test_25633_174175_2`.`posts`.`published_at` AS `published_at` from `dql_test_25633_174175_2`.`posts` where (`dql_test_25633_174175_2`.`posts`.`status` = 'published')",
                   "updatable": true,
                   "securityType": "DEFINER",
                   "checkOption": "NONE"
@@ -4754,8 +4754,15 @@
     "maxParams": 65535,
     "consistencyLevels": [
       "CONSISTENCY_PRIMARY",
-      "CONSISTENCY_ANY"
+      "CONSISTENCY_ANY",
+      "CONSISTENCY_BOUNDED_STALENESS",
+      "CONSISTENCY_READ_YOUR_WRITES"
     ],
+    "replication": {
+      "position": "SELECT @@GLOBAL.gtid_executed",
+      "lag": "SELECT CAST(CASE WHEN c.SERVICE_STATE IS NULL THEN NULL WHEN GTID_SUBSET(c.RECEIVED_TRANSACTION_SET, @@GLOBAL.gtid_executed) THEN 0 ELSE TIMESTAMPDIFF(MICROSECOND, (SELECT MAX(w.LAST_APPLIED_TRANSACTION_ORIGINAL_COMMIT_TIMESTAMP) FROM performance_schema.replication_applier_status_by_worker w), NOW(6)) / 1000000 END AS DOUBLE) FROM (SELECT 1) one LEFT JOIN performance_schema.replication_connection_status c ON c.CHANNEL_NAME = ''",
+      "replayed": "SELECT NOT EXISTS (SELECT 1 FROM JSON_TABLE(?, '$[*]' COLUMNS (p TEXT PATH '$')) j WHERE NOT GTID_SUBSET(j.p, @@GLOBAL.gtid_executed))"
+    },
     "statementModes": [
       "STATEMENT_MODE_PREPARE",
       "STATEMENT_MODE_SIMPLE"

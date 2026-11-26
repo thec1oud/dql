@@ -27,7 +27,7 @@ var MySQLSchemas = map[string]Schema{
 		URLEnv:   "DQL_TEST_MYSQL_URL",
 		Database: databaseMySQL,
 		Modes:    []dql.StatementMode{dql.ModePrepare, dql.ModeSimple},
-		Features: []string{"tinyint-bool"},
+		Features: []string{"replica", "tinyint-bool"},
 		Exec:     runMySQL,
 		Open:     opener(func() dql.Driver { return dqlmysql.New() }, mysqlshopdb.NewExecutor, mysqlshopdb.New),
 		Tables: map[string]any{
@@ -61,6 +61,7 @@ var MySQLSchemas = map[string]Schema{
 		},
 		Inject:    injectMySQL,
 		Terminate: terminateMySQL,
+		Replay:    replayMySQL,
 		Shapes:    mysqlshopdb.Shapes,
 		Types: []any{
 			mysqlshopdb.PostDraft{}, mysqlshopdb.PostDraftNested{}, mysqlshopdb.PostDraftNests{}, mysqlshopdb.PostFull{},
@@ -223,3 +224,12 @@ func openMySQL(dsn string) (*sql.DB, error) {
 // newUUID returns a random UUID, as MySQL's uuid() default would write
 // one; as(uuid) narrows the CHAR(36) it is stored in (§7.2).
 func newUUID() any { return uuid.New() }
+
+// replayMySQL stops or starts the applier of the replica at dsn, which
+// stops or resumes its replay of what it receives.
+func replayMySQL(ctx context.Context, dsn string, pause bool) error {
+	if pause {
+		return runMySQL(ctx, dsn, "STOP REPLICA SQL_THREAD")
+	}
+	return runMySQL(ctx, dsn, "START REPLICA SQL_THREAD")
+}
