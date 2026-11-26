@@ -55,7 +55,7 @@ test("scenarios", async () => {
   const lines: string[] = [];
   expect(await scenarios(["raw"], (l) => lines.push(l))).toBe(0);
   expect(lines).toEqual(["ok prepare/raw", "ok describe/raw"]);
-  expect(await readdir(out)).toEqual(["describe", "prepare"]);
+  expect((await readdir(out)).sort()).toEqual(["describe", "prepare"]);
   expect(JSON.parse(await readFile(join(out, "prepare", "raw.json"), "utf8"))[0].op).toBe("tenants.insert");
 });
 
