@@ -7,10 +7,10 @@
 import "./dql-version.dql.ts";
 import { type Executor, type RawReader, type RawWriter, type ReadTx, type TxOptions, type WriteTx, raw, rawWrite } from "@dql/runtime";
 import type { UnscopedQuerier, UnscopedReadQuerier, UserScopedQuerier, UserScopedReadQuerier } from "./dql-queries.dql.ts";
-import { PostTagsReads, PostTagsWrites, PostsReads, PostsWrites, ProfilesReads, ProfilesWrites, PublishedPostsReads, TagsReads, TagsWrites, TenantsReads, TenantsWrites, UnscopedQueries, UnscopedReadQueries, UserScopedQueries, UserScopedReadQueries, UsersReads, UsersUnscopedReads, UsersUnscopedWrites, UsersWrites } from "./dql-stores.dql.ts";
-import type { PostsReadStore, PostsStore } from "./post.dql.ts";
+import { PostTagsReads, PostTagsWrites, PostsReads, PostsUserScopedWrites, PostsWrites, ProfilesReads, ProfilesUserScopedWrites, ProfilesWrites, PublishedPostsReads, TagsReads, TagsWrites, TenantsReads, TenantsWrites, UnscopedQueries, UnscopedReadQueries, UserScopedQueries, UserScopedReadQueries, UsersReads, UsersUnscopedReads, UsersUnscopedWrites, UsersWrites } from "./dql-stores.dql.ts";
+import type { PostsReadStore, PostsStore, PostsUserScopedStore } from "./post.dql.ts";
 import type { PostTagsReadStore, PostTagsStore } from "./post_tag.dql.ts";
-import type { ProfilesReadStore, ProfilesStore } from "./profile.dql.ts";
+import type { ProfilesReadStore, ProfilesStore, ProfilesUserScopedStore } from "./profile.dql.ts";
 import type { PublishedPostsReadStore } from "./published_post.dql.ts";
 import type { TagsReadStore, TagsStore } from "./tag.dql.ts";
 import type { TenantsReadStore, TenantsStore } from "./tenant.dql.ts";
@@ -177,8 +177,8 @@ export class UserScoped {
   /** scope filters every read and gives every write its bound values (§21.1). */
   readonly scope: UserScope;
   readonly postTags: PostTagsStore;
-  readonly posts: PostsStore;
-  readonly profiles: ProfilesStore;
+  readonly posts: PostsUserScopedStore;
+  readonly profiles: ProfilesUserScopedStore;
   readonly publishedPosts: PublishedPostsReadStore;
   readonly tags: TagsStore;
   readonly tenants: TenantsStore;
@@ -190,8 +190,8 @@ export class UserScoped {
     this.executor = executor;
     this.scope = scope;
     this.postTags = new PostTagsWrites(executor);
-    this.posts = new PostsWrites(executor);
-    this.profiles = new ProfilesWrites(executor);
+    this.posts = new PostsUserScopedWrites(executor, scope);
+    this.profiles = new ProfilesUserScopedWrites(executor, scope);
     this.publishedPosts = new PublishedPostsReads(executor);
     this.tags = new TagsWrites(executor);
     this.tenants = new TenantsWrites(executor);
@@ -239,8 +239,8 @@ export class UserScopedWriteTx {
   /** scope filters every read and gives every write its bound values (§21.1). */
   readonly scope: UserScope;
   readonly postTags: PostTagsStore;
-  readonly posts: PostsStore;
-  readonly profiles: ProfilesStore;
+  readonly posts: PostsUserScopedStore;
+  readonly profiles: ProfilesUserScopedStore;
   readonly publishedPosts: PublishedPostsReadStore;
   readonly tags: TagsStore;
   readonly tenants: TenantsStore;
@@ -252,8 +252,8 @@ export class UserScopedWriteTx {
     this.tx = tx;
     this.scope = scope;
     this.postTags = new PostTagsWrites(tx);
-    this.posts = new PostsWrites(tx);
-    this.profiles = new ProfilesWrites(tx);
+    this.posts = new PostsUserScopedWrites(tx, scope);
+    this.profiles = new ProfilesUserScopedWrites(tx, scope);
     this.publishedPosts = new PublishedPostsReads(tx);
     this.tags = new TagsWrites(tx);
     this.tenants = new TenantsWrites(tx);

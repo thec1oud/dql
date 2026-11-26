@@ -137,7 +137,7 @@ func (g *generator) variant(f *file, v *variant, root bool, groups []*scopeGroup
 			f.printf("  /** scope filters every read and gives every write its bound values (§21.1). */\n  readonly scope: %s;\n", scopeType)
 		}
 		for _, e := range v.entities {
-			f.printf("  readonly %s: %s;\n", e.member, g.ref(f, storeIface(e, v, h.write), false))
+			f.printf("  readonly %s: %s;\n", e.member, g.ref(f, g.storeIface(e, v, h.write), false))
 		}
 		if q := v.queries; q != nil {
 			iface := q.read
@@ -233,8 +233,13 @@ func (g *generator) variant(f *file, v *variant, root bool, groups []*scopeGroup
 }
 
 // storeIface is the interface type of e's store in a handle of v.
-func storeIface(e *entity, v *variant, write bool) string {
+func (g *generator) storeIface(e *entity, v *variant, write bool) string {
 	write = write && e.writes()
+	if write && v.scope != nil && e.scope == nil {
+		if iface, _, ok := g.scopedStore(e, v.scope); ok {
+			return iface
+		}
+	}
 	switch {
 	case v.unscoped && e.scope != nil && write:
 		return e.unscopedStore()
@@ -250,6 +255,11 @@ func storeIface(e *entity, v *variant, write bool) string {
 // its scope taken from the handle's.
 func (g *generator) storeValue(f *file, e *entity, v *variant, held string, write bool) string {
 	write = write && e.writes()
+	if write && v.scope != nil && e.scope == nil {
+		if _, impl, ok := g.scopedStore(e, v.scope); ok {
+			return fmt.Sprintf("new %s(%s, scope)", g.ref(f, impl, true), held)
+		}
+	}
 	if v.unscoped && e.scope != nil {
 		if write {
 			return fmt.Sprintf("new %s(%s)", g.ref(f, e.unscopedWrites(), true), held)

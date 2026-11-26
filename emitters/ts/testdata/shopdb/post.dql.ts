@@ -1365,3 +1365,9 @@ export interface PostsStore extends PostsReadStore {
   delete(k: PostKey): Promise<void>;
   deleteWhere(where: Pred<PostsTable>): Promise<number>;
 }
+
+/** PostsUserScopedStore reads and writes shop.app.posts on a handle with scope UserScope, whose nested writes reach scoped entities (§21.1, §26.3). */
+export interface PostsUserScopedStore extends PostsStore {
+  insertNested(d: PostDraftNested, ...as: Assignment<PostsTable>[]): Promise<PostFullNested>;
+  patchNested(k: PostKey, p: PostPartialNested, ...as: Update<PostsTable>[]): Promise<PostFullNested>;
+}

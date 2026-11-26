@@ -1094,6 +1094,7 @@ export interface UsersReadStore {
 export interface UsersStore extends UsersReadStore {
   insert(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
   insertMany(ds: readonly UserDraft[], ...as: Assignment<UsersTable>[]): Promise<UserFull[]>;
+  insertNested(d: UserDraftNested, ...as: Assignment<UsersTable>[]): Promise<UserFullNested>;
   insertOrIgnore(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined>;
   insertOrIgnoreByTenantIdAndEmail(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined>;
   upsert(d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
@@ -1101,6 +1102,7 @@ export interface UsersStore extends UsersReadStore {
   upsertSet(d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
   upsertSetByTenantIdAndEmail(d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
   patch(k: UserKey, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
+  patchNested(k: UserKey, p: UserPartialNested, ...as: Update<UsersTable>[]): Promise<UserFullNested>;
   updateWhere(where: Pred<UsersTable>, p: UserPartial, ...as: Update<UsersTable>[]): Promise<number>;
   delete(k: UserKey): Promise<void>;
   deleteWhere(where: Pred<UsersTable>): Promise<number>;
@@ -1121,6 +1123,7 @@ export interface UsersUnscopedReadStore {
 export interface UsersUnscopedStore extends UsersUnscopedReadStore {
   insert(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
   insertMany(scope: UserScope, ds: readonly UserDraft[], ...as: Assignment<UsersTable>[]): Promise<UserFull[]>;
+  insertNested(scope: UserScope, d: UserDraftNested, ...as: Assignment<UsersTable>[]): Promise<UserFullNested>;
   insertOrIgnore(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined>;
   insertOrIgnoreByTenantIdAndEmail(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull | undefined>;
   upsert(scope: UserScope, d: UserDraft, ...as: Assignment<UsersTable>[]): Promise<UserFull>;
@@ -1128,6 +1131,7 @@ export interface UsersUnscopedStore extends UsersUnscopedReadStore {
   upsertSet(scope: UserScope, d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
   upsertSetByTenantIdAndEmail(scope: UserScope, d: UserDraft, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
   patch(scope: UserScope, k: UserKey, p: UserPartial, ...as: Update<UsersTable>[]): Promise<UserFull>;
+  patchNested(scope: UserScope, k: UserKey, p: UserPartialNested, ...as: Update<UsersTable>[]): Promise<UserFullNested>;
   updateWhere(scope: UserScope, where: Pred<UsersTable>, p: UserPartial, ...as: Update<UsersTable>[]): Promise<number>;
   delete(scope: UserScope, k: UserKey): Promise<void>;
   deleteWhere(scope: UserScope, where: Pred<UsersTable>): Promise<number>;

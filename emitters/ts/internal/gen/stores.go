@@ -22,11 +22,6 @@ const (
 // stores write their methods.
 var verbs = []string{"get", "find", "count", "exists", "insert", "insert_or_ignore", "upsert", "upsert_set", "patch", "update_where", "delete", "delete_where", "hard_delete", "hard_delete_where"}
 
-// generated are the operations the stores generate methods for. The core
-// derives the others for every entity too; they are left out without a
-// warning.
-var generated = map[string]bool{"get": true, "find": true, "count": true, "exists": true, "insert": true, "insert_or_ignore": true, "upsert": true, "upsert_set": true, "patch": true, "update_where": true, "delete": true, "delete_where": true, "hard_delete": true, "hard_delete_where": true}
-
 // reads are the operations a read handle has (§22.2).
 var reads = map[string]bool{"get": true, "find": true, "count": true, "exists": true}
 
@@ -48,10 +43,12 @@ type entry struct {
 	shape *irv1.Shape
 }
 
-// method is the store method of an entry: its verb, and By and the key's
-// words when it names a key other than the primary, as getByTenantIdAndEmail.
+// method is the store method of an entry: its verb, the custom shape it
+// takes, and By and the key's words when it names a key other than the
+// primary, as getByTenantIdAndEmail or insertQuickInvite.
 func (x entry) method() string {
 	words := strings.Split(x.verb, "_")
+	words = append(words, x.shape.GetHostName().GetWords()...)
 	if x.by != nil {
 		words = append(append(words, "by"), x.by...)
 	}
@@ -107,6 +104,7 @@ func (e *entity) entryName(verb string) string {
 // entities collects the builder queries of each table in IR order.
 func (g *generator) entities() []*entity {
 	byTable := map[key]*entity{}
+	g.byTable, g.scopedStores = byTable, map[string]bool{}
 	var out []*entity
 	g.eachNamespace(func(q func(string) *irv1.QualifiedName, ns *irv1.Namespace) {
 		for _, t := range ns.GetTables() {
@@ -145,9 +143,6 @@ func (g *generator) entities() []*entity {
 		if !ok {
 			g.diags = append(g.diags, &irv1.Diagnostic{Severity: irv1.Severity_SEVERITY_WARNING, Code: CodeQueryUnsupported, Target: q.GetTables()[0],
 				Message: fmt.Sprintf("builder query %s is an operation the ts emitter does not generate; it is left out", q.GetName().GetStored())})
-			continue
-		}
-		if !generated[x.verb] || x.shape != nil {
 			continue
 		}
 		x.v = MemberName(strings.FieldsFunc(q.GetName().GetStored(), func(r rune) bool { return r == '.' || r == '_' }))
@@ -330,6 +325,23 @@ type signature struct {
 	x      entry
 	// many: insertMany, which runs the insert entry for each Draft.
 	many bool
+	// nested: insertNested, which writes a Nested Draft, and patch:
+	// patchNested, which writes a Nested Partial (§20.5).
+	nested *nestedInsert
+	patch  *nestedPatch
+}
+
+// doc is what a method's comment adds to the query it runs.
+func (s signature) doc() string {
+	switch {
+	case s.many:
+		return " for each draft, in one transaction"
+	case s.nested != nil:
+		return " with the rows d nests, in one transaction: owning creates first, then the row, then its dependents and links; it returns them read back"
+	case s.patch != nil:
+		return " with the changes p nests, in one transaction: owning changes first, then the row, then its dependents and links under their collection policies; it returns the row and its relations as they now are"
+	}
+	return ""
 }
 
 // list spells the parameters, the scope's first when scope is not "".
@@ -363,7 +375,7 @@ func (s signature) args() string {
 
 // locals are the names a method body binds or takes from the runtime, which
 // a parameter named after a column must not take.
-var locals = map[string]bool{"k": true, "d": true, "p": true, "ds": true, "as": true, "q": true, "where": true, "rows": true, "args": true, "found": true, "set": true, "scope": true, "fragments": true}
+var locals = map[string]bool{"k": true, "d": true, "p": true, "ds": true, "issues": true, "as": true, "q": true, "where": true, "rows": true, "args": true, "found": true, "set": true, "scope": true, "fragments": true}
 
 // keyParam is the parameter of a key column a lookup by another key takes.
 func keyParam(c *irv1.Column) string {
@@ -402,11 +414,19 @@ func (g *generator) signatures(f *file, e *entity) []signature {
 		part := func() param { return param{"p", g.ref(f, TypeName(e.part.GetHostName().GetWords()), false), false} }
 		switch x.verb {
 		case "insert", "insert_or_ignore", "upsert":
-			s.params = []param{{"d", draft, false}, values}
+			d := param{"d", draft, false}
+			if x.shape != nil {
+				d.typ = g.ref(f, TypeName(x.shape.GetHostName().GetWords()), false)
+			}
+			s.params = slices.Concat([]param{d}, g.boundParams(f, e, x), []param{values})
 		case "upsert_set":
 			s.params = []param{{"d", draft, false}, part(), updates}
 		case "patch":
-			s.params = append(s.params, part(), updates)
+			p := part()
+			if x.shape != nil {
+				p.typ = g.ref(f, TypeName(x.shape.GetHostName().GetWords()), false)
+			}
+			s.params = slices.Concat(s.params, []param{p}, g.boundParams(f, e, x), []param{updates})
 		case "update_where":
 			s.params = []param{where, part(), updates}
 		case "delete_where", "hard_delete_where":
@@ -427,8 +447,16 @@ func (g *generator) signatures(f *file, e *entity) []signature {
 			s.result = "void"
 		}
 		out = append(out, s)
-		if x.verb == "insert" {
+		if x.verb == "patch" && x.by == nil && x.shape == nil {
+			if p, ok := g.nestedPatch(e, e.scope); ok {
+				out = append(out, g.nestedPatchSignature(f, e, p))
+			}
+		}
+		if x.verb == "insert" && x.shape == nil {
 			out = append(out, signature{name: "insertMany", params: []param{{"ds", "readonly " + draft + "[]", false}, values}, result: full + "[]", x: x, many: true})
+			if p, ok := g.nestedInsert(e, e.scope); ok {
+				out = append(out, g.nestedSignature(f, e, p))
+			}
 		}
 	}
 	return out
@@ -529,11 +557,11 @@ func (g *generator) methods(f *file, e *entity, sigs []signature, write bool) {
 		if reads[s.x.verb] == write {
 			continue
 		}
-		doc := ""
-		if s.many {
-			doc = " for each draft, in one transaction"
+		sec := section(s.x.verb)
+		if s.nested != nil || s.patch != nil {
+			sec = "20.5"
 		}
-		f.printf("\n  /** %s runs %s%s (§%s). */\n  async %s(%s): Promise<%s> {\n", s.name, s.x.q.GetName().GetStored(), doc, section(s.x.verb), s.name, s.list(""), s.result)
+		f.printf("\n  /** %s runs %s%s (§%s). */\n  async %s(%s): Promise<%s> {\n", s.name, s.x.q.GetName().GetStored(), s.doc(), sec, s.name, s.list(""), s.result)
 		g.methodBody(f, e, s)
 		f.printf("  }\n")
 	}
@@ -570,8 +598,15 @@ func section(verb string) string {
 func (g *generator) methodBody(f *file, e *entity, s signature) {
 	x := s.x
 	rt := func(name string) string { return f.rt(name, true) }
-	if s.many {
+	switch {
+	case s.many:
 		g.insertMany(f, e, s)
+		return
+	case s.nested != nil:
+		g.insertNested(f, e, s)
+		return
+	case s.patch != nil:
+		g.patchNested(f, e, s)
 		return
 	}
 	payload, pv := e.draft, "d"
@@ -582,14 +617,25 @@ func (g *generator) methodBody(f *file, e *entity, s signature) {
 	default:
 		payload = nil
 	}
-	if payload != nil {
+	if x.shape != nil {
+		payload = x.shape
+	}
+	if bound := g.boundChecks(f, e, x); len(bound) > 0 {
+		// A bound field is checked as the shape's own fields are (§14.8).
+		f.printf("    const issues = %s(%s);\n", g.ref(f, validatorName(payload.GetHostName().GetWords()), true), pv)
+		for _, b := range bound {
+			f.printf("    %s\n", b)
+		}
+		f.printf("    %s(issues);\n", rt("throwIfIssues"))
+	} else if payload != nil {
 		f.printf("    %s(%s(%s));\n", rt("throwIfIssues"), g.ref(f, validatorName(payload.GetHostName().GetWords()), true), pv)
 	}
 	if x.verb == "upsert_set" {
 		f.printf("    %s(%s(p));\n", rt("throwIfIssues"), g.ref(f, validatorName(e.part.GetHostName().GetWords()), true))
 	}
 	get, fallback := e.entries[e.entryName("get")]
-	fallback = fallback && x.verb == "patch" && !e.versioned
+	// A bound field is always written, so a patch with one always writes.
+	fallback = fallback && x.verb == "patch" && !e.versioned && len(x.shape.GetBind()) == 0
 	// An unversioned updateWhere with nothing set has nothing to write.
 	empty := x.verb == "update_where" && !e.versioned
 	lit, conds := g.args(f, e, x, payload, pv, fallback || empty)
@@ -694,6 +740,9 @@ func (g *generator) args(f *file, e *entity, x entry, payload *irv1.Shape, pv st
 		case x.verb == "upsert_set" && strings.HasPrefix(name, "set.") && shapeField(e.part, name[len("set."):]) != nil:
 			col := name[len("set."):]
 			conds = append(conds, fmt.Sprintf("    if (p.%[1]s !== undefined) {\n      args[%[2]s] = p.%[1]s;\n    }\n", g.memberOf(e.part, col), jsString(name)))
+		case slices.Contains(x.shape.GetBind(), name):
+			// A bound field is passed as its own parameter (§14.8).
+			lit = append(lit, jsString(name)+": "+keyParam(column(e.t, name)))
 		case payload != nil && shapeField(payload, name) != nil:
 			v := pv + "." + g.memberOf(payload, name)
 			if !isOptional(shapeField(payload, name)) {
@@ -721,4 +770,46 @@ func (g *generator) args(f *file, e *entity, x entry, payload *irv1.Shape, pv st
 		return "{}", conds
 	}
 	return "{ " + strings.Join(lit, ", ") + " }", conds
+}
+
+// boundParams is the parameters of a custom write shape's bound fields,
+// after its payload, in the query's order (§14.8).
+func (g *generator) boundParams(f *file, e *entity, x entry) []param {
+	var ps []param
+	for _, p := range x.q.GetParams() {
+		if slices.Contains(x.shape.GetBind(), p.GetName()) {
+			ps = append(ps, param{name: keyParam(column(e.t, p.GetName())), typ: g.field(f, p.GetType(), p.GetNullable(), e.q, "parameter "+p.GetName())})
+		}
+	}
+	return ps
+}
+
+// boundChecks is the checks of a custom write shape's bound fields, each
+// against the client-validated constraints its column has in the Draft or
+// Partial the shape derives from, pushing to issues (§10.5, §14.8).
+func (g *generator) boundChecks(f *file, e *entity, x entry) []string {
+	if x.shape == nil {
+		return nil
+	}
+	base := e.draft
+	if rootPreset(x.shape) == irv1.Preset_PRESET_PARTIAL {
+		base = e.part
+	}
+	shape := g.dotted(x.shape.GetId())
+	var out []string
+	for _, p := range x.q.GetParams() {
+		col := p.GetName()
+		fld := shapeField(base, col)
+		if !slices.Contains(x.shape.GetBind(), col) || len(fld.GetValidation()) == 0 {
+			continue
+		}
+		at := &irv1.QualifiedName{Catalog: e.q.GetCatalog(), Namespace: e.q.GetNamespace(), Object: e.q.GetObject(), Member: col}
+		value := keyParam(column(e.t, col))
+		calls := g.checkCalls(f, fld.GetValidation(), fld.GetType(), e.t, e.q, at, "issues", shape, col, value)
+		if len(calls) > 0 && p.GetNullable() {
+			calls = []string{"if (" + value + " !== null) {\n      " + strings.Join(calls, "\n      ") + "\n    }"}
+		}
+		out = append(out, calls...)
+	}
+	return out
 }

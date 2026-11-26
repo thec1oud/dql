@@ -672,3 +672,9 @@ export interface ProfilesStore extends ProfilesReadStore {
   delete(k: ProfileKey): Promise<void>;
   deleteWhere(where: Pred<ProfilesTable>): Promise<number>;
 }
+
+/** ProfilesUserScopedStore reads and writes shop.app.profiles on a handle with scope UserScope, whose nested writes reach scoped entities (§21.1, §26.3). */
+export interface ProfilesUserScopedStore extends ProfilesStore {
+  insertNested(d: ProfileDraftNested, ...as: Assignment<ProfilesTable>[]): Promise<ProfileFullNested>;
+  patchNested(k: ProfileKey, p: ProfilePartialNested, ...as: Update<ProfilesTable>[]): Promise<ProfileFullNested>;
+}
