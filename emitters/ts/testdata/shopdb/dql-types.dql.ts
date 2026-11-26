@@ -5,7 +5,8 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Decimal } from "@dql/runtime";
+import { type Decimal, type ValidationIssue, throwIfIssues } from "@dql/runtime";
+import { dqlEmailAddressCheck, dqlSlugTextCheck } from "./dql-checks.dql.ts";
 
 /** PostStatus is the enum shop.app.post_status. Its labels are in declared order. */
 export const PostStatus = ["draft", "published", "archived"] as const;
@@ -14,8 +15,30 @@ export type PostStatus = (typeof PostStatus)[number];
 /** EmailAddress is the domain shop.app.email_address. */
 export type EmailAddress = string & { readonly __domain: "shop.app.email_address" };
 
+/**
+ * parseEmailAddress returns x as EmailAddress when it passes the domain's
+ * constraints (§8.5, §10.5), and throws a ValidationError otherwise.
+ */
+export function parseEmailAddress(x: string): EmailAddress {
+  const issues: ValidationIssue[] = [];
+  dqlEmailAddressCheck.check(issues, "shop.app.email_address", "", x);
+  throwIfIssues(issues);
+  return x as EmailAddress;
+}
+
 /** SlugText is the domain shop.app.slug_text. */
 export type SlugText = string & { readonly __domain: "shop.app.slug_text" };
+
+/**
+ * parseSlugText returns x as SlugText when it passes the domain's
+ * constraints (§8.5, §10.5), and throws a ValidationError otherwise.
+ */
+export function parseSlugText(x: string): SlugText {
+  const issues: ValidationIssue[] = [];
+  dqlSlugTextCheck.check(issues, "shop.app.slug_text", "", x);
+  throwIfIssues(issues);
+  return x as SlugText;
+}
 
 /** MoneyAmount is the composite type shop.app.money_amount. */
 export interface MoneyAmount {

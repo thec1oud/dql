@@ -5,8 +5,8 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Keyed, Temporal } from "@dql/runtime";
-import type { UserFull, UserPartial, UserRef } from "./user.dql.ts";
+import { type Keyed, type Temporal, type ValidationIssue, issuesAt } from "@dql/runtime";
+import { type UserFull, type UserPartial, type UserRef, validateUserPartial, validateUserRef } from "./user.dql.ts";
 
 /** ProfileDraft is the shape profile.draft.flat of shop.app.profiles. */
 export interface ProfileDraft {
@@ -83,6 +83,111 @@ export type ProfileChangeForUser =
 /** ProfileUserChange holds one change to a related shop.app.users: update (§14.5, §14.6). */
 export type ProfileUserChange =
   | { kind: "update"; partial: UserPartial };
+
+/**
+ * validateProfileDraft checks d against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateProfileDraft(d: ProfileDraft): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateProfileDraftForUser checks u against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateProfileDraftForUser(u: ProfileDraftForUser): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateProfileDraftNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateProfileDraftNested(n: ProfileDraftNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.user !== undefined) {
+    v.push(...issuesAt(validateUserRef(n.user), "user"));
+  }
+  return v;
+}
+
+/**
+ * validateProfileDraftNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateProfileDraftNests(n: ProfileDraftNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.user !== undefined) {
+    v.push(...issuesAt(validateUserRef(n.user), "user"));
+  }
+  return v;
+}
+
+/**
+ * validateProfilePartial checks p against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateProfilePartial(p: ProfilePartial): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateProfilePartialForUser checks u against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateProfilePartialForUser(u: ProfilePartialForUser): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateProfilePartialNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateProfilePartialNested(n: ProfilePartialNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.user !== undefined) {
+    v.push(...issuesAt(validateProfileUserChange(n.user), "user"));
+  }
+  return v;
+}
+
+/**
+ * validateProfilePartialNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateProfilePartialNests(n: ProfilePartialNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.user !== undefined) {
+    v.push(...issuesAt(validateProfileUserChange(n.user), "user"));
+  }
+  return v;
+}
+
+/** validateProfileChangeForUser checks the Draft u creates or the Partial it updates (§10.5). */
+export function validateProfileChangeForUser(u: ProfileChangeForUser): ValidationIssue[] {
+  if (u.kind === "create") return validateProfileDraftForUser(u.draft);
+  if (u.kind === "update") return validateProfilePartialForUser(u.partial);
+  return [];
+}
+
+/** validateProfileUserChange checks the Draft c creates or the Partial it updates (§10.5). */
+export function validateProfileUserChange(c: ProfileUserChange): ValidationIssue[] {
+  if (c.kind === "update") return validateUserPartial(c.partial);
+  return [];
+}
 
 /** ProfileDraft converts ProfileDraft values to other shapes (§14.9). */
 export const ProfileDraft = {

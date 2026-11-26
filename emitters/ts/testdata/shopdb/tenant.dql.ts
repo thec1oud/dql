@@ -5,7 +5,7 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Keyed, Uuid } from "@dql/runtime";
+import type { Keyed, Uuid, ValidationIssue } from "@dql/runtime";
 import type { UserFull } from "./user.dql.ts";
 
 /** TenantDraft is the shape tenant.draft.flat of shop.app.tenants. */
@@ -52,6 +52,66 @@ export interface TenantPartialNested extends TenantPartial {
 
 /** TenantPartialNests is the shape tenant.partial.nests of shop.app.tenants. */
 export interface TenantPartialNests {
+}
+
+/**
+ * validateTenantDraft checks d against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTenantDraft(d: TenantDraft): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateTenantDraftNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTenantDraftNested(n: TenantDraftNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateTenantDraftNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTenantDraftNests(n: TenantDraftNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateTenantPartial checks p against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTenantPartial(p: TenantPartial): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateTenantPartialNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTenantPartialNested(n: TenantPartialNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
+}
+
+/**
+ * validateTenantPartialNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateTenantPartialNests(n: TenantPartialNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  return v;
 }
 
 /** TenantDraft converts TenantDraft values to other shapes (§14.9). */

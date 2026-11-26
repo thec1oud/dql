@@ -269,7 +269,7 @@ func TestMerges(t *testing.T) {
 		"if (r.id === c.key.id && r.code === c.key.code && bytesEqual(r.blob, c.key.blob) && foldAscii(r.slug) === foldAscii(c.key.slug)) {",
 		"merged[j] = ItemPartial.applyTo(c.value, r);",
 		`if (!matched) throw new UnmatchedKeyError("shop.app.items", i);`,
-		`import { type Decimal, type Keyed, type Temporal, UnmatchedKeyError, bytesEqual, foldAscii } from "@dql/runtime";`,
+		`import { type Decimal, type Keyed, type Temporal, UnmatchedKeyError, type ValidationIssue, bytesEqual, foldAscii } from "@dql/runtime";`,
 	} {
 		if !strings.Contains(src, part) {
 			t.Errorf("item.dql.ts lacks %q:\n%s", part, src)

@@ -5,10 +5,11 @@
 // Runtime: @dql/runtime, generated-code version 1
 
 import "./dql-version.dql.ts";
-import type { Keyed, Temporal, Uuid } from "@dql/runtime";
+import { type Keyed, type Temporal, type Uuid, type ValidationIssue, issuesAt } from "@dql/runtime";
+import { dqlEmailAddressCheck } from "./dql-checks.dql.ts";
 import type { EmailAddress } from "./dql-types.dql.ts";
-import type { PostChangeForAuthor, PostChangeForEditor, PostDraftForAuthor, PostDraftForEditor, PostFull } from "./post.dql.ts";
-import type { ProfileChangeForUser, ProfileDraftForUser, ProfileFull } from "./profile.dql.ts";
+import { type PostChangeForAuthor, type PostChangeForEditor, type PostDraftForAuthor, type PostDraftForEditor, type PostFull, validatePostChangeForAuthor, validatePostChangeForEditor, validatePostDraftForAuthor, validatePostDraftForEditor } from "./post.dql.ts";
+import { type ProfileChangeForUser, type ProfileDraftForUser, type ProfileFull, validateProfileChangeForUser, validateProfileDraftForUser } from "./profile.dql.ts";
 import type { TenantFull } from "./tenant.dql.ts";
 
 /** UserDraft is the shape user.draft.flat of shop.app.users. */
@@ -85,6 +86,132 @@ export interface UserScope {
 export type UserRef =
   | { kind: "link"; key: UserKey }
   | { kind: "create"; draft: UserDraft };
+
+/**
+ * validateUserDraft checks d against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateUserDraft(d: UserDraft): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  dqlEmailAddressCheck.check(v, "user.draft.flat", "email", d.email);
+  return v;
+}
+
+/**
+ * validateUserDraftNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateUserDraftNested(n: UserDraftNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  dqlEmailAddressCheck.check(v, "user.draft.nested", "email", n.email);
+  if (n.postsToAuthor !== undefined) {
+    for (const [i, x] of n.postsToAuthor.entries()) {
+      v.push(...issuesAt(validatePostDraftForAuthor(x), "posts_to_author[" + i + "]"));
+    }
+  }
+  if (n.postsToEditor !== undefined) {
+    for (const [i, x] of n.postsToEditor.entries()) {
+      v.push(...issuesAt(validatePostDraftForEditor(x), "posts_to_editor[" + i + "]"));
+    }
+  }
+  if (n.profile !== undefined) {
+    v.push(...issuesAt(validateProfileDraftForUser(n.profile), "profile"));
+  }
+  return v;
+}
+
+/**
+ * validateUserDraftNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateUserDraftNests(n: UserDraftNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.postsToAuthor !== undefined) {
+    for (const [i, x] of n.postsToAuthor.entries()) {
+      v.push(...issuesAt(validatePostDraftForAuthor(x), "posts_to_author[" + i + "]"));
+    }
+  }
+  if (n.postsToEditor !== undefined) {
+    for (const [i, x] of n.postsToEditor.entries()) {
+      v.push(...issuesAt(validatePostDraftForEditor(x), "posts_to_editor[" + i + "]"));
+    }
+  }
+  if (n.profile !== undefined) {
+    v.push(...issuesAt(validateProfileDraftForUser(n.profile), "profile"));
+  }
+  return v;
+}
+
+/**
+ * validateUserPartial checks p against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateUserPartial(p: UserPartial): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (p.email !== undefined) {
+    dqlEmailAddressCheck.check(v, "user.partial.flat", "email", p.email);
+  }
+  return v;
+}
+
+/**
+ * validateUserPartialNested checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateUserPartialNested(n: UserPartialNested): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.email !== undefined) {
+    dqlEmailAddressCheck.check(v, "user.partial.nested", "email", n.email);
+  }
+  if (n.postsToAuthor !== undefined) {
+    for (const [i, x] of n.postsToAuthor.entries()) {
+      v.push(...issuesAt(validatePostChangeForAuthor(x), "posts_to_author[" + i + "]"));
+    }
+  }
+  if (n.postsToEditor !== undefined) {
+    for (const [i, x] of n.postsToEditor.entries()) {
+      v.push(...issuesAt(validatePostChangeForEditor(x), "posts_to_editor[" + i + "]"));
+    }
+  }
+  if (n.profile !== undefined) {
+    v.push(...issuesAt(validateProfileChangeForUser(n.profile), "profile"));
+  }
+  return v;
+}
+
+/**
+ * validateUserPartialNests checks n against the client-validated constraints
+ * of its fields and of what it nests (§10.5), and returns every issue with
+ * its path. Absent fields are not checked.
+ */
+export function validateUserPartialNests(n: UserPartialNests): ValidationIssue[] {
+  const v: ValidationIssue[] = [];
+  if (n.postsToAuthor !== undefined) {
+    for (const [i, x] of n.postsToAuthor.entries()) {
+      v.push(...issuesAt(validatePostChangeForAuthor(x), "posts_to_author[" + i + "]"));
+    }
+  }
+  if (n.postsToEditor !== undefined) {
+    for (const [i, x] of n.postsToEditor.entries()) {
+      v.push(...issuesAt(validatePostChangeForEditor(x), "posts_to_editor[" + i + "]"));
+    }
+  }
+  if (n.profile !== undefined) {
+    v.push(...issuesAt(validateProfileChangeForUser(n.profile), "profile"));
+  }
+  return v;
+}
+
+/** validateUserRef checks the Draft r creates or the Partial it updates (§10.5). */
+export function validateUserRef(r: UserRef): ValidationIssue[] {
+  if (r.kind === "create") return validateUserDraft(r.draft);
+  return [];
+}
 
 /** UserDraft converts UserDraft values to other shapes (§14.9). */
 export const UserDraft = {
