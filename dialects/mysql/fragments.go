@@ -48,13 +48,15 @@ func Fragments(b *irv1.Bundle, p *irv1.CapabilityProfile, flavor Flavor) *irv1.F
 
 // operatorTemplates renders each operator of the catalog the dialect has
 // (§9.1). An operator that yields a value is parenthesized, so it nests as
-// an operand. A list is one placeholder, which the driver adapter expands
-// into one per item, writing NULL for an empty list. starts_with escapes
+// an operand. A list is one placeholder, a JSON array (§25.3): on a column,
+// in and any expand it with JSON_TABLE into items of the column's type
+// (listType); on any other operand, MEMBER OF compares the value with the
+// items as JSON, which is approximate. starts_with escapes
 // the prefix's wildcards with !, which needs no backslash and so means the
 // same under every sql_mode.
 var operatorTemplates = map[string]string{
 	"add":              "({0} + {1})",
-	"any":              "{0} IN ({1})",
+	"any":              "{0} MEMBER OF ({1})",
 	"between":          "{0} BETWEEN {1} AND {2}",
 	"contains":         "LOCATE({1}, {0}) > 0",
 	"div":              "({0} / {1})",
@@ -62,7 +64,7 @@ var operatorTemplates = map[string]string{
 	"ge":               "{0} >= {1}",
 	"gt":               "{0} > {1}",
 	"ilike":            "LOWER({0}) LIKE LOWER({1})",
-	"in":               "{0} IN ({1})",
+	"in":               "{0} MEMBER OF ({1})",
 	"is_distinct_from": "NOT ({0} <=> {1})",
 	"is_not_null":      "{0} IS NOT NULL",
 	"is_null":          "{0} IS NULL",
@@ -166,6 +168,11 @@ func (f *fragments) table(tb *table) {
 	self := false
 	for _, c := range tb.t.GetColumns() {
 		f.add("col."+tb.id+"."+c.GetName().GetStored(), tb.quoted+"."+quote(c.GetName().GetStored()))
+		if t := listType(c); t != "" {
+			for _, op := range []string{"any", "in"} {
+				f.add("op."+op+"."+tb.id+"."+c.GetName().GetStored(), "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v "+t+" PATH '$')) AS dql_list)")
+			}
+		}
 	}
 	for _, r := range tb.t.GetRelations() {
 		if r.GetCrossCatalog() {
@@ -192,6 +199,21 @@ func (f *fragments) table(tb *table) {
 		f.add("set."+suffix, col+" = {0}")
 		f.add("excluded."+suffix, f.excluded(col))
 	}
+}
+
+// listType is the type a list compared with column c holds its items as:
+// the column's own, in its character set and collation, so that items
+// compare as the column's values do. An opaque column has none.
+func listType(c *irv1.Column) string {
+	if c.GetType().GetOpaque() != nil || c.GetType().GetNative().GetRaw() == "" {
+		return ""
+	}
+	t := c.GetType().GetNative().GetRaw()
+	if co := c.GetCollation().GetName(); co != "" {
+		cs, _, _ := strings.Cut(co, "_")
+		t += " CHARACTER SET " + cs + " COLLATE " + co
+	}
+	return t
 }
 
 // excluded is the value an upsert proposed for a column: through the row

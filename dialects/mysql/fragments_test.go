@@ -232,3 +232,31 @@ func TestFragmentsSkipUnknownOperators(t *testing.T) {
 		}
 	}
 }
+
+// A list is one JSON array, which a column's in and any expand into items
+// of the column's type, in its collation (§25.3); an opaque column, or one
+// whose native type is unknown, has none, and falls back to MEMBER OF.
+func TestListFragments(t *testing.T) {
+	b := fixture()
+	cols := b.GetCatalogs()[0].GetNamespaces()[0].GetTables()[0].GetColumns()
+	native := func(raw string) *irv1.NativeType { return &irv1.NativeType{Raw: raw} }
+	cols[0].Type = &irv1.Type{Kind: &irv1.Type_Int64{Int64: &irv1.Empty{}}, Native: native("bigint unsigned")}
+	cols[1].Type = &irv1.Type{Kind: &irv1.Type_Opaque{Opaque: &irv1.Opaque{}}, Native: native("set('a')")}
+	cols[2].Type = &irv1.Type{Kind: &irv1.Type_Varchar{Varchar: &irv1.Varchar{Length: 80}}, Native: native("varchar(80)")}
+	cols[2].Collation = &irv1.Collation{Name: "utf8mb4_0900_ai_ci"}
+	got := table(t, b)
+	for id, want := range map[string]string{
+		"op.in.shop.people.id":     "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v bigint unsigned PATH '$')) AS dql_list)",
+		"op.any.shop.people.email": "{0} IN (SELECT dql_list.v FROM JSON_TABLE({1}, '$[*]' COLUMNS (v varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci PATH '$')) AS dql_list)",
+		"op.in":                    "{0} MEMBER OF ({1})",
+	} {
+		if got[id].GetTemplate() != want {
+			t.Errorf("%s\n got %q\nwant %q", id, got[id].GetTemplate(), want)
+		}
+	}
+	for _, id := range []string{"op.in.shop.people.manager_id", "op.in.shop.pets.id"} {
+		if got[id] != nil {
+			t.Errorf("unexpected %s", id)
+		}
+	}
+}

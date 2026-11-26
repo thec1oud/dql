@@ -105,7 +105,7 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 			}
 			methods = append(methods, fmt.Sprintf("    /** %s is operator %s on %s (§9.4).%s */\n    %s(%s): %s {\n      return %s<%s>(%s, %s%s);\n    },\n",
 				opMethod(op.GetName()), op.GetName(), c.GetName().GetStored(), doc, opMethod(op.GetName()), params, pred,
-				f.rt("compare", true), typ, jsString("op."+op.GetName()), jsString(frag), args))
+				f.rt("compare", true), typ, jsString(g.opFragment(op.GetName(), frag)), jsString(frag), args))
 		}
 		for _, dir := range []string{"asc", "desc"} {
 			if g.fragmentIDs["order."+dir] {
@@ -335,4 +335,14 @@ func (g *generator) shapeHandles(byTable map[key]*entity) {
 	}
 	g.declare(f, "shapes", "the constant shapes", nil)
 	f.printf("/** shapes are the read shapes a store's select reads (§18.2). */\nexport const shapes: {\n%s} = {\n%s};\n", strings.Join(types, ""), strings.Join(values, ""))
+}
+
+// opFragment returns the fragment of operator op on the column whose
+// fragment is col: the dialect's own for that column, such as MySQL's
+// typed list for in, or else the operator's.
+func (g *generator) opFragment(op, col string) string {
+	if id := "op." + op + "." + strings.TrimPrefix(col, "col."); g.fragmentIDs[id] {
+		return id
+	}
+	return "op." + op
 }

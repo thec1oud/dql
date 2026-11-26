@@ -216,7 +216,7 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 			}
 			fmt.Fprintf(&decls, "// %s is operator %s on %s (§9.4).%s\nfunc (%s) %s(%s) %s {\n\treturn %s.Compare[%s](%q, %q%s)\n}\n\n",
 				opMethod(op.GetName()), op.GetName(), c.GetName().GetStored(), doc,
-				handle, opMethod(op.GetName()), params, pred, dql, typ, "op."+op.GetName(), frag, args)
+				handle, opMethod(op.GetName()), params, pred, dql, typ, g.opFragment(op.GetName(), frag), frag, args)
 		}
 		g.assignments(&decls, e, c, handle, frag)
 		for _, dir := range []string{"asc", "desc"} {
@@ -412,4 +412,14 @@ func typeField(t string) string {
 		return ""
 	}
 	return fmt.Sprintf(", Type: %q", t)
+}
+
+// opFragment returns the fragment of operator op on the column whose
+// fragment is col: the dialect's own for that column, such as MySQL's
+// typed list for in, or else the operator's.
+func (g *generator) opFragment(op, col string) string {
+	if id := "op." + op + "." + strings.TrimPrefix(col, "col."); g.fragmentIDs[id] {
+		return id
+	}
+	return "op." + op
 }
