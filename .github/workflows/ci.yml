@@ -42,11 +42,12 @@ jobs:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres with a streaming replica
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
-      - name: start MySQL
+      - name: start MySQL and MariaDB
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
@@ -79,13 +80,14 @@ jobs:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres ${{ matrix.postgres }} with a streaming replica
         env:
           POSTGRES_VERSION: ${{ matrix.postgres }}
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
-      - name: start MySQL
+      - name: start MySQL and MariaDB
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
@@ -97,6 +99,41 @@ jobs:
         with:
           go-version: "1.25"
       - name: test against Postgres ${{ matrix.postgres }}
+        run: |
+          go test $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
+
+  # mysql-live reads information_schema, which differs between MySQL and
+  # MariaDB and between MariaDB releases. The go job runs everything on
+  # MariaDB 11.8, the newest LTS; this runs every test on 10.11, the oldest
+  # supported one.
+  mariadb-versions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        mariadb: ["10.11"]
+    env:
+      DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+      DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
+      DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
+    steps:
+      - uses: actions/checkout@v4
+      - name: start Postgres with a streaming replica
+        run: docker compose -f conformance/replica/compose.yaml up -d --wait
+      - name: start MySQL and MariaDB ${{ matrix.mariadb }}
+        env:
+          MARIADB_VERSION: ${{ matrix.mariadb }}
+        run: docker compose -f conformance/mysql/compose.yaml up -d --wait
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: build the TypeScript runtime, which the ts emitter's golden package is checked against
+        working-directory: runtime/ts
+        run: bun install --frozen-lockfile && bun run build
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: test against MariaDB ${{ matrix.mariadb }}
         run: |
           go test $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
 
@@ -119,7 +156,7 @@ jobs:
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
       - name: start MySQL
         working-directory: .
-        run: docker compose -f conformance/mysql/compose.yaml up -d --wait
+        run: docker compose -f conformance/mysql/compose.yaml up -d --wait mysql
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"
@@ -150,7 +187,7 @@ jobs:
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
       - name: start MySQL
         working-directory: .
-        run: docker compose -f conformance/mysql/compose.yaml up -d --wait
+        run: docker compose -f conformance/mysql/compose.yaml up -d --wait mysql
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"

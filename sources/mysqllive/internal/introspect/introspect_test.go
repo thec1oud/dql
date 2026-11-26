@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"flag"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/thec1oud/dql/sources/mysqltest"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden snapshots")
@@ -28,34 +29,33 @@ func read(t *testing.T, db *sql.DB, name string, wrap func(Querier) Querier) (*S
 	return Read(context.Background(), q, name)
 }
 
-// Snapshots of the shop and the fixture match their golden files, with the
-// database's generated name left out.
+// Snapshots of the shop and the fixture on each server match their golden
+// files, with the database's generated name left out.
 func TestRead(t *testing.T) {
-	for golden, db := range map[string]struct {
-		db   *sql.DB
-		name string
-	}{"shop.json": {shopDB.DB, shopDB.Name}, "fixture.json": {fixtureDB.DB, fixtureDB.Name}} {
-		t.Run(golden, func(t *testing.T) {
-			s, err := read(t, db.db, db.name, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got, _ := json.MarshalIndent(s, "", "  ")
-			got = []byte(strings.ReplaceAll(string(got), db.name, "DATABASE") + "\n")
-			path := filepath.Join("testdata", golden)
-			if *update {
-				if err := os.WriteFile(path, got, 0o644); err != nil {
+	for _, srv := range []*server{mysqlServer, mariadbServer} {
+		for golden, db := range map[string]*mysqltest.Database{"shop.json": srv.shop, "fixture.json": srv.fixture} {
+			t.Run(srv.name+"/"+golden, func(t *testing.T) {
+				s, err := read(t, db.DB, db.Name, nil)
+				if err != nil {
 					t.Fatal(err)
 				}
-			}
-			want, err := os.ReadFile(path)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if string(got) != string(want) {
-				t.Errorf("%s differs; rerun with -update and review the diff", golden)
-			}
-		})
+				got, _ := json.MarshalIndent(s, "", "  ")
+				got = []byte(strings.ReplaceAll(string(got), db.Name, "DATABASE") + "\n")
+				path := srv.file(golden)
+				if *update {
+					if err := os.WriteFile(path, got, 0o644); err != nil {
+						t.Fatal(err)
+					}
+				}
+				want, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if string(got) != string(want) {
+					t.Errorf("%s differs; rerun with -update and review the diff", path)
+				}
+			})
+		}
 	}
 }
 
@@ -70,26 +70,6 @@ func (r rewrite) QueryContext(ctx context.Context, q string, args ...any) (*sql.
 		q, args = r.query, nil
 	}
 	return r.Querier.QueryContext(ctx, q, args...)
-}
-
-// MariaDB has no PAD_ATTRIBUTE and no VIEW_TABLE_USAGE: its collations pad
-// unless named nopad, and its views list nothing they read.
-func TestMariaDB(t *testing.T) {
-	s, err := read(t, shopDB.DB, shopDB.Name, func(q Querier) Querier {
-		return rewrite{rewrite{q, "SELECT VERSION()", "SELECT '11.4.2-MariaDB'"},
-			"TABLE_NAME = 'VIEW_TABLE_USAGE'", "SELECT false"}
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if s.Database.Flavor != "mariadb" {
-		t.Errorf("flavor %q", s.Database.Flavor)
-	}
-	for _, tb := range s.Tables {
-		if tb.ViewDef != nil && len(tb.ViewDef.Reads) > 0 {
-			t.Errorf("view %s reads %v", tb.Name, tb.ViewDef.Reads)
-		}
-	}
 }
 
 func TestErrors(t *testing.T) {

@@ -14,12 +14,15 @@
 # The mysql-live tests run against a MySQL 8.4 server named by
 # DQL_TEST_MYSQL_URL, a go-sql-driver/mysql DSN without a database for a user
 # that may create and drop databases (such as root:root@tcp(localhost:3306)/);
-# conformance/mysql/compose.yaml starts one.
+# conformance/mysql/compose.yaml starts one. They also run against a MariaDB
+# server named by DQL_TEST_MARIADB_URL, in the same form (such as
+# root:root@tcp(localhost:3307)/), which the same compose file starts.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 : "${DQL_TEST_POSTGRES_URL:?set DQL_TEST_POSTGRES_URL to a Postgres 16 server URL; the pg-live tests need one}"
 : "${DQL_TEST_MYSQL_URL:?set DQL_TEST_MYSQL_URL to a MySQL 8.4 server DSN; the mysql-live tests need one}"
+: "${DQL_TEST_MARIADB_URL:?set DQL_TEST_MARIADB_URL to a MariaDB 10.11 or newer server DSN; the mysql-live tests need one}"
 
 out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT

@@ -20,14 +20,14 @@ import (
 	"github.com/thec1oud/dql/sources/mysqllive/internal/introspect"
 	"github.com/thec1oud/dql/sources/mysqllive/internal/mapping"
 	"github.com/thec1oud/dql/sources/mysqltest"
-	"github.com/thec1oud/dql/testkit/golden"
+	goldens "github.com/thec1oud/dql/testkit/golden"
 )
 
-// shop is a fresh database holding the MySQL shop, and bin is the plugin
-// built as an executable.
+// shop and mariadbShop are fresh databases holding the shop on the MySQL
+// and the MariaDB server, and bin is the plugin built as an executable.
 var (
-	shop *mysqltest.Database
-	bin  string
+	shop, mariadbShop *mysqltest.Database
+	bin               string
 )
 
 func TestMain(m *testing.M) {
@@ -55,14 +55,21 @@ func run(m *testing.M) int {
 		return 1
 	}
 	defer shop.Drop(ctx)
+	mariadbShop, err = mysqltest.CreateOn(ctx, mysqltest.MariaDBURLEnv, filepath.Join("..", "..", "conformance", "schemas", "mysql", "shop.sql"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL: setting up the test database: %v\n", err)
+		return 1
+	}
+	defer mariadbShop.Drop(ctx)
 	return m.Run()
 }
 
 func hello() *irv1.CoreHello { return &irv1.CoreHello{IrVersion: bundle.Version()} }
 
-// check invokes c and compares the catalog with the mapping's golden shop
-// catalog, which the same schema produces under the database name DATABASE.
-func check(t *testing.T, c plugin.Client) {
+// check invokes c, connected to db, and compares the catalog with the
+// mapping's golden shop catalog for db's flavor, which the same schema
+// produces under the database name DATABASE.
+func check(t *testing.T, c plugin.Client, db *mysqltest.Database) {
 	t.Helper()
 	res, err := c.Invoke(context.Background(), &irv1.Invoke{Bundle: &irv1.Bundle{Version: bundle.Version()}})
 	if err != nil {
@@ -83,38 +90,46 @@ func check(t *testing.T, c plugin.Client) {
 		t.Fatal(err)
 	}
 	got, _ = json.MarshalIndent(v, "", "  ")
-	want, err := os.ReadFile(filepath.Join("internal", "mapping", "testdata", "shop.json"))
+	golden := "shop.json"
+	if db.MariaDB {
+		golden = "shop-mariadb.json"
+	}
+	want, err := os.ReadFile(filepath.Join("internal", "mapping", "testdata", golden))
 	if err != nil {
 		t.Fatal(err)
 	}
 	// The input fingerprint covers the database's name.
 	fingerprint := regexp.MustCompile(`"inputFingerprint": "[^"]*"`)
-	g := golden.Mask([]byte(strings.ReplaceAll(string(got), shop.Name, "DATABASE")), fingerprint)
-	if strings.TrimSpace(string(g)) != strings.TrimSpace(string(golden.Mask(want, fingerprint))) {
-		t.Error("the plugin's catalog differs from the mapping's shop golden")
+	g := goldens.Mask([]byte(strings.ReplaceAll(string(got), db.Name, "DATABASE")), fingerprint)
+	if strings.TrimSpace(string(g)) != strings.TrimSpace(string(goldens.Mask(want, fingerprint))) {
+		t.Errorf("the plugin's catalog differs from the mapping's %s", golden)
 	}
 }
 
 func TestInProcess(t *testing.T) {
-	t.Setenv("DQL_TEST_SHOP_DSN", shop.DSN)
-	c, err := plugin.InProcess(New(Settings{Catalog: "shop", Connection: "env:DQL_TEST_SHOP_DSN"}), hello(), irv1.PluginKind_PLUGIN_KIND_SOURCE)
-	if err != nil {
-		t.Fatal(err)
+	for _, db := range []*mysqltest.Database{shop, mariadbShop} {
+		t.Setenv("DQL_TEST_SHOP_DSN", db.DSN)
+		c, err := plugin.InProcess(New(Settings{Catalog: "shop", Connection: "env:DQL_TEST_SHOP_DSN"}), hello(), irv1.PluginKind_PLUGIN_KIND_SOURCE)
+		if err != nil {
+			t.Fatal(err)
+		}
+		check(t, c, db)
+		c.Close()
 	}
-	defer c.Close()
-	check(t, c)
 }
 
 func TestExecutable(t *testing.T) {
-	t.Setenv("DQL_TEST_SHOP_DSN", shop.DSN)
-	args := []string{"-catalog", "shop", "-connection", "env:DQL_TEST_SHOP_DSN"}
-	c, err := plugin.Start(context.Background(), bin, "", args, hello(), irv1.PluginKind_PLUGIN_KIND_SOURCE)
-	if err != nil {
-		t.Fatal(err)
-	}
-	check(t, c)
-	if err := c.Close(); err != nil {
-		t.Fatal(err)
+	for _, db := range []*mysqltest.Database{shop, mariadbShop} {
+		t.Setenv("DQL_TEST_SHOP_DSN", db.DSN)
+		args := []string{"-catalog", "shop", "-connection", "env:DQL_TEST_SHOP_DSN"}
+		c, err := plugin.Start(context.Background(), bin, "", args, hello(), irv1.PluginKind_PLUGIN_KIND_SOURCE)
+		if err != nil {
+			t.Fatal(err)
+		}
+		check(t, c, db)
+		if err := c.Close(); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

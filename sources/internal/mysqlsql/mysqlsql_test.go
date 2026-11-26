@@ -215,6 +215,11 @@ func TestRecognizeCheck(t *testing.T) {
 		{"regexp_like(`s`, '\\\\d', 'c')", ""},
 		{"regexp_like(`n`, 'x', 'c')", ""},
 		{"regexp_like(`s`, 1, 'c')", ""},
+		{"regexp_like(`s`, '(?-i)^[a-z]+$')", `pattern: { regex: "^[a-z]+$" }`},
+		{"regexp_like(`s`, 'a', 'c', 1)", ""},
+		{"`s` regexp '(?-i)^[a-z]+$'", `pattern: { regex: "^[a-z]+$" }`},
+		{"`s` regexp '^[a-z]+$'", ""},
+		{"`s` not regexp '(?-i)^[a-z]+$'", ""},
 		{"abs(`n`) > 0", ""},
 		{"char_length(`n`) > 0", ""},
 		{"char_length(`s`, 1) > 0", ""},
@@ -242,5 +247,16 @@ func TestRecognizeCheck(t *testing.T) {
 	}
 	if got := Unescape(`a \'b\'`); got != "a 'b'" {
 		t.Errorf("Unescape %q", got)
+	}
+}
+
+func TestViewReads(t *testing.T) {
+	got, err := ViewReads("with c as (select 1 as x) select `p`.`id` from (`db`.`posts` `p` join `db`.`users` `u` on(`u`.`id` = `p`.`author_id`)) " +
+		"where exists (select 1 from `db`.`posts` `q`) and `p`.`id` in (select x from c)")
+	if err != nil || strings.Join(got, ",") != "db.posts,db.users" {
+		t.Errorf("reads %v, %v", got, err)
+	}
+	if _, err := ViewReads("select from"); err == nil || !strings.HasPrefix(err.Error(), "the view definition does not parse") {
+		t.Errorf("bad definition: %v", err)
 	}
 }

@@ -330,7 +330,7 @@
       "checks": [
         {
           "name": "tags_name_check",
-          "clause": "regexp_like(`name`,_utf8mb4\\'^[a-z0-9]+(-[a-z0-9]+)*$\\',_utf8mb4\\'c\\')",
+          "clause": "regexp_like(`name`,_utf8mb4\\'(?-i)^[a-z0-9]+(-[a-z0-9]+)*$\\')",
           "enforced": true
         }
       ],

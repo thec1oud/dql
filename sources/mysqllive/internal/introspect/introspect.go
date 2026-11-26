@@ -8,8 +8,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/thec1oud/dql/sources/internal/mysqlsql"
 )
 
 // Querier is what Read needs from a connection: database/sql's *sql.Tx.
@@ -37,6 +40,8 @@ type reader struct {
 	q   Querier
 	db  string
 	err error
+	// mariadb is set once the server says it is MariaDB.
+	mariadb bool
 }
 
 // query runs sql with args and scans each row into dest's pointers, which
@@ -78,18 +83,23 @@ func (r *reader) database(s *Snapshot) {
 	s.Database = Database{Flavor: "mysql", CharacterSet: cs, Collation: co}
 	if strings.Contains(strings.ToLower(version), "mariadb") {
 		s.Database.Flavor = "mariadb"
+		r.mariadb = true
 	}
 	// The collations the database and its columns use. MariaDB has no
-	// PAD_ATTRIBUTE; its NO PAD collations say so in their names.
-	pad := "PAD_ATTRIBUTE = 'PAD SPACE'"
-	if s.Database.Flavor == "mariadb" {
-		pad = "COLLATION_NAME NOT LIKE '%nopad%'"
+	// PAD_ATTRIBUTE, its NO PAD collations say so in their names, and it
+	// lists collations it shares between character sets, such as the UCA
+	// 14.0 ones, only by their full names in the applicability table.
+	from := "COLLATION_NAME, PAD_ATTRIBUTE = 'PAD SPACE' FROM information_schema.COLLATIONS"
+	name := "COLLATION_NAME"
+	if r.mariadb {
+		from = "FULL_COLLATION_NAME, FULL_COLLATION_NAME NOT LIKE '%nopad%' FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY"
+		name = "FULL_COLLATION_NAME"
 	}
 	var c Collation
-	r.query("collations", `SELECT COLLATION_NAME, `+pad+` FROM information_schema.COLLATIONS
-		WHERE COLLATION_NAME = ? OR COLLATION_NAME IN
+	r.query("collations", `SELECT `+from+`
+		WHERE `+name+` = ? OR `+name+` IN
 		(SELECT COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ?)
-		ORDER BY COLLATION_NAME`,
+		ORDER BY 1`,
 		func() []any { c = Collation{}; return []any{&c.Name, &c.PadSpace} },
 		func() { s.Database.Collations = append(s.Database.Collations, c) }, co, r.db)
 }
@@ -119,9 +129,53 @@ func (r *reader) tables(s *Snapshot) {
 	r.foreignKeys(byName)
 	r.triggers(byName)
 	r.views(byName)
+	// MySQL and MariaDB order names by different collations; the snapshot
+	// orders them the same on both.
+	slices.SortFunc(names, nameOrder)
 	for _, n := range names {
-		s.Tables = append(s.Tables, *byName[n])
+		t := byName[n]
+		if r.mariadb {
+			mariaJSON(t)
+		}
+		slices.SortStableFunc(t.Checks, func(a, b Check) int { return nameOrder(a.Name, b.Name) })
+		slices.SortStableFunc(t.Indexes, func(a, b Index) int { return nameOrder(a.Name, b.Name) })
+		slices.SortStableFunc(t.ForeignKeys, func(a, b ForeignKey) int { return nameOrder(a.Name, b.Name) })
+		slices.SortStableFunc(t.Triggers, func(a, b Trigger) int { return nameOrder(a.Name, b.Name) })
+		s.Tables = append(s.Tables, *t)
 	}
+}
+
+// mariaJSON makes a MariaDB JSON column one as MySQL has it. MariaDB's JSON is
+// LONGTEXT with a check, named after the column, that it holds valid JSON.
+func mariaJSON(t *Table) {
+	for i, c := range t.Columns {
+		at := slices.IndexFunc(t.Checks, func(k Check) bool {
+			return k.Name == c.Name && k.Clause == "json_valid(`"+c.Name+"`)"
+		})
+		if c.DataType == "longtext" && at >= 0 {
+			t.Columns[i].DataType, t.Columns[i].ColumnType = "json", "json"
+			t.Columns[i].CharacterSet, t.Columns[i].Collation = "", ""
+			t.Checks = slices.Delete(t.Checks, at, at+1)
+		}
+	}
+}
+
+// nameOrder orders names as MySQL does: ignoring case, then by bytes.
+func nameOrder(a, b string) int {
+	return cmp.Or(strings.Compare(strings.ToLower(a), strings.ToLower(b)), strings.Compare(a, b))
+}
+
+// widths matches an integer or year type with a display width.
+var widths = regexp.MustCompile(`^(tinyint|smallint|mediumint|int|bigint|year)\(\d+\)`)
+
+// typ is a column, return or parameter type as MySQL 8 prints it. MariaDB
+// prints integers and years with display widths, which mean nothing; MySQL
+// keeps one only on tinyint(1), which marks a boolean, and with zerofill.
+func (r *reader) typ(t string) string {
+	if !r.mariadb || strings.HasPrefix(t, "tinyint(1)") || strings.Contains(t, "zerofill") {
+		return t
+	}
+	return widths.ReplaceAllString(t, "$1")
 }
 
 func (r *reader) columns(byName map[string]*Table) {
@@ -144,6 +198,7 @@ func (r *reader) columns(byName map[string]*Table) {
 				c.Default = &d
 			}
 			c.Generation, c.CharacterSet, c.Collation = gen.String, cs.String, co.String
+			c.ColumnType = r.typ(c.ColumnType)
 			t.Columns = append(t.Columns, c)
 		}, r.db)
 }
@@ -152,7 +207,12 @@ func (r *reader) checks(byName map[string]*Table) {
 	var table string
 	var c Check
 	var enforced string
-	r.query("check constraints", `SELECT tc.TABLE_NAME, cc.CONSTRAINT_NAME, cc.CHECK_CLAUSE, tc.ENFORCED
+	// MariaDB enforces every check and has no ENFORCED column.
+	column := "tc.ENFORCED"
+	if r.mariadb {
+		column = "'YES'"
+	}
+	r.query("check constraints", `SELECT tc.TABLE_NAME, cc.CONSTRAINT_NAME, cc.CHECK_CLAUSE, `+column+`
 		FROM information_schema.CHECK_CONSTRAINTS cc
 		JOIN information_schema.TABLE_CONSTRAINTS tc
 		  ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
@@ -174,8 +234,14 @@ func (r *reader) indexes(byName map[string]*Table) {
 	var sub sql.NullInt64
 	byIndex := map[[2]string]*Index{}
 	var order [][2]string
+	// MariaDB says IGNORED for an invisible index, and indexes no
+	// expressions.
+	columns := "IS_VISIBLE, INDEX_COMMENT, EXPRESSION"
+	if r.mariadb {
+		columns = "IF(IGNORED = 'YES', 'NO', 'YES'), INDEX_COMMENT, NULL"
+	}
 	r.query("indexes", `SELECT TABLE_NAME, INDEX_NAME, NON_UNIQUE, COLUMN_NAME, SUB_PART, COLLATION, INDEX_TYPE,
-		IS_VISIBLE, INDEX_COMMENT, EXPRESSION
+		`+columns+`
 		FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME, INDEX_NAME, SEQ_IN_INDEX`,
 		func() []any {
 			return []any{&table, &name, &nonUnique, &col, &sub, &coll, &typ, &visible, &comment, &expr}
@@ -263,13 +329,23 @@ func (r *reader) views(byName map[string]*Table) {
 	if r.err != nil {
 		return
 	}
-	// MySQL 8.0.13 and later list what each view reads; MariaDB does not.
+	// MySQL 8.0.13 and later list what each view reads; MariaDB does not, so
+	// there the reads come from each view's definition.
 	var view, db, table string
 	var has bool
 	r.query("view usage support", `SELECT COUNT(*) > 0 FROM information_schema.TABLES
 		WHERE TABLE_SCHEMA = 'information_schema' AND TABLE_NAME = 'VIEW_TABLE_USAGE'`,
 		func() []any { return []any{&has} }, func() {})
 	if !has {
+		for _, t := range byName {
+			if t.ViewDef == nil {
+				continue
+			}
+			// A definition that does not parse reads nothing dql knows of.
+			if reads, err := mysqlsql.ViewReads(t.ViewDef.Definition); err == nil {
+				t.ViewDef.Reads = reads
+			}
+		}
 		return
 	}
 	r.query("view usage", `SELECT VIEW_NAME, TABLE_SCHEMA, TABLE_NAME FROM information_schema.VIEW_TABLE_USAGE
@@ -295,7 +371,7 @@ func (r *reader) routines(s *Snapshot) {
 			return []any{&rt.Name, &rt.Type, &rt.Comment, &returns, &deterministic, &rt.DataAccess, &rt.SecurityType, &def}
 		},
 		func() {
-			rt.Returns, rt.Definition, rt.Deterministic = returns.String, def.String, deterministic == "YES"
+			rt.Returns, rt.Definition, rt.Deterministic = r.typ(returns.String), def.String, deterministic == "YES"
 			s.Routines = append(s.Routines, rt)
 		}, r.db)
 	for i := range s.Routines {
@@ -310,7 +386,7 @@ func (r *reader) routines(s *Snapshot) {
 		func() []any { a = Argument{}; return []any{&name, &typ, &mode, &pname, &a.Type} },
 		func() {
 			if rt := byName[typ+"."+name]; rt != nil {
-				a.Name, a.Mode = pname.String, cmp.Or(mode.String, "")
+				a.Name, a.Mode, a.Type = pname.String, cmp.Or(mode.String, ""), r.typ(a.Type)
 				if rt.Type == "FUNCTION" {
 					a.Mode = ""
 				}

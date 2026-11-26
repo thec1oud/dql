@@ -55,7 +55,7 @@ CREATE TABLE tags (
   name VARCHAR(200) NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT tags_name_key UNIQUE (name),
-  CONSTRAINT tags_name_check CHECK (regexp_like(name, '^[a-z0-9]+(-[a-z0-9]+)*$', 'c'))
+  CONSTRAINT tags_name_check CHECK (name REGEXP '(?-i)^[a-z0-9]+(-[a-z0-9]+)*$')
 );
 
 CREATE TABLE post_tags (

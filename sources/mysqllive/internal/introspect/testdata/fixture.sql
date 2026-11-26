@@ -30,6 +30,7 @@ CREATE TABLE children (
 );
 
 CREATE TRIGGER children_bi BEFORE INSERT ON children FOR EACH ROW SET NEW.id = NEW.id;
+CREATE TRIGGER children_bu BEFORE UPDATE ON children FOR EACH ROW SET NEW.id = NEW.id;
 
 CREATE VIEW kind_names AS SELECT k.id, c.id AS child FROM kinds k JOIN children c ON c.kind_id = k.id;
 
