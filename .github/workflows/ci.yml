@@ -82,6 +82,24 @@ jobs:
         run: |
           go test $(go work edit -json | sed -n 's/.*"DiskPath": "\(.*\)".*/\1\/.../p')
 
+  # The TypeScript runtime: type checks, a build, and its unit tests on
+  # Bun with 100% coverage.
+  ts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: runtime/ts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run build
+      - name: test with 100% coverage
+        run: bun run coverage
+
   rules:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
