@@ -220,6 +220,7 @@ func TestPatchNestedPlans(t *testing.T) {
 			s.Fields = append(s.Fields, shapeField(presetShape(t, b, "posts", full, flat, ""), "slug"))
 		}, "user.dql.go", false, nil},
 		{"delete without delete", func(t *testing.T, b *irv1.Bundle) { dropQuery(b, "post.delete") }, "user.dql.go", false, nil},
+		{"update without get", func(t *testing.T, b *irv1.Bundle) { dropQuery(b, "profile.get.by_primary") }, "user.dql.go", false, nil},
 		{"replace and unlink", func(t *testing.T, b *irv1.Bundle) { replace(t, b, "users", "posts_to_editor") }, "user.dql.go", true, []string{
 			"var kept []PostKey",
 			"where := dql.And(Posts.EditorID.Eq(row.ID))",

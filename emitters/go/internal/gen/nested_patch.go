@@ -163,6 +163,10 @@ func (g *generator) childChange(s *nestStep) bool {
 	}
 	for _, c := range g.variants(s.draft) {
 		pl := g.payload(s.draft, c)
+		// An update or delete first reads the child it names.
+		if (c == irv1.RelationChange_RELATION_CHANGE_UPDATE || c == irv1.RelationChange_RELATION_CHANGE_DELETE) && !s.to.has("get") {
+			return false
+		}
 		switch c {
 		case irv1.RelationChange_RELATION_CHANGE_CREATE:
 			if !g.fills(s.to.draft, pl, fk) {
