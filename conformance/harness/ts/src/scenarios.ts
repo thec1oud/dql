@@ -10,6 +10,7 @@ import * as mysql from "./mysql.ts";
 import * as postgres from "./postgres.ts";
 import { root, schemas } from "./schemas.ts";
 import * as sqlite from "./sqlite.ts";
+import * as sqlserver from "./sqlserver.ts";
 
 /** Dialect is how the scenarios run on one dialect: its name in messages, the variable naming its server, empty for one that has none, the statement modes they run in, the features its schemas hold, how to create a database on its server, and, where it has one, the variable naming a replica of the server and how to find a database's copy there. */
 export interface Dialect {
@@ -27,7 +28,7 @@ export interface Dialect {
  * TypeScript driver has, simple needing a protocol node-postgres does not
  * offer; on MySQL and MariaDB they are Go's, whose outcomes the TypeScript
  * ones are compared with. SQLite runs in the process, with no server, and
- * prepares every statement.
+ * prepares every statement, as SQL Server's drivers do.
  */
 export const dialects: Readonly<Record<string, Dialect>> = {
   postgres: {
@@ -59,6 +60,13 @@ export const dialects: Readonly<Record<string, Dialect>> = {
     modes: ["prepare"],
     features: ["params-32766", "returning", "settable-identity"],
     database: sqlite.database,
+  },
+  sqlserver: {
+    label: "SQL Server",
+    env: "DQL_TEST_SQLSERVER_URL",
+    modes: ["prepare"],
+    features: ["named-foreign-keys", "params-2100", "returning", "stall"],
+    database: sqlserver.database,
   },
 };
 

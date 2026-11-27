@@ -9,10 +9,12 @@ import { database, replicaOf } from "../src/postgres.ts";
 import { missing, open, scenarios } from "../src/scenarios.ts";
 import { root, rotationWait, schemas } from "../src/schemas.ts";
 import * as sqlite from "../src/sqlite.ts";
+import * as sqlserver from "../src/sqlserver.ts";
 
 const base = process.env["DQL_TEST_POSTGRES_URL"] ?? "";
 const mysqlBase = process.env["DQL_TEST_MYSQL_URL"] ?? "";
 const mysqlReplica = process.env["DQL_TEST_MYSQL_REPLICA_URL"] ?? "";
+const sqlserverBase = process.env["DQL_TEST_SQLSERVER_URL"] ?? "";
 const saved = { ...process.env };
 
 afterEach(() => {
@@ -102,26 +104,40 @@ test("SQLite", async () => {
   await expect(open("shop", "prepare", true, 0, "sqlite")).rejects.toThrow("SQLite has no replica");
 });
 
+test("SQL Server", async () => {
+  await expect(sqlserver.inject(sqlserverBase, { delay: "soon", times: 1 })).rejects.toThrow("delay: ");
+  await expect(sqlserver.inject(sqlserverBase, { class: "Deadlock", times: 1 })).rejects.toThrow("no injected failure of class Deadlock on SQL Server");
+  // A database whose DDL fails is dropped.
+  const ddl = join(await mkdtemp(join(tmpdir(), "ddl-")), "bad.sql");
+  await writeFile(ddl, "NOT SQL");
+  await expect(sqlserver.database(sqlserverBase, [ddl])).rejects.toThrow("Incorrect syntax");
+  // A server that refuses the login fails to connect.
+  await expect(sqlserver.run("sqlserver://nobody:wrong@127.0.0.1:1433", "SELECT 1")).rejects.toThrow("Login failed");
+  await expect(sqlserver.replay()).rejects.toThrow("the SQL Server schemas have no replica");
+  await expect(open("shop", "prepare", true, 0, "sqlserver")).rejects.toThrow("SQL Server has no replica");
+});
+
 test("scenarios", async () => {
   const out = await mkdtemp(join(tmpdir(), "outcomes-"));
   process.env["DQL_CONFORMANCE_OUTCOMES"] = out;
   const lines: string[] = [];
   expect(await scenarios(["raw"], (l) => lines.push(l))).toBe(0);
-  expect(lines).toEqual(["ok prepare/raw", "ok describe/raw", "ok mysql/prepare/raw", "ok mysql/simple/raw", "ok mariadb/prepare/raw", "ok mariadb/simple/raw", "ok sqlite/prepare/raw"]);
-  expect((await readdir(out)).sort()).toEqual(["describe", "mariadb", "mysql", "prepare", "sqlite"]);
+  expect(lines).toEqual(["ok prepare/raw", "ok describe/raw", "ok mysql/prepare/raw", "ok mysql/simple/raw", "ok mariadb/prepare/raw", "ok mariadb/simple/raw", "ok sqlite/prepare/raw", "ok sqlserver/prepare/raw"]);
+  expect((await readdir(out)).sort()).toEqual(["describe", "mariadb", "mysql", "prepare", "sqlite", "sqlserver"]);
   expect((await readdir(join(out, "mysql"))).sort()).toEqual(["prepare", "simple"]);
   expect(JSON.parse(await readFile(join(out, "prepare", "raw.json"), "utf8"))[0].op).toBe("tenants.insert");
   expect(JSON.parse(await readFile(join(out, "mysql", "simple", "raw.json"), "utf8"))[0].op).toBe("tenants.insert");
   expect(JSON.parse(await readFile(join(out, "sqlite", "prepare", "raw.json"), "utf8"))[0].op).toBe("tenants.insert");
+  expect(JSON.parse(await readFile(join(out, "sqlserver", "prepare", "raw.json"), "utf8"))[0].op).toBe("tenants.insert");
 });
 
 test("scenarios with problems", async () => {
   const dir = await mkdtemp(join(tmpdir(), "scenarios-"));
   await writeFile(join(dir, "s.yaml"), "scenario: s\nschema: shop\nsteps:\n  - op: tenants.count\n    expect: { value: 1 }\n");
   const lines: string[] = [];
-  expect(await scenarios([], (l) => lines.push(l), dir)).toBe(7);
+  expect(await scenarios([], (l) => lines.push(l), dir)).toBe(8);
   expect(lines).toEqual(
-    ["prepare", "describe", "mysql/prepare", "mysql/simple", "mariadb/prepare", "mariadb/simple", "sqlite/prepare"].flatMap((m) => [`${m}/s step 1 (tenants.count): want value 1, got 0`, `FAIL ${m}/s`]),
+    ["prepare", "describe", "mysql/prepare", "mysql/simple", "mariadb/prepare", "mariadb/simple", "sqlite/prepare", "sqlserver/prepare"].flatMap((m) => [`${m}/s step 1 (tenants.count): want value 1, got 0`, `FAIL ${m}/s`]),
   );
 });
 
@@ -136,6 +152,7 @@ test("a scenario needing a feature a dialect lacks is skipped there", async () =
     "ok mariadb/prepare/tinyint-bool",
     "ok mariadb/simple/tinyint-bool",
     "skip sqlite/prepare/tinyint-bool: SQLite lacks tinyint-bool",
+    "skip sqlserver/prepare/tinyint-bool: SQL Server lacks tinyint-bool",
   ]);
 });
 
@@ -152,5 +169,6 @@ test("a scenario on a schema a dialect lacks is skipped there", async () => {
     "skip mariadb/prepare/v: MariaDB has no schema shop_variants",
     "skip mariadb/simple/v: MariaDB has no schema shop_variants",
     "skip sqlite/prepare/v: SQLite has no schema shop_variants",
+    "skip sqlserver/prepare/v: SQL Server has no schema shop_variants",
   ]);
 });
