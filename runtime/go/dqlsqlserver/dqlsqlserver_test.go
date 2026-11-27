@@ -387,8 +387,19 @@ func TestTransactions(t *testing.T) {
 	}
 	canceled, cancel := context.WithCancel(ctx)
 	cancel()
-	if c.Begin(ctx, dql.TxOptions{Isolation: "bogus"}) == nil || c.Begin(canceled, dql.TxOptions{}) == nil || c.Commit(canceled) == nil || c.Rollback(canceled) == nil {
-		t.Error("no error")
+	if c.Begin(ctx, dql.TxOptions{Isolation: "bogus"}) == nil {
+		t.Error("a bogus isolation level began")
+	}
+	// A done context fails each statement unsent, and the connection stays
+	// good.
+	id = connID(t, c)
+	for i, err := range []error{c.Begin(canceled, dql.TxOptions{}), c.Commit(canceled), c.Rollback(canceled)} {
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("call %d: %v", i, err)
+		}
+	}
+	if connID(t, c) != id {
+		t.Error("a done context broke the connection")
 	}
 	c.Release()
 }

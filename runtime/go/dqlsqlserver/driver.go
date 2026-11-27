@@ -189,7 +189,13 @@ func quote(name string) string {
 	return "[" + strings.ReplaceAll(name, "]", "]]") + "]"
 }
 
+// exec runs q. go-mssqldb sends a statement even when its context is
+// done, and the statement then runs, fails, or breaks the connection, by
+// how soon the driver sees the context; a done context fails it unsent.
 func (c *conn) exec(ctx context.Context, q string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	_, err := c.c.ExecContext(ctx, q)
 	return err
 }
