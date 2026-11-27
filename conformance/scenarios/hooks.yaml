@@ -1,6 +1,6 @@
 scenario: hooks
 schema: shop
-requires: [returning, serialization-failure]
+requires: [deadlock, returning]
 steps:
   # A query's end names the query and counts its rows (§24).
   - op: tenants.insert
@@ -54,7 +54,7 @@ steps:
         - { tx: end, outcome: commit }
   # A retry is reported between the failed run's end and the next begin.
   - op: write
-    inject: { class: SerializationFailure, times: 1 }
+    inject: { class: Deadlock, times: 1 }
     steps:
       - op: tenants.insert
         input: { name: globex }
@@ -62,9 +62,9 @@ steps:
       attempts: 2
       events:
         - { tx: begin, attempt: 1 }
-        - { query: tenant.insert, attempt: 1, class: SerializationFailure }
-        - { tx: end, outcome: rollback, class: SerializationFailure }
-        - { tx: retry, attempt: 1, class: SerializationFailure }
+        - { query: tenant.insert, attempt: 1, class: Deadlock }
+        - { tx: end, outcome: rollback, class: Deadlock }
+        - { tx: retry, attempt: 1, class: Deadlock }
         - { tx: begin, attempt: 2 }
         - { query: tenant.insert, attempt: 2, rows: 1 }
         - { tx: end, attempt: 2, outcome: commit }
