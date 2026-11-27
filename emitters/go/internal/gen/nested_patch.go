@@ -233,13 +233,14 @@ func (g *generator) keyLit(to *entity, v string, src *irv1.Shape) string {
 	return Exported(to.key.GetHostName().GetWords()) + "{" + strings.Join(fields, ", ") + "}"
 }
 
-// match is the predicate on e's rows that cols of e equal the values vals.
-func (g *generator) match(e *entity, cols, vals []string) string {
+// match is the predicate on e's rows that cols of e equal the values vals,
+// written into f.
+func (g *generator) match(f *file, e *entity, cols, vals []string) string {
 	var ps []string
 	for i, c := range cols {
 		ps = append(ps, fmt.Sprintf("%s.%s.Eq(%s)", e.plural, Exported(column(e.t, c).GetHostName().GetWords()), vals[i]))
 	}
-	return e.f.use(pkgDQL, "dql") + ".And(" + strings.Join(ps, ", ") + ")"
+	return f.use(pkgDQL, "dql") + ".And(" + strings.Join(ps, ", ") + ")"
 }
 
 // keyCols are e's Key columns but its expected version.
@@ -369,7 +370,7 @@ func (g *generator) patchNested(e *entity, s signature) {
 			for _, c := range keyCols(st.to) {
 				order = append(order, fmt.Sprintf("%s.%s.Asc()", st.to.plural, Exported(column(st.to.t, c).GetHostName().GetWords())))
 			}
-			sel := fmt.Sprintf("Select(%s, Shapes.%s).Where(%s).OrderBy(%s)", store(st.to), Exported(st.to.full.GetHostName().GetWords()), g.match(st.to, fk, vals), strings.Join(order, ", "))
+			sel := fmt.Sprintf("Select(%s, Shapes.%s).Where(%s).OrderBy(%s)", store(st.to), Exported(st.to.full.GetHostName().GetWords()), g.match(f, st.to, fk, vals), strings.Join(order, ", "))
 			if toMany(st.r) {
 				f.printf("\t\tif out.%s, err = %s.All(ctx); err != nil {\n\t\t\treturn err\n\t\t}\n", name, sel)
 				continue
@@ -516,7 +517,7 @@ func (g *generator) childChanges(f *file, e *entity, st *nestStep) {
 				kvals = append(kvals, "k."+g.fieldName(st.to.key, c))
 			}
 			f.printf("\t\t\t// Replace removes the children the changes leave out.\n\t\t\twhere := %s\n\t\t\tfor _, k := range kept {\n\t\t\t\twhere = %s.And(where, %s.Not(%s))\n\t\t\t}\n",
-				g.match(st.to, fk, vals), dql, dql, g.match(st.to, kcols, kvals))
+				g.match(f, st.to, fk, vals), dql, dql, g.match(f, st.to, kcols, kvals))
 			if unlink {
 				f.printf("\t\t\tif _, err := %s.UpdateWhere(ctx, where, %s{%s}); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n", store, Exported(st.to.part.GetHostName().GetWords()), strings.Join(unset, ", "))
 			} else {
@@ -582,7 +583,7 @@ func (g *generator) linkChanges(f *file, e *entity, st *nestStep) {
 			fvals = append(fvals, "k."+g.fieldName(st.to.key, st.far.GetTo().GetColumns()[i]))
 		}
 		f.printf("\t\t\t// Replace unlinks the rows the changes leave out.\n\t\t\twhere := %s\n\t\t\tfor _, k := range kept {\n\t\t\t\twhere = %s.And(where, %s.Not(%s))\n\t\t\t}\n\t\t\tif _, err := %s.DeleteWhere(ctx, where); err != nil {\n\t\t\t\treturn err\n\t\t\t}\n",
-			g.match(st.via, st.own.GetFrom().GetColumns(), vals), dql, dql, g.match(st.via, st.far.GetFrom().GetColumns(), fvals), via)
+			g.match(f, st.via, st.own.GetFrom().GetColumns(), vals), dql, dql, g.match(f, st.via, st.far.GetFrom().GetColumns(), fvals), via)
 	}
 	f.printf("\t\t}\n")
 }
