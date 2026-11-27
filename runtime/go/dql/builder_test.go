@@ -51,6 +51,24 @@ func noLimitTable() *Fragments {
 	return t
 }
 
+// pageTable is a dialect, such as SQL Server, whose page is one clause that
+// needs an ORDER BY and whose locks are table hints.
+var pageTable = &Fragments{Placeholder: AtNumbered, Templates: map[string]string{
+	"select.user":      `SELECT u.[id] FROM [app].[users] AS u{locks}`,
+	"select.distinct":  `SELECT DISTINCT {cols} FROM {from}{locks}`,
+	"from.users":       `[app].[users] AS u`,
+	"col.users.id":     `u.[id]`,
+	"clause.order":     ` ORDER BY {0}`,
+	"clause.offset":    ` OFFSET {0} ROWS`,
+	"clause.page":      ` OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY`,
+	"order.asc":        `{0} ASC`,
+	"order.none":       ` ORDER BY (SELECT NULL)`,
+	"value.zero":       `0`,
+	"lock.hints":       ` WITH ({0})`,
+	"lock.update":      `UPDLOCK, ROWLOCK`,
+	"lock.skip_locked": `READPAST`,
+}}
+
 func colEq(col string, v any) Pred[userE] {
 	return NewPred[userE](Use{Fragment: "op.eq", Holes: map[string]Node{"0": Use{Fragment: col}, "1": Arg{Value: v}}})
 }
@@ -96,6 +114,19 @@ func TestBuilderStatements(t *testing.T) {
 		{name: "distinct", b: b.Distinct(), want: `SELECT DISTINCT u."id" FROM "app"."users" u`, args: "[]"},
 		{name: "locks", b: b.ForUpdate().SkipLocked(), want: `SELECT u."id" FROM "app"."users" u FOR UPDATE SKIP LOCKED`, args: "[]"},
 		{name: "share", b: b.ForShare().NoWait(), want: `SELECT u."id" FROM "app"."users" u FOR SHARE NOWAIT`, args: "[]"},
+		// A page is one clause, ordered by nothing when the call orders
+		// nothing; locks are table hints on the from item.
+		{name: "hinted page", b: NewBuilder(pageTable, From{}, userShape).Limit(10).Offset(20),
+			want: `SELECT u.[id] FROM [app].[users] AS u ORDER BY (SELECT NULL) OFFSET @p1 ROWS FETCH NEXT @p2 ROWS ONLY`, args: "[20 10]"},
+		{name: "hinted limit", b: NewBuilder(pageTable, From{}, userShape).OrderBy(asc).Limit(10),
+			want: `SELECT u.[id] FROM [app].[users] AS u ORDER BY u.[id] ASC OFFSET 0 ROWS FETCH NEXT @p1 ROWS ONLY`, args: "[10]"},
+		{name: "hinted offset", b: NewBuilder(pageTable, From{}, userShape).Offset(5),
+			want: `SELECT u.[id] FROM [app].[users] AS u ORDER BY (SELECT NULL) OFFSET @p1 ROWS`, args: "[5]"},
+		{name: "hinted plain", b: NewBuilder(pageTable, From{}, userShape), want: `SELECT u.[id] FROM [app].[users] AS u`, args: "[]"},
+		{name: "hinted locks", b: NewBuilder(pageTable, From{}, userShape).ForUpdate().SkipLocked(),
+			want: `SELECT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK, READPAST)`, args: "[]"},
+		{name: "hinted distinct", b: NewBuilder(pageTable, From{}, userShape).Distinct().ForUpdate(),
+			want: `SELECT DISTINCT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK)`, args: "[]"},
 		{name: "count", b: where.OrderBy(asc).Limit(1), agg: "count",
 			want: `SELECT count(*) FROM "app"."users" u WHERE ((u."email" = $1 OR u."email" = $2) OR NOT (u."id" > $3))`, args: "[a b 1]"},
 		{name: "exists", b: b, agg: "exists", want: `SELECT EXISTS (SELECT FROM "app"."users" u)`, args: "[]"},

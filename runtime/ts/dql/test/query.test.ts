@@ -12,6 +12,7 @@ import {
   type Pred,
   type Query,
   type Shape,
+  type Use,
   allRows,
   and,
   arg,
@@ -286,6 +287,46 @@ describe("the builder (§18)", () => {
     expect(last(f).sql).toBe(`SELECT u."id" FROM "app"."users" u`);
   });
 
+  test("a page in one clause, and locks as table hints", async () => {
+    const [f, e] = await fakeExec();
+    f.onAny("user.select").returns([7n]);
+    const hinted: Fragments = {
+      placeholder: "at",
+      templates: {
+        "select.user": `SELECT u.[id] FROM [app].[users] AS u{locks}`,
+        "select.distinct": `SELECT DISTINCT {cols} FROM {from}{locks}`,
+        "from.users": `[app].[users] AS u`,
+        "col.users.id": `u.[id]`,
+        "clause.order": ` ORDER BY {0}`,
+        "clause.offset": ` OFFSET {0} ROWS`,
+        "clause.page": ` OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY`,
+        "order.asc": `{0} ASC`,
+        "order.none": ` ORDER BY (SELECT NULL)`,
+        "value.zero": `0`,
+        "lock.hints": ` WITH ({0})`,
+        "lock.update": `UPDLOCK, ROWLOCK`,
+        "lock.skip_locked": `READPAST`,
+      },
+    };
+    const b = newBuilder(hinted, { h: e }, userShape);
+    const asc = newOrder<UserE>(use("order.asc", { "0": use("col.users.id") }));
+    const noLimit: Fragments = { ...builderTable, templates: { ...builderTable.templates, "value.no_limit": "18446744073709551615" } };
+    const cases: [string, () => Promise<unknown>, string, unknown[]][] = [
+      ["page", () => b.limit(10).offset(20n).all(), `SELECT u.[id] FROM [app].[users] AS u ORDER BY (SELECT NULL) OFFSET @p1 ROWS FETCH NEXT @p2 ROWS ONLY`, [20n, 10n]],
+      ["limit", () => b.orderBy(asc).limit(10).all(), `SELECT u.[id] FROM [app].[users] AS u ORDER BY u.[id] ASC OFFSET 0 ROWS FETCH NEXT @p1 ROWS ONLY`, [10n]],
+      ["offset", () => b.offset(5n).all(), `SELECT u.[id] FROM [app].[users] AS u ORDER BY (SELECT NULL) OFFSET @p1 ROWS`, [5n]],
+      ["plain", () => b.all(), `SELECT u.[id] FROM [app].[users] AS u`, []],
+      ["locks", () => b.forUpdate().skipLocked().all(), `SELECT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK, READPAST)`, []],
+      ["distinct", () => b.distinct().forUpdate().all(), `SELECT DISTINCT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK)`, []],
+      // A dialect without OFFSET alone limits to every row.
+      ["offset alone", () => newBuilder(noLimit, { h: e }, userShape).offset(5n).all(), `SELECT u."id" FROM "app"."users" u LIMIT 18446744073709551615 OFFSET $1`, [5n]],
+    ];
+    for (const [name, run, sql, args] of cases) {
+      await run();
+      expect([name, last(f).sql, last(f).args]).toEqual([name, sql, args]);
+    }
+  });
+
   test("terminals", async () => {
     const [f, e] = await fakeExec();
     const b = newBuilder(builderTable, { h: e }, userShape);
@@ -467,6 +508,20 @@ describe("writes (§20)", () => {
     expect(last(f).sql).toBe(`INSERT INTO "app"."users" AS u ("name") VALUES ($1), ($2) RETURNING u."id"$3`);
     expect(await insertMany(e, lite, insert, [], (r: Row) => r)).toEqual([]);
     expect(statementOf(insert, lite, { email: "e" }).sql).toBe(`INSERT INTO "app"."users" AS u ("email") VALUES ($1) RETURNING u."id"$2`);
+    // A MERGE's new-row values leave out the unset columns too.
+    const merging: Fragments = {
+      ...lite,
+      templates: { ...lite.templates, "upsert.users": "MERGE USING (VALUES {rows}) AS n ({cols}) INSERT ({cols}) VALUES ({news})", "excluded.users.email": `n."email"`, "excluded.users.name": `n."name"` },
+    };
+    const head = insert.plan[0] as Use;
+    const merge: Query = {
+      name: "user.upsert",
+      catalog: "shop",
+      kind: "insert",
+      writes: true,
+      plan: [use("upsert.users", { cols: head.holes?.["cols"] as Node, rows: head.holes?.["rows"] as Node, news: list([use("excluded.users.email"), use("excluded.users.name")], ", ") })],
+    };
+    expect(statementOf(merge, merging, { name: "n" }).sql).toBe(`MERGE USING (VALUES ($1)) AS n ("name") INSERT ("name") VALUES (n."name")`);
     // DEFAULT in a SET renders the column's default, as SQLite has no DEFAULT there; elsewhere it still needs value.default.
     const withDefault: Fragments = { ...lite, templates: { ...lite.templates, "default.users.name": "('')" } };
     const patch: Query = { name: "user.patch", catalog: "shop", kind: "update", writes: true, plan: [use("set.users.name", { "0": param("name") }), param("email")] };
