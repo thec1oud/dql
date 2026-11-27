@@ -15,3 +15,6 @@ export const dqlSlugTextCheck = new PatternCheck("shop.app.slug_text.slug_text_c
 
 /** dqlPostsTitleCheck checks shop.app.posts.posts_title_check. */
 export const dqlPostsTitleCheck = new LengthCheck("shop.app.posts.posts_title_check", "characters", 1, 200);
+
+/** dqlUsersDisplayNameLength checks shop.app.users.display_name. */
+export const dqlUsersDisplayNameLength = new LengthCheck("shop.app.users.display_name", "characters", undefined, 80);
