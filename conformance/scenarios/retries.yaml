@@ -1,11 +1,12 @@
 scenario: retries
 schema: shop
-requires: [serialization-failure]
+requires: [deadlock, lock-timeout]
+# The serialization failures of §22.4 are in serialization-retries.yaml,
+# since SQL Server raises one only under snapshot isolation.
 steps:
-  # A serialization failure or a deadlock reruns the closure, which then
-  # commits once (§22.4).
+  # A deadlock reruns the closure, which then commits once (§22.4).
   - op: write
-    inject: { class: SerializationFailure, times: 1 }
+    inject: { class: Deadlock, times: 1 }
     steps:
       - op: tenants.insert
         input: { name: acme }
@@ -24,13 +25,13 @@ steps:
   # attempts.
   - op: write
     retry: { attempts: 2 }
-    inject: { class: SerializationFailure, times: 5 }
+    inject: { class: Deadlock, times: 3 }
     steps:
       - op: tenants.insert
         input: { name: initech }
     expect:
       attempts: 2
-      error: { class: SerializationFailure }
+      error: { class: Deadlock }
   - op: tenants.count
     expect: { value: 2 }
   # Other failures are not retried.

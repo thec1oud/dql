@@ -186,7 +186,7 @@ var Matrix = map[string]map[string]Schema{
 // postgresFeatures are the features Postgres's schemas hold: every one a
 // scenario requires but tinyint-bool, a MySQL type, and params-32766 and
 // params-2100, SQLite's and SQL Server's parameter limits.
-var postgresFeatures = []string{"arrays", "composites", "named-foreign-keys", "params-65535", "pattern-checks", "regex-match", "replica", "returning", "serialization-failure", "settable-identity", "stall"}
+var postgresFeatures = []string{"arrays", "composites", "deadlock", "lock-timeout", "named-foreign-keys", "params-65535", "pattern-checks", "regex-match", "replica", "returning", "serialization-failure", "settable-identity", "stall"}
 
 // opener opens a schema's handle, made by newDB on the executor newExec
 // makes: on the database at dsn with its replicas, at most maxConns
