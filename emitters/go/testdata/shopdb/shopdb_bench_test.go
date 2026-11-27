@@ -7,12 +7,47 @@ package shopdb_test
 
 import (
 	"context"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/thec1oud/dql/emitters/go/testdata/shopdb"
 	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/dqlfake"
 )
+
+// TestBudgets holds the runtime to its performance budgets: at most 10µs
+// per call, and a fixed number of allocations per call. It runs only with
+// DQL_BUDGETS set, as the budgets CI job does: times taken under coverage
+// or alongside other tests mean nothing.
+func TestBudgets(t *testing.T) {
+	if os.Getenv("DQL_BUDGETS") == "" {
+		t.Skip("DQL_BUDGETS is not set")
+	}
+	const budget = 10 * time.Microsecond
+	for _, c := range []struct {
+		name   string
+		bench  func(*testing.B)
+		allocs int64
+	}{
+		{"Find", BenchmarkFind, 20},
+		{"Count", BenchmarkCount, 14},
+		{"Insert", BenchmarkInsert, 22},
+	} {
+		r := testing.Benchmark(c.bench)
+		per := time.Duration(r.NsPerOp())
+		switch {
+		case r.N == 0:
+			t.Errorf("%s did not run", c.name)
+		case per > budget:
+			t.Errorf("%s took %v per call, over its budget of %v", c.name, per, budget)
+		case r.AllocsPerOp() > c.allocs:
+			t.Errorf("%s made %d allocations per call, over its budget of %d", c.name, r.AllocsPerOp(), c.allocs)
+		default:
+			t.Logf("%s took %v and %d allocations per call", c.name, per, r.AllocsPerOp())
+		}
+	}
+}
 
 // fake returns a generated DB on a fake driver answering every call of
 // query with row.

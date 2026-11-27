@@ -1,12 +1,16 @@
 // This file is hand-written (§26.5): it measures the runtime's overhead per
 // call of generated code against the fake driver, so the numbers count dql's
 // own work (building statements, binding, validating, decoding) and not a
-// database's. Run it with Bun: bun bench.ts.
+// database's. Run it with Bun: bun bench.ts. It fails when a call takes
+// more than its budget of 25µs, as the budgets CI job checks.
 
 import { Fake } from "@dql/runtime/fake";
 import { Db, dialect, parseSlugText } from "./index.dql.ts";
 
-/** measure runs fn n times after a warm-up and prints its mean time per call. */
+/** budget is the most time a call may take, in nanoseconds. */
+const budget = 25_000;
+
+/** measure runs fn n times after a warm-up, prints its mean time per call, and fails the run when that is over budget. */
 async function measure(name: string, fn: () => Promise<unknown>, n = 20_000): Promise<void> {
   for (let i = 0; i < n / 10; i++) {
     await fn();
@@ -17,6 +21,10 @@ async function measure(name: string, fn: () => Promise<unknown>, n = 20_000): Pr
   }
   const ns = ((performance.now() - start) * 1e6) / n;
   console.log(`${name}\t${Math.round(ns)} ns/op`);
+  if (ns > budget) {
+    console.error(`${name} took ${Math.round(ns)} ns per call, over its budget of ${budget} ns`);
+    process.exitCode = 1;
+  }
 }
 
 /** db returns a generated Db on a fake answering every call of query with row. */
