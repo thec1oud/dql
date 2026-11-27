@@ -21,6 +21,7 @@ import (
 	"github.com/thec1oud/dql/dialects/mysql"
 	"github.com/thec1oud/dql/dialects/postgres"
 	"github.com/thec1oud/dql/dialects/sqlite"
+	"github.com/thec1oud/dql/dialects/sqlserver"
 	goemit "github.com/thec1oud/dql/emitters/go"
 	tsemit "github.com/thec1oud/dql/emitters/ts"
 	"github.com/thec1oud/dql/plugin"
@@ -67,9 +68,10 @@ var sources = map[string]func(c *config.Config, s config.Source) plugin.Plugin{
 // dialects are the shipped dialect plugins, by the dialect they serve, which
 // run in-process (ADR 0002).
 var dialects = map[irv1.Dialect]func() plugin.Plugin{
-	irv1.Dialect_DIALECT_POSTGRES: func() plugin.Plugin { return postgres.New() },
-	irv1.Dialect_DIALECT_MYSQL:    func() plugin.Plugin { return mysql.New() },
-	irv1.Dialect_DIALECT_SQLITE:   func() plugin.Plugin { return sqlite.New() },
+	irv1.Dialect_DIALECT_POSTGRES:  func() plugin.Plugin { return postgres.New() },
+	irv1.Dialect_DIALECT_MYSQL:     func() plugin.Plugin { return mysql.New() },
+	irv1.Dialect_DIALECT_SQLITE:    func() plugin.Plugin { return sqlite.New() },
+	irv1.Dialect_DIALECT_SQLSERVER: func() plugin.Plugin { return sqlserver.New() },
 }
 
 // querySources are the shipped query-source plugins, by the dialect whose
