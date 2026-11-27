@@ -76,6 +76,9 @@ func Check(t Target, anns []*irv1.Annotation) []*irv1.Diagnostic {
 	c := &checker{t: t, at: diagnostics.Name(t.Name)}
 	for _, a := range anns {
 		c.has = append(c.has, a.GetKey())
+		if a.GetKey() == CorePrefix+"as" {
+			c.as = a.GetValue().GetString_()
+		}
 	}
 	for _, a := range anns {
 		c.check(a)
@@ -94,7 +97,9 @@ type checker struct {
 	t   Target
 	at  string
 	has []string
-	ds  []*irv1.Diagnostic
+	// as is the logical type an as annotation narrows the column to.
+	as string
+	ds []*irv1.Diagnostic
 }
 
 func (c *checker) present(name string) bool { return slices.Contains(c.has, CorePrefix+name) }
@@ -246,11 +251,13 @@ func (c *checker) rules(k Key, v *irv1.AnnotationValue) {
 			c.wrongTarget(k, "is not a TINYINT(1) column")
 		}
 	case "soft-delete":
-		// A nullable timestamp is deleted when set; a boolean when true (§21.3).
+		// A nullable timestamp is deleted when set; a boolean when true
+		// (§21.3). A TINYINT(1) narrowed by bool is a boolean, and text
+		// narrowed by as to a timestamp a timestamp (§7.2).
 		isBool := typ == "bool" || (t.TinyIntOne && c.present("bool"))
 		switch {
 		case isBool:
-		case !slices.Contains(timestamps, typ):
+		case !slices.Contains(timestamps, typ) && !(slices.Contains(timestamps, c.as) && Narrows(t.Type, c.as)):
 			c.wrongTarget(k, "is "+article(describe(t.Type))+" column")
 		case t.NotNull:
 			c.wrongTargetFix(k, "is a NOT NULL timestamp, which can never mark a row as not deleted",
