@@ -197,6 +197,7 @@ jobs:
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
       DQL_TEST_MYSQL_REPLICA_URL: root:root@tcp(localhost:3308)/
       DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
+      DQL_TEST_SQLSERVER_URL: sqlserver://sa:Dql-Test-2026!@localhost:1433
     defaults:
       run:
         working-directory: conformance/harness/ts
@@ -208,6 +209,9 @@ jobs:
       - name: start MySQL with a replica, and MariaDB
         working-directory: .
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
+      - name: start SQL Server
+        working-directory: .
+        run: docker compose -f conformance/sqlserver/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"
@@ -229,6 +233,8 @@ jobs:
         run: bun run coverage
       - name: Go's outcomes
         working-directory: conformance/harness/go
+        # Every dialect, SQL Server too, which the TypeScript harness does
+        # not run yet.
         run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/go" go test -count=1 -run 'TestScenarios' .
       - name: every scenario on Node
         run: DQL_CONFORMANCE_OUTCOMES="$RUNNER_TEMP/outcomes/node" node --import ./src/node.ts src/main.ts

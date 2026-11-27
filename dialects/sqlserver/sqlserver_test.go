@@ -51,7 +51,7 @@ func TestProfileOperators(t *testing.T) {
 	}
 	for name, want := range map[string]irv1.Fidelity{
 		"eq": irv1.Fidelity_FIDELITY_EXACT, "is_distinct_from": irv1.Fidelity_FIDELITY_EXACT, "starts_with": irv1.Fidelity_FIDELITY_EXACT,
-		"like": irv1.Fidelity_FIDELITY_EXACT, "in": irv1.Fidelity_FIDELITY_APPROXIMATE, "any": irv1.Fidelity_FIDELITY_APPROXIMATE,
+		"like": irv1.Fidelity_FIDELITY_EXACT, "in": irv1.Fidelity_FIDELITY_EXACT, "any": irv1.Fidelity_FIDELITY_EXACT,
 		"ilike": irv1.Fidelity_FIDELITY_APPROXIMATE,
 	} {
 		if fidelity[name] != want {

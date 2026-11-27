@@ -30,6 +30,7 @@ var errorCodes = map[string]irv1.ErrorKind{
 	"233":       irv1.ErrorKind_ERROR_KIND_CONNECTION, // no process on the other end of the pipe
 	"515":       irv1.ErrorKind_ERROR_KIND_NOT_NULL_VIOLATION,
 	"547":       irv1.ErrorKind_ERROR_KIND_FOREIGN_KEY_VIOLATION,
+	"596":       irv1.ErrorKind_ERROR_KIND_CONNECTION, // the session was killed
 	"547/CHECK": irv1.ErrorKind_ERROR_KIND_CHECK_VIOLATION,
 	"1205":      irv1.ErrorKind_ERROR_KIND_DEADLOCK,              // chosen as the deadlock victim
 	"1222":      irv1.ErrorKind_ERROR_KIND_LOCK_TIMEOUT,          // LOCK_TIMEOUT ran out, or NOWAIT

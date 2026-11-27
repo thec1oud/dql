@@ -1,6 +1,8 @@
 # The running example's dql.yaml (§1.3) on SQL Server: conformance/schemas/
 # sqlserver/shop.sql through sqlserver-live and the sqlserver dialect. The
-# database is the catalog and app its namespace, as on Postgres.
+# database is the catalog and app its namespace, as on Postgres. Its Go
+# package is conformance/harness/go/testdata/sqlservershopdb, and its
+# TypeScript package conformance/harness/ts/sqlservershopdb.
 sources:
   - plugin: sqlserver-live
     catalog: shop
@@ -20,3 +22,12 @@ annotations:
 
 queries:
   - queries.sql
+
+emit:
+  - plugin: go
+    dialect: sqlserver
+    package: sqlservershopdb
+    out: sqlservershopdb
+  - plugin: ts
+    dialect: sqlserver
+    out: ts/sqlservershopdb

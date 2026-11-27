@@ -59,10 +59,11 @@ func (*Plugin) Invoke(_ context.Context, in *irv1.Invoke) (*irv1.InvokeResult, e
 // lower() folds by the collation, so ilike is approximate. There are no
 // arrays, ranges or regular expressions before SQL Server 2025, and json
 // is text, so no JSON operators. in and any take one list placeholder, a
-// JSON array, which OPENJSON expands (§25.3); on an expression that is no
-// column its items are text, so they are approximate there.
+// JSON array, which OPENJSON expands as the compared column's type and
+// collation (§25.3), so they are exact, as MySQL's are.
 //
-// A statement binds at most 2,100 parameters (§25.2). Reads go to the
+// A statement binds at most 2,098 parameters, and an INSERT's VALUES at
+// most 1,000 rows (§25.2). Reads go to the
 // primary: availability-group replicas are not routed yet, and
 // read-your-writes always goes to the primary (decided 2026-11-26). A
 // write's rows come back through OUTPUT (§20.1).
@@ -96,7 +97,7 @@ func Profile() *irv1.CapabilityProfile {
 // operatorFidelity is an operator's fidelity: exact unless listed.
 func operatorFidelity(name string) irv1.Fidelity {
 	switch name {
-	case "ilike", "in", "any":
+	case "ilike":
 		return irv1.Fidelity_FIDELITY_APPROXIMATE
 	}
 	return irv1.Fidelity_FIDELITY_EXACT
