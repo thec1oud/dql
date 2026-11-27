@@ -29,6 +29,7 @@ import (
 	myqueries "github.com/thec1oud/dql/querysources/mysql"
 	pgqueries "github.com/thec1oud/dql/querysources/postgres"
 	litequeries "github.com/thec1oud/dql/querysources/sqlite"
+	ssqueries "github.com/thec1oud/dql/querysources/sqlserver"
 	"github.com/thec1oud/dql/sources/dpgsnapshot"
 	"github.com/thec1oud/dql/sources/mysqllive"
 	"github.com/thec1oud/dql/sources/pglive"
@@ -77,9 +78,10 @@ var dialects = map[irv1.Dialect]func() plugin.Plugin{
 // querySources are the shipped query-source plugins, by the dialect whose
 // query files they type, which run in-process (ADR 0002).
 var querySources = map[irv1.Dialect]func() plugin.Plugin{
-	irv1.Dialect_DIALECT_POSTGRES: func() plugin.Plugin { return pgqueries.New() },
-	irv1.Dialect_DIALECT_MYSQL:    func() plugin.Plugin { return myqueries.New() },
-	irv1.Dialect_DIALECT_SQLITE:   func() plugin.Plugin { return litequeries.New() },
+	irv1.Dialect_DIALECT_POSTGRES:  func() plugin.Plugin { return pgqueries.New() },
+	irv1.Dialect_DIALECT_MYSQL:     func() plugin.Plugin { return myqueries.New() },
+	irv1.Dialect_DIALECT_SQLITE:    func() plugin.Plugin { return litequeries.New() },
+	irv1.Dialect_DIALECT_SQLSERVER: func() plugin.Plugin { return ssqueries.New() },
 }
 
 // emitters are the shipped emitter plugins, which run in-process (ADR 0002).
