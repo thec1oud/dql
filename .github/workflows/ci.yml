@@ -152,13 +152,15 @@ jobs:
 
   # The TypeScript runtime: a build, type checks, and its unit tests on
   # Bun with 100% coverage. @dql/pg's tests run against Postgres and its
-  # streaming replica, and @dql/mysql's against MySQL.
+  # streaming replica, @dql/mysql's against MySQL, and @dql/sqlserver's
+  # against SQL Server.
   ts:
     runs-on: ubuntu-latest
     env:
       DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
       DQL_TEST_POSTGRES_REPLICA_URL: postgres://postgres:postgres@localhost:5433/postgres?sslmode=disable
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_SQLSERVER_URL: sqlserver://sa:Dql-Test-2026!@localhost:1433
     defaults:
       run:
         working-directory: runtime/ts
@@ -170,6 +172,9 @@ jobs:
       - name: start MySQL
         working-directory: .
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait mysql
+      - name: start SQL Server
+        working-directory: .
+        run: docker compose -f conformance/sqlserver/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"
