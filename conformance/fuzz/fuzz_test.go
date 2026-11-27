@@ -25,7 +25,13 @@ func TestGenerateReplays(t *testing.T) {
 		if !reflect.DeepEqual(c, fuzz.Generate(s)) {
 			t.Fatalf("seed %d generated two catalogs", s)
 		}
-		distinct[fmt.Sprintf("%+v", c.Tables)] = true
+		// The tables' contents, not their pointers, which the collector
+		// reuses across seeds.
+		var key strings.Builder
+		for _, tb := range c.Tables {
+			fmt.Fprintf(&key, "%+v;", *tb)
+		}
+		distinct[key.String()] = true
 	}
 	if len(distinct) < seeds*9/10 {
 		t.Errorf("%d seeds generated %d catalogs", seeds, len(distinct))
