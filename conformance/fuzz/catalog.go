@@ -171,7 +171,9 @@ func (g *gen) parents() []*Table {
 // id.
 func (g *gen) table(name string) *Table {
 	if ps := g.parents(); len(ps) > 0 && g.chance(4) {
-		return g.link(name, ps[g.r.IntN(len(ps))], ps[g.r.IntN(len(ps))])
+		if a, b := ps[g.r.IntN(len(ps))], ps[g.r.IntN(len(ps))]; !g.related(a, b) {
+			return g.link(name, a, b)
+		}
 	}
 	t := &Table{Name: name, Key: []string{"id"}, Columns: []Column{{Name: "id", Kind: Integer}}}
 	for i := range 1 + g.r.IntN(5) {
@@ -186,6 +188,22 @@ func (g *gen) table(name string) *Table {
 	}
 	g.rows(t)
 	return t
+}
+
+// related reports whether a references b, b references a, or a table
+// links them. A link then gives a or b a second relation to the other,
+// named as the first, which dql reports as a collision (§4.5).
+func (g *gen) related(a, b *Table) bool {
+	refs := func(t, p *Table) bool {
+		return slices.ContainsFunc(t.Foreign, func(f ForeignKey) bool { return f.Table == p.Name })
+	}
+	if refs(a, b) || refs(b, a) {
+		return true
+	}
+	return slices.ContainsFunc(g.c.Tables, func(t *Table) bool {
+		return len(t.Foreign) == 2 && len(t.Key) == 2 &&
+			(t.Foreign[0].Table == a.Name && t.Foreign[1].Table == b.Name || t.Foreign[0].Table == b.Name && t.Foreign[1].Table == a.Name)
+	})
 }
 
 // link generates a table linking a and b, which may be one table.

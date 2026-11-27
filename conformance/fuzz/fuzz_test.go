@@ -226,3 +226,32 @@ func TestApply(t *testing.T) {
 		})
 	}
 }
+
+// A link table's two tables are related by nothing else: a second relation
+// between them would take the same name (§4.5).
+func TestLinksAreAlone(t *testing.T) {
+	for s := range uint64(seeds) {
+		c := fuzz.Generate(s)
+		pairs := map[[2]string]int{}
+		for _, tb := range c.Tables {
+			for _, f := range tb.Foreign {
+				pair := [2]string{tb.Name, f.Table}
+				if len(tb.Key) == 2 {
+					pair = [2]string{tb.Foreign[0].Table, tb.Foreign[1].Table}
+				}
+				slices.Sort(pair[:])
+				pairs[pair]++
+			}
+		}
+		for _, tb := range c.Tables {
+			if len(tb.Key) != 2 {
+				continue
+			}
+			pair := [2]string{tb.Foreign[0].Table, tb.Foreign[1].Table}
+			slices.Sort(pair[:])
+			if pairs[pair] != 2 {
+				t.Errorf("seed %d: %s links %v, which more relate", s, tb.Name, pair)
+			}
+		}
+	}
+}

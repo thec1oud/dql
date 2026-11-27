@@ -32,13 +32,18 @@ CREATE TABLE t2 (
 ) STRICT;
 
 CREATE TABLE t3 (
-  t1_id INTEGER NOT NULL,
-  t2_id INTEGER NOT NULL,
+  id INTEGER NOT NULL,
   c1 TEXT NOT NULL,
-  CONSTRAINT t3_pkey PRIMARY KEY (t1_id, t2_id),
+  c2 TEXT,
+  c3 TEXT NOT NULL,
+  t2_id INTEGER NOT NULL,
+  CONSTRAINT t3_pkey PRIMARY KEY (id),
+  CONSTRAINT t3_c3_key UNIQUE (c3),
   CONSTRAINT t3_c1_length CHECK (length(c1) <= 2),
+  CONSTRAINT t3_c2_length CHECK (length(c2) <= 21),
+  CONSTRAINT t3_c3_length CHECK (length(c3) <= 20),
   CONSTRAINT t3_c1_check CHECK (length(c1) >= 2),
-  CONSTRAINT t3_t1_id_fkey FOREIGN KEY (t1_id) REFERENCES t1 (id),
+  CONSTRAINT t3_c2_check CHECK (length(c2) >= 7),
   CONSTRAINT t3_t2_id_fkey FOREIGN KEY (t2_id) REFERENCES t2 (id)
 ) STRICT;
 
@@ -67,23 +72,3 @@ INSERT INTO t2 (id, c1, c2, c3, c4, c5, t1_id) VALUES
   (35, 'ZK', 273, 'bThvgHW2CtOFl 0cxNQ39947u  hb5 hm', 'ZA vm', '5 6W XsFn8OXurNYrWBSzR', 12),
   (36, 'GTLpco5D Cg', 150, 'qa4B PjiWi1vHBG 81y', '', '8', 6),
   (38, '8 lZdw CK4', 216, 'WCRYle', '', 'IVKXf7CiRZAjc1gsl6', 6);
-
-INSERT INTO t3 (t1_id, t2_id, c1) VALUES
-  (3, 21, 'SV'),
-  (12, 6, 'jJ'),
-  (12, 15, 'Bv'),
-  (3, 33, 'fK'),
-  (6, 24, 'L6'),
-  (9, 3, 'D0'),
-  (12, 3, '4V'),
-  (12, 24, 'A4'),
-  (12, 33, 'Md'),
-  (4, 8, 'NM'),
-  (4, 16, '2D'),
-  (6, 18, 'J1'),
-  (4, 30, 'hc'),
-  (12, 26, 'KA'),
-  (3, 15, 'g8'),
-  (4, 38, 'oQ'),
-  (4, 15, 'qU'),
-  (4, 10, 'B2');

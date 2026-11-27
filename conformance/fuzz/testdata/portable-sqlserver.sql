@@ -27,12 +27,15 @@ CREATE TABLE t2 (
 );
 
 CREATE TABLE t3 (
-  t1_id bigint NOT NULL,
-  t2_id bigint NOT NULL,
+  id bigint NOT NULL,
   c1 nvarchar(2) COLLATE Latin1_General_100_BIN2 NOT NULL,
-  CONSTRAINT t3_pkey PRIMARY KEY (t1_id, t2_id),
+  c2 nvarchar(21) COLLATE Latin1_General_100_BIN2,
+  c3 nvarchar(20) COLLATE Latin1_General_100_BIN2 NOT NULL,
+  t2_id bigint NOT NULL,
+  CONSTRAINT t3_pkey PRIMARY KEY (id),
+  CONSTRAINT t3_c3_key UNIQUE (c3),
   CONSTRAINT t3_c1_check CHECK (DATALENGTH(c1) >= 4),
-  CONSTRAINT t3_t1_id_fkey FOREIGN KEY (t1_id) REFERENCES t1 (id),
+  CONSTRAINT t3_c2_check CHECK (DATALENGTH(c2) >= 14),
   CONSTRAINT t3_t2_id_fkey FOREIGN KEY (t2_id) REFERENCES t2 (id)
 );
 
@@ -61,23 +64,3 @@ INSERT INTO t2 (id, c1, c2, c3, c4, c5, t1_id) VALUES
   (35, N'ZK', 273, N'bThvgHW2CtOFl 0cxNQ39947u  hb5 hm', N'ZA vm', N'5 6W XsFn8OXurNYrWBSzR', 12),
   (36, N'GTLpco5D Cg', 150, N'qa4B PjiWi1vHBG 81y', N'', N'8', 6),
   (38, N'8 lZdw CK4', 216, N'WCRYle', N'', N'IVKXf7CiRZAjc1gsl6', 6);
-
-INSERT INTO t3 (t1_id, t2_id, c1) VALUES
-  (3, 21, N'SV'),
-  (12, 6, N'jJ'),
-  (12, 15, N'Bv'),
-  (3, 33, N'fK'),
-  (6, 24, N'L6'),
-  (9, 3, N'D0'),
-  (12, 3, N'4V'),
-  (12, 24, N'A4'),
-  (12, 33, N'Md'),
-  (4, 8, N'NM'),
-  (4, 16, N'2D'),
-  (6, 18, N'J1'),
-  (4, 30, N'hc'),
-  (12, 26, N'KA'),
-  (3, 15, N'g8'),
-  (4, 38, N'oQ'),
-  (4, 15, N'qU'),
-  (4, 10, N'B2');
