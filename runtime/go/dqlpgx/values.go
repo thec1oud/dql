@@ -1,6 +1,7 @@
 package dqlpgx
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"net/netip"
 	"strings"
@@ -53,6 +54,12 @@ func decode(m *pgtype.Map, oid uint32, format int16, raw []byte) (any, error) {
 			return nil, err
 		}
 		return reshape(convertAll(m, c.ElementType.OID, a.Elements), a.Dims), nil
+	}
+	if oid == pgtype.NumericOID && format == pgtype.BinaryFormatCode && len(raw) >= 8 &&
+		binary.BigEndian.Uint16(raw) == 0 && binary.BigEndian.Uint16(raw[4:]) == 0 {
+		// A zero has no digits, and pgx decodes it without its scale,
+		// which the column's type gives it: numeric(3,2) reads 0.00.
+		return dec.New(0, -int32(binary.BigEndian.Uint16(raw[6:]))), nil
 	}
 	v, err := t.Codec.DecodeValue(m, oid, format, raw)
 	if err != nil {

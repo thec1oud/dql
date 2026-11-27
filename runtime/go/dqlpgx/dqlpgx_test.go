@@ -488,6 +488,20 @@ func TestValues(t *testing.T) {
 		}
 	}
 
+	// A zero keeps the scale its type gives it, as other values do.
+	for q, want := range map[string]string{"SELECT 0::numeric(3,2)": "0.00", "SELECT 0::numeric": "0", "SELECT -1.5::numeric(3,2)": "-1.50"} {
+		rows, err := c.Query(ctx, q, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for rows.Next() {
+			if got := rows.Row()[0].(dec.Decimal).String(); got != want {
+				t.Errorf("%s: got %s, want %s", q, got, want)
+			}
+		}
+		rows.Close()
+	}
+
 	// The simple protocol encodes each value by its declared type, and
 	// without one infers a type from the Go value, which a range, a
 	// composite or a multidimensional list does not give (§26.4).
