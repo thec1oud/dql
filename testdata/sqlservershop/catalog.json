@@ -4408,14 +4408,15 @@
         "rule": "version"
       }
     ],
-    "maxParams": 2100,
+    "maxParams": 2098,
     "consistencyLevels": [
       "CONSISTENCY_PRIMARY"
     ],
     "statementModes": [
       "STATEMENT_MODE_PREPARE"
     ],
-    "returnedRows": "RETURNED_ROWS_CLAUSE"
+    "returnedRows": "RETURNED_ROWS_CLAUSE",
+    "maxRows": 1000
   },
   "queries": {
     "queries": [

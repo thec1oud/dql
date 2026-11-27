@@ -53,12 +53,17 @@ type Bulk struct {
 	Statement func(from, to int) (Statement, error)
 }
 
-// chunk returns how many rows each statement writes.
-func (b Bulk) chunk(maxParams int) int {
-	if maxParams <= 0 || b.ParamsPerRow <= 0 {
-		return max(b.Rows, 1)
+// chunk returns how many rows each statement of d writes: as many as its
+// parameters and its VALUES rows allow.
+func (b Bulk) chunk(d *Dialect) int {
+	size := max(b.Rows, 1)
+	if d.MaxParams > 0 && b.ParamsPerRow > 0 {
+		size = max(d.MaxParams/b.ParamsPerRow, 1)
 	}
-	return max(maxParams/b.ParamsPerRow, 1)
+	if d.MaxRows > 0 {
+		size = min(size, d.MaxRows)
+	}
+	return size
 }
 
 // ExecBulk runs b and returns how many rows its statements affected. More
@@ -94,7 +99,7 @@ func FetchBulk(ctx context.Context, h Writer, b Bulk) ([]Row, error) {
 // start. No rows run nothing.
 func bulk(ctx context.Context, h Writer, b Bulk, start func(), run func(context.Context, Writer, Statement) error) error {
 	e, _ := h.bind()
-	size := b.chunk(e.dialect.MaxParams)
+	size := b.chunk(e.dialect)
 	chunks := func(ctx context.Context, w Writer) error {
 		start()
 		for from := 0; from < b.Rows; from += size {

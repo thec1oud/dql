@@ -58,11 +58,13 @@ func TestDialectFile(t *testing.T) {
 	)
 	contains(t, files, "dql-fragments.dql.go", "Placeholder: dql.DollarNumbered,", "\"col.users.email\": `u.\"email\"`,")
 
-	// A dialect with no replicas, limits, setup or rules, other
-	// placeholders, and templates a raw string cannot hold.
+	// A dialect with no replicas, parameter limit, setup or rules, a
+	// limit on VALUES rows, other placeholders, and templates a raw string
+	// cannot hold.
 	p := b.GetCapabilities()
 	p.ConsistencyLevels = []irv1.ConsistencyLevel{irv1.ConsistencyLevel_CONSISTENCY_PRIMARY}
 	p.MaxParams, p.SessionSetup, p.Violations, p.StatementModes = 0, nil, nil, nil
+	p.MaxRows = 1000
 	p.ErrorCodes = append(p.ErrorCodes, &irv1.ErrorCode{Code: "XX000"})
 	t2 := b.GetQueries().GetFragments()
 	t2.Placeholder = irv1.Placeholder_PLACEHOLDER_QUESTION
@@ -77,6 +79,7 @@ func TestDialectFile(t *testing.T) {
 			t.Errorf("dialect has %s:\n%s", absent, d)
 		}
 	}
+	contains(t, files, "dql-dialect.dql.go", "MaxRows: 1000,")
 	contains(t, files, "dql-fragments.dql.go", "Placeholder: dql.Question,", `"zz.backquote": "a`+"`"+`b",`, `"zz.return": "a\rb",`)
 
 	// Rules whose kind names no constraint are left out; so is a placeholder

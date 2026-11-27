@@ -241,7 +241,7 @@ function insertBatched<T>(h: Writer, t: Fragments, q: Query, rows: readonly Args
   const { reread: back, ...read } = q;
   return atomic(h, async (w) => {
     const out: T[] = [];
-    const size = chunk(b, w[bind]().executor.dialect.maxParams ?? 0);
+    const size = chunk(b, w[bind]().executor.dialect);
     for (let from = 0; from < rows.length; from += size) {
       const to = Math.min(from + size, rows.length);
       const { affected, id } = await executeId(w, b.statement(from, to));

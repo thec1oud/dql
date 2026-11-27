@@ -151,18 +151,22 @@ func TestBulk(t *testing.T) {
 
 func TestBulkChunks(t *testing.T) {
 	for _, c := range []struct {
-		b         Bulk
-		maxParams int
-		want      int
+		b                  Bulk
+		maxParams, maxRows int
+		want               int
 	}{
-		{Bulk{Rows: 10, ParamsPerRow: 3}, 0, 10},
-		{Bulk{Rows: 0, ParamsPerRow: 3}, 0, 1},
-		{Bulk{Rows: 10, ParamsPerRow: 0}, 100, 10},
-		{Bulk{Rows: 10, ParamsPerRow: 3}, 65535, 21845},
-		{Bulk{Rows: 10, ParamsPerRow: 50}, 20, 1},
+		{Bulk{Rows: 10, ParamsPerRow: 3}, 0, 0, 10},
+		{Bulk{Rows: 0, ParamsPerRow: 3}, 0, 0, 1},
+		{Bulk{Rows: 10, ParamsPerRow: 0}, 100, 0, 10},
+		{Bulk{Rows: 10, ParamsPerRow: 3}, 65535, 0, 21845},
+		{Bulk{Rows: 10, ParamsPerRow: 50}, 20, 0, 1},
+		// SQL Server: 2098 parameters, and 1000 rows of VALUES.
+		{Bulk{Rows: 5000, ParamsPerRow: 2}, 2098, 1000, 1000},
+		{Bulk{Rows: 5000, ParamsPerRow: 3}, 2098, 1000, 699},
+		{Bulk{Rows: 5000, ParamsPerRow: 0}, 0, 1000, 1000},
 	} {
-		if got := c.b.chunk(c.maxParams); got != c.want {
-			t.Errorf("%+v in %d: %d, want %d", c.b, c.maxParams, got, c.want)
+		if got := c.b.chunk(&Dialect{MaxParams: c.maxParams, MaxRows: c.maxRows}); got != c.want {
+			t.Errorf("%+v in %d parameters and %d rows: %d, want %d", c.b, c.maxParams, c.maxRows, got, c.want)
 		}
 	}
 }

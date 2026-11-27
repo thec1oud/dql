@@ -535,7 +535,11 @@ type CapabilityProfile struct {
 	StatementModes []StatementMode `protobuf:"varint,10,rep,packed,name=statement_modes,json=statementModes,proto3,enum=dql.ir.v1.StatementMode" json:"statement_modes,omitempty"`
 	// How a write that returns a Full gets its rows back (§20.1, §14.5).
 	// Unspecified is a RETURNING clause, as on Postgres.
-	ReturnedRows  ReturnedRows `protobuf:"varint,11,opt,name=returned_rows,json=returnedRows,proto3,enum=dql.ir.v1.ReturnedRows" json:"returned_rows,omitempty"`
+	ReturnedRows ReturnedRows `protobuf:"varint,11,opt,name=returned_rows,json=returnedRows,proto3,enum=dql.ir.v1.ReturnedRows" json:"returned_rows,omitempty"`
+	// The most rows one INSERT's VALUES list may hold, which bulk writes
+	// also split to stay under (§25.2): 1000 on SQL Server. Zero when the
+	// dialect has no such limit.
+	MaxRows       uint32 `protobuf:"varint,12,opt,name=max_rows,json=maxRows,proto3" json:"max_rows,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -645,6 +649,13 @@ func (x *CapabilityProfile) GetReturnedRows() ReturnedRows {
 		return x.ReturnedRows
 	}
 	return ReturnedRows_RETURNED_ROWS_UNSPECIFIED
+}
+
+func (x *CapabilityProfile) GetMaxRows() uint32 {
+	if x != nil {
+		return x.MaxRows
+	}
+	return 0
 }
 
 // The statements the runtime runs to route reads to replicas (§22.5).
@@ -1144,7 +1155,7 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\x05patch\x18\x03 \x01(\rH\x02R\x05patch\x88\x01\x01B\b\n" +
 	"\x06_majorB\b\n" +
 	"\x06_minorB\b\n" +
-	"\x06_patch\"\xfa\x04\n" +
+	"\x06_patch\"\x95\x05\n" +
 	"\x11CapabilityProfile\x12,\n" +
 	"\adialect\x18\x01 \x01(\x0e2\x12.dql.ir.v1.DialectR\adialect\x128\n" +
 	"\toperators\x18\x02 \x03(\v2\x1a.dql.ir.v1.OperatorSupportR\toperators\x128\n" +
@@ -1161,7 +1172,8 @@ const file_dql_ir_v1_bundle_proto_rawDesc = "" +
 	"\vreplication\x18\t \x01(\v2\x1d.dql.ir.v1.ReplicationQueriesR\vreplication\x12A\n" +
 	"\x0fstatement_modes\x18\n" +
 	" \x03(\x0e2\x18.dql.ir.v1.StatementModeR\x0estatementModes\x12<\n" +
-	"\rreturned_rows\x18\v \x01(\x0e2\x17.dql.ir.v1.ReturnedRowsR\freturnedRows\"^\n" +
+	"\rreturned_rows\x18\v \x01(\x0e2\x17.dql.ir.v1.ReturnedRowsR\freturnedRows\x12\x19\n" +
+	"\bmax_rows\x18\f \x01(\rR\amaxRows\"^\n" +
 	"\x12ReplicationQueries\x12\x1a\n" +
 	"\bposition\x18\x01 \x01(\tR\bposition\x12\x10\n" +
 	"\x03lag\x18\x02 \x01(\tR\x03lag\x12\x1a\n" +

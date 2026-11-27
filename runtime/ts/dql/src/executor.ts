@@ -46,7 +46,8 @@ export interface ConnConfig {
  * Dialect is the generated description of the target dialect: its name, the
  * statements every new connection runs (§22.7), its error map (§23), how it
  * reads replica positions (§22.5), how many parameters one statement may
- * bind, or 0 for no limit (§25.2), and the statement modes its drivers
+ * bind and how many rows one INSERT's VALUES may hold, or 0 for no limit
+ * (§25.2), and the statement modes its drivers
  * support, or absent to allow every mode (§26.4).
  */
 export interface Dialect {
@@ -55,6 +56,7 @@ export interface Dialect {
   readonly errors: ErrorMap;
   readonly replication?: Replication;
   readonly maxParams?: number;
+  readonly maxRows?: number;
   readonly statementModes?: readonly StatementMode[];
 }
 

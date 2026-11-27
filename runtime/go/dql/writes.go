@@ -256,7 +256,7 @@ func insertBatched[T any](ctx context.Context, h Writer, t *Fragments, q *Query,
 	err := Atomic(ctx, h, func(ctx context.Context, w Writer) error {
 		out = make([]T, 0, len(rows))
 		e, _ := w.bind()
-		size := b.chunk(e.dialect.MaxParams)
+		size := b.chunk(e.dialect)
 		for from := 0; from < len(rows); from += size {
 			to := min(from+size, len(rows))
 			s, err := b.Statement(from, to)

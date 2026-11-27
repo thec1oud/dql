@@ -85,6 +85,10 @@ message CapabilityProfile {
   // How a write that returns a Full gets its rows back (§20.1, §14.5).
   // Unspecified is a RETURNING clause, as on Postgres.
   ReturnedRows returned_rows = 11;
+  // The most rows one INSERT's VALUES list may hold, which bulk writes
+  // also split to stay under (§25.2): 1000 on SQL Server. Zero when the
+  // dialect has no such limit.
+  uint32 max_rows = 12;
 }
 
 // How a write gets back the rows it wrote (§20.1).

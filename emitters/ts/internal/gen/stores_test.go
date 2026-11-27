@@ -68,11 +68,13 @@ func TestDialectFile(t *testing.T) {
 		t.Errorf("the index exports the package's own modules:\n%s", files["index.dql.ts"])
 	}
 
-	// A dialect with no replicas, limits, setup or rules, other
-	// placeholders, and modes this runtime does not know.
+	// A dialect with no replicas, parameter limit, setup or rules, a limit
+	// on VALUES rows, other placeholders, and modes this runtime does not
+	// know.
 	p := b.GetCapabilities()
 	p.ConsistencyLevels = []irv1.ConsistencyLevel{irv1.ConsistencyLevel_CONSISTENCY_PRIMARY}
 	p.MaxParams, p.SessionSetup, p.Violations = 0, nil, nil
+	p.MaxRows = 1000
 	p.ErrorCodes = append(p.ErrorCodes, &irv1.ErrorCode{Code: "XX000"})
 	p.StatementModes = []irv1.StatementMode{irv1.StatementMode_STATEMENT_MODE_PREPARE, 99}
 	t2 := b.GetQueries().GetFragments()
@@ -87,7 +89,7 @@ func TestDialectFile(t *testing.T) {
 			t.Errorf("dialect has %s:\n%s", absent, d)
 		}
 	}
-	contains(t, files, "dql-dialect.dql.ts", "  setup: [],\n", "    violations: [],\n", `  statementModes: ["prepare"],`)
+	contains(t, files, "dql-dialect.dql.ts", "  setup: [],\n", "    violations: [],\n", `  statementModes: ["prepare"],`, "  maxRows: 1000,\n")
 	contains(t, files, "dql-fragments.dql.ts", "  placeholder: \"question\",\n")
 
 	// Rules whose kind names no constraint are left out; a placeholder
