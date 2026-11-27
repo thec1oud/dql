@@ -247,6 +247,34 @@ jobs:
             bun src/check.ts "$RUNNER_TEMP/outcomes/go" "$RUNNER_TEMP/outcomes/$runtime"
           done
 
+  # The performance budgets: generation time, and the runtimes' overhead per
+  # call against their fakes, each on a job of its own so nothing else
+  # shares the runner.
+  budgets:
+    runs-on: ubuntu-latest
+    env:
+      DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - name: start Postgres, which cmd/dql's tests set up before any runs
+        run: docker compose -f conformance/replica/compose.yaml up -d --wait primary
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: build the TypeScript runtime
+        working-directory: runtime/ts
+        run: bun install --frozen-lockfile && bun run build
+      - name: generation and the Go runtime
+        env:
+          DQL_BUDGETS: "1"
+        run: go test -count=1 -v -run '^TestBudgets$' ./cmd/dql ./emitters/go/testdata/shopdb
+      - name: the TypeScript runtime on Bun
+        working-directory: emitters/ts/testdata/shopdb
+        run: bun bench.ts
+
   rules:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'

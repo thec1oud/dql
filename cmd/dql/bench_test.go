@@ -13,7 +13,34 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
+
+// TestBudgets holds generation to its performance budgets. It runs only
+// with DQL_BUDGETS set, as the budgets CI job does: times taken under
+// coverage or alongside other tests mean nothing.
+func TestBudgets(t *testing.T) {
+	if os.Getenv("DQL_BUDGETS") == "" {
+		t.Skip("DQL_BUDGETS is not set")
+	}
+	for _, c := range []struct {
+		name   string
+		bench  func(*testing.B)
+		budget time.Duration
+	}{
+		{"generate shop", BenchmarkGenerateShop, 500 * time.Millisecond},
+		{"generate large", BenchmarkGenerateLarge, 30 * time.Second},
+	} {
+		r := testing.Benchmark(c.bench)
+		if r.N == 0 {
+			t.Errorf("%s did not run", c.name)
+		} else if per := time.Duration(r.NsPerOp()); per > c.budget {
+			t.Errorf("%s took %v, over its budget of %v", c.name, per, c.budget)
+		} else {
+			t.Logf("%s took %v of %v", c.name, per, c.budget)
+		}
+	}
+}
 
 // benchConfig writes a dql.yaml reading snapshot and emitting both
 // packages into a temporary directory, and returns its path. A snapshot
@@ -129,4 +156,3 @@ func largeSnapshot(b *testing.B, n int) []byte {
 	}
 	return out
 }
-
