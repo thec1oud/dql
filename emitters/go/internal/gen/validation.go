@@ -112,7 +112,10 @@ func (g *generator) checkAs(c *irv1.Constraint, qualified, key string, words []s
 		g.checkFile = g.newFile("dql-checks")
 	}
 	f := g.checkFile
-	base, goType, fam := g.baseOf(f, t)
+	// The Go type's package is imported only by a check that names the
+	// type: a digits check takes a dec.Decimal without spelling it.
+	typed := &file{imports: map[string]string{}}
+	base, goType, fam := g.baseOf(typed, t)
 	if name, ok := g.checks[key]; ok {
 		return name, goType, name != ""
 	}
@@ -195,6 +198,11 @@ func (g *generator) checkAs(c *irv1.Constraint, qualified, key string, words []s
 		decl = fmt.Sprintf("%s.MembershipCheck[%s]{Constraint: %q, Values: []%s{%s}}", dql, goType, qualified, goType, strings.Join(values, ", "))
 	default:
 		return fail("it is not a portable kind this emitter knows")
+	}
+	if strings.Contains(decl, goType) {
+		for path, pkg := range typed.imports {
+			f.use(path, pkg)
+		}
 	}
 	name := fresh("dql"+Exported(words), g.checkNames)
 	g.checks[key] = name

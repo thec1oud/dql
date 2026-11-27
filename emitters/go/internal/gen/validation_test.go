@@ -458,6 +458,9 @@ func TestTypeFacts(t *testing.T) {
 	}
 	for file, parts := range map[string][]string{
 		"dql-checks.dql.go": {
+			// A digits check takes a dec.Decimal without naming it, so the
+			// file imports dql alone.
+			"import (\n\t\"github.com/thec1oud/dql/runtime/go/dql\"\n)",
 			"var dqlCodeLength = dql.LengthCheck{Constraint: \"shop.app.code\", Max: dql.Ptr(4), Unit: dql.UnitCharacters}",
 			"var dqlFactsNameLength = dql.LengthCheck{Constraint: \"shop.app.facts.name\", Max: dql.Ptr(8), Unit: dql.UnitCharacters}",
 			"var dqlFactsTitleLength = dql.LengthCheck{Constraint: \"shop.app.facts.title\", Max: dql.Ptr(40), Unit: dql.UnitUTF16CodeUnits}",
