@@ -25,7 +25,7 @@ export function normalize(v: unknown): Json {
   return v as Json;
 }
 
-/** encode turns a value of the generated code into its JSON, normalized: integers and decimals as Go writes them, and time values in their ISO forms. */
+/** encode turns a value of the generated code into its JSON, normalized: integers and decimals as Go writes them, and time values in their ISO forms, a zoned time without its zone's name, as Go writes one. */
 export function encode(v: unknown): Json {
   switch (typeof v) {
     case "undefined":
@@ -41,6 +41,9 @@ export function encode(v: unknown): Json {
       }
       if (v instanceof Row) {
         return v.values.map(encode);
+      }
+      if (v instanceof Temporal.ZonedDateTime) {
+        return v.toString({ timeZoneName: "never" });
       }
       if (v instanceof Decimal || String(Object.getPrototypeOf(v)?.[Symbol.toStringTag]).startsWith("Temporal.")) {
         return String(v);
@@ -152,6 +155,13 @@ export class Decoder {
       const cls = (Temporal as unknown as Record<string, { from(s: string): unknown }>)[type.slice("Temporal.".length)];
       if (cls === undefined || typeof v !== "string") {
         throw new Error(`want a ${type}, got ${show(v)}`);
+      }
+      // An instant with its offset, as SQL Server's datetimeoffset holds one,
+      // is written as an RFC 3339 time, which names no time zone: it is at
+      // its own offset, Z being +00:00.
+      const offset = /(Z|[+-]\d{2}:\d{2})$/.exec(v)?.[1];
+      if (type === "Temporal.ZonedDateTime" && offset !== undefined) {
+        return Temporal.Instant.from(v).toZonedDateTimeISO(offset === "Z" ? "+00:00" : offset);
       }
       return cls.from(v);
     }

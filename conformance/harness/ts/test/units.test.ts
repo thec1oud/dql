@@ -106,6 +106,7 @@ test("decode", () => {
 
 test("encode", () => {
   expect(encode(undefined)).toBeNull();
+  expect(encode(Temporal.Instant.from("2026-01-02T03:04:05Z").toZonedDateTimeISO("+02:00"))).toBe("2026-01-02T05:04:05+02:00");
   expect(encode({ aB: [1n, Decimal.parse("1.50"), Temporal.PlainDate.from("2026-01-02"), null] })).toEqual({ ab: [1, "1.50", "2026-01-02", null] });
   expect(normalize({ A_b: [{ C: 1 }] })).toEqual({ ab: [{ c: 1 }] });
 });

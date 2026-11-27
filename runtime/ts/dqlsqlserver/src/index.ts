@@ -135,7 +135,12 @@ class SqlServerPool implements Pool {
     if (this.closed) {
       throw Object.assign(new Error("dqlsqlserver: the pool is closed"), { code: "ECLOSE" });
     }
-    const c = this.idle.pop();
+    // An idle connection whose session the server ended is closed, and makes room.
+    let c = this.idle.pop();
+    while (c?.closed === true) {
+      this.open--;
+      c = this.idle.pop();
+    }
     if (c !== undefined) {
       return new SqlServerConn(this, c);
     }

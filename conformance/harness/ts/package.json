@@ -14,6 +14,7 @@
   "dependencies": {
     "mysql2": "3.24.6",
     "pg": "8.23.1",
+    "tedious": "20.3.9",
     "yaml": "2.8.1"
   },
   "devDependencies": {

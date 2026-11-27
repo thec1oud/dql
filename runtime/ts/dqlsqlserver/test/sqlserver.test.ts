@@ -412,4 +412,19 @@ describe("connections", () => {
     d.release();
     await p.close();
   });
+
+  test("an idle connection whose session was killed is skipped", async () => {
+    const p = await pool(1);
+    const c = await p.acquire();
+    const [[session]] = (await rows(c, "SELECT @@SPID")) as [[number]];
+    c.release();
+    await adminBatch(`KILL ${session}`);
+    // The server's end of the session reaches the idle connection.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const d = await p.acquire();
+    const [[other]] = (await rows(d, "SELECT @@SPID")) as [[number]];
+    expect(typeof other).toBe("number");
+    d.release();
+    await p.close();
+  });
 });
