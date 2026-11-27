@@ -894,11 +894,11 @@ export const posts = {
     },
     /** asc orders by editor_id, ascending. */
     asc(): Order<PostsTable> {
-      return ordered<PostsTable>("order.asc", "col.posts.editor_id");
+      return ordered<PostsTable>("order.asc_nullable", "col.posts.editor_id");
     },
     /** desc orders by editor_id, descending. */
     desc(): Order<PostsTable> {
-      return ordered<PostsTable>("order.desc", "col.posts.editor_id");
+      return ordered<PostsTable>("order.desc_nullable", "col.posts.editor_id");
     },
     /** set assigns DEFAULT to editor_id on a write, in place of a value (§20.2). */
     set(e: Expr<"default">): Assignment<PostsTable> {
@@ -1044,11 +1044,11 @@ export const posts = {
     },
     /** asc orders by slug, ascending. */
     asc(): Order<PostsTable> {
-      return ordered<PostsTable>("order.asc", "col.posts.slug");
+      return ordered<PostsTable>("order.asc_nullable", "col.posts.slug");
     },
     /** desc orders by slug, descending. */
     desc(): Order<PostsTable> {
-      return ordered<PostsTable>("order.desc", "col.posts.slug");
+      return ordered<PostsTable>("order.desc_nullable", "col.posts.slug");
     },
   },
   /** status is column status in builder reads (§9.4). */
@@ -1182,11 +1182,11 @@ export const posts = {
     },
     /** asc orders by published_at, ascending. */
     asc(): Order<PostsTable> {
-      return ordered<PostsTable>("order.asc", "col.posts.published_at");
+      return ordered<PostsTable>("order.asc_nullable", "col.posts.published_at");
     },
     /** desc orders by published_at, descending. */
     desc(): Order<PostsTable> {
-      return ordered<PostsTable>("order.desc", "col.posts.published_at");
+      return ordered<PostsTable>("order.desc_nullable", "col.posts.published_at");
     },
     /** set assigns DEFAULT to published_at on a write, in place of a value (§20.2). */
     set(e: Expr<"default">): Assignment<PostsTable> {
@@ -1245,11 +1245,11 @@ export const posts = {
     },
     /** asc orders by deleted_at, ascending. */
     asc(): Order<PostsTable> {
-      return ordered<PostsTable>("order.asc", "col.posts.deleted_at");
+      return ordered<PostsTable>("order.asc_nullable", "col.posts.deleted_at");
     },
     /** desc orders by deleted_at, descending. */
     desc(): Order<PostsTable> {
-      return ordered<PostsTable>("order.desc", "col.posts.deleted_at");
+      return ordered<PostsTable>("order.desc_nullable", "col.posts.deleted_at");
     },
   },
   /** author is relation author in builder reads (§18.2). */
