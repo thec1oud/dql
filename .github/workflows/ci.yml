@@ -44,12 +44,15 @@ jobs:
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
       DQL_TEST_MYSQL_REPLICA_URL: root:root@tcp(localhost:3308)/
       DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
+      DQL_TEST_SQLSERVER_URL: sqlserver://sa:Dql-Test-2026!@localhost:1433
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres with a streaming replica
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
       - name: start MySQL with a replica, and MariaDB
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
+      - name: start SQL Server
+        run: docker compose -f conformance/sqlserver/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"
@@ -84,6 +87,7 @@ jobs:
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
       DQL_TEST_MYSQL_REPLICA_URL: root:root@tcp(localhost:3308)/
       DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
+      DQL_TEST_SQLSERVER_URL: sqlserver://sa:Dql-Test-2026!@localhost:1433
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres ${{ matrix.postgres }} with a streaming replica
@@ -92,6 +96,8 @@ jobs:
         run: docker compose -f conformance/replica/compose.yaml up -d --wait
       - name: start MySQL with a replica, and MariaDB
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
+      - name: start SQL Server
+        run: docker compose -f conformance/sqlserver/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"
@@ -120,6 +126,7 @@ jobs:
       DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
       DQL_TEST_MYSQL_REPLICA_URL: root:root@tcp(localhost:3308)/
       DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
+      DQL_TEST_SQLSERVER_URL: sqlserver://sa:Dql-Test-2026!@localhost:1433
     steps:
       - uses: actions/checkout@v4
       - name: start Postgres with a streaming replica
@@ -128,6 +135,8 @@ jobs:
         env:
           MARIADB_VERSION: ${{ matrix.mariadb }}
         run: docker compose -f conformance/mysql/compose.yaml up -d --wait
+      - name: start SQL Server
+        run: docker compose -f conformance/sqlserver/compose.yaml up -d --wait
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.4.4"

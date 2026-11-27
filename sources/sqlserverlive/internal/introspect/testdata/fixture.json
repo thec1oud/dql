@@ -1,0 +1,390 @@
+{
+  "database": {
+    "version": "VERSION",
+    "collation": "SQL_Latin1_General_CP1_CI_AS",
+    "compatibilityLevel": 160
+  },
+  "schemas": [
+    {
+      "name": "billing",
+      "comment": "invoices and payments",
+      "tables": [
+        {
+          "name": "big_invoices",
+          "view": true,
+          "columns": [
+            {
+              "name": "id",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10
+            },
+            {
+              "name": "amount",
+              "type": "money",
+              "maxLength": 8,
+              "precision": 19,
+              "scale": 4
+            }
+          ],
+          "viewDef": {
+            "definition": "\n\nCREATE VIEW billing.big_invoices WITH SCHEMABINDING AS\n  SELECT id, amount FROM billing.invoices WHERE amount \u003e 100\n  WITH CHECK OPTION;\n",
+            "checkOption": true,
+            "schemaBound": true,
+            "reads": [
+              "billing.invoices"
+            ]
+          }
+        },
+        {
+          "name": "invoices",
+          "comment": "@name(bill)",
+          "columns": [
+            {
+              "name": "id",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10,
+              "identity": {
+                "seed": "100",
+                "increment": "5"
+              }
+            },
+            {
+              "name": "code",
+              "type": "varchar",
+              "maxLength": 12,
+              "alias": "billing.code",
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            },
+            {
+              "name": "guid",
+              "type": "uniqueidentifier",
+              "maxLength": 16,
+              "default": {
+                "name": "invoices_guid_default",
+                "definition": "(newsequentialid())"
+              },
+              "rowGuid": true
+            },
+            {
+              "name": "amount",
+              "type": "money",
+              "maxLength": 8,
+              "precision": 19,
+              "scale": 4
+            },
+            {
+              "name": "tax",
+              "type": "decimal",
+              "maxLength": 5,
+              "precision": 9,
+              "scale": 3,
+              "nullable": true
+            },
+            {
+              "name": "total",
+              "type": "decimal",
+              "maxLength": 13,
+              "precision": 20,
+              "scale": 4,
+              "nullable": true,
+              "computed": {
+                "definition": "([amount]+coalesce([tax],(0)))"
+              }
+            },
+            {
+              "name": "note",
+              "type": "varchar",
+              "maxLength": -1,
+              "nullable": true,
+              "collation": "Latin1_General_100_BIN2"
+            },
+            {
+              "name": "stamp",
+              "type": "timestamp",
+              "maxLength": 8
+            }
+          ],
+          "checks": [
+            {
+              "name": "invoices_amount_check",
+              "definition": "([amount]\u003e=(0))",
+              "disabled": true,
+              "notTrusted": true
+            }
+          ],
+          "indexes": [
+            {
+              "name": "invoices_code_key",
+              "type": "CLUSTERED",
+              "unique": true,
+              "uniqueConstraint": true,
+              "parts": [
+                {
+                  "column": "code",
+                  "descending": true
+                }
+              ]
+            },
+            {
+              "name": "invoices_pkey",
+              "type": "NONCLUSTERED",
+              "unique": true,
+              "primaryKey": true,
+              "parts": [
+                {
+                  "column": "id"
+                }
+              ],
+              "comment": "the key"
+            }
+          ],
+          "triggers": [
+            {
+              "name": "invoices_audit",
+              "events": [
+                "INSERT",
+                "DELETE"
+              ],
+              "disabled": true,
+              "definition": "\nCREATE TRIGGER billing.invoices_audit ON billing.invoices AFTER INSERT, DELETE AS\nBEGIN\n  SET NOCOUNT ON;\nEND;\n"
+            }
+          ]
+        },
+        {
+          "name": "payments",
+          "columns": [
+            {
+              "name": "invoice_id",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10
+            },
+            {
+              "name": "paid_on",
+              "type": "date",
+              "maxLength": 3,
+              "precision": 10
+            },
+            {
+              "name": "amount",
+              "type": "money",
+              "maxLength": 8,
+              "precision": 19,
+              "scale": 4
+            }
+          ],
+          "indexes": [
+            {
+              "name": "payments_by_day",
+              "type": "NONCLUSTERED",
+              "filter": "([amount]\u003e(0))",
+              "parts": [
+                {
+                  "column": "paid_on",
+                  "descending": true
+                },
+                {
+                  "column": "invoice_id"
+                }
+              ],
+              "included": [
+                "amount"
+              ],
+              "comment": "@unique"
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": "payments_invoice_id_fkey",
+              "columns": [
+                "invoice_id"
+              ],
+              "refSchema": "billing",
+              "refTable": "invoices",
+              "refColumns": [
+                "id"
+              ],
+              "onUpdate": "NO_ACTION",
+              "onDelete": "CASCADE",
+              "disabled": true,
+              "notTrusted": true
+            }
+          ],
+          "triggers": [
+            {
+              "name": "payments_changed",
+              "events": [
+                "UPDATE"
+              ],
+              "definition": "\nCREATE TRIGGER billing.payments_changed ON billing.payments AFTER UPDATE AS\nBEGIN\n  SET NOCOUNT ON;\nEND;\n"
+            },
+            {
+              "name": "payments_guard",
+              "insteadOf": true,
+              "events": [
+                "INSERT"
+              ],
+              "definition": "\n\nCREATE TRIGGER billing.payments_guard ON billing.payments INSTEAD OF INSERT AS\nBEGIN\n  SET NOCOUNT ON;\nEND;\n"
+            }
+          ]
+        }
+      ],
+      "routines": [
+        {
+          "name": "codes",
+          "type": "SQL_TABLE_VALUED_FUNCTION",
+          "comment": "@public",
+          "columns": [
+            {
+              "name": "code",
+              "type": "varchar",
+              "maxLength": 12,
+              "alias": "billing.code",
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            },
+            {
+              "name": "n",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10,
+              "nullable": true
+            }
+          ],
+          "definition": "\nCREATE FUNCTION billing.codes() RETURNS @out TABLE (code billing.code, n INT) AS\nBEGIN\n  RETURN;\nEND;\n"
+        },
+        {
+          "name": "invoice_total",
+          "type": "SQL_SCALAR_FUNCTION",
+          "returns": {
+            "type": "money",
+            "maxLength": 8,
+            "precision": 19,
+            "scale": 4
+          },
+          "parameters": [
+            {
+              "name": "id",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10
+            },
+            {
+              "name": "with_tax",
+              "type": "bit",
+              "maxLength": 1,
+              "precision": 1
+            }
+          ],
+          "definition": "\n\nCREATE FUNCTION billing.invoice_total(@id INT, @with_tax BIT = 1) RETURNS MONEY AS\nBEGIN\n  RETURN (SELECT amount FROM billing.invoices WHERE id = @id);\nEND;\n"
+        },
+        {
+          "name": "invoices_over",
+          "type": "SQL_INLINE_TABLE_VALUED_FUNCTION",
+          "columns": [
+            {
+              "name": "id",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10
+            },
+            {
+              "name": "amount",
+              "type": "money",
+              "maxLength": 8,
+              "precision": 19,
+              "scale": 4
+            }
+          ],
+          "parameters": [
+            {
+              "name": "min",
+              "type": "money",
+              "maxLength": 8,
+              "precision": 19,
+              "scale": 4
+            }
+          ],
+          "definition": "\nCREATE FUNCTION billing.invoices_over(@min MONEY) RETURNS TABLE AS\n  RETURN SELECT id, amount FROM billing.invoices WHERE amount \u003e @min;\n"
+        },
+        {
+          "name": "pay",
+          "type": "SQL_STORED_PROCEDURE",
+          "comment": "@public",
+          "parameters": [
+            {
+              "name": "invoice",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10
+            },
+            {
+              "name": "amount",
+              "type": "money",
+              "maxLength": 8,
+              "precision": 19,
+              "scale": 4
+            },
+            {
+              "name": "paid",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10,
+              "output": true
+            }
+          ],
+          "definition": "\nCREATE PROCEDURE billing.pay @invoice INT, @amount MONEY, @paid INT OUTPUT AS\nBEGIN\n  SET @paid = 1;\nEND;\n"
+        }
+      ]
+    },
+    {
+      "name": "dbo",
+      "tables": [
+        {
+          "name": "backups",
+          "view": true,
+          "columns": [
+            {
+              "name": "backup_set_id",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10
+            }
+          ],
+          "viewDef": {
+            "definition": "\nCREATE VIEW dbo.backups AS\n  SELECT backup_set_id FROM msdb.dbo.backupset;\n",
+            "reads": [
+              "msdb.dbo.backupset"
+            ]
+          }
+        },
+        {
+          "name": "invoice_days",
+          "view": true,
+          "columns": [
+            {
+              "name": "id",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10
+            },
+            {
+              "name": "paid_on",
+              "type": "date",
+              "maxLength": 3,
+              "precision": 10
+            }
+          ],
+          "viewDef": {
+            "definition": "\nCREATE VIEW dbo.invoice_days AS\n  SELECT i.id, p.paid_on FROM billing.invoices i JOIN billing.payments p ON p.invoice_id = i.id;\n",
+            "reads": [
+              "billing.invoices",
+              "billing.payments"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

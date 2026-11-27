@@ -21,12 +21,19 @@
 # routing scenario needs on MySQL. They also run against a MariaDB
 # server named by DQL_TEST_MARIADB_URL, in the same form (such as
 # root:root@tcp(localhost:3307)/), which the same compose file starts.
+#
+# The sqlserver-live tests run against a SQL Server 2022 named by
+# DQL_TEST_SQLSERVER_URL, a go-mssqldb URL without a database for a login
+# that may create and drop databases (such as
+# sqlserver://sa:Dql-Test-2026!@localhost:1433); conformance/sqlserver/compose.yaml
+# starts one.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 : "${DQL_TEST_POSTGRES_URL:?set DQL_TEST_POSTGRES_URL to a Postgres 16 server URL; the pg-live tests need one}"
 : "${DQL_TEST_MYSQL_URL:?set DQL_TEST_MYSQL_URL to a MySQL 8.4 server DSN; the mysql-live tests need one}"
 : "${DQL_TEST_MYSQL_REPLICA_URL:?set DQL_TEST_MYSQL_REPLICA_URL to a replica of DQL_TEST_MYSQL_URL; the MySQL routing scenario needs one}"
+: "${DQL_TEST_SQLSERVER_URL:?set DQL_TEST_SQLSERVER_URL to a SQL Server 2022 or newer URL; the sqlserver-live tests need one}"
 : "${DQL_TEST_MARIADB_URL:?set DQL_TEST_MARIADB_URL to a MariaDB 10.11 or newer server DSN; the mysql-live tests need one}"
 
 out=$(mktemp -d)
