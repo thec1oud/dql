@@ -2049,12 +2049,12 @@ func (usersDisplayNameColumn) Set(e dql.DefaultExpr) dql.Assignment[UsersTable] 
 
 // Asc orders by display_name, ascending.
 func (usersDisplayNameColumn) Asc() dql.Order[UsersTable] {
-	return dql.Ordered[UsersTable]("order.asc", "col.users.display_name")
+	return dql.Ordered[UsersTable]("order.asc_nullable", "col.users.display_name")
 }
 
 // Desc orders by display_name, descending.
 func (usersDisplayNameColumn) Desc() dql.Order[UsersTable] {
-	return dql.Ordered[UsersTable]("order.desc", "col.users.display_name")
+	return dql.Ordered[UsersTable]("order.desc_nullable", "col.users.display_name")
 }
 
 // usersPasswordHashColumn is column password_hash in builder reads (§9.4).

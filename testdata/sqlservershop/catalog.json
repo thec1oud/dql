@@ -13644,10 +13644,18 @@
         },
         {
           "id": "order.asc",
+          "template": "{0} ASC"
+        },
+        {
+          "id": "order.asc_nullable",
           "template": "CASE WHEN {0} IS NULL THEN 1 ELSE 0 END, {0} ASC"
         },
         {
           "id": "order.desc",
+          "template": "{0} DESC"
+        },
+        {
+          "id": "order.desc_nullable",
           "template": "CASE WHEN {0} IS NULL THEN 0 ELSE 1 END, {0} DESC"
         },
         {

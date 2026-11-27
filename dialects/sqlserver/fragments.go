@@ -132,11 +132,13 @@ func (f *fragments) static() {
 		"lock.share":       "HOLDLOCK, ROWLOCK",
 		"lock.skip_locked": "READPAST",
 		"lock.update":      "UPDLOCK, ROWLOCK",
-		// NULLs sort last ascending and first descending, as on Postgres;
-		// SQL Server sorts them first ascending.
-		"order.asc":  "CASE WHEN {0} IS NULL THEN 1 ELSE 0 END, {0} ASC",
-		"order.desc": "CASE WHEN {0} IS NULL THEN 0 ELSE 1 END, {0} DESC",
-		"order.none": " ORDER BY (SELECT NULL)",
+		// A nullable column sorts its NULLs last ascending and first
+		// descending, as on Postgres; SQL Server sorts them first ascending.
+		"order.asc_nullable":  "CASE WHEN {0} IS NULL THEN 1 ELSE 0 END, {0} ASC",
+		"order.desc_nullable": "CASE WHEN {0} IS NULL THEN 0 ELSE 1 END, {0} DESC",
+		"order.asc":           "{0} ASC",
+		"order.desc":          "{0} DESC",
+		"order.none":          " ORDER BY (SELECT NULL)",
 		// A distinct read groups by its columns, so that its order may take
 		// expressions of them, as order.asc and order.desc do.
 		"select.distinct": "SELECT {cols} FROM {from}{locks}",

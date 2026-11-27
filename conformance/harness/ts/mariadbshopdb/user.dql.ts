@@ -731,11 +731,11 @@ export const users = {
     },
     /** asc orders by display_name, ascending. */
     asc(): Order<UsersTable> {
-      return ordered<UsersTable>("order.asc", "col.users.display_name");
+      return ordered<UsersTable>("order.asc_nullable", "col.users.display_name");
     },
     /** desc orders by display_name, descending. */
     desc(): Order<UsersTable> {
-      return ordered<UsersTable>("order.desc", "col.users.display_name");
+      return ordered<UsersTable>("order.desc_nullable", "col.users.display_name");
     },
     /** set assigns DEFAULT to display_name on a write, in place of a value (§20.2). */
     set(e: Expr<"default">): Assignment<UsersTable> {

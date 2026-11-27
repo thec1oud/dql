@@ -149,18 +149,21 @@ func (f *fragments) static() {
 		"lock.share":        share,
 		"lock.skip_locked":  " SKIP LOCKED",
 		"lock.update":       " FOR UPDATE",
-		// NULLs sort last ascending and first descending, as on Postgres;
-		// MySQL sorts them first ascending.
-		"order.asc":       "{0} IS NULL, {0} ASC",
-		"order.desc":      "{0} IS NULL DESC, {0} DESC",
-		"reread.from":     "{0} >= {1} AND MOD({0} - {2}, @@SESSION.auto_increment_increment) = 0",
-		"select.distinct": "SELECT DISTINCT {cols} FROM {from}",
-		"value.default":   "DEFAULT",
-		"value.no_limit":  "18446744073709551615",
-		"value.now":       "CURRENT_TIMESTAMP(6)",
-		"value.one":       "1",
-		"value.true":      "TRUE",
-		"values.row":      "({0})",
+		// A nullable column sorts its NULLs last ascending and first
+		// descending, as on Postgres; MySQL and MariaDB sort them first
+		// ascending.
+		"order.asc_nullable":  "{0} IS NULL, {0} ASC",
+		"order.desc_nullable": "{0} IS NULL DESC, {0} DESC",
+		"order.asc":           "{0} ASC",
+		"order.desc":          "{0} DESC",
+		"reread.from":         "{0} >= {1} AND MOD({0} - {2}, @@SESSION.auto_increment_increment) = 0",
+		"select.distinct":     "SELECT DISTINCT {cols} FROM {from}",
+		"value.default":       "DEFAULT",
+		"value.no_limit":      "18446744073709551615",
+		"value.now":           "CURRENT_TIMESTAMP(6)",
+		"value.one":           "1",
+		"value.true":          "TRUE",
+		"values.row":          "({0})",
 	} {
 		f.add(id, t)
 	}

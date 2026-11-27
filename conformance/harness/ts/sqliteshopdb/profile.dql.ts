@@ -552,11 +552,11 @@ export const profiles = {
     },
     /** asc orders by bio, ascending. */
     asc(): Order<ProfilesTable> {
-      return ordered<ProfilesTable>("order.asc", "col.profiles.bio");
+      return ordered<ProfilesTable>("order.asc_nullable", "col.profiles.bio");
     },
     /** desc orders by bio, descending. */
     desc(): Order<ProfilesTable> {
-      return ordered<ProfilesTable>("order.desc", "col.profiles.bio");
+      return ordered<ProfilesTable>("order.desc_nullable", "col.profiles.bio");
     },
     /** set assigns DEFAULT to bio on a write, in place of a value (§20.2). */
     set(e: Expr<"default">): Assignment<ProfilesTable> {
@@ -615,11 +615,11 @@ export const profiles = {
     },
     /** asc orders by birthday, ascending. */
     asc(): Order<ProfilesTable> {
-      return ordered<ProfilesTable>("order.asc", "col.profiles.birthday");
+      return ordered<ProfilesTable>("order.asc_nullable", "col.profiles.birthday");
     },
     /** desc orders by birthday, descending. */
     desc(): Order<ProfilesTable> {
-      return ordered<ProfilesTable>("order.desc", "col.profiles.birthday");
+      return ordered<ProfilesTable>("order.desc_nullable", "col.profiles.birthday");
     },
     /** set assigns now or DEFAULT to birthday on a write, in place of a value (§20.2). */
     set(e: Expr): Assignment<ProfilesTable> {

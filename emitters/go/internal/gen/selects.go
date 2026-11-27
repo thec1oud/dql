@@ -222,7 +222,7 @@ func (g *generator) tableHandle(e *entity, byTable map[key]*entity) {
 		for _, dir := range []string{"asc", "desc"} {
 			if g.fragmentIDs["order."+dir] {
 				fmt.Fprintf(&decls, "// %s orders by %s, %sending.\nfunc (%s) %s() %s.Order[%s] { return %s.Ordered[%s](%q, %q) }\n\n",
-					capitalize(dir), c.GetName().GetStored(), dir, handle, capitalize(dir), dql, typ, dql, typ, "order."+dir, frag)
+					capitalize(dir), c.GetName().GetStored(), dir, handle, capitalize(dir), dql, typ, dql, typ, g.orderFragment(c, dir), frag)
 			}
 		}
 	}
@@ -422,4 +422,14 @@ func (g *generator) opFragment(op, col string) string {
 		return id
 	}
 	return "op." + op
+}
+
+// orderFragment is the fragment ordering by column c in direction dir: on a
+// nullable column, the dialect's order.<dir>_nullable if it has one, which
+// places NULLs as Postgres does, and order.<dir> otherwise.
+func (g *generator) orderFragment(c *irv1.Column, dir string) string {
+	if id := "order." + dir + "_nullable"; c.GetNullable() && g.fragmentIDs[id] {
+		return id
+	}
+	return "order." + dir
 }
