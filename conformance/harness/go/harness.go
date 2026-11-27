@@ -110,6 +110,8 @@ type Step struct {
 	// Deleted is with to keep soft-deleted rows too, or only to keep only
 	// them (§21.3).
 	Deleted string `yaml:"deleted"`
+	// Distinct reads each distinct row once.
+	Distinct bool `yaml:"distinct"`
 	// Consistency is the read's level: primary, any, bounded, with Bound,
 	// or read_your_writes, with Wait and OrFail. Bound and Wait are Go
 	// durations, as 500ms.
@@ -879,6 +881,9 @@ func (r *runner) read(st Step) (any, error, []string) {
 	case "":
 	default:
 		return nil, nil, []string{"no deleted " + st.Deleted}
+	}
+	if st.Distinct {
+		b = b.MethodByName("Distinct").Call(nil)[0]
 	}
 	if st.Limit > 0 {
 		b = b.MethodByName("Limit").Call([]reflect.Value{reflect.ValueOf(st.Limit)})[0]

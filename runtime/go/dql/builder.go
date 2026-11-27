@@ -242,8 +242,8 @@ func (b Builder[T, E]) filter() Node {
 // rows assembles the read of the shape's rows.
 func (b Builder[T, E]) rows() (Statement, error) {
 	var plan []Node
+	var cols []Node
 	if b.distinct {
-		var cols []Node
 		for _, c := range b.shape.Columns {
 			cols = append(cols, Use{Fragment: c})
 		}
@@ -255,6 +255,11 @@ func (b Builder[T, E]) rows() (Statement, error) {
 	}
 	if w := b.filter(); w != nil {
 		plan = append(plan, w)
+	}
+	if _, ok := b.t.Templates["clause.distinct"]; ok && b.distinct {
+		// A dialect that orders a distinct read only by its selected
+		// columns, and so not by an expression of them, groups by them.
+		plan = append(plan, Use{Fragment: "clause.distinct", Holes: map[string]Node{"cols": List{Items: cols, Separator: ", "}}})
 	}
 	_, page := b.t.Templates["clause.page"]
 	paged := page && (b.limit != nil || b.offset != nil)

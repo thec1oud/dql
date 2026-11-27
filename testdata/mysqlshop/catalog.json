@@ -17498,11 +17498,11 @@
         },
         {
           "id": "order.asc",
-          "template": "{0} ASC"
+          "template": "{0} IS NULL, {0} ASC"
         },
         {
           "id": "order.desc",
-          "template": "{0} DESC"
+          "template": "{0} IS NULL DESC, {0} DESC"
         },
         {
           "id": "rel.post_tags.post",

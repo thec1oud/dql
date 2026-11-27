@@ -117,14 +117,16 @@ func (f *fragments) static() {
 		"clause.where":      " WHERE {0}",
 		"keyset.after":      "({cols}) > ({vals})",
 		"keyset.after_desc": "({cols}) < ({vals})",
-		"order.asc":         "{0} ASC",
-		"order.desc":        "{0} DESC",
-		"select.distinct":   "SELECT DISTINCT {cols} FROM {from}",
-		"value.no_limit":    "-1",
-		"value.now":         "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
-		"value.one":         "1",
-		"value.true":        "TRUE",
-		"values.row":        "({0})",
+		// NULLs sort last ascending and first descending, as on Postgres;
+		// SQLite sorts them first ascending.
+		"order.asc":       "{0} ASC NULLS LAST",
+		"order.desc":      "{0} DESC NULLS FIRST",
+		"select.distinct": "SELECT DISTINCT {cols} FROM {from}",
+		"value.no_limit":  "-1",
+		"value.now":       "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+		"value.one":       "1",
+		"value.true":      "TRUE",
+		"values.row":      "({0})",
 	} {
 		f.add(id, t)
 	}

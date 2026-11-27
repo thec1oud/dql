@@ -257,8 +257,9 @@ export class Builder<T, E> {
   /** rows assembles the read of the shape's rows. */
   private rows(): Statement {
     const plan: Node[] = [];
+    const cols = list(this.shape.columns.map((c) => use(c)), ", ");
     if (this.o.distinct) {
-      plan.push(this.locked(use("select.distinct", { cols: list(this.shape.columns.map((c) => use(c)), ", "), from: use(this.shape.from) })));
+      plan.push(this.locked(use("select.distinct", { cols, from: use(this.shape.from) })));
     } else {
       plan.push(this.locked(use(this.shape.select)));
     }
@@ -267,6 +268,10 @@ export class Builder<T, E> {
       plan.push(w);
     }
     const has = (id: string): boolean => Object.hasOwn(this.t.templates, id);
+    if (this.o.distinct && has("clause.distinct")) {
+      // A dialect that orders a distinct read only by its selected columns, and so not by an expression of them, groups by them.
+      plan.push(use("clause.distinct", { cols }));
+    }
     const page = has("clause.page");
     if (this.o.order.length > 0) {
       plan.push(use("clause.order", { "0": list(this.o.order, ", ") }));

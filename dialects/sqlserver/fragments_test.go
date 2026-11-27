@@ -193,7 +193,9 @@ func TestFragments(t *testing.T) {
 		"lock.hints":      " WITH ({0})",
 		"lock.update":     "UPDLOCK, ROWLOCK",
 		"lock.share":      "HOLDLOCK, ROWLOCK",
-		"select.distinct": "SELECT DISTINCT {cols} FROM {from}{locks}",
+		"select.distinct": "SELECT {cols} FROM {from}{locks}",
+		"clause.distinct": " GROUP BY {cols}",
+		"order.asc":       "CASE WHEN {0} IS NULL THEN 1 ELSE 0 END, {0} ASC",
 		"value.true":      "1 = 1",
 		"value.now":       "TODATETIMEOFFSET(SYSUTCDATETIME(), 0)",
 	} {

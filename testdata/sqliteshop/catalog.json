@@ -15139,11 +15139,11 @@
         },
         {
           "id": "order.asc",
-          "template": "{0} ASC"
+          "template": "{0} ASC NULLS LAST"
         },
         {
           "id": "order.desc",
-          "template": "{0} DESC"
+          "template": "{0} DESC NULLS FIRST"
         },
         {
           "id": "rel.post_tags.post",

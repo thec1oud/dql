@@ -73,6 +73,7 @@ export interface Step {
   readonly filter?: readonly { readonly column: string; readonly op: string; readonly value?: Json }[];
   readonly order?: readonly { readonly column: string; readonly desc?: boolean }[];
   readonly limit?: number;
+  readonly distinct?: boolean;
   readonly read?: string;
   readonly stop?: number;
   readonly deleted?: string;
@@ -690,6 +691,9 @@ class Runner {
         break;
       default:
         return { problems: [`no deleted ${st.deleted}`] };
+    }
+    if (st.distinct === true) {
+      b = b.distinct();
     }
     if ((st.limit ?? 0) > 0) {
       b = b.limit(st.limit as number);

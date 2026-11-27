@@ -294,7 +294,8 @@ describe("the builder (§18)", () => {
       placeholder: "at",
       templates: {
         "select.user": `SELECT u.[id] FROM [app].[users] AS u{locks}`,
-        "select.distinct": `SELECT DISTINCT {cols} FROM {from}{locks}`,
+        "select.distinct": `SELECT {cols} FROM {from}{locks}`,
+        "clause.distinct": ` GROUP BY {cols}`,
         "from.users": `[app].[users] AS u`,
         "col.users.id": `u.[id]`,
         "clause.order": ` ORDER BY {0}`,
@@ -317,7 +318,8 @@ describe("the builder (§18)", () => {
       ["offset", () => b.offset(5n).all(), `SELECT u.[id] FROM [app].[users] AS u ORDER BY (SELECT NULL) OFFSET @p1 ROWS`, [5n]],
       ["plain", () => b.all(), `SELECT u.[id] FROM [app].[users] AS u`, []],
       ["locks", () => b.forUpdate().skipLocked().all(), `SELECT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK, READPAST)`, []],
-      ["distinct", () => b.distinct().forUpdate().all(), `SELECT DISTINCT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK)`, []],
+      ["distinct", () => b.distinct().forUpdate().all(), `SELECT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK) GROUP BY u.[id]`, []],
+      ["ordered distinct", () => b.distinct().orderBy(asc).all(), `SELECT u.[id] FROM [app].[users] AS u GROUP BY u.[id] ORDER BY u.[id] ASC`, []],
       // A dialect without OFFSET alone limits to every row.
       ["offset alone", () => newBuilder(noLimit, { h: e }, userShape).offset(5n).all(), `SELECT u."id" FROM "app"."users" u LIMIT 18446744073709551615 OFFSET $1`, [5n]],
     ];
