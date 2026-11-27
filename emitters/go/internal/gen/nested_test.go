@@ -237,6 +237,13 @@ func TestPatchNestedPlans(t *testing.T) {
 			replace(t, b, "tags", "posts")
 			dropQuery(b, "post_tag.delete_where")
 		}, "tag.dql.go", false, nil},
+		// The predicates on the link table's rows are written into the
+		// file being generated, before the link table's own.
+		{"replaced links before the link table", func(t *testing.T, b *irv1.Bundle) {
+			replace(t, b, "tags", "posts")
+			ns, tags := b.GetCatalogs()[0].GetNamespaces()[0], table(t, b, "tags")
+			ns.Tables = append([]*irv1.Table{tags}, slices.DeleteFunc(ns.GetTables(), func(tb *irv1.Table) bool { return tb == tags })...)
+		}, "tag.dql.go", true, []string{"where := dql.And(PostTags.TagID.Eq(row.ID))"}},
 		{"replaced links", func(t *testing.T, b *irv1.Bundle) { replace(t, b, "tags", "posts") }, "tag.dql.go", true, []string{
 			"kept = append(kept, ch.key)",
 			"kept = append(kept, PostKey{ID: related.ID})",
