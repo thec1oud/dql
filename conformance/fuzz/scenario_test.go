@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	harness "github.com/thec1oud/dql/conformance/harness/go"
 	"github.com/thec1oud/dql/conformance/fuzz"
+	harness "github.com/thec1oud/dql/conformance/harness/go"
 )
 
 func TestScenarioReplays(t *testing.T) {
