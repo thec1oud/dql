@@ -315,7 +315,7 @@ export function statementOf(q: Query, t: Fragments, args: Args = {}): Statement 
 
 /**
  * omitUnset leaves the columns args does not set out of an insert's column
- * list and VALUES rows, for a dialect without value.default: the column then
+ * list, VALUES rows and new-row values ({news}), for a dialect without value.default: the column then
  * takes its default. A multi-row insert's rows set the same columns, as
  * insertMany groups them so, so the first row's say which.
  */
@@ -330,6 +330,13 @@ function omitUnset(plan: readonly Node[], args: Args): Node[] {
     const keep = (first.holes?.["0"] as List).items.map((it) => it.node !== "param" || Object.hasOwn(args, it.name));
     const kept = (l: List): List => list(l.items.filter((_, i) => keep[i]), l.separator);
     const keptRow = (r: Node): Use => use((r as Use).fragment, { "0": kept((r as Use).holes?.["0"] as List) });
-    return use(node.fragment, { ...node.holes, cols: kept(cols), rows: rows.node === "list" ? list(rows.items.map(keptRow), rows.separator) : keptRow(rows) });
+    const news = node.holes?.["news"];
+    return use(node.fragment, {
+      ...node.holes,
+      cols: kept(cols),
+      rows: rows.node === "list" ? list(rows.items.map(keptRow), rows.separator) : keptRow(rows),
+      // A MERGE's insert branch names the new row's value of each column the statement writes.
+      ...(news?.node === "list" ? { news: kept(news) } : {}),
+    });
   });
 }

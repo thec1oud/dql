@@ -464,3 +464,25 @@ func TestPlanReadBack(t *testing.T) {
 		t.Error("post_tag writes without a select")
 	}
 }
+
+// An upsert or insert-or-ignore whose template has a {news} hole, as a
+// MERGE does, gets the new row's value of each column it writes there.
+func TestPlanNews(t *testing.T) {
+	b := shop(t)
+	for _, f := range b.GetQueries().GetFragments().GetFragments() {
+		if f.GetId() == "upsert.post_tags.post_tags_pkey" || f.GetId() == "ignore.post_tags.post_tags_pkey" {
+			f.Template = "MERGE ... INSERT ({cols}) VALUES ({news})"
+		}
+	}
+	qs := planned(b)
+	news := "news=[excluded.post_tags.post_id, excluded.post_tags.tag_id]"
+	if got := describe(qs["post_tag.upsert.by_primary"].GetPlan().GetParts()); !strings.Contains(got, news) {
+		t.Errorf("upsert: %s", got)
+	}
+	if got := describe(qs["post_tag.insert_or_ignore.by_primary"].GetPlan().GetParts()); !strings.Contains(got, news) {
+		t.Errorf("ignore: %s", got)
+	}
+	if got := describe(qs["tag.upsert.by_name"].GetPlan().GetParts()); strings.Contains(got, "news=") {
+		t.Errorf("a template without the hole: %s", got)
+	}
+}

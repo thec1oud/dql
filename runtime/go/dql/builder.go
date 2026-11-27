@@ -3,6 +3,7 @@ package dql
 import (
 	"context"
 	"iter"
+	"maps"
 	"slices"
 	"strconv"
 
@@ -246,33 +247,79 @@ func (b Builder[T, E]) rows() (Statement, error) {
 		for _, c := range b.shape.Columns {
 			cols = append(cols, Use{Fragment: c})
 		}
-		plan = append(plan, Use{Fragment: "select.distinct", Holes: map[string]Node{
+		plan = append(plan, b.locked(Use{Fragment: "select.distinct", Holes: map[string]Node{
 			"cols": List{Items: cols, Separator: ", "}, "from": Use{Fragment: b.shape.From},
-		}})
+		}}))
 	} else {
-		plan = append(plan, Use{Fragment: b.shape.Select})
+		plan = append(plan, b.locked(Use{Fragment: b.shape.Select}))
 	}
 	if w := b.filter(); w != nil {
 		plan = append(plan, w)
 	}
+	_, page := b.t.Templates["clause.page"]
+	paged := page && (b.limit != nil || b.offset != nil)
 	if len(b.order) > 0 {
 		plan = append(plan, Use{Fragment: "clause.order", Holes: map[string]Node{"0": List{Items: b.order, Separator: ", "}}})
+	} else if _, ok := b.t.Templates["order.none"]; ok && paged {
+		// A dialect whose page needs an ORDER BY orders an unordered one by
+		// nothing.
+		plan = append(plan, Use{Fragment: "order.none"})
 	}
 	limit := b.limit
 	if _, ok := b.t.Templates["value.no_limit"]; ok && limit == nil && b.offset != nil {
 		// A dialect without OFFSET alone limits to every row (§18.2).
 		limit = Use{Fragment: "value.no_limit"}
 	}
-	if limit != nil {
-		plan = append(plan, Use{Fragment: "clause.limit", Holes: map[string]Node{"0": limit}})
+	switch {
+	case page && limit != nil:
+		// A dialect whose limit follows its offset pages with one clause,
+		// from the first row unless the call skips some.
+		offset := b.offset
+		if offset == nil {
+			offset = Use{Fragment: "value.zero"}
+		}
+		plan = append(plan, Use{Fragment: "clause.page", Holes: map[string]Node{"offset": offset, "limit": limit}})
+	default:
+		if limit != nil {
+			plan = append(plan, Use{Fragment: "clause.limit", Holes: map[string]Node{"0": limit}})
+		}
+		if b.offset != nil {
+			plan = append(plan, Use{Fragment: "clause.offset", Holes: map[string]Node{"0": b.offset}})
+		}
 	}
-	if b.offset != nil {
-		plan = append(plan, Use{Fragment: "clause.offset", Holes: map[string]Node{"0": b.offset}})
-	}
-	for _, l := range b.locks {
-		plan = append(plan, Use{Fragment: l})
+	if !b.hinted() {
+		for _, l := range b.locks {
+			plan = append(plan, Use{Fragment: l})
+		}
 	}
 	return b.statement(b.shape.Name, "select", plan)
+}
+
+// hinted reports whether the dialect locks through table hints: its
+// lock.hints fragment fills the select's {locks} hole in place of lock
+// clauses after the statement.
+func (b Builder[T, E]) hinted() bool {
+	_, ok := b.t.Templates["lock.hints"]
+	return ok && len(b.locks) > 0
+}
+
+// locked fills sel's {locks} hole with the read's locks, joined, as table
+// hints, on a dialect that has them.
+func (b Builder[T, E]) locked(sel Use) Use {
+	if !b.hinted() {
+		return sel
+	}
+	locks := make([]Node, len(b.locks))
+	for i, l := range b.locks {
+		locks[i] = Use{Fragment: l}
+	}
+	holes := maps.Clone(sel.Holes)
+	if holes == nil {
+		holes = map[string]Node{}
+	}
+	holes["locks"] = Use{Fragment: "lock.hints", Holes: map[string]Node{"0": List{Items: locks, Separator: ", "}}}
+	sel.Holes = holes
+	return sel
 }
 
 // aggregate assembles a count or exists read of the rows the filter keeps.

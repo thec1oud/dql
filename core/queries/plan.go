@@ -66,10 +66,10 @@ func TableID(cats []*irv1.Catalog, q *irv1.QualifiedName) string {
 // not give comes back as the last insert ID when it is an identity; a write
 // whose row has no such key has no query.
 func Plan(b *irv1.Bundle) []*irv1.Query {
-	p := &planner{b: b, fragments: map[string]bool{}, tables: map[string]*entity{},
+	p := &planner{b: b, fragments: map[string]string{}, tables: map[string]*entity{},
 		readBack: b.GetCapabilities().GetReturnedRows() == irv1.ReturnedRows_RETURNED_ROWS_REREAD}
 	for _, f := range b.GetQueries().GetFragments().GetFragments() {
-		p.fragments[f.GetId()] = true
+		p.fragments[f.GetId()] = f.GetTemplate()
 	}
 	for _, cat := range b.GetCatalogs() {
 		for _, ns := range cat.GetNamespaces() {
@@ -111,7 +111,8 @@ func Plan(b *irv1.Bundle) []*irv1.Query {
 
 type planner struct {
 	b         *irv1.Bundle
-	fragments map[string]bool
+	// fragments are the table's templates by id.
+	fragments map[string]string
 	// readBack: the dialect re-reads written rows rather than returning
 	// them from the write (§20.1).
 	readBack bool
@@ -269,7 +270,7 @@ func (p *planner) add(e *entity, name string, card irv1.Cardinality, writes bool
 
 // renders reports whether the fragment table has every fragment of u.
 func (p *planner) renders(u *irv1.FragmentUse) bool {
-	if !p.fragments[u.GetFragment()] {
+	if _, ok := p.fragments[u.GetFragment()]; !ok {
 		return false
 	}
 	for _, h := range u.GetHoles() {
@@ -348,7 +349,7 @@ func (p *planner) entity(e *entity) {
 				}
 				cols, row, params := e.values(s)
 				p.withReread(p.add(e, e.spelling+".insert_or_ignore"+suffix+".by_"+keyName(u), irv1.Cardinality_CARDINALITY_OPTIONAL, true, params, full,
-					use("ignore."+e.id+"."+u.GetName(), cols, row, returning)), rr)
+					p.merged("ignore."+e.id+"."+u.GetName(), cols, row, returning)), rr)
 			}
 		case irv1.Preset_PRESET_PARTIAL:
 			p.patch(e, s, suffix, full, returning)
@@ -548,7 +549,7 @@ func (p *planner) upsert(e *entity, u *irv1.Upsert) {
 	}
 	cols, row, params := e.values(s)
 	p.withReread(p.add(e, e.spelling+".upsert.by_"+keyName(e.t.GetUniqueness()[k]), irv1.Cardinality_CARDINALITY_ONE, true, params, full,
-		use("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), p.returning(e, full))), rr)
+		p.merged("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), p.returning(e, full))), rr)
 	p.upsertSet(e, u, k, s, full, rr)
 }
 
@@ -581,7 +582,22 @@ func (p *planner) upsertSet(e *entity, u *irv1.Upsert, k int, s, full *irv1.Shap
 	}
 	cols, row, params := e.values(s)
 	p.withReread(p.add(e, e.spelling+".upsert_set.by_"+keyName(e.t.GetUniqueness()[k]), irv1.Cardinality_CARDINALITY_ONE, true, append(params, setParams...), full,
-		use("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), p.returning(e, full))), rr)
+		p.merged("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), p.returning(e, full))), rr)
+}
+
+// merged is a use of an upsert or insert-or-ignore fragment. Where its
+// template has a {news} hole, as a MERGE does, the hole holds the new
+// row's value of each column cols writes: its excluded fragment.
+func (p *planner) merged(id string, cols *irv1.HoleFill, holes ...*irv1.HoleFill) *irv1.FragmentUse {
+	holes = append(holes, cols)
+	if strings.Contains(p.fragments[id], "{news}") {
+		var news []*irv1.ListItem
+		for _, it := range cols.GetList().GetItems() {
+			news = append(news, item(use("excluded."+strings.TrimPrefix(it.GetFragment().GetFragment(), "name."))))
+		}
+		holes = append(holes, list("news", news))
+	}
+	return use(id, holes...)
 }
 
 func shapeEqual(a, b *irv1.ShapeId) bool {

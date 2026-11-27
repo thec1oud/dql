@@ -258,27 +258,58 @@ export class Builder<T, E> {
   private rows(): Statement {
     const plan: Node[] = [];
     if (this.o.distinct) {
-      plan.push(use("select.distinct", { cols: list(this.shape.columns.map((c) => use(c)), ", "), from: use(this.shape.from) }));
+      plan.push(this.locked(use("select.distinct", { cols: list(this.shape.columns.map((c) => use(c)), ", "), from: use(this.shape.from) })));
     } else {
-      plan.push(use(this.shape.select));
+      plan.push(this.locked(use(this.shape.select)));
     }
     const w = this.filter();
     if (w !== undefined) {
       plan.push(w);
     }
+    const has = (id: string): boolean => Object.hasOwn(this.t.templates, id);
+    const page = has("clause.page");
     if (this.o.order.length > 0) {
       plan.push(use("clause.order", { "0": list(this.o.order, ", ") }));
+    } else if (has("order.none") && page && (this.o.limit !== undefined || this.o.offset !== undefined)) {
+      // A dialect whose page needs an ORDER BY orders an unordered one by nothing.
+      plan.push(use("order.none"));
     }
-    if (this.o.limit !== undefined) {
-      plan.push(use("clause.limit", { "0": this.o.limit }));
+    let limit = this.o.limit;
+    if (has("value.no_limit") && limit === undefined && this.o.offset !== undefined) {
+      // A dialect without OFFSET alone limits to every row (§18.2).
+      limit = use("value.no_limit");
     }
-    if (this.o.offset !== undefined) {
-      plan.push(use("clause.offset", { "0": this.o.offset }));
+    if (page && limit !== undefined) {
+      // A dialect whose limit follows its offset pages with one clause, from the first row unless the call skips some.
+      plan.push(use("clause.page", { offset: this.o.offset ?? use("value.zero"), limit }));
+    } else {
+      if (limit !== undefined) {
+        plan.push(use("clause.limit", { "0": limit }));
+      }
+      if (this.o.offset !== undefined) {
+        plan.push(use("clause.offset", { "0": this.o.offset }));
+      }
     }
-    for (const l of this.o.locks) {
-      plan.push(use(l));
+    if (!this.hinted()) {
+      for (const l of this.o.locks) {
+        plan.push(use(l));
+      }
     }
     return this.statement(this.shape.name, "select", plan);
+  }
+
+  /** hinted reports whether the dialect locks through table hints: its lock.hints fragment fills the select's {locks} hole in place of lock clauses after the statement. */
+  private hinted(): boolean {
+    return Object.hasOwn(this.t.templates, "lock.hints") && this.o.locks.length > 0;
+  }
+
+  /** locked fills sel's {locks} hole with the read's locks, joined, as table hints, on a dialect that has them. */
+  private locked(sel: Use): Use {
+    if (!this.hinted()) {
+      return sel;
+    }
+    const hints = use("lock.hints", { "0": list(this.o.locks.map((l) => use(l)), ", ") });
+    return use(sel.fragment, { ...sel.holes, locks: hints });
   }
 
   /** aggregate assembles a count or exists read of the rows the filter keeps. */

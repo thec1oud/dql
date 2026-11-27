@@ -158,6 +158,18 @@ func TestInsertManyWithoutDefault(t *testing.T) {
 		t.Error(s.SQL, err)
 	}
 
+	// A MERGE's new-row values leave out the unset columns too.
+	lite.Templates["upsert.users"] = `MERGE USING (VALUES {rows}) AS n ({cols}) INSERT ({cols}) VALUES ({news})`
+	lite.Templates["excluded.users.a"] = `n."a"`
+	lite.Templates["excluded.users.b"] = `n."b"`
+	merge := &Query{Name: "user.upsert", Plan: []Node{Use{Fragment: "upsert.users", Holes: map[string]Node{
+		"cols": q.Plan[0].(Use).Holes["cols"], "rows": q.Plan[0].(Use).Holes["rows"],
+		"news": List{Items: []Node{Use{Fragment: "excluded.users.a"}, Use{Fragment: "excluded.users.b"}}, Separator: ", "},
+	}}}}
+	if s, err := merge.Statement(lite, Args{"b": 7}); err != nil || s.SQL != `MERGE USING (VALUES ($1)) AS n ("b") INSERT ("b") VALUES (n."b")` {
+		t.Error(s.SQL, err)
+	}
+
 	// DEFAULT in a SET renders the column's default, as SQLite has no
 	// DEFAULT there; elsewhere it still needs value.default.
 	lite.Templates["set.users.a"] = `"a" = {0}`

@@ -147,7 +147,7 @@ func sameKeys(a, b Args) bool {
 }
 
 // omitUnset leaves the columns args does not set out of an insert's column
-// list and VALUES rows, for a dialect without value.default: the column
+// list, VALUES rows and new-row values ({news}), for a dialect without value.default: the column
 // then takes its default. A multi-row insert's rows set the same columns,
 // as groups splits them so, so the first row's say which.
 func omitUnset(plan []Node, args Args) []Node {
@@ -171,6 +171,11 @@ func omitUnset(plan []Node, args Args) []Node {
 		}
 		holes := maps.Clone(u.Holes)
 		holes["cols"] = kept(cols, keep)
+		if news, ok := u.Holes["news"].(List); ok {
+			// A MERGE's insert branch names the new row's value of each
+			// column the statement writes.
+			holes["news"] = kept(news, keep)
+		}
 		if l, ok := rows.(List); ok {
 			items := make([]Node, len(l.Items))
 			for j, r := range l.Items {
