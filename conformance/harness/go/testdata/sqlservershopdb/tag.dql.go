@@ -261,6 +261,7 @@ func (d TagDraft) Validate() error { return d.validate().Err() }
 
 func (d TagDraft) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlTagsNameLength.Check(&v, "tag.draft.flat", "name", d.Name)
 	return v
 }
 
@@ -271,6 +272,7 @@ func (n TagDraftNested) Validate() error { return n.validate().Err() }
 
 func (n TagDraftNested) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlTagsNameLength.Check(&v, "tag.draft.nested", "name", n.Name)
 	for i, x := range n.PostTags {
 		v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)
 	}
@@ -303,6 +305,9 @@ func (p TagPartial) Validate() error { return p.validate().Err() }
 
 func (p TagPartial) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	if x, ok := p.Name.Get(); ok {
+		dqlTagsNameLength.Check(&v, "tag.partial.flat", "name", x)
+	}
 	return v
 }
 
@@ -313,6 +318,9 @@ func (n TagPartialNested) Validate() error { return n.validate().Err() }
 
 func (n TagPartialNested) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	if x, ok := n.Name.Get(); ok {
+		dqlTagsNameLength.Check(&v, "tag.partial.nested", "name", x)
+	}
 	if xs, ok := n.PostTags.Get(); ok {
 		for i, x := range xs {
 			v = append(v, x.validate().At("post_tags["+strconv.Itoa(i)+"]")...)

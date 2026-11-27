@@ -95,19 +95,31 @@ var unitWords = map[irv1.LengthUnit]string{
 // dql-checks.dql.go the first time (§10.2, §10.3), and the Go type the
 // check takes. It fails a kind the field's type cannot be checked by.
 func (g *generator) check(c *irv1.Constraint, owner *irv1.QualifiedName, t *irv1.Type, at *irv1.QualifiedName) (string, string, bool) {
+	// The constraint's words, after its owner's when the name does not
+	// start with them: posts_title_check is dqlPostsTitleCheck.
+	words := splitWords(c.GetName())
+	if prefix := splitWords(owner.GetObject()); !slices.Equal(prefix, words[:min(len(prefix), len(words))]) {
+		words = append(prefix, words...)
+	}
 	qualified := displayName(owner) + "." + c.GetName()
+	return g.checkAs(c, qualified, qualified, words, t, at)
+}
+
+// checkAs is check for a constraint named qualified in issues, cached under
+// key, whose variable is named from words.
+func (g *generator) checkAs(c *irv1.Constraint, qualified, key string, words []string, t *irv1.Type, at *irv1.QualifiedName) (string, string, bool) {
 	if g.checkFile == nil {
 		g.checkFile = g.newFile("dql-checks")
 	}
 	f := g.checkFile
 	base, goType, fam := g.baseOf(f, t)
-	if name, ok := g.checks[qualified]; ok {
+	if name, ok := g.checks[key]; ok {
 		return name, goType, name != ""
 	}
 	dql := f.use(pkgDQL, "dql")
 	fail := func(why string) (string, string, bool) {
 		// Once per constraint, though its domain and each field check it.
-		g.checks[qualified] = ""
+		g.checks[key] = ""
 		g.errorf(CodeValidationUnsupported, at, "constraint %s is client-validated, but the go emitter cannot check it: %s (§10.2)", qualified, why)
 		return "", "", false
 	}
@@ -184,14 +196,8 @@ func (g *generator) check(c *irv1.Constraint, owner *irv1.QualifiedName, t *irv1
 	default:
 		return fail("it is not a portable kind this emitter knows")
 	}
-	// The constraint's words, after its owner's when the name does not
-	// start with them: posts_title_check is dqlPostsTitleCheck.
-	words := splitWords(c.GetName())
-	if prefix := splitWords(owner.GetObject()); !slices.Equal(prefix, words[:min(len(prefix), len(words))]) {
-		words = append(prefix, words...)
-	}
 	name := fresh("dql"+Exported(words), g.checkNames)
-	g.checks[qualified] = name
+	g.checks[key] = name
 	f.printf("// %s checks %s.\nvar %s = %s\n\n", name, qualified, name, decl)
 	return name, goType, true
 }
@@ -281,26 +287,71 @@ func (g *generator) literal(f *file, t *irv1.Type, fam family, v *irv1.Value) (s
 	return fmt.Sprintf("%s.Must(%s.%s(%q))", f.use(pkgDQL, "dql"), f.use(pkgCiv, "civil"), fn, text), true
 }
 
+// fact returns the check of the structured fact of t's base type (§10.1): a
+// varchar(n) or char(n) length in the type's unit (§10.3), or a decimal's
+// precision and scale. The fact is named for the innermost domain whose
+// base type it is, or for the column at. It returns the check's variable
+// and the Go type it takes, or false when the type states no such fact.
+func (g *generator) fact(t *irv1.Type, at *irv1.QualifiedName) (string, string, bool) {
+	owner := at
+	for t.GetNamed().GetDomain() != nil {
+		owner = t.GetNamed().GetDomain()
+		t = g.named[keyOf(owner)].base
+	}
+	var p *irv1.PortableConstraint
+	kind := "length"
+	switch k := t.GetKind().(type) {
+	case *irv1.Type_Varchar:
+		p = lengthFact(k.Varchar.GetLength(), k.Varchar.GetUnit())
+	case *irv1.Type_Char:
+		p = lengthFact(k.Char.GetLength(), k.Char.GetUnit())
+	case *irv1.Type_Decimal:
+		if k.Decimal.Precision != nil {
+			kind = "digits"
+			p = &irv1.PortableConstraint{Kind: &irv1.PortableConstraint_Digits{Digits: &irv1.DigitsConstraint{Precision: k.Decimal.GetPrecision(), Scale: k.Decimal.GetScale()}}}
+		}
+	}
+	if p == nil {
+		return "", "", false
+	}
+	qualified := displayName(owner)
+	words := append(splitWords(owner.GetObject()), splitWords(owner.GetMember())...)
+	return g.checkAs(&irv1.Constraint{Form: &irv1.Constraint_Portable{Portable: p}}, qualified, "fact "+qualified, append(words, kind), t, at)
+}
+
+// lengthFact is the length fact of a bounded text type, or nil when it has
+// no length or no unit.
+func lengthFact(n uint32, unit irv1.LengthUnit) *irv1.PortableConstraint {
+	if n == 0 || unit == irv1.LengthUnit_LENGTH_UNIT_UNSPECIFIED {
+		return nil
+	}
+	return &irv1.PortableConstraint{Kind: &irv1.PortableConstraint_Length{Length: &irv1.LengthConstraint{Max: &n, Unit: unit}}}
+}
+
 // checkCalls returns the statements that check value, a non-null value of
-// type t, against the named constraints: each check runs on the value
-// converted to the Go type it takes.
+// type t, against the fact of its type and then the named constraints: each
+// check runs on the value converted to the Go type it takes.
 func (g *generator) checkCalls(names []string, t *irv1.Type, table *irv1.Table, owner, at *irv1.QualifiedName, v, shape, field, value string) []string {
 	var out []string
+	call := func(name, goType string) {
+		arg := value
+		if t.GetNamed().GetDomain() != nil {
+			arg = goType + "(" + value + ")"
+		}
+		out = append(out, fmt.Sprintf("%s.Check(&%s, %q, %q, %s)", name, v, shape, field, arg))
+	}
+	if name, goType, ok := g.fact(t, at); ok {
+		call(name, goType)
+	}
 	for _, n := range names {
 		c, cOwner := g.constraintOf(t, table, owner, n)
 		if c == nil {
 			g.errorf(CodeReferenceUnknown, at, "field %s is checked against constraint %s, which neither its domains nor %s hold", field, n, displayName(owner))
 			continue
 		}
-		name, goType, ok := g.check(c, cOwner, t, at)
-		if !ok {
-			continue
+		if name, goType, ok := g.check(c, cOwner, t, at); ok {
+			call(name, goType)
 		}
-		arg := value
-		if t.GetNamed().GetDomain() != nil {
-			arg = goType + "(" + value + ")"
-		}
-		out = append(out, fmt.Sprintf("%s.Check(&%s, %q, %q, %s)", name, v, shape, field, arg))
 	}
 	return out
 }
@@ -318,6 +369,9 @@ func (g *generator) domainParse(f *file, q *irv1.QualifiedName, d *irv1.Domain) 
 	}
 	dql := f.use(pkgDQL, "dql")
 	var body []string
+	if check, _, ok := g.fact(t, q); ok {
+		body = append(body, fmt.Sprintf("%s.Check(&issues, %q, \"\", x)", check, displayName(q)))
+	}
 	for typ := t; typ.GetNamed().GetDomain() != nil; typ = g.named[keyOf(typ.GetNamed().GetDomain())].base {
 		n := g.named[keyOf(typ.GetNamed().GetDomain())]
 		for _, c := range n.constraints {
@@ -363,9 +417,6 @@ func (g *generator) validator(s *irv1.Shape) {
 	dql := f.use(pkgDQL, "dql")
 	var body []string
 	for _, fld := range s.GetFields() {
-		if len(fld.GetValidation()) == 0 {
-			continue
-		}
 		at := &irv1.QualifiedName{Catalog: q.GetCatalog(), Namespace: q.GetNamespace(), Object: q.GetObject(), Member: fld.GetColumn()}
 		field := recv + "." + g.fieldName(s, fld.GetColumn())
 		optional := fld.GetPresence() == irv1.Presence_PRESENCE_OPTIONAL

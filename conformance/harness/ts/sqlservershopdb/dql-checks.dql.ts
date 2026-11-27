@@ -7,11 +7,26 @@
 import "./dql-version.dql.ts";
 import { LengthCheck, MembershipCheck } from "@dql/runtime";
 
+/** dqlPostsTitleLength checks shop.app.posts.title. */
+export const dqlPostsTitleLength = new LengthCheck("shop.app.posts.title", "utf16_code_units", undefined, 200);
+
 /** dqlPostsTitleCheck checks shop.app.posts.posts_title_check. */
 export const dqlPostsTitleCheck = new LengthCheck("shop.app.posts.posts_title_check", "utf16_code_units", 1, 200);
+
+/** dqlPostsStatusLength checks shop.app.posts.status. */
+export const dqlPostsStatusLength = new LengthCheck("shop.app.posts.status", "utf16_code_units", undefined, 16);
 
 /** dqlPostsStatusCheck checks shop.app.posts.posts_status_check. */
 export const dqlPostsStatusCheck = new MembershipCheck<string>("shop.app.posts.posts_status_check", ["draft", "published", "archived"]);
 
+/** dqlTagsNameLength checks shop.app.tags.name. */
+export const dqlTagsNameLength = new LengthCheck("shop.app.tags.name", "utf16_code_units", undefined, 200);
+
+/** dqlUsersEmailLength checks shop.app.users.email. */
+export const dqlUsersEmailLength = new LengthCheck("shop.app.users.email", "utf16_code_units", undefined, 320);
+
 /** dqlUsersEmailCheck checks shop.app.users.users_email_check. */
 export const dqlUsersEmailCheck = new LengthCheck("shop.app.users.users_email_check", "utf16_code_units", undefined, 320);
+
+/** dqlUsersDisplayNameLength checks shop.app.users.display_name. */
+export const dqlUsersDisplayNameLength = new LengthCheck("shop.app.users.display_name", "utf16_code_units", undefined, 80);

@@ -20,3 +20,6 @@ var dqlSlugTextCheck = dql.PatternCheck{Constraint: "shop.app.slug_text.slug_tex
 
 // dqlPostsTitleCheck checks shop.app.posts.posts_title_check.
 var dqlPostsTitleCheck = dql.LengthCheck{Constraint: "shop.app.posts.posts_title_check", Min: dql.Ptr(1), Max: dql.Ptr(200), Unit: dql.UnitCharacters}
+
+// dqlUsersDisplayNameLength checks shop.app.users.display_name.
+var dqlUsersDisplayNameLength = dql.LengthCheck{Constraint: "shop.app.users.display_name", Max: dql.Ptr(80), Unit: dql.UnitCharacters}

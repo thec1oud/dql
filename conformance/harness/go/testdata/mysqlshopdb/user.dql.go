@@ -248,7 +248,11 @@ func (d UserDraft) Validate() error { return d.validate().Err() }
 
 func (d UserDraft) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlUsersEmailLength.Check(&v, "user.draft.flat", "email", d.Email)
 	dqlUsersEmailCheck.Check(&v, "user.draft.flat", "email", d.Email)
+	if x, ok := d.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "user.draft.flat", "display_name", *x)
+	}
 	return v
 }
 
@@ -259,7 +263,11 @@ func (n UserDraftNested) Validate() error { return n.validate().Err() }
 
 func (n UserDraftNested) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlUsersEmailLength.Check(&v, "user.draft.nested", "email", n.Email)
 	dqlUsersEmailCheck.Check(&v, "user.draft.nested", "email", n.Email)
+	if x, ok := n.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "user.draft.nested", "display_name", *x)
+	}
 	for i, x := range n.PostsToAuthor {
 		v = append(v, x.validate().At("posts_to_author["+strconv.Itoa(i)+"]")...)
 	}
@@ -299,7 +307,11 @@ func (p UserPartial) Validate() error { return p.validate().Err() }
 func (p UserPartial) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	if x, ok := p.Email.Get(); ok {
+		dqlUsersEmailLength.Check(&v, "user.partial.flat", "email", x)
 		dqlUsersEmailCheck.Check(&v, "user.partial.flat", "email", x)
+	}
+	if x, ok := p.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "user.partial.flat", "display_name", *x)
 	}
 	return v
 }
@@ -312,7 +324,11 @@ func (n UserPartialNested) Validate() error { return n.validate().Err() }
 func (n UserPartialNested) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	if x, ok := n.Email.Get(); ok {
+		dqlUsersEmailLength.Check(&v, "user.partial.nested", "email", x)
 		dqlUsersEmailCheck.Check(&v, "user.partial.nested", "email", x)
+	}
+	if x, ok := n.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "user.partial.nested", "display_name", *x)
 	}
 	if xs, ok := n.PostsToAuthor.Get(); ok {
 		for i, x := range xs {

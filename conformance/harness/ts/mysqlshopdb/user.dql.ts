@@ -6,7 +6,7 @@
 
 import "./dql-version.dql.ts";
 import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type Update, type Uuid, type ValidationIssue, allRows, arg, asInstanceOf, asInt32, asInt64, asParsed, asString, asserted, compare, issuesAt, nest, not, ordered, parseUuid, related, set } from "@dql/runtime";
-import { dqlUsersEmailCheck } from "./dql-checks.dql.ts";
+import { dqlUsersDisplayNameLength, dqlUsersEmailCheck, dqlUsersEmailLength } from "./dql-checks.dql.ts";
 import { type PostChangeForAuthor, type PostChangeForEditor, type PostDraftForAuthor, type PostDraftForEditor, type PostFull, type PostsTable, decodePostFull, validatePostChangeForAuthor, validatePostChangeForEditor, validatePostDraftForAuthor, validatePostDraftForEditor } from "./post.dql.ts";
 import { type ProfileChangeForUser, type ProfileDraftForUser, type ProfileFull, type ProfilesTable, decodeProfileFull, validateProfileChangeForUser, validateProfileDraftForUser } from "./profile.dql.ts";
 import { type TenantFull, type TenantsTable, decodeTenantFull } from "./tenant.dql.ts";
@@ -94,7 +94,11 @@ export type UserRef =
  */
 export function validateUserDraft(d: UserDraft): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlUsersEmailLength.check(v, "user.draft.flat", "email", d.email);
   dqlUsersEmailCheck.check(v, "user.draft.flat", "email", d.email);
+  if (d.displayName !== undefined && d.displayName !== null) {
+    dqlUsersDisplayNameLength.check(v, "user.draft.flat", "display_name", d.displayName);
+  }
   return v;
 }
 
@@ -105,7 +109,11 @@ export function validateUserDraft(d: UserDraft): ValidationIssue[] {
  */
 export function validateUserDraftNested(n: UserDraftNested): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlUsersEmailLength.check(v, "user.draft.nested", "email", n.email);
   dqlUsersEmailCheck.check(v, "user.draft.nested", "email", n.email);
+  if (n.displayName !== undefined && n.displayName !== null) {
+    dqlUsersDisplayNameLength.check(v, "user.draft.nested", "display_name", n.displayName);
+  }
   if (n.postsToAuthor !== undefined) {
     for (const [i, x] of n.postsToAuthor.entries()) {
       v.push(...issuesAt(validatePostDraftForAuthor(x), "posts_to_author[" + i + "]"));
@@ -153,7 +161,11 @@ export function validateUserDraftNests(n: UserDraftNests): ValidationIssue[] {
 export function validateUserPartial(p: UserPartial): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   if (p.email !== undefined) {
+    dqlUsersEmailLength.check(v, "user.partial.flat", "email", p.email);
     dqlUsersEmailCheck.check(v, "user.partial.flat", "email", p.email);
+  }
+  if (p.displayName !== undefined && p.displayName !== null) {
+    dqlUsersDisplayNameLength.check(v, "user.partial.flat", "display_name", p.displayName);
   }
   return v;
 }
@@ -166,7 +178,11 @@ export function validateUserPartial(p: UserPartial): ValidationIssue[] {
 export function validateUserPartialNested(n: UserPartialNested): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   if (n.email !== undefined) {
+    dqlUsersEmailLength.check(v, "user.partial.nested", "email", n.email);
     dqlUsersEmailCheck.check(v, "user.partial.nested", "email", n.email);
+  }
+  if (n.displayName !== undefined && n.displayName !== null) {
+    dqlUsersDisplayNameLength.check(v, "user.partial.nested", "display_name", n.displayName);
   }
   if (n.postsToAuthor !== undefined) {
     for (const [i, x] of n.postsToAuthor.entries()) {

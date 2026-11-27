@@ -10,11 +10,26 @@ import (
 	"github.com/thec1oud/dql/runtime/go/dql"
 )
 
+// dqlPostsTitleLength checks shop.app.posts.title.
+var dqlPostsTitleLength = dql.LengthCheck{Constraint: "shop.app.posts.title", Max: dql.Ptr(200), Unit: dql.UnitUTF16CodeUnits}
+
 // dqlPostsTitleCheck checks shop.app.posts.posts_title_check.
 var dqlPostsTitleCheck = dql.LengthCheck{Constraint: "shop.app.posts.posts_title_check", Min: dql.Ptr(1), Max: dql.Ptr(200), Unit: dql.UnitUTF16CodeUnits}
+
+// dqlPostsStatusLength checks shop.app.posts.status.
+var dqlPostsStatusLength = dql.LengthCheck{Constraint: "shop.app.posts.status", Max: dql.Ptr(16), Unit: dql.UnitUTF16CodeUnits}
 
 // dqlPostsStatusCheck checks shop.app.posts.posts_status_check.
 var dqlPostsStatusCheck = dql.MembershipCheck[string]{Constraint: "shop.app.posts.posts_status_check", Values: []string{"draft", "published", "archived"}}
 
+// dqlTagsNameLength checks shop.app.tags.name.
+var dqlTagsNameLength = dql.LengthCheck{Constraint: "shop.app.tags.name", Max: dql.Ptr(200), Unit: dql.UnitUTF16CodeUnits}
+
+// dqlUsersEmailLength checks shop.app.users.email.
+var dqlUsersEmailLength = dql.LengthCheck{Constraint: "shop.app.users.email", Max: dql.Ptr(320), Unit: dql.UnitUTF16CodeUnits}
+
 // dqlUsersEmailCheck checks shop.app.users.users_email_check.
 var dqlUsersEmailCheck = dql.LengthCheck{Constraint: "shop.app.users.users_email_check", Max: dql.Ptr(320), Unit: dql.UnitUTF16CodeUnits}
+
+// dqlUsersDisplayNameLength checks shop.app.users.display_name.
+var dqlUsersDisplayNameLength = dql.LengthCheck{Constraint: "shop.app.users.display_name", Max: dql.Ptr(80), Unit: dql.UnitUTF16CodeUnits}

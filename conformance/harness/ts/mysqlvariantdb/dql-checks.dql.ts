@@ -10,8 +10,17 @@ import { LengthCheck, PatternCheck } from "@dql/runtime";
 /** dqlPostsTitleCheck checks shop.posts.posts_title_check. */
 export const dqlPostsTitleCheck = new LengthCheck("shop.posts.posts_title_check", "characters", 1, 200);
 
+/** dqlUsersEmailLength checks shop.users.email. */
+export const dqlUsersEmailLength = new LengthCheck("shop.users.email", "characters", undefined, 320);
+
 /** dqlUsersEmailCheck checks shop.users.users_email_check. */
 export const dqlUsersEmailCheck = new LengthCheck("shop.users.users_email_check", "characters", undefined, 320);
+
+/** dqlUsersDisplayNameLength checks shop.users.display_name. */
+export const dqlUsersDisplayNameLength = new LengthCheck("shop.users.display_name", "characters", undefined, 80);
+
+/** dqlTagsNameLength checks shop.tags.name. */
+export const dqlTagsNameLength = new LengthCheck("shop.tags.name", "characters", undefined, 200);
 
 /** dqlTagsNameCheck checks shop.tags.tags_name_check. */
 export const dqlTagsNameCheck = new PatternCheck("shop.tags.tags_name_check", "^[a-z0-9]+(-[a-z0-9]+)*$", /^[0-9a-z]+(?:-[0-9a-z]+)*$/u);

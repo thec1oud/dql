@@ -6,7 +6,7 @@
 
 import "./dql-version.dql.ts";
 import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, type Update, type ValidationIssue, allRows, arg, asInt64, asString, compare, issuesAt, not, ordered, related, set } from "@dql/runtime";
-import { dqlTagsNameCheck } from "./dql-checks.dql.ts";
+import { dqlTagsNameCheck, dqlTagsNameLength } from "./dql-checks.dql.ts";
 import { type PostDraft, type PostFull, type PostKey, type PostLink, type PostsTable, decodePostFull, validatePostDraft, validatePostLink } from "./post.dql.ts";
 import { type PostTagChangeForTag, type PostTagDraftForTag, type PostTagFull, type PostTagsTable, decodePostTagFull, validatePostTagChangeForTag, validatePostTagDraftForTag } from "./post_tag.dql.ts";
 
@@ -82,6 +82,7 @@ export type TagRef =
  */
 export function validateTagDraft(d: TagDraft): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlTagsNameLength.check(v, "tag.draft.flat", "name", d.name);
   dqlTagsNameCheck.check(v, "tag.draft.flat", "name", d.name);
   return v;
 }
@@ -93,6 +94,7 @@ export function validateTagDraft(d: TagDraft): ValidationIssue[] {
  */
 export function validateTagDraftNested(n: TagDraftNested): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlTagsNameLength.check(v, "tag.draft.nested", "name", n.name);
   dqlTagsNameCheck.check(v, "tag.draft.nested", "name", n.name);
   if (n.postTags !== undefined) {
     for (const [i, x] of n.postTags.entries()) {
@@ -135,6 +137,7 @@ export function validateTagDraftNests(n: TagDraftNests): ValidationIssue[] {
 export function validateTagPartial(p: TagPartial): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   if (p.name !== undefined) {
+    dqlTagsNameLength.check(v, "tag.partial.flat", "name", p.name);
     dqlTagsNameCheck.check(v, "tag.partial.flat", "name", p.name);
   }
   return v;
@@ -148,6 +151,7 @@ export function validateTagPartial(p: TagPartial): ValidationIssue[] {
 export function validateTagPartialNested(n: TagPartialNested): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   if (n.name !== undefined) {
+    dqlTagsNameLength.check(v, "tag.partial.nested", "name", n.name);
     dqlTagsNameCheck.check(v, "tag.partial.nested", "name", n.name);
   }
   if (n.postTags !== undefined) {

@@ -247,6 +247,9 @@ func (d UserDraft) Validate() error { return d.validate().Err() }
 func (d UserDraft) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	dqlEmailAddressCheck.Check(&v, "user.draft.flat", "email", string(d.Email))
+	if x, ok := d.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "user.draft.flat", "display_name", *x)
+	}
 	return v
 }
 
@@ -258,6 +261,9 @@ func (n UserDraftNested) Validate() error { return n.validate().Err() }
 func (n UserDraftNested) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	dqlEmailAddressCheck.Check(&v, "user.draft.nested", "email", string(n.Email))
+	if x, ok := n.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "user.draft.nested", "display_name", *x)
+	}
 	for i, x := range n.PostsToAuthor {
 		v = append(v, x.validate().At("posts_to_author["+strconv.Itoa(i)+"]")...)
 	}
@@ -299,6 +305,9 @@ func (p UserPartial) validate() dql.ValidationErrors {
 	if x, ok := p.Email.Get(); ok {
 		dqlEmailAddressCheck.Check(&v, "user.partial.flat", "email", string(x))
 	}
+	if x, ok := p.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "user.partial.flat", "display_name", *x)
+	}
 	return v
 }
 
@@ -311,6 +320,9 @@ func (n UserPartialNested) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	if x, ok := n.Email.Get(); ok {
 		dqlEmailAddressCheck.Check(&v, "user.partial.nested", "email", string(x))
+	}
+	if x, ok := n.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "user.partial.nested", "display_name", *x)
 	}
 	if xs, ok := n.PostsToAuthor.Get(); ok {
 		for i, x := range xs {

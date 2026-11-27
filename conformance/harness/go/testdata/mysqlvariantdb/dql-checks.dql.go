@@ -15,8 +15,17 @@ import (
 // dqlPostsTitleCheck checks shop.posts.posts_title_check.
 var dqlPostsTitleCheck = dql.LengthCheck{Constraint: "shop.posts.posts_title_check", Min: dql.Ptr(1), Max: dql.Ptr(200), Unit: dql.UnitCharacters}
 
+// dqlUsersEmailLength checks shop.users.email.
+var dqlUsersEmailLength = dql.LengthCheck{Constraint: "shop.users.email", Max: dql.Ptr(320), Unit: dql.UnitCharacters}
+
 // dqlUsersEmailCheck checks shop.users.users_email_check.
 var dqlUsersEmailCheck = dql.LengthCheck{Constraint: "shop.users.users_email_check", Max: dql.Ptr(320), Unit: dql.UnitCharacters}
+
+// dqlUsersDisplayNameLength checks shop.users.display_name.
+var dqlUsersDisplayNameLength = dql.LengthCheck{Constraint: "shop.users.display_name", Max: dql.Ptr(80), Unit: dql.UnitCharacters}
+
+// dqlTagsNameLength checks shop.tags.name.
+var dqlTagsNameLength = dql.LengthCheck{Constraint: "shop.tags.name", Max: dql.Ptr(200), Unit: dql.UnitCharacters}
 
 // dqlTagsNameCheck checks shop.tags.tags_name_check.
 var dqlTagsNameCheck = dql.PatternCheck{Constraint: "shop.tags.tags_name_check", Regex: regexp.MustCompile("^[a-z0-9]+(-[a-z0-9]+)*$")}

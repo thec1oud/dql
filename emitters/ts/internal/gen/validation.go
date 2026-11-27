@@ -109,8 +109,20 @@ var unitWords = map[irv1.LengthUnit]string{
 // dql-checks.dql.ts the first time (§10.2, §10.3). It fails a kind the
 // field's type cannot be checked by, once per constraint.
 func (g *generator) check(c *irv1.Constraint, owner *irv1.QualifiedName, t *irv1.Type, at *irv1.QualifiedName) (string, bool) {
+	// The constraint's words, after its owner's when the name does not
+	// start with them: posts_title_check is dqlPostsTitleCheck.
+	words := splitWords(c.GetName())
+	if prefix := splitWords(owner.GetObject()); !slices.Equal(prefix, words[:min(len(prefix), len(words))]) {
+		words = append(prefix, words...)
+	}
 	qualified := displayName(owner) + "." + c.GetName()
-	if name, ok := g.checks[qualified]; ok {
+	return g.checkAs(c, qualified, qualified, words, t, at)
+}
+
+// checkAs is check for a constraint named qualified in issues, cached under
+// key, whose check is named from words.
+func (g *generator) checkAs(c *irv1.Constraint, qualified, key string, words []string, t *irv1.Type, at *irv1.QualifiedName) (string, bool) {
+	if name, ok := g.checks[key]; ok {
 		return name, name != ""
 	}
 	if g.checkFile == nil {
@@ -121,7 +133,7 @@ func (g *generator) check(c *irv1.Constraint, owner *irv1.QualifiedName, t *irv1
 	base, tsType, fam := g.baseOf(f, t)
 	fail := func(why string) (string, bool) {
 		// Once per constraint, though its domain and each field check it.
-		g.checks[qualified] = ""
+		g.checks[key] = ""
 		g.errorf(CodeValidationUnsupported, at, "constraint %s is client-validated, but the ts emitter cannot check it: %s (§10.2)", qualified, why)
 		return "", false
 	}
@@ -216,14 +228,8 @@ func (g *generator) check(c *irv1.Constraint, owner *irv1.QualifiedName, t *irv1
 	default:
 		return fail("it is not a portable kind this emitter knows")
 	}
-	// The constraint's words, after its owner's when the name does not
-	// start with them: posts_title_check is dqlPostsTitleCheck.
-	words := splitWords(c.GetName())
-	if prefix := splitWords(owner.GetObject()); !slices.Equal(prefix, words[:min(len(prefix), len(words))]) {
-		words = append(prefix, words...)
-	}
 	name := fresh("dql"+TypeName(words), g.checkNames)
-	g.checks[qualified] = name
+	g.checks[key] = name
 	g.declare(f, name, "the check of constraint "+qualified, at)
 	f.printf("/** %s checks %s. */\nexport const %s = %s;\n\n", name, qualified, name, decl)
 	return name, true
@@ -318,10 +324,55 @@ func (g *generator) literal(f *file, t *irv1.Type, fam family, tsType string, v 
 	return tsType + ".from(" + jsString(text) + ")", true
 }
 
+// fact returns the check of the structured fact of t's base type (§10.1): a
+// varchar(n) or char(n) length in the type's unit (§10.3), or a decimal's
+// precision and scale. The fact is named for the innermost domain whose
+// base type it is, or for the column at. It returns false when the type
+// states no such fact.
+func (g *generator) fact(t *irv1.Type, at *irv1.QualifiedName) (string, bool) {
+	owner := at
+	for t.GetNamed().GetDomain() != nil {
+		owner = t.GetNamed().GetDomain()
+		t = g.named[keyOf(owner)].base
+	}
+	var p *irv1.PortableConstraint
+	kind := "length"
+	switch k := t.GetKind().(type) {
+	case *irv1.Type_Varchar:
+		p = lengthFact(k.Varchar.GetLength(), k.Varchar.GetUnit())
+	case *irv1.Type_Char:
+		p = lengthFact(k.Char.GetLength(), k.Char.GetUnit())
+	case *irv1.Type_Decimal:
+		if k.Decimal.Precision != nil {
+			kind = "digits"
+			p = &irv1.PortableConstraint{Kind: &irv1.PortableConstraint_Digits{Digits: &irv1.DigitsConstraint{Precision: k.Decimal.GetPrecision(), Scale: k.Decimal.GetScale()}}}
+		}
+	}
+	if p == nil {
+		return "", false
+	}
+	qualified := displayName(owner)
+	words := append(splitWords(owner.GetObject()), splitWords(owner.GetMember())...)
+	return g.checkAs(&irv1.Constraint{Form: &irv1.Constraint_Portable{Portable: p}}, qualified, "fact "+qualified, append(words, kind), t, at)
+}
+
+// lengthFact is the length fact of a bounded text type, or nil when it has
+// no length or no unit.
+func lengthFact(n uint32, unit irv1.LengthUnit) *irv1.PortableConstraint {
+	if n == 0 || unit == irv1.LengthUnit_LENGTH_UNIT_UNSPECIFIED {
+		return nil
+	}
+	return &irv1.PortableConstraint{Kind: &irv1.PortableConstraint_Length{Length: &irv1.LengthConstraint{Max: &n, Unit: unit}}}
+}
+
 // checkCalls returns the statements that check value, a non-null value of
-// type t, against the named constraints, pushing issues to v.
+// type t, against the fact of its type and then the named constraints,
+// pushing issues to v.
 func (g *generator) checkCalls(f *file, names []string, t *irv1.Type, table *irv1.Table, owner, at *irv1.QualifiedName, v, shape, field, value string) []string {
 	var out []string
+	if name, ok := g.fact(t, at); ok {
+		out = append(out, fmt.Sprintf("%s.check(%s, %s, %s, %s);", g.ref(f, name, true), v, jsString(shape), jsString(field), value))
+	}
 	for _, n := range names {
 		c, cOwner := g.constraintOf(t, table, owner, n)
 		if c == nil {
@@ -351,6 +402,9 @@ func (g *generator) domainParse(f *file, q *irv1.QualifiedName, d *irv1.Domain) 
 	}
 	baseType := g.tsType(f, base, q, "domain "+displayName(q))
 	var body []string
+	if check, ok := g.fact(t, q); ok {
+		body = append(body, fmt.Sprintf("%s.check(issues, %s, \"\", x);", g.ref(f, check, true), jsString(displayName(q))))
+	}
 	for typ := t; typ.GetNamed().GetDomain() != nil; typ = g.named[keyOf(typ.GetNamed().GetDomain())].base {
 		n := g.named[keyOf(typ.GetNamed().GetDomain())]
 		for _, c := range n.constraints {
@@ -454,9 +508,6 @@ func (g *generator) validator(s *irv1.Shape) {
 	issue := f.rt("ValidationIssue", false)
 	var body []string
 	for _, fld := range s.GetFields() {
-		if len(fld.GetValidation()) == 0 {
-			continue
-		}
 		at := &irv1.QualifiedName{Catalog: q.GetCatalog(), Namespace: q.GetNamespace(), Object: q.GetObject(), Member: fld.GetColumn()}
 		col := column(t, fld.GetColumn())
 		if col == nil {

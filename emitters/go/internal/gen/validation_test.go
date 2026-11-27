@@ -408,3 +408,82 @@ func TestValidationFailures(t *testing.T) {
 		t.Errorf("an unlisted constraint was checked:\n%s", all)
 	}
 }
+
+// §10.1, §10.3: the structured facts of a field's type are checked before
+// its named constraints: a varchar(n) or char(n) length in its unit, and a
+// decimal's precision and scale. A fact on a domain's base type is named for
+// the innermost domain, which its constructor checks too; a type with no
+// length, unit or precision states none.
+func TestTypeFacts(t *testing.T) {
+	varchar := func(n uint32, unit irv1.LengthUnit) *irv1.Type {
+		return &irv1.Type{Kind: &irv1.Type_Varchar{Varchar: &irv1.Varchar{Length: n, Unit: unit}}}
+	}
+	char := &irv1.Type{Kind: &irv1.Type_Char{Char: &irv1.Char{Length: 3, Unit: irv1.LengthUnit_LENGTH_UNIT_BYTES}}}
+	decimal := func(p, s *uint32) *irv1.Type {
+		return &irv1.Type{Kind: &irv1.Type_Decimal{Decimal: &irv1.Decimal{Precision: p, Scale: s}}}
+	}
+	cols := map[string]*irv1.Type{
+		"name":  varchar(8, irv1.LengthUnit_LENGTH_UNIT_CHARACTERS),
+		"title": varchar(40, irv1.LengthUnit_LENGTH_UNIT_UTF16_CODE_UNITS),
+		"iso":   char,
+		"price": decimal(proto.Uint32(5), proto.Uint32(2)),
+		"whole": decimal(proto.Uint32(7), nil),
+		"any":   decimal(nil, nil),
+		"loose": varchar(8, irv1.LengthUnit_LENGTH_UNIT_UNSPECIFIED),
+		"open":  varchar(0, irv1.LengthUnit_LENGTH_UNIT_CHARACTERS),
+		"code":  ty("code"),
+		"wrap":  ty("wrap"),
+	}
+	order := []string{"name", "title", "iso", "price", "whole", "any", "loose", "open", "code", "wrap"}
+	var columns []*irv1.Column
+	var fields []*irv1.Field
+	for _, c := range order {
+		columns = append(columns, attr(c, cols[c], false))
+		fields = append(fields, fl(c, cols[c], false, false))
+	}
+	fields[0].Validation = []string{"facts_name_check"}
+	ns := &irv1.Namespace{
+		Tables: []*irv1.Table{{Name: &irv1.Identifier{Stored: "facts"}, HostName: &irv1.Identifier{Words: []string{"fact"}}, Columns: columns,
+			Constraints: []*irv1.Constraint{cons("facts_name_check", notEmpty)}}},
+		Domains: []*irv1.Domain{
+			{Name: &irv1.Identifier{Stored: "code"}, HostName: &irv1.Identifier{Words: []string{"code"}}, Base: varchar(4, irv1.LengthUnit_LENGTH_UNIT_CHARACTERS)},
+			{Name: &irv1.Identifier{Stored: "wrap"}, HostName: &irv1.Identifier{Words: []string{"wrap"}}, Base: ty("code")},
+		},
+	}
+	b := bundle(ns)
+	b.Shapes = &irv1.ShapeLayer{Shapes: []*irv1.Shape{shp(presetID("facts", irv1.Preset_PRESET_DRAFT, irv1.Form_FORM_FLAT), "fact draft", "facts", fields)}}
+	files, codes := generate(t, b, Options{})
+	if len(codes) != 0 {
+		t.Fatalf("codes %q", codes)
+	}
+	for file, parts := range map[string][]string{
+		"dql-checks.dql.go": {
+			"var dqlCodeLength = dql.LengthCheck{Constraint: \"shop.app.code\", Max: dql.Ptr(4), Unit: dql.UnitCharacters}",
+			"var dqlFactsNameLength = dql.LengthCheck{Constraint: \"shop.app.facts.name\", Max: dql.Ptr(8), Unit: dql.UnitCharacters}",
+			"var dqlFactsTitleLength = dql.LengthCheck{Constraint: \"shop.app.facts.title\", Max: dql.Ptr(40), Unit: dql.UnitUTF16CodeUnits}",
+			"var dqlFactsIsoLength = dql.LengthCheck{Constraint: \"shop.app.facts.iso\", Max: dql.Ptr(3), Unit: dql.UnitBytes}",
+			"var dqlFactsPriceDigits = dql.DigitsCheck{Constraint: \"shop.app.facts.price\", Precision: 5, Scale: 2}",
+			"var dqlFactsWholeDigits = dql.DigitsCheck{Constraint: \"shop.app.facts.whole\", Precision: 7, Scale: 0}",
+		},
+		"dql-types.dql.go": {
+			"func ParseCode(x string) (Code, error) {\n\tvar issues dql.ValidationErrors\n\tdqlCodeLength.Check(&issues, \"shop.app.code\", \"\", x)\n",
+			"func ParseWrap(x string) (Wrap, error) {\n\tvar issues dql.ValidationErrors\n\tdqlCodeLength.Check(&issues, \"shop.app.wrap\", \"\", x)\n",
+		},
+		"fact.dql.go": {
+			"\tdqlFactsNameLength.Check(&v, \"fact.draft.flat\", \"name\", d.Name)\n\tdqlFactsNameCheck.Check(&v, \"fact.draft.flat\", \"name\", d.Name)\n" +
+				"\tdqlFactsTitleLength.Check(&v, \"fact.draft.flat\", \"title\", d.Title)\n" +
+				"\tdqlFactsIsoLength.Check(&v, \"fact.draft.flat\", \"iso\", d.Iso)\n" +
+				"\tdqlFactsPriceDigits.Check(&v, \"fact.draft.flat\", \"price\", d.Price)\n" +
+				"\tdqlFactsWholeDigits.Check(&v, \"fact.draft.flat\", \"whole\", d.Whole)\n" +
+				"\tdqlCodeLength.Check(&v, \"fact.draft.flat\", \"code\", string(d.Code))\n" +
+				"\tdqlCodeLength.Check(&v, \"fact.draft.flat\", \"wrap\", string(d.Wrap))\n\treturn v\n",
+		},
+	} {
+		compile(t, files[file])
+		for _, part := range parts {
+			if !strings.Contains(files[file], part) {
+				t.Errorf("%s lacks %q:\n%s", file, part, files[file])
+			}
+		}
+	}
+}
