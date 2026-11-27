@@ -6,7 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as mysql from "../src/mysql.ts";
 import { database, replicaOf } from "../src/postgres.ts";
-import { missing, open, scenarios } from "../src/scenarios.ts";
+import type { Scenario } from "../src/harness.ts";
+import { missing, open, scenarios, skipped } from "../src/scenarios.ts";
 import { root, rotationWait, schemas } from "../src/schemas.ts";
 import * as sqlite from "../src/sqlite.ts";
 import * as sqlserver from "../src/sqlserver.ts";
@@ -156,7 +157,7 @@ test("a scenario needing a feature a dialect lacks is skipped there", async () =
   ]);
 });
 
-test("a scenario on a schema a dialect lacks is skipped there", async () => {
+test("a shop_variants scenario runs on every dialect", async () => {
   const dir = await mkdtemp(join(tmpdir(), "scenarios-"));
   await writeFile(join(dir, "v.yaml"), "scenario: v\nschema: shop_variants\nsteps:\n  - op: tenants.count\n    expect: { value: 0 }\n");
   const lines: string[] = [];
@@ -166,9 +167,14 @@ test("a scenario on a schema a dialect lacks is skipped there", async () => {
     "ok describe/v",
     "ok mysql/prepare/v",
     "ok mysql/simple/v",
-    "skip mariadb/prepare/v: MariaDB has no schema shop_variants",
-    "skip mariadb/simple/v: MariaDB has no schema shop_variants",
-    "skip sqlite/prepare/v: SQLite has no schema shop_variants",
-    "skip sqlserver/prepare/v: SQL Server has no schema shop_variants",
+    "ok mariadb/prepare/v",
+    "ok mariadb/simple/v",
+    "ok sqlite/prepare/v",
+    "ok sqlserver/prepare/v",
   ]);
+});
+
+test("a scenario on a schema a dialect lacks is skipped there", async () => {
+  const sc: Scenario = { scenario: "n", schema: "nowhere", steps: [] };
+  expect(await skipped(sc, "sqlite")).toBe("SQLite has no schema nowhere");
 });

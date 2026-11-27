@@ -1,0 +1,60 @@
+# The running example's dql.yaml on MariaDB (shop-mariadb.yaml) with the
+# design record's variants of it, as variants.yaml has them on MySQL, from
+# the same variants.sql. Its Go package is
+# conformance/harness/go/testdata/mariadbvariantdb, and its TypeScript
+# package conformance/harness/ts/mariadbvariantdb.
+sources:
+  - plugin: mysql-live
+    catalog: shop
+    connection: env:SHOP_MARIADB_DSN
+
+annotations:
+  shop.tenants:         { name: tenant }
+  shop.users:           { name: user }
+  shop.profiles:        { name: profile }
+  shop.posts:           { name: post }
+  shop.tags:            { name: tag }
+  shop.post_tags:       { name: post_tag }
+  shop.published_posts: { name: published_post }
+  shop.profiles.profiles_user_id_fkey: { inverse-name: profile }
+  shop.posts.posts_author_id_fkey:     { collection-policy: replace, removal: delete }
+  shop.posts.deleted_at: { soft-delete }
+
+shapes:
+  user_summary:
+    from: user.full
+    pick: [id, email, display_name]
+  user_summary_named:
+    from: user_summary
+    nonnull: [display_name]
+  post_with_tags:
+    from: post.full
+    nest:
+      tags: tag.full
+      author: user_summary
+  signup:
+    from: user.draft
+    pick: [email, password_hash]
+  quick_invite:
+    from: user.draft
+    pick: [email]
+    bind: [password_hash]
+  # Not in the record: a bound field with a check, which the store validates
+  # as it does the shape's own fields (§10.5, §14.8).
+  email_invite:
+    from: user.draft
+    pick: [password_hash]
+    bind: [email]
+  # Not in the record: a Partial-derived shape, for Patch<Shape> (§14.8).
+  rename:
+    from: user.partial
+    pick: [display_name]
+
+emit:
+  - plugin: go
+    dialect: mysql
+    package: mariadbvariantdb
+    out: mariadbvariantdb
+  - plugin: ts
+    dialect: mysql
+    out: ts/mariadbvariantdb
