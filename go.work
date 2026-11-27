@@ -1,0 +1,24 @@
+go 1.25.0
+
+use (
+	./cmd/dql
+	./conformance
+	./core
+	./dialects
+	./emitters/go
+	./emitters/ts
+	./plugin
+	./proto
+	./querysources
+	./querysources/mysql
+	./querysources/sqlite
+	./querysources/sqlserver
+	./runtime/go
+	./runtime/go/dqlmysql
+	./runtime/go/dqlotel
+	./runtime/go/dqlpgx
+	./runtime/go/dqlsqlite
+	./runtime/go/dqlsqlserver
+	./sources
+	./testkit
+)

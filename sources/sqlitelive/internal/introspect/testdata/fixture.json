@@ -1,0 +1,291 @@
+{
+  "database": {
+    "version": "3.50.4",
+    "encoding": "UTF-8"
+  },
+  "tables": [
+    {
+      "name": "bare",
+      "sql": "CREATE TABLE bare (x)",
+      "columns": [
+        {
+          "name": "x"
+        }
+      ]
+    },
+    {
+      "name": "loose",
+      "sql": "CREATE TABLE loose ( -- @name(Loose)\n  id      INTEGER PRIMARY KEY DESC,\n  n       INT DEFAULT 7,\n  label   VARCHAR(40) COLLATE NOCASE DEFAULT 'x' UNIQUE,\n  padded  CHAR(8) COLLATE RTRIM,\n  price   NUMERIC(10, 2) DEFAULT 1.5,\n  ratio   DOUBLE DEFAULT -2.5,\n  blob,\n  made    TEXT DEFAULT CURRENT_TIMESTAMP,\n  twice   INT GENERATED ALWAYS AS (n * 2),\n  CHECK (n \u003e 0),\n  CHECK (n \u003c 100),\n  CHECK (length(label) \u003c= 40)\n)",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primaryKey": 1
+        },
+        {
+          "name": "n",
+          "type": "INT",
+          "default": "7"
+        },
+        {
+          "name": "label",
+          "type": "VARCHAR(40)",
+          "default": "'x'"
+        },
+        {
+          "name": "padded",
+          "type": "CHAR(8)"
+        },
+        {
+          "name": "price",
+          "type": "NUMERIC(10, 2)",
+          "default": "1.5"
+        },
+        {
+          "name": "ratio",
+          "type": "DOUBLE",
+          "default": "-2.5"
+        },
+        {
+          "name": "blob"
+        },
+        {
+          "name": "made",
+          "type": "TEXT",
+          "default": "CURRENT_TIMESTAMP"
+        },
+        {
+          "name": "twice",
+          "type": "INT",
+          "hidden": 2
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_loose_1",
+          "unique": true,
+          "origin": "pk",
+          "parts": [
+            {
+              "column": "id",
+              "descending": true,
+              "collation": "BINARY"
+            }
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_loose_2",
+          "unique": true,
+          "origin": "u",
+          "parts": [
+            {
+              "column": "label",
+              "collation": "NOCASE"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pairs",
+      "sql": "CREATE TABLE pairs (\n  a TEXT,\n  b TEXT,\n  note ANY, -- @name(oops\n  PRIMARY KEY (a, b),\n  UNIQUE (b, a) -- @deprecated\n) STRICT, WITHOUT ROWID",
+      "strict": true,
+      "withoutRowid": true,
+      "columns": [
+        {
+          "name": "a",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "b",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKey": 2
+        },
+        {
+          "name": "note",
+          "type": "ANY"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_pairs_1",
+          "unique": true,
+          "origin": "pk",
+          "parts": [
+            {
+              "column": "a",
+              "collation": "BINARY"
+            },
+            {
+              "column": "b",
+              "collation": "BINARY"
+            }
+          ]
+        },
+        {
+          "name": "sqlite_autoindex_pairs_2",
+          "unique": true,
+          "origin": "u",
+          "parts": [
+            {
+              "column": "b",
+              "collation": "BINARY"
+            },
+            {
+              "column": "a",
+              "collation": "BINARY"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "recent",
+      "view": true,
+      "sql": "CREATE VIEW recent AS\n  WITH r AS (SELECT * FROM refs)\n  SELECT r.id, l.label FROM r JOIN loose AS l ON l.id = r.loose",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER"
+        },
+        {
+          "name": "label",
+          "type": "VARCHAR(40)"
+        }
+      ]
+    },
+    {
+      "name": "refs",
+      "sql": "CREATE TABLE refs (\n  id      INTEGER NOT NULL PRIMARY KEY,\n  loose   INTEGER REFERENCES loose ON DELETE CASCADE ON UPDATE SET NULL,\n  pa      TEXT,\n  pb      TEXT,\n  deleted INTEGER,\n  ghost   INTEGER REFERENCES Ghosts (id),\n  FOREIGN KEY (pa, pb) REFERENCES pairs (a, b), /* @name(Pair) */\n  CONSTRAINT refs_custom_key UNIQUE (pb)\n) STRICT",
+      "strict": true,
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "loose",
+          "type": "INTEGER"
+        },
+        {
+          "name": "pa",
+          "type": "TEXT"
+        },
+        {
+          "name": "pb",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted",
+          "type": "INTEGER"
+        },
+        {
+          "name": "ghost",
+          "type": "INTEGER"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "refs_live",
+          "unique": true,
+          "origin": "c",
+          "partial": true,
+          "parts": [
+            {
+              "column": "pa",
+              "collation": "BINARY"
+            }
+          ],
+          "sql": "CREATE UNIQUE INDEX refs_live ON refs (pa) WHERE deleted IS NULL AND NOT deleted"
+        },
+        {
+          "name": "refs_lower",
+          "unique": true,
+          "origin": "c",
+          "parts": [
+            {
+              "collation": "BINARY"
+            },
+            {
+              "column": "pb",
+              "descending": true,
+              "collation": "BINARY"
+            }
+          ],
+          "sql": "CREATE UNIQUE INDEX refs_lower ON refs (lower(pa), pb DESC)"
+        },
+        {
+          "name": "refs_pb",
+          "origin": "c",
+          "parts": [
+            {
+              "column": "pb",
+              "collation": "NOCASE"
+            }
+          ],
+          "sql": "CREATE INDEX refs_pb ON refs (pb COLLATE NOCASE)"
+        },
+        {
+          "name": "sqlite_autoindex_refs_1",
+          "unique": true,
+          "origin": "u",
+          "parts": [
+            {
+              "column": "pb",
+              "collation": "BINARY"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": [
+            "loose"
+          ],
+          "refTable": "loose",
+          "onUpdate": "SET NULL",
+          "onDelete": "CASCADE"
+        },
+        {
+          "columns": [
+            "ghost"
+          ],
+          "refTable": "Ghosts",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        },
+        {
+          "columns": [
+            "pa",
+            "pb"
+          ],
+          "refTable": "pairs",
+          "refColumns": [
+            "a",
+            "b"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "refs_also",
+          "sql": "CREATE TRIGGER refs_also AFTER DELETE ON refs BEGIN SELECT 1; END"
+        },
+        {
+          "name": "refs_noop",
+          "sql": "CREATE TRIGGER refs_noop AFTER INSERT ON refs BEGIN SELECT 1; END"
+        }
+      ]
+    }
+  ]
+}

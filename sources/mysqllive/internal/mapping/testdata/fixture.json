@@ -1,0 +1,1476 @@
+{
+  "bundle": {
+    "catalogs": [
+      {
+        "extensions": [
+          {
+            "@type": "type.dql.dev/dql.ext.mysql.v1.Database",
+            "defaultCharacterSet": "utf8mb4",
+            "defaultCollation": "utf8mb4_0900_ai_ci",
+            "flavor": "mysql"
+          }
+        ],
+        "name": {
+          "stored": "shop"
+        },
+        "namespaces": [
+          {
+            "enums": [
+              {
+                "derivedFrom": {
+                  "catalog": "shop",
+                  "member": "mood",
+                  "object": "children"
+                },
+                "labels": [
+                  "calm",
+                  "busy"
+                ],
+                "name": {
+                  "stored": "children_mood"
+                },
+                "origin": "ENUM_ORIGIN_INLINE"
+              },
+              {
+                "derivedFrom": {
+                  "catalog": "shop",
+                  "member": "e",
+                  "object": "kinds"
+                },
+                "labels": [
+                  "x",
+                  "it's"
+                ],
+                "name": {
+                  "stored": "kinds_e"
+                },
+                "origin": "ENUM_ORIGIN_INLINE"
+              }
+            ],
+            "extensions": [
+              {
+                "@type": "type.dql.dev/dql.ext.mysql.v1.Routine",
+                "comment": "internal @public-not",
+                "definition": "RETURN 1;",
+                "name": "hidden_one",
+                "type": "FUNCTION"
+              }
+            ],
+            "name": {},
+            "routines": [
+              {
+                "name": {
+                  "stored": "pure"
+                },
+                "overloads": [
+                  {
+                    "annotations": [
+                      {
+                        "key": "core.public",
+                        "origin": {
+                          "kind": "ORIGIN_DB_COMMENT",
+                          "location": "the comment of function pure",
+                          "plugin": "mysql-live"
+                        }
+                      }
+                    ],
+                    "arguments": [
+                      {
+                        "mode": "ARG_MODE_IN",
+                        "name": {
+                          "stored": "x"
+                        },
+                        "type": {
+                          "int32": {},
+                          "native": {
+                            "name": {
+                              "object": "int"
+                            },
+                            "raw": "int"
+                          }
+                        }
+                      }
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Comment",
+                        "text": "@public"
+                      },
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.RoutineProperties",
+                        "dataAccess": "NO SQL",
+                        "definition": "RETURN x;",
+                        "deterministic": true,
+                        "securityType": "DEFINER"
+                      }
+                    ],
+                    "kind": "ROUTINE_KIND_FUNCTION",
+                    "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+                    "returns": {
+                      "scalar": {
+                        "nullable": true,
+                        "type": {
+                          "int32": {},
+                          "native": {
+                            "name": {
+                              "object": "int"
+                            },
+                            "raw": "int"
+                          }
+                        }
+                      }
+                    },
+                    "volatility": "VOLATILITY_IMMUTABLE"
+                  }
+                ]
+              },
+              {
+                "name": {
+                  "stored": "reads_data"
+                },
+                "overloads": [
+                  {
+                    "annotations": [
+                      {
+                        "key": "core.public",
+                        "origin": {
+                          "kind": "ORIGIN_DB_COMMENT",
+                          "location": "the comment of function reads_data",
+                          "plugin": "mysql-live"
+                        }
+                      }
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Comment",
+                        "text": "@public"
+                      },
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.RoutineProperties",
+                        "dataAccess": "READS SQL DATA",
+                        "definition": "RETURN 1",
+                        "deterministic": true,
+                        "securityType": "DEFINER"
+                      }
+                    ],
+                    "kind": "ROUTINE_KIND_FUNCTION",
+                    "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+                    "returns": {
+                      "scalar": {
+                        "nullable": true,
+                        "type": {
+                          "int32": {},
+                          "native": {
+                            "name": {
+                              "object": "int"
+                            },
+                            "raw": "int"
+                          }
+                        }
+                      }
+                    },
+                    "volatility": "VOLATILITY_STABLE"
+                  }
+                ]
+              },
+              {
+                "name": {
+                  "stored": "touch"
+                },
+                "overloads": [
+                  {
+                    "annotations": [
+                      {
+                        "key": "core.public",
+                        "origin": {
+                          "kind": "ORIGIN_DB_COMMENT",
+                          "location": "the comment of procedure touch",
+                          "plugin": "mysql-live"
+                        }
+                      }
+                    ],
+                    "arguments": [
+                      {
+                        "mode": "ARG_MODE_IN",
+                        "name": {
+                          "stored": "a"
+                        },
+                        "type": {
+                          "int32": {},
+                          "native": {
+                            "name": {
+                              "object": "int"
+                            },
+                            "raw": "int"
+                          }
+                        }
+                      },
+                      {
+                        "mode": "ARG_MODE_OUT",
+                        "name": {
+                          "stored": "b"
+                        },
+                        "type": {
+                          "int32": {},
+                          "native": {
+                            "name": {
+                              "object": "int"
+                            },
+                            "raw": "int"
+                          }
+                        }
+                      },
+                      {
+                        "mode": "ARG_MODE_INOUT",
+                        "name": {
+                          "stored": "c"
+                        },
+                        "type": {
+                          "int32": {},
+                          "native": {
+                            "name": {
+                              "object": "int"
+                            },
+                            "raw": "int"
+                          }
+                        }
+                      }
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Comment",
+                        "text": "@public"
+                      },
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.RoutineProperties",
+                        "dataAccess": "CONTAINS SQL",
+                        "definition": "SET b = a;",
+                        "securityType": "DEFINER"
+                      }
+                    ],
+                    "kind": "ROUTINE_KIND_PROCEDURE",
+                    "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+                    "returns": {
+                      "nothing": {}
+                    },
+                    "volatility": "VOLATILITY_VOLATILE"
+                  }
+                ]
+              }
+            ],
+            "tables": [
+              {
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 1,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "kind_id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 2,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "int unsigned"
+                      },
+                      "uint32": {}
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_FALSE",
+                      "caseSensitive": "TRISTATE_FALSE",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "utf8mb4_0900_ai_ci",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.ColumnCharset",
+                        "characterSet": "utf8mb4"
+                      }
+                    ],
+                    "name": {
+                      "stored": "mood"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 3,
+                    "type": {
+                      "named": {
+                        "enum": {
+                          "catalog": "shop",
+                          "object": "children_mood"
+                        }
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "string": "calm"
+                          },
+                          {
+                            "string": "busy"
+                          }
+                        ],
+                        "name": {
+                          "object": "enum"
+                        },
+                        "raw": "enum('calm','busy')"
+                      }
+                    }
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.Index",
+                    "name": "children_kind_fkey",
+                    "parts": [
+                      {
+                        "column": "kind_id"
+                      }
+                    ],
+                    "type": "BTREE",
+                    "visible": true
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.TableOptions",
+                    "collation": "utf8mb4_0900_ai_ci",
+                    "engine": "InnoDB"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.Trigger",
+                    "event": "INSERT",
+                    "name": "children_bi",
+                    "order": 1,
+                    "statement": "SET NEW.id = NEW.id;",
+                    "timing": "BEFORE"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.Trigger",
+                    "event": "UPDATE",
+                    "name": "children_bu",
+                    "order": 1,
+                    "statement": "SET NEW.id = NEW.id;",
+                    "timing": "BEFORE"
+                  }
+                ],
+                "foreignKeys": [
+                  {
+                    "columns": [
+                      "kind_id"
+                    ],
+                    "match": "FOREIGN_KEY_MATCH_SIMPLE",
+                    "name": {
+                      "stored": "children_kind_fkey"
+                    },
+                    "onDelete": "FOREIGN_KEY_ACTION_CASCADE",
+                    "onUpdate": "FOREIGN_KEY_ACTION_SET_NULL",
+                    "references": {
+                      "columns": [
+                        "id"
+                      ],
+                      "table": {
+                        "catalog": "shop",
+                        "object": "kinds"
+                      }
+                    }
+                  }
+                ],
+                "kind": "RELATION_KIND_TABLE",
+                "name": {
+                  "stored": "children"
+                },
+                "uniqueness": [
+                  {
+                    "columns": [
+                      "id"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Index",
+                        "name": "PRIMARY",
+                        "parts": [
+                          {
+                            "column": "id"
+                          }
+                        ],
+                        "type": "BTREE",
+                        "visible": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_PRIMARY_KEY",
+                    "name": "PRIMARY",
+                    "nullsDistinct": true
+                  }
+                ]
+              },
+              {
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 1,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "int unsigned"
+                      },
+                      "uint32": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "child"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 2,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  }
+                ],
+                "dependsOn": [
+                  {
+                    "catalog": "shop",
+                    "object": "children"
+                  },
+                  {
+                    "catalog": "shop",
+                    "object": "kinds"
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.ViewDefinition",
+                    "checkOption": "NONE",
+                    "definition": "select `k`.`id` AS `id`,`c`.`id` AS `child` from (`DATABASE`.`kinds` `k` join `DATABASE`.`children` `c` on((`c`.`kind_id` = `k`.`id`)))",
+                    "securityType": "DEFINER",
+                    "updatable": true
+                  }
+                ],
+                "kind": "RELATION_KIND_VIEW",
+                "name": {
+                  "stored": "kind_names"
+                }
+              },
+              {
+                "annotations": [
+                  {
+                    "key": "core.name",
+                    "origin": {
+                      "kind": "ORIGIN_DB_COMMENT",
+                      "location": "the comment of table kinds",
+                      "plugin": "mysql-live"
+                    },
+                    "value": {
+                      "string": "kind"
+                    }
+                  }
+                ],
+                "columns": [
+                  {
+                    "annotations": [
+                      {
+                        "key": "core.name",
+                        "origin": {
+                          "kind": "ORIGIN_DB_COMMENT",
+                          "location": "the comment of column kinds.id",
+                          "plugin": "mysql-live"
+                        },
+                        "value": {
+                          "string": "kind_id"
+                        }
+                      }
+                    ],
+                    "default": {
+                      "class": "DEFAULT_IDENTITY_BY_DEFAULT"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Comment",
+                        "text": "The key. @name(kind_id)"
+                      }
+                    ],
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 1,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "int unsigned"
+                      },
+                      "uint32": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "t8"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 2,
+                    "type": {
+                      "int8": {},
+                      "native": {
+                        "name": {
+                          "object": "tinyint"
+                        },
+                        "raw": "tinyint"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "u8"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 3,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "tinyint"
+                        },
+                        "raw": "tinyint unsigned"
+                      },
+                      "uint8": {}
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "0",
+                      "value": {
+                        "int": "0"
+                      }
+                    },
+                    "name": {
+                      "stored": "flag"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 4,
+                    "type": {
+                      "int8": {},
+                      "native": {
+                        "booleanStorage": true,
+                        "modifiers": [
+                          {
+                            "int": 1
+                          }
+                        ],
+                        "name": {
+                          "object": "tinyint"
+                        },
+                        "raw": "tinyint(1)"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "i16"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 5,
+                    "type": {
+                      "int16": {},
+                      "native": {
+                        "name": {
+                          "object": "smallint"
+                        },
+                        "raw": "smallint"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "u16"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 6,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "smallint"
+                        },
+                        "raw": "smallint unsigned"
+                      },
+                      "uint16": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "i24"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 7,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "object": "mediumint"
+                        },
+                        "raw": "mediumint"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "i32"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 8,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "7",
+                      "value": {
+                        "uint": "7"
+                      }
+                    },
+                    "name": {
+                      "stored": "u64"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 9,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "bigint"
+                        },
+                        "raw": "bigint unsigned"
+                      },
+                      "uint64": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "f32"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 10,
+                    "type": {
+                      "float32": {},
+                      "native": {
+                        "name": {
+                          "object": "float"
+                        },
+                        "raw": "float"
+                      }
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "1.5",
+                      "value": {
+                        "float": 1.5
+                      }
+                    },
+                    "name": {
+                      "stored": "f64"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 11,
+                    "type": {
+                      "float64": {},
+                      "native": {
+                        "name": {
+                          "object": "double"
+                        },
+                        "raw": "double"
+                      }
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "3.10",
+                      "value": {
+                        "decimal": "3.10"
+                      }
+                    },
+                    "name": {
+                      "stored": "d"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 12,
+                    "type": {
+                      "decimal": {
+                        "precision": 12,
+                        "scale": 2
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 12
+                          },
+                          {
+                            "int": 2
+                          }
+                        ],
+                        "name": {
+                          "object": "decimal"
+                        },
+                        "raw": "decimal(12,2)"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "dn"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 13,
+                    "type": {
+                      "decimal": {
+                        "precision": 10,
+                        "scale": 0
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 10
+                          },
+                          {
+                            "int": 0
+                          }
+                        ],
+                        "name": {
+                          "object": "decimal"
+                        },
+                        "raw": "decimal(10,0)"
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "clientFold": "CLIENT_FOLD_NONE",
+                      "deterministic": "TRISTATE_TRUE",
+                      "name": "utf8mb4_bin",
+                      "padSpace": "TRISTATE_TRUE"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.ColumnCharset",
+                        "characterSet": "utf8mb4"
+                      }
+                    ],
+                    "name": {
+                      "stored": "c"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 14,
+                    "type": {
+                      "char": {
+                        "length": 2,
+                        "unit": "LENGTH_UNIT_CHARACTERS"
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 2
+                          }
+                        ],
+                        "name": {
+                          "object": "char"
+                        },
+                        "raw": "char(2)"
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "utf8mb4_0900_as_cs",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.ColumnCharset",
+                        "characterSet": "utf8mb4"
+                      }
+                    ],
+                    "name": {
+                      "stored": "vc"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 15,
+                    "type": {
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 10
+                          }
+                        ],
+                        "name": {
+                          "object": "varchar"
+                        },
+                        "raw": "varchar(10)"
+                      },
+                      "varchar": {
+                        "length": 10,
+                        "unit": "LENGTH_UNIT_CHARACTERS"
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_FALSE",
+                      "caseSensitive": "TRISTATE_FALSE",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "utf8mb4_0900_ai_ci",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.ColumnCharset",
+                        "characterSet": "utf8mb4"
+                      }
+                    ],
+                    "name": {
+                      "stored": "tt"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 16,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "tinytext"
+                        },
+                        "raw": "tinytext"
+                      },
+                      "text": {}
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_FALSE",
+                      "caseSensitive": "TRISTATE_FALSE",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "utf8mb4_0900_ai_ci",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.ColumnCharset",
+                        "characterSet": "utf8mb4"
+                      }
+                    ],
+                    "name": {
+                      "stored": "lt"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 17,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "longtext"
+                        },
+                        "raw": "longtext"
+                      },
+                      "text": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "b"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 18,
+                    "type": {
+                      "bytes": {
+                        "maxLength": 4
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 4
+                          }
+                        ],
+                        "name": {
+                          "object": "binary"
+                        },
+                        "raw": "binary(4)"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "vb"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 19,
+                    "type": {
+                      "bytes": {
+                        "maxLength": 8
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 8
+                          }
+                        ],
+                        "name": {
+                          "object": "varbinary"
+                        },
+                        "raw": "varbinary(8)"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "bl"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 20,
+                    "type": {
+                      "bytes": {
+                        "maxLength": 65535
+                      },
+                      "native": {
+                        "name": {
+                          "object": "blob"
+                        },
+                        "raw": "blob"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "dt"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 21,
+                    "type": {
+                      "localDatetime": {
+                        "precision": 3
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 3
+                          }
+                        ],
+                        "name": {
+                          "object": "datetime"
+                        },
+                        "raw": "datetime(3)"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "ts"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 22,
+                    "type": {
+                      "instant": {
+                        "precision": 0
+                      },
+                      "native": {
+                        "name": {
+                          "object": "timestamp"
+                        },
+                        "raw": "timestamp"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "tm"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 23,
+                    "type": {
+                      "interval": {
+                        "precision": 2
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 2
+                          }
+                        ],
+                        "name": {
+                          "object": "time"
+                        },
+                        "raw": "time(2)"
+                      }
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "2026-01-01",
+                      "value": {
+                        "string": "2026-01-01"
+                      }
+                    },
+                    "name": {
+                      "stored": "dd"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 24,
+                    "type": {
+                      "date": {},
+                      "native": {
+                        "name": {
+                          "object": "date"
+                        },
+                        "raw": "date"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "y"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 25,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "year"
+                        },
+                        "raw": "year"
+                      },
+                      "opaque": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "j"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 26,
+                    "type": {
+                      "json": {},
+                      "native": {
+                        "name": {
+                          "object": "json"
+                        },
+                        "raw": "json"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "bits"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 27,
+                    "type": {
+                      "bit": {
+                        "length": 3
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 3
+                          }
+                        ],
+                        "name": {
+                          "object": "bit"
+                        },
+                        "raw": "bit(3)"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "bit1"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 28,
+                    "type": {
+                      "bit": {
+                        "length": 1
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 1
+                          }
+                        ],
+                        "name": {
+                          "object": "bit"
+                        },
+                        "raw": "bit(1)"
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_FALSE",
+                      "caseSensitive": "TRISTATE_FALSE",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "utf8mb4_0900_ai_ci",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.ColumnCharset",
+                        "characterSet": "utf8mb4"
+                      }
+                    ],
+                    "name": {
+                      "stored": "s"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 29,
+                    "type": {
+                      "native": {
+                        "modifiers": [
+                          {
+                            "string": "a"
+                          },
+                          {
+                            "string": "b"
+                          }
+                        ],
+                        "name": {
+                          "object": "set"
+                        },
+                        "raw": "set('a','b')"
+                      },
+                      "opaque": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "g"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 30,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "point"
+                        },
+                        "raw": "point"
+                      },
+                      "opaque": {}
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_FALSE",
+                      "caseSensitive": "TRISTATE_FALSE",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "utf8mb4_0900_ai_ci",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "x",
+                      "value": {
+                        "string": "x"
+                      }
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.ColumnCharset",
+                        "characterSet": "utf8mb4"
+                      }
+                    ],
+                    "name": {
+                      "stored": "e"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 31,
+                    "type": {
+                      "named": {
+                        "enum": {
+                          "catalog": "shop",
+                          "object": "kinds_e"
+                        }
+                      },
+                      "native": {
+                        "modifiers": [
+                          {
+                            "string": "x"
+                          },
+                          {
+                            "string": "it's"
+                          }
+                        ],
+                        "name": {
+                          "object": "enum"
+                        },
+                        "raw": "enum('x','it''s')"
+                      }
+                    }
+                  },
+                  {
+                    "generation": {
+                      "kind": "GENERATION_VIRTUAL",
+                      "native": "(`i32` + 1)"
+                    },
+                    "name": {
+                      "stored": "v"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 32,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  }
+                ],
+                "constraints": [
+                  {
+                    "columns": [
+                      "c"
+                    ],
+                    "kind": "CONSTRAINT_KIND_CHECK",
+                    "name": "kinds_membership",
+                    "opaque": {
+                      "native": "(`c` in (_utf8mb4'ab',_utf8mb4'cd'))"
+                    }
+                  },
+                  {
+                    "clientValidated": true,
+                    "columns": [
+                      "i32"
+                    ],
+                    "kind": "CONSTRAINT_KIND_CHECK",
+                    "name": "kinds_range",
+                    "portable": {
+                      "range": {
+                        "max": {
+                          "int": "10"
+                        },
+                        "maxInclusive": true,
+                        "min": {
+                          "int": "-5"
+                        },
+                        "minInclusive": true
+                      }
+                    }
+                  },
+                  {
+                    "columns": [
+                      "i16"
+                    ],
+                    "kind": "CONSTRAINT_KIND_CHECK",
+                    "name": "kinds_unenforced",
+                    "opaque": {
+                      "native": "(`i16` \u003e 0)"
+                    }
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.Comment",
+                    "text": "Every type. @name(kind)"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.Index",
+                    "comment": "A note @ignored",
+                    "name": "kinds_desc",
+                    "parts": [
+                      {
+                        "column": "i16",
+                        "descending": true
+                      }
+                    ],
+                    "type": "BTREE",
+                    "visible": true
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.mysql.v1.TableOptions",
+                    "collation": "utf8mb4_0900_ai_ci",
+                    "engine": "InnoDB"
+                  }
+                ],
+                "kind": "RELATION_KIND_TABLE",
+                "name": {
+                  "stored": "kinds"
+                },
+                "uniqueness": [
+                  {
+                    "columns": [
+                      "id"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Index",
+                        "name": "PRIMARY",
+                        "parts": [
+                          {
+                            "column": "id"
+                          }
+                        ],
+                        "type": "BTREE",
+                        "visible": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_PRIMARY_KEY",
+                    "name": "PRIMARY",
+                    "nullsDistinct": true
+                  },
+                  {
+                    "expressions": [
+                      {
+                        "native": "(`i32` * 2)"
+                      }
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Index",
+                        "name": "kinds_expr",
+                        "parts": [
+                          {
+                            "expression": "(`i32` * 2)"
+                          }
+                        ],
+                        "type": "BTREE",
+                        "visible": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_CONSTRAINT",
+                    "name": "kinds_expr",
+                    "nullsDistinct": true
+                  },
+                  {
+                    "expressions": [
+                      {
+                        "native": "`vc`(4)"
+                      }
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.mysql.v1.Index",
+                        "name": "kinds_prefix",
+                        "parts": [
+                          {
+                            "column": "vc",
+                            "prefix": 4
+                          }
+                        ],
+                        "type": "BTREE",
+                        "visible": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_CONSTRAINT",
+                    "name": "kinds_prefix",
+                    "nullsDistinct": true
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "provenance": {
+          "fidelity": "SOURCE_FIDELITY_FULL",
+          "inputFingerprint": "sha256:4ecdab647a8a754cd21b5329a7cea326f94c3a400b4bf432e829490e23ea907f",
+          "source": "mysql-live",
+          "sourceVersion": "1.0.0"
+        }
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "code": "mysqllive-annotation-ignored",
+      "message": "the comment of function hidden_one: the routine is not exposed, so mysql-live reads no annotations on it, so @public-not is ignored; remove the annotation tokens from the comment",
+      "severity": "SEVERITY_WARNING",
+      "target": {
+        "catalog": "shop",
+        "object": "hidden_one"
+      }
+    },
+    {
+      "code": "mysqllive-annotation-ignored",
+      "message": "the comment of index kinds_desc: mysql-live reads no annotations on indexes, so @ignored is ignored; remove the annotation tokens from the comment",
+      "severity": "SEVERITY_WARNING",
+      "target": {
+        "catalog": "shop",
+        "member": "kinds_desc",
+        "object": "kinds"
+      }
+    }
+  ]
+}

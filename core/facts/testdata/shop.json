@@ -1,0 +1,1577 @@
+{
+  "name": {
+    "stored": "shop",
+    "words": [
+      "shop"
+    ]
+  },
+  "namespaces": [
+    {
+      "name": {
+        "stored": "app",
+        "words": [
+          "app"
+        ]
+      },
+      "tables": [
+        {
+          "name": {
+            "stored": "post_tags",
+            "words": [
+              "post",
+              "tags"
+            ]
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "post_id",
+                "words": [
+                  "post",
+                  "id"
+                ]
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "tag_id",
+                "words": [
+                  "tag",
+                  "id"
+                ]
+              },
+              "ordinal": 2,
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "post_tags_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "post_id",
+                "tag_id"
+              ],
+              "nullsDistinct": true,
+              "identifies": true
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "post_tags_post_id_fkey",
+                "words": [
+                  "post",
+                  "tags",
+                  "post",
+                  "id",
+                  "fkey"
+                ]
+              },
+              "columns": [
+                "post_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "posts"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE"
+            },
+            {
+              "name": {
+                "stored": "post_tags_tag_id_fkey",
+                "words": [
+                  "post",
+                  "tags",
+                  "tag",
+                  "id",
+                  "fkey"
+                ]
+              },
+              "columns": [
+                "tag_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "tags"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE"
+            }
+          ],
+          "relations": [
+            {
+              "name": {
+                "stored": "post",
+                "words": [
+                  "post"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_tags"
+              },
+              "kind": "RELATION_KIND_MANY_TO_ONE",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_tags",
+                "member": "post_tags_post_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "post_id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "posts"
+                },
+                "columns": [
+                  "id"
+                ]
+              }
+            },
+            {
+              "name": {
+                "stored": "tag",
+                "words": [
+                  "tag"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_tags"
+              },
+              "kind": "RELATION_KIND_MANY_TO_ONE",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_tags",
+                "member": "post_tags_tag_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "tag_id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "tags"
+                },
+                "columns": [
+                  "id"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "posts",
+            "words": [
+              "posts"
+            ]
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id",
+                "words": [
+                  "id"
+                ]
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "author_id",
+                "words": [
+                  "author",
+                  "id"
+                ]
+              },
+              "ordinal": 2,
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "editor_id",
+                "words": [
+                  "editor",
+                  "id"
+                ]
+              },
+              "ordinal": 3,
+              "type": {
+                "int64": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "title",
+                "words": [
+                  "title"
+                ]
+              },
+              "ordinal": 4,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "slug",
+                "words": [
+                  "slug"
+                ]
+              },
+              "ordinal": 5,
+              "type": {
+                "text": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "status",
+                "words": [
+                  "status"
+                ]
+              },
+              "ordinal": 6,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "price",
+                "words": [
+                  "price"
+                ]
+              },
+              "ordinal": 7,
+              "type": {
+                "text": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "labels",
+                "words": [
+                  "labels"
+                ]
+              },
+              "ordinal": 8,
+              "type": {
+                "text": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "published_at",
+                "words": [
+                  "published",
+                  "at"
+                ]
+              },
+              "ordinal": 9,
+              "type": {
+                "text": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "posts_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "identifies": true
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "posts_author_id_fkey",
+                "words": [
+                  "posts",
+                  "author",
+                  "id",
+                  "fkey"
+                ]
+              },
+              "columns": [
+                "author_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "annotations": [
+                {
+                  "key": "core.collection-policy",
+                  "value": {
+                    "string": "replace"
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_CONFIG",
+                    "plugin": "pg-live",
+                    "location": "dql.yaml#annotations.shop.app.posts.posts_author_id_fkey"
+                  }
+                },
+                {
+                  "key": "core.removal",
+                  "value": {
+                    "string": "delete"
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_CONFIG",
+                    "plugin": "pg-live",
+                    "location": "dql.yaml#annotations.shop.app.posts.posts_author_id_fkey"
+                  }
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "posts_editor_id_fkey",
+                "words": [
+                  "posts",
+                  "editor",
+                  "id",
+                  "fkey"
+                ]
+              },
+              "columns": [
+                "editor_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE"
+            }
+          ],
+          "relations": [
+            {
+              "name": {
+                "stored": "author",
+                "words": [
+                  "author"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "posts"
+              },
+              "kind": "RELATION_KIND_MANY_TO_ONE",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "posts",
+                "member": "posts_author_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "author_id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              }
+            },
+            {
+              "name": {
+                "stored": "editor",
+                "words": [
+                  "editor"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "posts"
+              },
+              "kind": "RELATION_KIND_MANY_TO_ONE",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "posts",
+                "member": "posts_editor_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "editor_id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "optional": true
+            },
+            {
+              "name": {
+                "stored": "post_tags",
+                "words": [
+                  "post",
+                  "tags"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "posts"
+              },
+              "kind": "RELATION_KIND_ONE_TO_MANY",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_tags",
+                "member": "post_tags_post_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "post_tags"
+                },
+                "columns": [
+                  "post_id"
+                ]
+              },
+              "inverseOf": "post",
+              "policy": {
+                "collection": "COLLECTION_POLICY_MERGE",
+                "removal": "REMOVAL_DELETE"
+              }
+            },
+            {
+              "name": {
+                "stored": "tags",
+                "words": [
+                  "tags"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "posts"
+              },
+              "kind": "RELATION_KIND_MANY_TO_MANY",
+              "origin": "RELATION_ORIGIN_INFERRED_JUNCTION",
+              "from": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "tags"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "policy": {
+                "collection": "COLLECTION_POLICY_MERGE"
+              },
+              "through": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_tags"
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "profiles",
+            "words": [
+              "profiles"
+            ]
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "user_id",
+                "words": [
+                  "user",
+                  "id"
+                ]
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "bio",
+                "words": [
+                  "bio"
+                ]
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "birthday",
+                "words": [
+                  "birthday"
+                ]
+              },
+              "ordinal": 3,
+              "type": {
+                "text": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "profiles_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "user_id"
+              ],
+              "nullsDistinct": true,
+              "identifies": true
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "profiles_user_id_fkey",
+                "words": [
+                  "profiles",
+                  "user",
+                  "id",
+                  "fkey"
+                ]
+              },
+              "columns": [
+                "user_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE",
+              "annotations": [
+                {
+                  "key": "core.inverse-name",
+                  "value": {
+                    "words": [
+                      "profile"
+                    ]
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_CONFIG",
+                    "plugin": "pg-live",
+                    "location": "dql.yaml#annotations.shop.app.profiles.profiles_user_id_fkey"
+                  },
+                  "superseded": [
+                    {
+                      "key": "core.inverse-name",
+                      "value": {
+                        "words": [
+                          "user",
+                          "profile"
+                        ]
+                      },
+                      "origin": {
+                        "kind": "ORIGIN_DB_COMMENT",
+                        "plugin": "pg-live",
+                        "location": "COMMENT ON CONSTRAINT profiles_user_id_fkey ON app.profiles"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "relations": [
+            {
+              "name": {
+                "stored": "user",
+                "words": [
+                  "user"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "profiles"
+              },
+              "kind": "RELATION_KIND_ONE_TO_ONE",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "profiles",
+                "member": "profiles_user_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "user_id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "id"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "published_posts",
+            "words": [
+              "published",
+              "posts"
+            ]
+          },
+          "kind": "RELATION_KIND_VIEW",
+          "columns": [
+            {
+              "name": {
+                "stored": "id",
+                "words": [
+                  "id"
+                ]
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_ANNOTATION"
+            },
+            {
+              "name": {
+                "stored": "title",
+                "words": [
+                  "title"
+                ]
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_ANNOTATION"
+            },
+            {
+              "name": {
+                "stored": "author_id",
+                "words": [
+                  "author",
+                  "id"
+                ]
+              },
+              "ordinal": 3,
+              "type": {
+                "int64": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "published_at",
+                "words": [
+                  "published",
+                  "at"
+                ]
+              },
+              "ordinal": 4,
+              "type": {
+                "text": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            }
+          ],
+          "logicalKey": {
+            "columns": [
+              "id"
+            ],
+            "origin": "ORIGIN_DB_COMMENT"
+          },
+          "dependsOn": [
+            {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "posts"
+            }
+          ],
+          "annotations": [
+            {
+              "key": "core.logical-key",
+              "value": {
+                "list": [
+                  "id"
+                ]
+              },
+              "origin": {
+                "kind": "ORIGIN_DB_COMMENT",
+                "plugin": "pg-live",
+                "location": "COMMENT ON VIEW app.published_posts"
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "tags",
+            "words": [
+              "tags"
+            ]
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id",
+                "words": [
+                  "id"
+                ]
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "name",
+                "words": [
+                  "name"
+                ]
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "tags_name_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "name"
+              ],
+              "nullsDistinct": true,
+              "identifies": true
+            },
+            {
+              "name": "tags_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "identifies": true
+            }
+          ],
+          "relations": [
+            {
+              "name": {
+                "stored": "post_tags",
+                "words": [
+                  "post",
+                  "tags"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "tags"
+              },
+              "kind": "RELATION_KIND_ONE_TO_MANY",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_tags",
+                "member": "post_tags_tag_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "post_tags"
+                },
+                "columns": [
+                  "tag_id"
+                ]
+              },
+              "inverseOf": "tag",
+              "policy": {
+                "collection": "COLLECTION_POLICY_MERGE",
+                "removal": "REMOVAL_DELETE"
+              }
+            },
+            {
+              "name": {
+                "stored": "posts",
+                "words": [
+                  "posts"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "tags"
+              },
+              "kind": "RELATION_KIND_MANY_TO_MANY",
+              "origin": "RELATION_ORIGIN_INFERRED_JUNCTION",
+              "from": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "posts"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "policy": {
+                "collection": "COLLECTION_POLICY_MERGE"
+              },
+              "through": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "post_tags"
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "tenants",
+            "words": [
+              "tenants"
+            ]
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id",
+                "words": [
+                  "id"
+                ]
+              },
+              "ordinal": 1,
+              "type": {
+                "uuid": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "name",
+                "words": [
+                  "name"
+                ]
+              },
+              "ordinal": 2,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "tenants_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "identifies": true
+            }
+          ],
+          "relations": [
+            {
+              "name": {
+                "stored": "users",
+                "words": [
+                  "users"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "tenants"
+              },
+              "kind": "RELATION_KIND_ONE_TO_MANY",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "users",
+                "member": "users_tenant_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users"
+                },
+                "columns": [
+                  "tenant_id"
+                ]
+              },
+              "inverseOf": "tenant",
+              "policy": {
+                "collection": "COLLECTION_POLICY_MERGE",
+                "removal": "REMOVAL_DELETE"
+              }
+            }
+          ]
+        },
+        {
+          "name": {
+            "stored": "users",
+            "words": [
+              "users"
+            ]
+          },
+          "kind": "RELATION_KIND_TABLE",
+          "columns": [
+            {
+              "name": {
+                "stored": "id",
+                "words": [
+                  "id"
+                ]
+              },
+              "ordinal": 1,
+              "type": {
+                "int64": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "tenant_id",
+                "words": [
+                  "tenant",
+                  "id"
+                ]
+              },
+              "ordinal": 2,
+              "type": {
+                "uuid": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "email",
+                "words": [
+                  "email"
+                ]
+              },
+              "ordinal": 3,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "display_name",
+                "words": [
+                  "display",
+                  "name"
+                ]
+              },
+              "ordinal": 4,
+              "type": {
+                "text": {}
+              },
+              "nullable": true,
+              "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+            },
+            {
+              "name": {
+                "stored": "password_hash",
+                "words": [
+                  "password",
+                  "hash"
+                ]
+              },
+              "ordinal": 5,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "created_at",
+                "words": [
+                  "created",
+                  "at"
+                ]
+              },
+              "ordinal": 6,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "updated_at",
+                "words": [
+                  "updated",
+                  "at"
+                ]
+              },
+              "ordinal": 7,
+              "type": {
+                "text": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            },
+            {
+              "name": {
+                "stored": "version",
+                "words": [
+                  "version"
+                ]
+              },
+              "ordinal": 8,
+              "type": {
+                "int32": {}
+              },
+              "nullabilitySource": "NULLABILITY_SOURCE_DATABASE"
+            }
+          ],
+          "uniqueness": [
+            {
+              "name": "users_pkey",
+              "kind": "UNIQUENESS_PRIMARY_KEY",
+              "columns": [
+                "id"
+              ],
+              "nullsDistinct": true,
+              "identifies": true
+            },
+            {
+              "name": "users_tenant_email_key",
+              "kind": "UNIQUENESS_CONSTRAINT",
+              "columns": [
+                "tenant_id",
+                "email"
+              ],
+              "nullsDistinct": true,
+              "identifies": true
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": {
+                "stored": "users_tenant_id_fkey",
+                "words": [
+                  "users",
+                  "tenant",
+                  "id",
+                  "fkey"
+                ]
+              },
+              "columns": [
+                "tenant_id"
+              ],
+              "references": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "tenants"
+                },
+                "columns": [
+                  "id"
+                ]
+              },
+              "match": "FOREIGN_KEY_MATCH_SIMPLE"
+            }
+          ],
+          "relations": [
+            {
+              "name": {
+                "stored": "posts_to_author",
+                "words": [
+                  "posts",
+                  "to",
+                  "author"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "users"
+              },
+              "kind": "RELATION_KIND_ONE_TO_MANY",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "posts",
+                "member": "posts_author_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "posts"
+                },
+                "columns": [
+                  "author_id"
+                ]
+              },
+              "inverseOf": "author",
+              "policy": {
+                "collection": "COLLECTION_POLICY_REPLACE",
+                "removal": "REMOVAL_DELETE"
+              },
+              "annotations": [
+                {
+                  "key": "core.collection-policy",
+                  "value": {
+                    "string": "replace"
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_CONFIG",
+                    "plugin": "pg-live",
+                    "location": "dql.yaml#annotations.shop.app.posts.posts_author_id_fkey"
+                  }
+                },
+                {
+                  "key": "core.removal",
+                  "value": {
+                    "string": "delete"
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_CONFIG",
+                    "plugin": "pg-live",
+                    "location": "dql.yaml#annotations.shop.app.posts.posts_author_id_fkey"
+                  }
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "posts_to_editor",
+                "words": [
+                  "posts",
+                  "to",
+                  "editor"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "users"
+              },
+              "kind": "RELATION_KIND_ONE_TO_MANY",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "posts",
+                "member": "posts_editor_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "posts"
+                },
+                "columns": [
+                  "editor_id"
+                ]
+              },
+              "inverseOf": "editor",
+              "policy": {
+                "collection": "COLLECTION_POLICY_MERGE",
+                "removal": "REMOVAL_UNLINK"
+              }
+            },
+            {
+              "name": {
+                "stored": "profile",
+                "words": [
+                  "profile"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "users"
+              },
+              "kind": "RELATION_KIND_INVERSE_TO_ONE",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "profiles",
+                "member": "profiles_user_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "profiles"
+                },
+                "columns": [
+                  "user_id"
+                ]
+              },
+              "optional": true,
+              "inverseOf": "user",
+              "policy": {
+                "collection": "COLLECTION_POLICY_MERGE",
+                "removal": "REMOVAL_DELETE"
+              },
+              "annotations": [
+                {
+                  "key": "core.inverse-name",
+                  "value": {
+                    "words": [
+                      "profile"
+                    ]
+                  },
+                  "origin": {
+                    "kind": "ORIGIN_CONFIG",
+                    "plugin": "pg-live",
+                    "location": "dql.yaml#annotations.shop.app.profiles.profiles_user_id_fkey"
+                  },
+                  "superseded": [
+                    {
+                      "key": "core.inverse-name",
+                      "value": {
+                        "words": [
+                          "user",
+                          "profile"
+                        ]
+                      },
+                      "origin": {
+                        "kind": "ORIGIN_DB_COMMENT",
+                        "plugin": "pg-live",
+                        "location": "COMMENT ON CONSTRAINT profiles_user_id_fkey ON app.profiles"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": {
+                "stored": "tenant",
+                "words": [
+                  "tenant"
+                ]
+              },
+              "owner": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "users"
+              },
+              "kind": "RELATION_KIND_MANY_TO_ONE",
+              "origin": "RELATION_ORIGIN_FOREIGN_KEY",
+              "via": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "users",
+                "member": "users_tenant_id_fkey"
+              },
+              "from": {
+                "columns": [
+                  "tenant_id"
+                ]
+              },
+              "to": {
+                "table": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "tenants"
+                },
+                "columns": [
+                  "id"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "routines": [
+        {
+          "name": {
+            "stored": "post_score",
+            "words": [
+              "post",
+              "score"
+            ]
+          },
+          "overloads": [
+            {
+              "signature": [
+                "int64"
+              ],
+              "hostName": {
+                "words": [
+                  "post",
+                  "score",
+                  "int64"
+                ]
+              },
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "arguments": [
+                {
+                  "name": {
+                    "stored": "p_id",
+                    "words": [
+                      "p",
+                      "id"
+                    ]
+                  },
+                  "type": {
+                    "int64": {}
+                  },
+                  "mode": "ARG_MODE_IN"
+                }
+              ],
+              "returns": {
+                "scalar": {
+                  "type": {
+                    "decimal": {}
+                  },
+                  "nullable": true
+                }
+              },
+              "nullBehavior": "NULL_BEHAVIOR_STRICT",
+              "volatility": "VOLATILITY_STABLE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live"
+                  }
+                }
+              ]
+            },
+            {
+              "signature": [
+                "int64",
+                "int32"
+              ],
+              "hostName": {
+                "words": [
+                  "post",
+                  "score",
+                  "int64",
+                  "int32"
+                ]
+              },
+              "kind": "ROUTINE_KIND_FUNCTION",
+              "arguments": [
+                {
+                  "name": {
+                    "stored": "p_id",
+                    "words": [
+                      "p",
+                      "id"
+                    ]
+                  },
+                  "type": {
+                    "int64": {}
+                  },
+                  "mode": "ARG_MODE_IN"
+                },
+                {
+                  "name": {
+                    "stored": "window_days",
+                    "words": [
+                      "window",
+                      "days"
+                    ]
+                  },
+                  "type": {
+                    "int32": {}
+                  },
+                  "mode": "ARG_MODE_IN"
+                }
+              ],
+              "returns": {
+                "scalar": {
+                  "type": {
+                    "decimal": {}
+                  },
+                  "nullable": true
+                }
+              },
+              "nullBehavior": "NULL_BEHAVIOR_STRICT",
+              "volatility": "VOLATILITY_STABLE",
+              "annotations": [
+                {
+                  "key": "core.public",
+                  "origin": {
+                    "kind": "ORIGIN_DB_COMMENT",
+                    "plugin": "pg-live"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "defaultNamespace": "app"
+}

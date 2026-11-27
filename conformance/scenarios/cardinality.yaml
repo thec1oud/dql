@@ -1,0 +1,54 @@
+scenario: cardinality
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: users.get
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 1 }
+    expect:
+      row: { email: a@acme.com }
+  - op: users.get
+    scope: { tenant_id: $acme.id }
+    key: { id: 999999, version: 1 }
+    expect:
+      error: { class: NotFound }
+  - op: users.find
+    scope: { tenant_id: $acme.id }
+    key: { id: 999999, version: 1 }
+    expect:
+      none: true
+  - op: users.find_by_tenant_id_and_email
+    scope: { tenant_id: $acme.id }
+    input: a@acme.com
+    expect:
+      row: { id: $ann.id }
+  - op: users.count
+    scope: { tenant_id: $acme.id }
+    expect:
+      value: 1
+  - op: users.exists
+    scope: { tenant_id: $acme.id }
+    expect:
+      value: true
+  # Writes by key report a key that matches no row as NotFound, as Get does
+  # (§19, §20.1), on unversioned entities too.
+  - op: tenants.insert
+    input: { name: brief }
+    save: brief
+  - op: tenants.delete
+    key: { id: $brief.id }
+  - op: tenants.delete
+    key: { id: $brief.id }
+    expect:
+      error: { class: NotFound }
+  - op: tenants.patch
+    key: { id: $brief.id }
+    input: { name: back }
+    expect:
+      error: { class: NotFound }

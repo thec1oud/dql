@@ -1,0 +1,32 @@
+# The running example's dql.yaml (§1.3) on SQLite: conformance/schemas/
+# sqlite/shop.sql through sqlite-live and the sqlite dialect. The database
+# file is the catalog, with one implicit namespace, so names have no app.
+# part. Its Go package is conformance/harness/go/testdata/sqliteshopdb, and
+# its TypeScript package conformance/harness/ts/sqliteshopdb.
+sources:
+  - plugin: sqlite-live
+    catalog: shop
+    connection: env:SHOP_SQLITE_PATH
+
+annotations:
+  shop.tenants:         { name: tenant }
+  shop.users:           { name: user }
+  shop.profiles:        { name: profile }
+  shop.posts:           { name: post }
+  shop.tags:            { name: tag }
+  shop.post_tags:       { name: post_tag }
+  shop.published_posts: { name: published_post }
+  shop.profiles.profiles_user_id_fkey: { inverse-name: profile }
+  shop.posts.posts_author_id_fkey:     { collection-policy: replace, removal: delete }
+
+queries:
+  - queries.sql
+
+emit:
+  - plugin: go
+    dialect: sqlite
+    package: sqliteshopdb
+    out: sqliteshopdb
+  - plugin: ts
+    dialect: sqlite
+    out: ts/sqliteshopdb

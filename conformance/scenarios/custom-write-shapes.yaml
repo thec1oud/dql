@@ -1,0 +1,104 @@
+scenario: custom-write-shapes
+schema: shop_variants
+# Custom write shapes (design record §14.8): a shape derived from the Draft
+# inserts through Insert<Shape>, with its bound fields as parameters, and one
+# derived from the Partial patches through Patch<Shape>. Each returns the
+# Full and validates its payload first. The hook events of these inserts are
+# in custom-write-shapes-events.yaml.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  # signup keeps two of the Draft's fields; the rest take their defaults.
+  - op: users.insert_signup
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+    expect:
+      row: { email: a@acme.com, display_name: null, version: 1 }
+  # quick_invite binds password_hash: it is passed beside the payload, and
+  # stays redacted in hooks.
+  - op: users.insert_quick_invite
+    scope: { tenant_id: $acme.id }
+    input: { email: b@acme.com }
+    bind: [invited]
+    save: bob
+    expect:
+      row: { email: b@acme.com }
+  # password_hash is write-only, so the Full leaves it out: the database
+  # holds the bound value.
+  - op: sql
+    sql:
+      postgres: |
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM app.users WHERE email = 'b@acme.com' AND password_hash = 'invited') THEN
+            RAISE EXCEPTION 'quick_invite did not write the bound password_hash';
+          END IF;
+        END $$
+      # MySQL raises only in stored programs: a subquery of two rows fails.
+      mysql: |
+        SELECT IF(EXISTS (SELECT 1 FROM users WHERE email = 'b@acme.com' AND password_hash = 'invited'),
+                  1, (SELECT 1 UNION SELECT 2))
+      # SQLite raises only in triggers: abs of the smallest integer overflows.
+      sqlite: |
+        SELECT CASE WHEN EXISTS (SELECT 1 FROM users WHERE email = 'b@acme.com' AND password_hash = 'invited')
+                    THEN 1 ELSE abs(-9223372036854775808) END
+      sqlserver: |
+        IF NOT EXISTS (SELECT 1 FROM app.users WHERE email = 'b@acme.com' AND password_hash = 'invited')
+          THROW 50000, 'quick_invite did not write the bound password_hash', 1;
+  # The payload is validated before anything is sent.
+  - op: users.insert_quick_invite
+    scope: { tenant_id: $acme.id }
+    input: { email: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@acme.com" }
+    bind: [invited]
+    expect:
+      error: { class: ValidationErrors, kind: length, field: email }
+      statements: 0
+  # So is a bound field, against its column's checks.
+  - op: users.insert_email_invite
+    scope: { tenant_id: $acme.id }
+    input: { password_hash: x }
+    bind: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@acme.com"]
+    expect:
+      error: { class: ValidationErrors, kind: length, field: email }
+      statements: 0
+  - op: users.insert_email_invite
+    scope: { tenant_id: $acme.id }
+    input: { password_hash: x }
+    bind: [d@acme.com]
+    expect:
+      row: { email: d@acme.com }
+  # A bound field set by an expression too is FieldSetTwice.
+  - op: users.insert_quick_invite
+    scope: { tenant_id: $acme.id }
+    input: { email: c@acme.com }
+    bind: [invited]
+    assign: [{ column: password_hash, set: default }]
+    expect:
+      error: { class: ValidationErrors, kind: field_set_twice, field: password_hash }
+  # Errors map as for Insert.
+  - op: users.insert_quick_invite
+    scope: { tenant_id: $acme.id }
+    input: { email: b@acme.com }
+    bind: [again]
+    expect:
+      error: { class: UniqueViolation, constraint: users_tenant_email_key, hides: again }
+  # rename patches one field and compares the version, as Patch does.
+  - op: users.patch_rename
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 1 }
+    input: { display_name: Ann }
+    expect:
+      row: { display_name: Ann, email: a@acme.com, version: 2 }
+  - op: users.patch_rename
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 1 }
+    input: { display_name: Anne }
+    expect:
+      error: { class: ConcurrentModification }
+  - op: users.patch_rename
+    scope: { tenant_id: $acme.id }
+    key: { id: 999999, version: 1 }
+    input: { display_name: Nobody }
+    expect:
+      error: { class: NotFound }

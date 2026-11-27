@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/names.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// A generation diagnostic. Codes are stable and every diagnostic names its
+// target (implementation guide §7.13). Diagnostics are sorted by severity,
+// then qualified name, then code (§3.2).
+message Diagnostic {
+  Severity severity = 1;
+  // Stable kebab-case code, such as "write-shape-incomplete".
+  string code = 2;
+  // The catalog object or member the diagnostic is about.
+  QualifiedName target = 3;
+  // The shape the diagnostic is about, when it concerns a shape (§14.8).
+  string shape = 4;
+  // The query the diagnostic is about, when it concerns a query (§17.3).
+  string query = 5;
+  // What is wrong and how to fix it.
+  string message = 6;
+}
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  // Fails generation.
+  SEVERITY_ERROR = 1;
+  // Carried through to emitters; never swallowed.
+  SEVERITY_WARNING = 2;
+}

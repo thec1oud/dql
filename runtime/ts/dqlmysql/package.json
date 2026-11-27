@@ -1,0 +1,29 @@
+{
+  "name": "@dql/mysql",
+  "version": "0.1.0",
+  "description": "The dql executor's driver for MySQL and MariaDB, on mysql2",
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@dql/runtime": "workspace:*",
+    "mysql2": "3.24.6"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.10"
+  }
+}

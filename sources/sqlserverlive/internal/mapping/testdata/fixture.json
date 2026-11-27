@@ -1,0 +1,854 @@
+{
+  "bundle": {
+    "catalogs": [
+      {
+        "defaultNamespace": "dbo",
+        "extensions": [
+          {
+            "@type": "type.dql.dev/dql.ext.sqlserver.v1.Database",
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "compatibilityLevel": 160,
+            "version": "VERSION"
+          }
+        ],
+        "name": {
+          "stored": "shop"
+        },
+        "namespaces": [
+          {
+            "extensions": [
+              {
+                "@type": "type.dql.dev/dql.ext.sqlserver.v1.Comment",
+                "text": "invoices and payments"
+              },
+              {
+                "@type": "type.dql.dev/dql.ext.sqlserver.v1.Routine",
+                "definition": "\n\nCREATE FUNCTION billing.invoice_total(@id INT, @with_tax BIT = 1) RETURNS MONEY AS\nBEGIN\n  RETURN (SELECT amount FROM billing.invoices WHERE id = @id);\nEND;\n",
+                "name": "invoice_total",
+                "type": "SQL_SCALAR_FUNCTION"
+              },
+              {
+                "@type": "type.dql.dev/dql.ext.sqlserver.v1.Routine",
+                "definition": "\nCREATE FUNCTION billing.invoices_over(@min MONEY) RETURNS TABLE AS\n  RETURN SELECT id, amount FROM billing.invoices WHERE amount \u003e @min;\n",
+                "name": "invoices_over",
+                "type": "SQL_INLINE_TABLE_VALUED_FUNCTION"
+              }
+            ],
+            "name": {
+              "stored": "billing"
+            },
+            "routines": [
+              {
+                "name": {
+                  "stored": "codes"
+                },
+                "overloads": [
+                  {
+                    "annotations": [
+                      {
+                        "key": "core.public",
+                        "origin": {
+                          "kind": "ORIGIN_DB_COMMENT",
+                          "location": "the MS_Description of function billing.codes",
+                          "plugin": "sqlserver-live"
+                        }
+                      }
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.Comment",
+                        "text": "@public"
+                      },
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.RoutineProperties",
+                        "definition": "\nCREATE FUNCTION billing.codes() RETURNS @out TABLE (code billing.code, n INT) AS\nBEGIN\n  RETURN;\nEND;\n",
+                        "type": "SQL_TABLE_VALUED_FUNCTION"
+                      }
+                    ],
+                    "kind": "ROUTINE_KIND_FUNCTION",
+                    "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+                    "returns": {
+                      "table": {
+                        "columns": [
+                          {
+                            "collation": {
+                              "accentSensitive": "TRISTATE_TRUE",
+                              "caseSensitive": "TRISTATE_FALSE",
+                              "deterministic": "TRISTATE_FALSE",
+                              "name": "SQL_Latin1_General_CP1_CI_AS",
+                              "padSpace": "TRISTATE_TRUE"
+                            },
+                            "name": {
+                              "stored": "code"
+                            },
+                            "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                            "nullable": true,
+                            "ordinal": 1,
+                            "type": {
+                              "native": {
+                                "name": {
+                                  "namespace": "billing",
+                                  "object": "code"
+                                },
+                                "raw": "varchar(12)"
+                              },
+                              "varchar": {
+                                "length": 12,
+                                "unit": "LENGTH_UNIT_BYTES"
+                              }
+                            }
+                          },
+                          {
+                            "name": {
+                              "stored": "n"
+                            },
+                            "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                            "nullable": true,
+                            "ordinal": 2,
+                            "type": {
+                              "int32": {},
+                              "native": {
+                                "name": {
+                                  "namespace": "sys",
+                                  "object": "int"
+                                },
+                                "raw": "int"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "volatility": "VOLATILITY_VOLATILE"
+                  }
+                ]
+              },
+              {
+                "name": {
+                  "stored": "pay"
+                },
+                "overloads": [
+                  {
+                    "annotations": [
+                      {
+                        "key": "core.public",
+                        "origin": {
+                          "kind": "ORIGIN_DB_COMMENT",
+                          "location": "the MS_Description of procedure billing.pay",
+                          "plugin": "sqlserver-live"
+                        }
+                      }
+                    ],
+                    "arguments": [
+                      {
+                        "mode": "ARG_MODE_IN",
+                        "name": {
+                          "stored": "invoice"
+                        },
+                        "type": {
+                          "int32": {},
+                          "native": {
+                            "name": {
+                              "namespace": "sys",
+                              "object": "int"
+                            },
+                            "raw": "int"
+                          }
+                        }
+                      },
+                      {
+                        "mode": "ARG_MODE_IN",
+                        "name": {
+                          "stored": "amount"
+                        },
+                        "type": {
+                          "decimal": {
+                            "precision": 19,
+                            "scale": 4
+                          },
+                          "native": {
+                            "name": {
+                              "namespace": "sys",
+                              "object": "money"
+                            },
+                            "raw": "money"
+                          }
+                        }
+                      },
+                      {
+                        "mode": "ARG_MODE_INOUT",
+                        "name": {
+                          "stored": "paid"
+                        },
+                        "type": {
+                          "int32": {},
+                          "native": {
+                            "name": {
+                              "namespace": "sys",
+                              "object": "int"
+                            },
+                            "raw": "int"
+                          }
+                        }
+                      }
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.Comment",
+                        "text": "@public"
+                      },
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.RoutineProperties",
+                        "definition": "\nCREATE PROCEDURE billing.pay @invoice INT, @amount MONEY, @paid INT OUTPUT AS\nBEGIN\n  SET @paid = 1;\nEND;\n",
+                        "type": "SQL_STORED_PROCEDURE"
+                      }
+                    ],
+                    "kind": "ROUTINE_KIND_PROCEDURE",
+                    "nullBehavior": "NULL_BEHAVIOR_CALLED_ON_NULL_INPUT",
+                    "returns": {
+                      "nothing": {}
+                    },
+                    "volatility": "VOLATILITY_VOLATILE"
+                  }
+                ]
+              }
+            ],
+            "tables": [
+              {
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 1,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "amount"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 2,
+                    "type": {
+                      "decimal": {
+                        "precision": 19,
+                        "scale": 4
+                      },
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "money"
+                        },
+                        "raw": "money"
+                      }
+                    }
+                  }
+                ],
+                "dependsOn": [
+                  {
+                    "catalog": "shop",
+                    "namespace": "billing",
+                    "object": "invoices"
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlserver.v1.ViewDefinition",
+                    "checkOption": true,
+                    "definition": "\n\nCREATE VIEW billing.big_invoices WITH SCHEMABINDING AS\n  SELECT id, amount FROM billing.invoices WHERE amount \u003e 100\n  WITH CHECK OPTION;\n",
+                    "schemaBound": true
+                  }
+                ],
+                "kind": "RELATION_KIND_VIEW",
+                "name": {
+                  "stored": "big_invoices"
+                }
+              },
+              {
+                "annotations": [
+                  {
+                    "key": "core.name",
+                    "origin": {
+                      "kind": "ORIGIN_DB_COMMENT",
+                      "location": "the MS_Description of table billing.invoices",
+                      "plugin": "sqlserver-live"
+                    },
+                    "value": {
+                      "string": "bill"
+                    }
+                  }
+                ],
+                "columns": [
+                  {
+                    "default": {
+                      "class": "DEFAULT_IDENTITY_ALWAYS"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.Identity",
+                        "increment": "5",
+                        "seed": "100"
+                      }
+                    ],
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 1,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_FALSE",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "SQL_Latin1_General_CP1_CI_AS",
+                      "padSpace": "TRISTATE_TRUE"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.AliasType",
+                        "name": "code",
+                        "schema": "billing"
+                      }
+                    ],
+                    "name": {
+                      "stored": "code"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 2,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "namespace": "billing",
+                          "object": "code"
+                        },
+                        "raw": "varchar(12)"
+                      },
+                      "varchar": {
+                        "length": 12,
+                        "unit": "LENGTH_UNIT_BYTES"
+                      }
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_EXPRESSION",
+                      "native": "(newsequentialid())"
+                    },
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.DefaultConstraint",
+                        "name": "invoices_guid_default"
+                      },
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.RowGuidColumn"
+                      }
+                    ],
+                    "name": {
+                      "stored": "guid"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 3,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "uniqueidentifier"
+                        },
+                        "raw": "uniqueidentifier"
+                      },
+                      "uuid": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "amount"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 4,
+                    "type": {
+                      "decimal": {
+                        "precision": 19,
+                        "scale": 4
+                      },
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "money"
+                        },
+                        "raw": "money"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "tax"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 5,
+                    "type": {
+                      "decimal": {
+                        "precision": 9,
+                        "scale": 3
+                      },
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "decimal"
+                        },
+                        "raw": "decimal(9,3)"
+                      }
+                    }
+                  },
+                  {
+                    "generation": {
+                      "kind": "GENERATION_VIRTUAL",
+                      "native": "([amount]+coalesce([tax],(0)))"
+                    },
+                    "name": {
+                      "stored": "total"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 6,
+                    "type": {
+                      "decimal": {
+                        "precision": 20,
+                        "scale": 4
+                      },
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "decimal"
+                        },
+                        "raw": "decimal(20,4)"
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "deterministic": "TRISTATE_TRUE",
+                      "name": "Latin1_General_100_BIN2",
+                      "padSpace": "TRISTATE_TRUE"
+                    },
+                    "name": {
+                      "stored": "note"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 7,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "varchar"
+                        },
+                        "raw": "varchar(max)"
+                      },
+                      "text": {}
+                    }
+                  },
+                  {
+                    "generation": {
+                      "kind": "GENERATION_STORED",
+                      "native": "rowversion"
+                    },
+                    "name": {
+                      "stored": "stamp"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 8,
+                    "type": {
+                      "bytes": {
+                        "maxLength": 8
+                      },
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "timestamp"
+                        },
+                        "raw": "timestamp"
+                      }
+                    }
+                  }
+                ],
+                "constraints": [
+                  {
+                    "columns": [
+                      "amount"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.UntrustedCheck",
+                        "disabled": true,
+                        "name": "invoices_amount_check",
+                        "notTrusted": true
+                      }
+                    ],
+                    "kind": "CONSTRAINT_KIND_CHECK",
+                    "name": "invoices_amount_check",
+                    "opaque": {
+                      "native": "([amount]\u003e=(0))"
+                    }
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlserver.v1.Comment",
+                    "text": "@name(bill)"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlserver.v1.Trigger",
+                    "definition": "\nCREATE TRIGGER billing.invoices_audit ON billing.invoices AFTER INSERT, DELETE AS\nBEGIN\n  SET NOCOUNT ON;\nEND;\n",
+                    "disabled": true,
+                    "events": [
+                      "INSERT",
+                      "DELETE"
+                    ],
+                    "name": "invoices_audit",
+                    "timing": "AFTER"
+                  }
+                ],
+                "kind": "RELATION_KIND_TABLE",
+                "name": {
+                  "stored": "invoices"
+                },
+                "uniqueness": [
+                  {
+                    "columns": [
+                      "code"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.Index",
+                        "name": "invoices_code_key",
+                        "parts": [
+                          {
+                            "column": "code",
+                            "descending": true
+                          }
+                        ],
+                        "type": "CLUSTERED",
+                        "unique": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_CONSTRAINT",
+                    "name": "invoices_code_key"
+                  },
+                  {
+                    "columns": [
+                      "id"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.Comment",
+                        "text": "the key"
+                      },
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.Index",
+                        "name": "invoices_pkey",
+                        "parts": [
+                          {
+                            "column": "id"
+                          }
+                        ],
+                        "type": "NONCLUSTERED",
+                        "unique": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_PRIMARY_KEY",
+                    "name": "invoices_pkey"
+                  }
+                ]
+              },
+              {
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "invoice_id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 1,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "paid_on"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 2,
+                    "type": {
+                      "date": {},
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "date"
+                        },
+                        "raw": "date"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "amount"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 3,
+                    "type": {
+                      "decimal": {
+                        "precision": 19,
+                        "scale": 4
+                      },
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "money"
+                        },
+                        "raw": "money"
+                      }
+                    }
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlserver.v1.Index",
+                    "comment": "@unique",
+                    "filter": "([amount]\u003e(0))",
+                    "included": [
+                      "amount"
+                    ],
+                    "name": "payments_by_day",
+                    "parts": [
+                      {
+                        "column": "paid_on",
+                        "descending": true
+                      },
+                      {
+                        "column": "invoice_id"
+                      }
+                    ],
+                    "type": "NONCLUSTERED"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlserver.v1.Trigger",
+                    "definition": "\nCREATE TRIGGER billing.payments_changed ON billing.payments AFTER UPDATE AS\nBEGIN\n  SET NOCOUNT ON;\nEND;\n",
+                    "events": [
+                      "UPDATE"
+                    ],
+                    "name": "payments_changed",
+                    "timing": "AFTER"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlserver.v1.Trigger",
+                    "definition": "\n\nCREATE TRIGGER billing.payments_guard ON billing.payments INSTEAD OF INSERT AS\nBEGIN\n  SET NOCOUNT ON;\nEND;\n",
+                    "events": [
+                      "INSERT"
+                    ],
+                    "name": "payments_guard",
+                    "timing": "INSTEAD OF"
+                  }
+                ],
+                "foreignKeys": [
+                  {
+                    "columns": [
+                      "invoice_id"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlserver.v1.UntrustedForeignKey",
+                        "disabled": true,
+                        "name": "payments_invoice_id_fkey",
+                        "notTrusted": true
+                      }
+                    ],
+                    "match": "FOREIGN_KEY_MATCH_SIMPLE",
+                    "name": {
+                      "stored": "payments_invoice_id_fkey"
+                    },
+                    "onDelete": "FOREIGN_KEY_ACTION_CASCADE",
+                    "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+                    "references": {
+                      "columns": [
+                        "id"
+                      ],
+                      "table": {
+                        "catalog": "shop",
+                        "namespace": "billing",
+                        "object": "invoices"
+                      }
+                    }
+                  }
+                ],
+                "kind": "RELATION_KIND_TABLE",
+                "name": {
+                  "stored": "payments"
+                }
+              }
+            ]
+          },
+          {
+            "name": {
+              "stored": "dbo"
+            },
+            "tables": [
+              {
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "backup_set_id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 1,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  }
+                ],
+                "dependsOn": [
+                  {
+                    "catalog": "msdb",
+                    "namespace": "dbo",
+                    "object": "backupset"
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlserver.v1.ViewDefinition",
+                    "definition": "\nCREATE VIEW dbo.backups AS\n  SELECT backup_set_id FROM msdb.dbo.backupset;\n"
+                  }
+                ],
+                "kind": "RELATION_KIND_VIEW",
+                "name": {
+                  "stored": "backups"
+                }
+              },
+              {
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 1,
+                    "type": {
+                      "int32": {},
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "int"
+                        },
+                        "raw": "int"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "paid_on"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 2,
+                    "type": {
+                      "date": {},
+                      "native": {
+                        "name": {
+                          "namespace": "sys",
+                          "object": "date"
+                        },
+                        "raw": "date"
+                      }
+                    }
+                  }
+                ],
+                "dependsOn": [
+                  {
+                    "catalog": "shop",
+                    "namespace": "billing",
+                    "object": "invoices"
+                  },
+                  {
+                    "catalog": "shop",
+                    "namespace": "billing",
+                    "object": "payments"
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlserver.v1.ViewDefinition",
+                    "definition": "\nCREATE VIEW dbo.invoice_days AS\n  SELECT i.id, p.paid_on FROM billing.invoices i JOIN billing.payments p ON p.invoice_id = i.id;\n"
+                  }
+                ],
+                "kind": "RELATION_KIND_VIEW",
+                "name": {
+                  "stored": "invoice_days"
+                }
+              }
+            ]
+          }
+        ],
+        "provenance": {
+          "fidelity": "SOURCE_FIDELITY_FULL",
+          "inputFingerprint": "sha256:11c77c35c81ab4273c018f13c08d80bb250dea6159dad4c346c189c0158df08e",
+          "source": "sqlserver-live",
+          "sourceVersion": "1.0.0"
+        }
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "code": "sqlserverlive-annotation-ignored",
+      "message": "the MS_Description of index payments_by_day of billing.payments: sqlserver-live reads no annotations on keys and indexes, so @unique is ignored; remove the annotation tokens from the description",
+      "severity": "SEVERITY_WARNING",
+      "target": {
+        "catalog": "shop",
+        "member": "payments_by_day",
+        "namespace": "billing",
+        "object": "payments"
+      }
+    }
+  ]
+}

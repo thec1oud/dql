@@ -1,0 +1,24 @@
+{
+  "dpg_version": "0.2.0",
+  "cluster": "local",
+  "database": "shop",
+  "applied_at": "2026-10-23T03:14:26Z",
+  "source_revision": "",
+  "objects": {
+    "app.tenants": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "tenants",
+        "columns": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "not_null": true,
+            "element_not_null": true
+          }
+        ]
+      }
+    }
+  }
+}

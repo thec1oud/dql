@@ -1,0 +1,23 @@
+scenario: custom-write-shapes-events
+schema: shop_variants
+requires: [returning]
+# The hook events of custom write shapes' inserts (design record §14.8, §24):
+# one statement each, and a bound field stays redacted. Where Full is
+# re-read (MySQL), the insert has a select and a transaction around it.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert_signup
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    expect:
+      events:
+        - { query: user.insert.signup, rows: 1, redacted: 1 }
+  - op: users.insert_quick_invite
+    scope: { tenant_id: $acme.id }
+    input: { email: b@acme.com }
+    bind: [invited]
+    expect:
+      events:
+        - { query: user.insert.quick_invite, rows: 1, redacted: 1 }

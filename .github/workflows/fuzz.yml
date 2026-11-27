@@ -1,0 +1,43 @@
+name: fuzz
+
+# The differential fuzzer (guide 6.4): 40 seeds on every push, and each
+# night 300 seeds no earlier night ran.
+on:
+  pull_request:
+  push:
+    branches: [master, dev]
+  schedule:
+    - cron: "0 2 * * *"
+
+jobs:
+  differential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DQL_TEST_POSTGRES_URL: postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
+      DQL_TEST_MYSQL_URL: root:root@tcp(localhost:3306)/
+      DQL_TEST_MARIADB_URL: root:root@tcp(localhost:3307)/
+      DQL_TEST_SQLSERVER_URL: sqlserver://sa:Dql-Test-2026!@localhost:1433
+    steps:
+      - uses: actions/checkout@v4
+      - name: start Postgres
+        run: docker compose -f conformance/replica/compose.yaml up -d --wait
+      - name: start MySQL and MariaDB
+        run: docker compose -f conformance/mysql/compose.yaml up -d --wait
+      - name: start SQL Server
+        run: docker compose -f conformance/sqlserver/compose.yaml up -d --wait
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - name: pick the seeds
+        run: |
+          if [ "${{ github.event_name }}" = schedule ]; then
+            # Seeds from 1000 on, 300 a night, by the day's number.
+            from=$(( 1000 + $(date -u +%s) / 86400 * 300 ))
+            echo "DQL_FUZZ_SEEDS=$from-$(( from + 299 ))" >> "$GITHUB_ENV"
+          else
+            echo "DQL_FUZZ_SEEDS=0-39" >> "$GITHUB_ENV"
+          fi
+      - name: run the seeds on every dialect and compare them with Postgres
+        working-directory: conformance
+        run: go test -count=1 -v -timeout 40m -run '^TestDifferential$' ./fuzz/

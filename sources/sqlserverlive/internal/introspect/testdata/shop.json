@@ -1,0 +1,536 @@
+{
+  "database": {
+    "version": "VERSION",
+    "collation": "SQL_Latin1_General_CP1_CI_AS",
+    "compatibilityLevel": 160
+  },
+  "schemas": [
+    {
+      "name": "app",
+      "tables": [
+        {
+          "name": "post_tags",
+          "columns": [
+            {
+              "name": "post_id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19
+            },
+            {
+              "name": "tag_id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19
+            }
+          ],
+          "indexes": [
+            {
+              "name": "post_tags_pkey",
+              "type": "CLUSTERED",
+              "unique": true,
+              "primaryKey": true,
+              "parts": [
+                {
+                  "column": "post_id"
+                },
+                {
+                  "column": "tag_id"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": "post_tags_post_id_fkey",
+              "columns": [
+                "post_id"
+              ],
+              "refSchema": "app",
+              "refTable": "posts",
+              "refColumns": [
+                "id"
+              ],
+              "onUpdate": "NO_ACTION",
+              "onDelete": "NO_ACTION"
+            },
+            {
+              "name": "post_tags_tag_id_fkey",
+              "columns": [
+                "tag_id"
+              ],
+              "refSchema": "app",
+              "refTable": "tags",
+              "refColumns": [
+                "id"
+              ],
+              "onUpdate": "NO_ACTION",
+              "onDelete": "NO_ACTION"
+            }
+          ]
+        },
+        {
+          "name": "posts",
+          "columns": [
+            {
+              "name": "id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19,
+              "identity": {
+                "seed": "1",
+                "increment": "1"
+              }
+            },
+            {
+              "name": "author_id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19
+            },
+            {
+              "name": "editor_id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19,
+              "nullable": true
+            },
+            {
+              "name": "title",
+              "type": "nvarchar",
+              "maxLength": 400,
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            },
+            {
+              "name": "slug",
+              "type": "nvarchar",
+              "maxLength": 400,
+              "nullable": true,
+              "collation": "SQL_Latin1_General_CP1_CI_AS",
+              "computed": {
+                "definition": "(CONVERT([nvarchar](200),lower(replace([title],' ','-'))))",
+                "persisted": true
+              }
+            },
+            {
+              "name": "status",
+              "type": "nvarchar",
+              "maxLength": 32,
+              "collation": "SQL_Latin1_General_CP1_CI_AS",
+              "default": {
+                "name": "posts_status_default",
+                "definition": "('draft')"
+              }
+            },
+            {
+              "name": "published_at",
+              "type": "datetimeoffset",
+              "maxLength": 10,
+              "precision": 33,
+              "scale": 6,
+              "nullable": true
+            }
+          ],
+          "checks": [
+            {
+              "name": "posts_published_check",
+              "definition": "([published_at] IS NULL OR [status]\u003c\u003e'draft')"
+            },
+            {
+              "name": "posts_status_check",
+              "definition": "([status]='archived' OR [status]='published' OR [status]='draft')",
+              "comment": "@enum(post_status)"
+            },
+            {
+              "name": "posts_title_check",
+              "definition": "(datalength([title])\u003e=(2) AND datalength([title])\u003c=(400))"
+            }
+          ],
+          "indexes": [
+            {
+              "name": "posts_one_published_slug",
+              "type": "NONCLUSTERED",
+              "unique": true,
+              "filter": "([status]='published')",
+              "parts": [
+                {
+                  "column": "slug"
+                }
+              ]
+            },
+            {
+              "name": "posts_pkey",
+              "type": "CLUSTERED",
+              "unique": true,
+              "primaryKey": true,
+              "parts": [
+                {
+                  "column": "id"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": "posts_author_id_fkey",
+              "columns": [
+                "author_id"
+              ],
+              "refSchema": "app",
+              "refTable": "users",
+              "refColumns": [
+                "id"
+              ],
+              "onUpdate": "NO_ACTION",
+              "onDelete": "NO_ACTION"
+            },
+            {
+              "name": "posts_editor_id_fkey",
+              "columns": [
+                "editor_id"
+              ],
+              "refSchema": "app",
+              "refTable": "users",
+              "refColumns": [
+                "id"
+              ],
+              "onUpdate": "NO_ACTION",
+              "onDelete": "NO_ACTION"
+            }
+          ]
+        },
+        {
+          "name": "profiles",
+          "columns": [
+            {
+              "name": "user_id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19
+            },
+            {
+              "name": "bio",
+              "type": "nvarchar",
+              "maxLength": -1,
+              "nullable": true,
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            },
+            {
+              "name": "birthday",
+              "type": "date",
+              "maxLength": 3,
+              "precision": 10,
+              "nullable": true
+            }
+          ],
+          "indexes": [
+            {
+              "name": "profiles_pkey",
+              "type": "CLUSTERED",
+              "unique": true,
+              "primaryKey": true,
+              "parts": [
+                {
+                  "column": "user_id"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": "profiles_user_id_fkey",
+              "columns": [
+                "user_id"
+              ],
+              "refSchema": "app",
+              "refTable": "users",
+              "refColumns": [
+                "id"
+              ],
+              "onUpdate": "NO_ACTION",
+              "onDelete": "NO_ACTION",
+              "comment": "@inverse-name(user_profile)"
+            }
+          ]
+        },
+        {
+          "name": "published_posts",
+          "view": true,
+          "comment": "@logical-key(id)",
+          "columns": [
+            {
+              "name": "id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19,
+              "comment": "@nonnull"
+            },
+            {
+              "name": "title",
+              "type": "nvarchar",
+              "maxLength": 400,
+              "collation": "SQL_Latin1_General_CP1_CI_AS",
+              "comment": "@nonnull"
+            },
+            {
+              "name": "author_id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19
+            },
+            {
+              "name": "published_at",
+              "type": "datetimeoffset",
+              "maxLength": 10,
+              "precision": 33,
+              "scale": 6,
+              "nullable": true
+            }
+          ],
+          "viewDef": {
+            "definition": "\n\nCREATE VIEW app.published_posts AS\n  SELECT id, title, author_id, published_at\n  FROM app.posts WHERE status = 'published';\n",
+            "reads": [
+              "app.posts"
+            ]
+          }
+        },
+        {
+          "name": "tags",
+          "columns": [
+            {
+              "name": "id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19,
+              "identity": {
+                "seed": "1",
+                "increment": "1"
+              }
+            },
+            {
+              "name": "name",
+              "type": "nvarchar",
+              "maxLength": 400,
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            }
+          ],
+          "indexes": [
+            {
+              "name": "tags_name_key",
+              "type": "NONCLUSTERED",
+              "unique": true,
+              "uniqueConstraint": true,
+              "parts": [
+                {
+                  "column": "name"
+                }
+              ]
+            },
+            {
+              "name": "tags_pkey",
+              "type": "CLUSTERED",
+              "unique": true,
+              "primaryKey": true,
+              "parts": [
+                {
+                  "column": "id"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "tenants",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uniqueidentifier",
+              "maxLength": 16,
+              "default": {
+                "name": "tenants_id_default",
+                "definition": "(newid())"
+              }
+            },
+            {
+              "name": "name",
+              "type": "nvarchar",
+              "maxLength": -1,
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            }
+          ],
+          "indexes": [
+            {
+              "name": "tenants_pkey",
+              "type": "CLUSTERED",
+              "unique": true,
+              "primaryKey": true,
+              "parts": [
+                {
+                  "column": "id"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19,
+              "identity": {
+                "seed": "1",
+                "increment": "1"
+              }
+            },
+            {
+              "name": "tenant_id",
+              "type": "uniqueidentifier",
+              "maxLength": 16,
+              "comment": "@bound"
+            },
+            {
+              "name": "email",
+              "type": "nvarchar",
+              "maxLength": 640,
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            },
+            {
+              "name": "display_name",
+              "type": "nvarchar",
+              "maxLength": 160,
+              "nullable": true,
+              "collation": "SQL_Latin1_General_CP1_CI_AS"
+            },
+            {
+              "name": "password_hash",
+              "type": "nvarchar",
+              "maxLength": -1,
+              "collation": "SQL_Latin1_General_CP1_CI_AS",
+              "comment": "@write-only @sensitive"
+            },
+            {
+              "name": "created_at",
+              "type": "datetimeoffset",
+              "maxLength": 10,
+              "precision": 33,
+              "scale": 6,
+              "default": {
+                "name": "users_created_at_default",
+                "definition": "(sysutcdatetime())"
+              },
+              "comment": "@immutable"
+            },
+            {
+              "name": "updated_at",
+              "type": "datetimeoffset",
+              "maxLength": 10,
+              "precision": 33,
+              "scale": 6,
+              "default": {
+                "name": "users_updated_at_default",
+                "definition": "(sysutcdatetime())"
+              },
+              "comment": "@db-updated"
+            },
+            {
+              "name": "version",
+              "type": "int",
+              "maxLength": 4,
+              "precision": 10,
+              "default": {
+                "name": "users_version_default",
+                "definition": "((1))"
+              },
+              "comment": "@version"
+            }
+          ],
+          "checks": [
+            {
+              "name": "users_email_check",
+              "definition": "(datalength([email])\u003c=(640))"
+            }
+          ],
+          "indexes": [
+            {
+              "name": "users_pkey",
+              "type": "CLUSTERED",
+              "unique": true,
+              "primaryKey": true,
+              "parts": [
+                {
+                  "column": "id"
+                }
+              ]
+            },
+            {
+              "name": "users_tenant_email_key",
+              "type": "NONCLUSTERED",
+              "unique": true,
+              "uniqueConstraint": true,
+              "parts": [
+                {
+                  "column": "tenant_id"
+                },
+                {
+                  "column": "email"
+                }
+              ]
+            }
+          ],
+          "foreignKeys": [
+            {
+              "name": "users_tenant_id_fkey",
+              "columns": [
+                "tenant_id"
+              ],
+              "refSchema": "app",
+              "refTable": "tenants",
+              "refColumns": [
+                "id"
+              ],
+              "onUpdate": "NO_ACTION",
+              "onDelete": "NO_ACTION"
+            }
+          ],
+          "triggers": [
+            {
+              "name": "users_updated_at",
+              "events": [
+                "UPDATE"
+              ],
+              "definition": "\n\n-- updated_at changes with every update that leaves it as it was, as\n-- Postgres's shop has its application do and MySQL's ON UPDATE does.\nCREATE TRIGGER app.users_updated_at ON app.users AFTER UPDATE AS\nBEGIN\n  SET NOCOUNT ON;\n  IF NOT UPDATE(updated_at)\n    UPDATE u SET updated_at = SYSUTCDATETIME()\n    FROM app.users u JOIN inserted i ON u.id = i.id;\nEND;\n"
+            }
+          ]
+        }
+      ],
+      "routines": [
+        {
+          "name": "post_score",
+          "type": "SQL_SCALAR_FUNCTION",
+          "comment": "@public",
+          "returns": {
+            "type": "decimal",
+            "maxLength": 17,
+            "precision": 38,
+            "scale": 10
+          },
+          "parameters": [
+            {
+              "name": "p_id",
+              "type": "bigint",
+              "maxLength": 8,
+              "precision": 19
+            }
+          ],
+          "definition": "\n\nCREATE FUNCTION app.post_score(@p_id BIGINT) RETURNS DECIMAL(38, 10) AS\nBEGIN\n  RETURN 0;\nEND;\n"
+        }
+      ]
+    },
+    {
+      "name": "dbo"
+    }
+  ]
+}

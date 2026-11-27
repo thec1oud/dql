@@ -1,0 +1,21 @@
+scenario: infrastructure-errors
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+  - op: tenants.insert
+    input: { name: globex }
+  # A read of one row that finds several (§19).
+  - op: select
+    from: tenants
+    shape: tenant_full
+    read: one
+    expect:
+      error: { class: TooManyRows }
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: eq, value: acme }]
+    read: one
+    expect:
+      row: { name: acme }

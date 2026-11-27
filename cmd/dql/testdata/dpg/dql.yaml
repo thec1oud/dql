@@ -1,0 +1,32 @@
+# testdata/shop/dql.yaml reading the running example from the snapshot dpg
+# recorded of it, instead of from the database.
+sources:
+  - plugin: dpg-snapshot
+    snapshot: ../../../../sources/dpgsnapshot/internal/format/testdata/shop.json
+    catalog: shop
+    namespaces: [app]
+    default-namespace: app
+
+annotations:
+  shop.app.tenants:         { name: tenant }
+  shop.app.users:           { name: user }
+  shop.app.profiles:        { name: profile }
+  shop.app.posts:           { name: post }
+  shop.app.tags:            { name: tag }
+  shop.app.post_tags:       { name: post_tag }
+  shop.app.published_posts: { name: published_post }
+  shop.app.profiles.profiles_user_id_fkey: { inverse-name: profile }
+  shop.app.posts.posts_author_id_fkey:     { collection-policy: replace, removal: delete }
+  # A snapshot keeps no comments on view columns, so the nonnull that
+  # schema.sql comments assert comes from config (view-column-comments).
+  shop.app.published_posts.id:    { nonnull }
+  shop.app.published_posts.title: { nonnull }
+
+emit:
+  - plugin: go
+    dialect: postgres
+    package: shopdb
+    out: internal/shopdb
+  - plugin: ts
+    dialect: postgres
+    out: src/shopdb

@@ -1,0 +1,17 @@
+scenario: streaming-errors
+schema: shop
+# A server error ends a stream with that error (§25.1). An invalid regular
+# expression makes the server fail, so the scenario needs regex_match on
+# tenants.name, which MySQL's case-insensitive collation rules out.
+requires: [regex-match]
+steps:
+  - op: tenants.insert_many
+    input: { generate: { count: 10, row: { name: "s-$i" } } }
+    expect: { count: 10 }
+  # A server error ends the stream with that error.
+  - op: select
+    from: tenants
+    shape: tenant_full
+    filter: [{ column: name, op: regex_match, value: "(" }]
+    read: iter
+    expect: { error: { class: DatabaseError } }

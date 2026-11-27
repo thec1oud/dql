@@ -1,0 +1,193 @@
+// @dql/runtime: the TypeScript runtime that dql's generated code uses
+// (design record §15, §26).
+export { MAX_VERSION, MIN_VERSION, VersionError, enforceVersion } from "./version.js";
+export { Temporal } from "./temporal.js";
+export { Decimal, MAX_PARSE_EXPONENT } from "./decimal.js";
+export { type Cidr, type Inet, type MacAddr, type Uuid, parseCidr, parseInet, parseMacAddr, parseUuid } from "./brands.js";
+export type { JsonValue } from "./json.js";
+export { type StorageClass, type StorageValue, type Weak, weakOf, weakRaw } from "./weak.js";
+export {
+  type Bound,
+  type Range,
+  emptyRange,
+  exclusive,
+  formatRange,
+  inclusive,
+  range,
+  rangeContains,
+  unbounded,
+} from "./range.js";
+export { OffsetTime } from "./offset-time.js";
+export {
+  Canceled,
+  CheckViolation,
+  ConcurrentModification,
+  ConnectionError,
+  type Constraint,
+  type ConstraintKind,
+  DatabaseError,
+  Deadlock,
+  DecodeError,
+  type DecodeFailure,
+  type DecodeReason,
+  DqlError,
+  type ErrorClass,
+  ExclusionViolation,
+  ForeignKeyViolation,
+  LockTimeout,
+  NotFound,
+  NotNullViolation,
+  type Origin,
+  PoolExhausted,
+  ReplicaUnavailable,
+  SerializationFailure,
+  Timeout,
+  TooManyRows,
+  UniqueViolation,
+  Violation,
+  classOf,
+  isViolation,
+} from "./errors.js";
+export {
+  type IssueKind,
+  type LengthUnit,
+  ValidationError,
+  type ValidationIssue,
+  describeIssue,
+  issuesAt,
+  throwIfIssues,
+} from "./validation.js";
+export { DigitsCheck, LengthCheck, MembershipCheck, NotEmptyCheck, PatternCheck, type RangeBounds, RangeCheck, length } from "./checks.js";
+export { type Keyed, UnmatchedKeyError, bytesEqual, foldAscii } from "./collections.js";
+export {
+  type Converter,
+  Decoder,
+  Row,
+  array,
+  asBigint,
+  asBoolean,
+  asserted,
+  asParsed,
+  asTimeOfDay,
+  parseInstant,
+  asBytes,
+  asDate,
+  asEnum,
+  asFloat32,
+  asFloat64,
+  asInstanceOf,
+  asInt16,
+  asInt32,
+  asInt64,
+  asInt8,
+  asJson,
+  asMultirange,
+  asRange,
+  asString,
+  asUint16,
+  asUint32,
+  asUint64,
+  asUint8,
+  elem,
+  fixedBits,
+  nest,
+  nullableElem,
+  unchecked,
+  weak,
+} from "./decode.js";
+export { currentSignal, withSignal, withTimeout } from "./context.js";
+export type { BeginOptions, Conn, Driver, InsertIdConn, InsertResult, Isolation, NativeError, Pool, PoolConfig, Rows, Sent, StatementMode } from "./driver.js";
+export type { ErrorMap, Reported } from "./translate.js";
+export { DEFAULT_RETRY, Retried, Retrier, type RetryPolicy, retry } from "./retry.js";
+export {
+  type Binding,
+  type Config,
+  type ConnConfig,
+  type Dialect,
+  Executor,
+  type ExecutorOptions,
+  type Propagation,
+  ReadTx,
+  type Reader,
+  type SourceConfig,
+  type TxOptions,
+  UsageError,
+  type UsageReason,
+  WriteTx,
+  type Writer,
+} from "./executor.js";
+export { Consistency, type Replication, Session, currentSession, withSession } from "./routing.js";
+export { RAW_QUERY, RawReader, RawWriter, type Statement, execute, queryAll, queryOne, queryOptional, raw, rawWrite } from "./statement.js";
+export {
+  type Hooks,
+  Leaked,
+  type PoolWaitEvent,
+  type QueryEvent,
+  Redacted,
+  RedactedValue,
+  type RotationEvent,
+  type TxEvent,
+  type TxOutcome,
+  formatDuration,
+} from "./hooks.js";
+export { type LogOptions, type Logger, logHooks } from "./log.js";
+export { type Bulk, atomic, executeBulk, iterate, queryBulk } from "./large.js";
+export {
+  type Arg,
+  type Args,
+  type Assembled,
+  Expression,
+  type Fragments,
+  type List,
+  type Node,
+  type Param,
+  type Placeholder,
+  type Query,
+  type Use,
+  arg,
+  assemble,
+  list,
+  param,
+  statementOf,
+  use,
+} from "./fragments.js";
+export {
+  Builder,
+  type From,
+  Order,
+  Pred,
+  type Shape,
+  allOf,
+  and,
+  compare,
+  count,
+  exists,
+  iterateOf,
+  newBuilder,
+  newOrder,
+  newPred,
+  not,
+  oneOf,
+  optionalOf,
+  or,
+  ordered,
+  related,
+} from "./builder.js";
+export {
+  Assignment,
+  type Change,
+  DEFAULT,
+  Expr,
+  Update,
+  allRows,
+  arith,
+  assign,
+  execByKey,
+  filtered,
+  insertMany,
+  missing,
+  now,
+  set,
+  versionedExec,
+  versionedOne,
+} from "./writes.js";

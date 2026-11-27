@@ -1,0 +1,526 @@
+{
+  "queries": {
+    "queries": [
+      {
+        "name": {
+          "stored": "AuthorPostCounts",
+          "words": [
+            "author",
+            "post",
+            "counts"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_MANY",
+        "result": {
+          "anonymous": {
+            "fields": [
+              {
+                "name": "author_id",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "object": "integer"
+                    },
+                    "raw": "INTEGER"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "display_name",
+                "type": {
+                  "text": {},
+                  "native": {
+                    "name": {
+                      "object": "text"
+                    },
+                    "raw": "TEXT"
+                  }
+                },
+                "nullable": true,
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "display_name"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+              },
+              {
+                "name": "posts",
+                "type": {
+                  "int64": {}
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              }
+            ]
+          }
+        },
+        "consistency": {
+          "level": "CONSISTENCY_ANY"
+        },
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts\nFROM users u\nLEFT JOIN posts p ON p.author_id = u.id\nWHERE u.tenant_id = ?\nGROUP BY u.id, u.display_name",
+        "location": "q.sql:11",
+        "tables": [
+          {
+            "catalog": "shop",
+            "object": "posts"
+          },
+          {
+            "catalog": "shop",
+            "object": "users"
+          }
+        ],
+        "placeholders": [
+          0
+        ]
+      },
+      {
+        "name": {
+          "stored": "GetUserByEmail",
+          "words": [
+            "get",
+            "user",
+            "by",
+            "email"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_ONE",
+        "params": [
+          {
+            "name": "email",
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "result": {
+          "anonymous": {
+            "fields": [
+              {
+                "name": "id",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "object": "integer"
+                    },
+                    "raw": "INTEGER"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "tenant_id",
+                "type": {
+                  "uuid": {},
+                  "native": {
+                    "name": {
+                      "object": "text"
+                    },
+                    "raw": "TEXT"
+                  },
+                  "narrowed": {
+                    "key": "core.as",
+                    "assertion": "core.as from the comment of column users.tenant_id",
+                    "stored": {
+                      "text": {},
+                      "native": {
+                        "name": {
+                          "object": "text"
+                        },
+                        "raw": "TEXT"
+                      }
+                    }
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "tenant_id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "email",
+                "type": {
+                  "text": {},
+                  "native": {
+                    "name": {
+                      "object": "text"
+                    },
+                    "raw": "TEXT"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "email"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "display_name",
+                "type": {
+                  "text": {},
+                  "native": {
+                    "name": {
+                      "object": "text"
+                    },
+                    "raw": "TEXT"
+                  }
+                },
+                "nullable": true,
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "display_name"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+              },
+              {
+                "name": "created_at",
+                "type": {
+                  "instant": {},
+                  "native": {
+                    "name": {
+                      "object": "text"
+                    },
+                    "raw": "TEXT"
+                  },
+                  "narrowed": {
+                    "key": "core.as",
+                    "assertion": "core.as from the comment of column users.created_at",
+                    "stored": {
+                      "text": {},
+                      "native": {
+                        "name": {
+                          "object": "text"
+                        },
+                        "raw": "TEXT"
+                      }
+                    }
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "created_at"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "updated_at",
+                "type": {
+                  "instant": {},
+                  "native": {
+                    "name": {
+                      "object": "text"
+                    },
+                    "raw": "TEXT"
+                  },
+                  "narrowed": {
+                    "key": "core.as",
+                    "assertion": "core.as from the comment of column users.updated_at",
+                    "stored": {
+                      "text": {},
+                      "native": {
+                        "name": {
+                          "object": "text"
+                        },
+                        "raw": "TEXT"
+                      }
+                    }
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "updated_at"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "version",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "object": "integer"
+                    },
+                    "raw": "INTEGER"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "version"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              }
+            ]
+          }
+        },
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "SELECT id, tenant_id, email, display_name, created_at, updated_at, version\nFROM users\nWHERE tenant_id = ? AND email = ?",
+        "location": "q.sql:5",
+        "returns": "user.full",
+        "tables": [
+          {
+            "catalog": "shop",
+            "object": "users"
+          }
+        ],
+        "placeholders": [
+          1,
+          0
+        ]
+      },
+      {
+        "name": {
+          "stored": "RenameUser",
+          "words": [
+            "rename",
+            "user"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "params": [
+          {
+            "name": "display_name",
+            "type": {
+              "text": {}
+            },
+            "nullable": true
+          },
+          {
+            "name": "id",
+            "type": {
+              "int64": {}
+            }
+          },
+          {
+            "name": "version",
+            "type": {
+              "int64": {}
+            }
+          }
+        ],
+        "writes": true,
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "UPDATE users\nSET display_name = ?, version = version + 1\nWHERE tenant_id = ? AND id = ? AND version = ?",
+        "location": "q.sql:32",
+        "tables": [
+          {
+            "catalog": "shop",
+            "object": "users"
+          }
+        ],
+        "placeholders": [
+          0,
+          3,
+          1,
+          2
+        ]
+      },
+      {
+        "name": {
+          "stored": "SearchUsers",
+          "words": [
+            "search",
+            "users"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_MANY",
+        "params": [
+          {
+            "name": "name",
+            "type": {
+              "text": {}
+            }
+          },
+          {
+            "name": "lim",
+            "type": {
+              "int64": {}
+            }
+          }
+        ],
+        "result": {
+          "anonymous": {
+            "fields": [
+              {
+                "name": "id",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "object": "integer"
+                    },
+                    "raw": "INTEGER"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "display_name",
+                "type": {
+                  "text": {},
+                  "native": {
+                    "name": {
+                      "object": "text"
+                    },
+                    "raw": "TEXT"
+                  }
+                },
+                "nullable": true,
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "display_name"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+              }
+            ]
+          }
+        },
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "SELECT id, display_name\nFROM users\nWHERE tenant_id = ? AND (? = '' OR display_name LIKE '%' || ? || '%')\nORDER BY id\nLIMIT ?",
+        "location": "q.sql:25",
+        "tables": [
+          {
+            "catalog": "shop",
+            "object": "users"
+          }
+        ],
+        "placeholders": [
+          2,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "name": {
+          "stored": "UsersByEmail",
+          "words": [
+            "users",
+            "by",
+            "email"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_MANY",
+        "params": [
+          {
+            "name": "emails",
+            "type": {
+              "text": {}
+            },
+            "list": true
+          }
+        ],
+        "result": {
+          "anonymous": {
+            "fields": [
+              {
+                "name": "id",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "object": "integer"
+                    },
+                    "raw": "INTEGER"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "email",
+                "type": {
+                  "text": {},
+                  "native": {
+                    "name": {
+                      "object": "text"
+                    },
+                    "raw": "TEXT"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "object": "users",
+                  "member": "email"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              }
+            ]
+          }
+        },
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "SELECT id, email\nFROM users\nWHERE tenant_id = ? AND email IN (SELECT value FROM json_each(?))\nORDER BY id",
+        "location": "q.sql:19",
+        "tables": [
+          {
+            "catalog": "shop",
+            "object": "users"
+          }
+        ],
+        "placeholders": [
+          1,
+          0
+        ]
+      }
+    ]
+  }
+}

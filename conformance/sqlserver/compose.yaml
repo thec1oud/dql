@@ -1,0 +1,19 @@
+# A SQL Server 2022 on port 1433, for the tests of sqlserver-live (guide
+# M6). SQLSERVER_VERSION picks the image's tag, 2022-latest by default; dql
+# supports SQL Server 2022 and newer. sa's password meets the server's
+# complexity rule.
+#
+#   docker compose -f conformance/sqlserver/compose.yaml up -d --wait
+#   DQL_TEST_SQLSERVER_URL='sqlserver://sa:Dql-Test-2026!@localhost:1433'
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:${SQLSERVER_VERSION:-2022-latest}
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: Dql-Test-2026!
+    ports: ["1433:1433"]
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Dql-Test-2026!' -Q 'SELECT 1' -b
+      interval: 2s
+      timeout: 5s
+      retries: 90

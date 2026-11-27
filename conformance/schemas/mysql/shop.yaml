@@ -1,0 +1,32 @@
+# The running example's dql.yaml (§1.3) on MySQL: conformance/schemas/mysql/
+# shop.sql through mysql-live and the mysql dialect. A MySQL database is the
+# catalog, with one implicit namespace, so names have no app. part. Its Go
+# package is conformance/harness/go/testdata/mysqlshopdb, and its TypeScript
+# package conformance/harness/ts/mysqlshopdb.
+sources:
+  - plugin: mysql-live
+    catalog: shop
+    connection: env:SHOP_MYSQL_DSN
+
+annotations:
+  shop.tenants:         { name: tenant }
+  shop.users:           { name: user }
+  shop.profiles:        { name: profile }
+  shop.posts:           { name: post }
+  shop.tags:            { name: tag }
+  shop.post_tags:       { name: post_tag }
+  shop.published_posts: { name: published_post }
+  shop.profiles.profiles_user_id_fkey: { inverse-name: profile }
+  shop.posts.posts_author_id_fkey:     { collection-policy: replace, removal: delete }
+
+queries:
+  - queries.sql
+
+emit:
+  - plugin: go
+    dialect: mysql
+    package: mysqlshopdb
+    out: mysqlshopdb
+  - plugin: ts
+    dialect: mysql
+    out: ts/mysqlshopdb

@@ -1,0 +1,140 @@
+scenario: soft-delete
+schema: shop_variants
+# posts.deleted_at is soft-delete (design record §21.3).
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: gone }
+    save: gone
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: kept }
+    save: kept
+  - op: tags.insert
+    input: { name: db }
+    save: db
+  - op: post_tags.insert
+    input: { post_id: $gone.id, tag_id: $db.id }
+  # Delete sets the column; the row stays.
+  - op: posts.delete
+    key: { id: $gone.id }
+    expect:
+      events: [{ query: post.delete, rows: 1 }]
+  # Reads leave the deleted row out: by key, counts, builder reads, and rows
+  # reached through a relation predicate.
+  - op: posts.get
+    key: { id: $gone.id }
+    expect:
+      error: { class: NotFound }
+  - op: posts.find
+    key: { id: $gone.id }
+    expect: { none: true }
+  - op: posts.count
+    expect: { value: 1 }
+  - op: select
+    from: posts
+    shape: post_full
+    expect:
+      rows: [{ title: kept, deleted_at: null }]
+  - op: select
+    from: tags
+    shape: tag_full
+    filter: [{ column: posts, op: any }]
+    expect: { rows: [] }
+  - op: select
+    from: tags
+    shape: tag_full
+    filter: [{ column: posts, op: none }]
+    expect:
+      rows: [{ name: db }]
+  # WithDeleted keeps it too, and OnlyDeleted keeps only it.
+  - op: select
+    from: posts
+    shape: post_full
+    deleted: with
+    order: [{ column: id }]
+    expect:
+      rows: [{ title: gone, deleted_at: present }, { title: kept }]
+  - op: select
+    from: posts
+    shape: post_full
+    deleted: only
+    expect:
+      rows: [{ title: gone }]
+  # A second delete finds no row it sees: the key is NotFound, as for Patch.
+  - op: posts.delete
+    key: { id: $gone.id }
+    expect:
+      error: { class: NotFound }
+  # A soft-deleted row is not writable through Patch.
+  - op: posts.patch
+    key: { id: $gone.id }
+    input: { title: back }
+    expect:
+      error: { class: NotFound }
+  # HardDelete removes the row, deleted or not; the link still refers to it.
+  # SQLite does not name the foreign key, so its name is checked in
+  # foreign-key-names.yaml.
+  - op: posts.hard_delete
+    key: { id: $gone.id }
+    expect:
+      error: { class: ForeignKeyViolation }
+  - op: post_tags.delete
+    key: { post_id: $gone.id, tag_id: $db.id }
+  - op: posts.hard_delete
+    key: { id: $gone.id }
+  - op: posts.hard_delete
+    key: { id: $gone.id }
+    expect:
+      error: { class: NotFound }
+  - op: select
+    from: posts
+    shape: post_full
+    deleted: with
+    expect:
+      rows: [{ title: kept }]
+  # A filtered delete is soft too.
+  - op: posts.delete_where
+    where: all
+    expect:
+      events: [{ query: post.delete_where, rows: 1 }]
+  - op: posts.count
+    expect: { value: 0 }
+  - op: select
+    from: posts
+    shape: post_full
+    deleted: only
+    expect:
+      rows: [{ title: kept }]
+  # Removal under the replace policy of posts' author relation, and Delete
+  # changes, delete softly too.
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: one }
+    save: one
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: two }
+    save: two
+  - op: users.patch_nested
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: $ann.version }
+    input:
+      posts_to_author: [{ update: { key: { id: $one.id }, input: { title: One } } }]
+    expect:
+      row:
+        posts_to_author: [{ title: One }]
+  - op: select
+    from: posts
+    shape: post_full
+    deleted: only
+    order: [{ column: id }]
+    expect:
+      rows: [{ title: kept }, { title: two }]

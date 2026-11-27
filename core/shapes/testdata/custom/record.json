@@ -1,0 +1,494 @@
+{
+  "shapes": [
+    {
+      "id": {
+        "custom": "post_with_tags"
+      },
+      "hostName": {
+        "words": [
+          "post",
+          "with",
+          "tags"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "posts"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        },
+        {
+          "op": "NEST",
+          "shape": {
+            "custom": "user_summary"
+          },
+          "relation": "author"
+        },
+        {
+          "op": "NEST",
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "tags"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          },
+          "relation": "tags"
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "type": {
+            "int64": {}
+          }
+        },
+        {
+          "column": "author_id",
+          "presence": "PRESENCE_REQUIRED",
+          "type": {
+            "int64": {}
+          }
+        },
+        {
+          "column": "editor_id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "type": {
+            "int64": {}
+          }
+        },
+        {
+          "column": "title",
+          "presence": "PRESENCE_REQUIRED",
+          "type": {
+            "text": {}
+          }
+        }
+      ],
+      "nests": [
+        {
+          "relation": "author",
+          "presence": "PRESENCE_REQUIRED",
+          "shape": {
+            "custom": "user_summary"
+          }
+        },
+        {
+          "relation": "tags",
+          "presence": "PRESENCE_REQUIRED",
+          "shape": {
+            "entity": {
+              "catalog": "shop",
+              "namespace": "app",
+              "object": "tags"
+            },
+            "preset": "PRESET_FULL",
+            "form": "FORM_FLAT"
+          }
+        }
+      ]
+    },
+    {
+      "id": {
+        "custom": "quick_invite"
+      },
+      "hostName": {
+        "words": [
+          "quick",
+          "invite"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_DRAFT",
+          "form": "FORM_FLAT"
+        },
+        {
+          "op": "PICK",
+          "columns": [
+            "email"
+          ]
+        },
+        {
+          "op": "BIND",
+          "columns": [
+            "password_hash"
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "column": "email",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "email_address"
+              }
+            }
+          },
+          "validation": [
+            "email_address_check"
+          ]
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "id",
+          "reason": "FORBIDDEN_IDENTITY_ALWAYS"
+        },
+        {
+          "column": "tenant_id",
+          "reason": "FORBIDDEN_BOUND"
+        },
+        {
+          "column": "display_name",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "created_at",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "updated_at",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "version",
+          "reason": "FORBIDDEN_OMITTED"
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ],
+      "bind": [
+        "password_hash"
+      ]
+    },
+    {
+      "id": {
+        "custom": "signup"
+      },
+      "hostName": {
+        "words": [
+          "signup"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_DRAFT",
+          "form": "FORM_FLAT"
+        },
+        {
+          "op": "PICK",
+          "columns": [
+            "email",
+            "password_hash"
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "column": "email",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "email_address"
+              }
+            }
+          },
+          "validation": [
+            "email_address_check"
+          ]
+        },
+        {
+          "column": "password_hash",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "valueKind": "VALUE_KIND_VALUE_OR_EXPRESSION",
+          "type": {
+            "text": {}
+          },
+          "redact": true
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "id",
+          "reason": "FORBIDDEN_IDENTITY_ALWAYS"
+        },
+        {
+          "column": "tenant_id",
+          "reason": "FORBIDDEN_BOUND"
+        },
+        {
+          "column": "display_name",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "created_at",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "updated_at",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "version",
+          "reason": "FORBIDDEN_OMITTED"
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ]
+    },
+    {
+      "id": {
+        "custom": "user_summary"
+      },
+      "hostName": {
+        "words": [
+          "user",
+          "summary"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        },
+        {
+          "op": "PICK",
+          "columns": [
+            "id",
+            "email",
+            "display_name"
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {}
+          }
+        },
+        {
+          "column": "email",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "email_address"
+              }
+            }
+          }
+        },
+        {
+          "column": "display_name",
+          "presence": "PRESENCE_REQUIRED",
+          "nullable": true,
+          "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+          "type": {
+            "text": {}
+          }
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "tenant_id",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "password_hash",
+          "reason": "FORBIDDEN_WRITE_ONLY"
+        },
+        {
+          "column": "created_at",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "updated_at",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "version",
+          "reason": "FORBIDDEN_OMITTED"
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ]
+    },
+    {
+      "id": {
+        "custom": "user_summary_named"
+      },
+      "hostName": {
+        "words": [
+          "user",
+          "summary",
+          "named"
+        ]
+      },
+      "entity": {
+        "catalog": "shop",
+        "namespace": "app",
+        "object": "users"
+      },
+      "lineage": [
+        {
+          "op": "PRESET",
+          "entity": {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          },
+          "preset": "PRESET_FULL",
+          "form": "FORM_FLAT"
+        },
+        {
+          "op": "PICK",
+          "columns": [
+            "id",
+            "email",
+            "display_name"
+          ]
+        },
+        {
+          "op": "FROM",
+          "shape": {
+            "custom": "user_summary"
+          }
+        },
+        {
+          "op": "NONNULL",
+          "columns": [
+            "display_name"
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "column": "id",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "int64": {}
+          }
+        },
+        {
+          "column": "email",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+          "type": {
+            "named": {
+              "domain": {
+                "catalog": "shop",
+                "namespace": "app",
+                "object": "email_address"
+              }
+            }
+          }
+        },
+        {
+          "column": "display_name",
+          "presence": "PRESENCE_REQUIRED",
+          "nullabilitySource": "NULLABILITY_SOURCE_SHAPE_OPERATOR",
+          "nullabilityShape": {
+            "custom": "user_summary_named"
+          },
+          "type": {
+            "text": {}
+          }
+        }
+      ],
+      "forbidden": [
+        {
+          "column": "tenant_id",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "password_hash",
+          "reason": "FORBIDDEN_WRITE_ONLY"
+        },
+        {
+          "column": "created_at",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "updated_at",
+          "reason": "FORBIDDEN_OMITTED"
+        },
+        {
+          "column": "version",
+          "reason": "FORBIDDEN_OMITTED"
+        }
+      ],
+      "scope": [
+        "tenant_id"
+      ]
+    }
+  ]
+}

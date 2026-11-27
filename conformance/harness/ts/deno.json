@@ -1,0 +1,10 @@
+{
+  "nodeModulesDir": "manual",
+  "imports": {
+    "@dql/runtime": "../../../runtime/ts/dql/dist/index.js",
+    "@dql/pg": "../../../runtime/ts/dqlpg/dist/index.js",
+    "@dql/mysql": "../../../runtime/ts/dqlmysql/dist/index.js",
+    "@dql/sqlite": "../../../runtime/ts/dqlsqlite/dist/index.js",
+    "@dql/sqlserver": "../../../runtime/ts/dqlsqlserver/dist/index.js"
+  }
+}

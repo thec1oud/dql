@@ -1,0 +1,27 @@
+scenario: array-elements
+schema: shop_variants
+requires: [arrays]
+# An array whose elements are asserted non-null (design record §8.6), in the
+# variants: a NULL element fails decoding at its index.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  - op: posts.insert
+    scope: { tenant_id: $acme.id }
+    input: { author_id: $ann.id, title: x, labels: [a, b] }
+    save: post
+    expect:
+      row: { labels: [a, b] }
+  # A NULL element in an array asserted array-elements-nonnull.
+  - op: sql
+    sql:
+      postgres: UPDATE app.posts SET labels = ARRAY['a', NULL]
+  - op: posts.get
+    key: { id: $post.id }
+    expect:
+      error: { class: DecodeError, shape: post.full.flat, field: "labels[1]", reason: null_element_into_non_null }

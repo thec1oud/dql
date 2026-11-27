@@ -1,0 +1,63 @@
+# The running example's dql.yaml on SQLite (shop.yaml) with the design
+# record's variants of it, as conformance/schemas/postgres/variants.yaml has
+# them, but for labels, as SQLite has no arrays: posts.deleted_at is
+# soft-delete (§21.3), an instant stored as text as published_at is, the
+# custom shapes of §14.8, rename, a Partial-derived shape for
+# Patch<Shape>, and email_invite, whose bound field has a check. Its Go
+# package is conformance/harness/go/testdata/sqlitevariantdb, and its
+# TypeScript package conformance/harness/ts/sqlitevariantdb.
+sources:
+  - plugin: sqlite-live
+    catalog: shop
+    connection: env:SHOP_SQLITE_PATH
+
+annotations:
+  shop.tenants:         { name: tenant }
+  shop.users:           { name: user }
+  shop.profiles:        { name: profile }
+  shop.posts:           { name: post }
+  shop.tags:            { name: tag }
+  shop.post_tags:       { name: post_tag }
+  shop.published_posts: { name: published_post }
+  shop.profiles.profiles_user_id_fkey: { inverse-name: profile }
+  shop.posts.posts_author_id_fkey:     { collection-policy: replace, removal: delete }
+  shop.posts.deleted_at: { soft-delete, as: instant }
+
+shapes:
+  user_summary:
+    from: user.full
+    pick: [id, email, display_name]
+  user_summary_named:
+    from: user_summary
+    nonnull: [display_name]
+  post_with_tags:
+    from: post.full
+    nest:
+      tags: tag.full
+      author: user_summary
+  signup:
+    from: user.draft
+    pick: [email, password_hash]
+  quick_invite:
+    from: user.draft
+    pick: [email]
+    bind: [password_hash]
+  # Not in the record: a bound field with a check, which the store validates
+  # as it does the shape's own fields (§10.5, §14.8).
+  email_invite:
+    from: user.draft
+    pick: [password_hash]
+    bind: [email]
+  # Not in the record: a Partial-derived shape, for Patch<Shape> (§14.8).
+  rename:
+    from: user.partial
+    pick: [display_name]
+
+emit:
+  - plugin: go
+    dialect: sqlite
+    package: sqlitevariantdb
+    out: sqlitevariantdb
+  - plugin: ts
+    dialect: sqlite
+    out: ts/sqlitevariantdb

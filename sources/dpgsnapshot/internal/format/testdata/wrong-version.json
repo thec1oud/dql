@@ -1,0 +1,16 @@
+{
+  "dpg_version": "0.3.0",
+  "cluster": "local",
+  "database": "shop",
+  "applied_at": "2026-10-23T03:14:26Z",
+  "source_revision": "",
+  "field_from_a_later_format": true,
+  "objects": {
+    "app": {
+      "kind": "schema",
+      "schema": {
+        "name": "app"
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+scenario: leaked-transactions
+schema: shop
+requires: [returning]
+steps:
+  # A pair-form transaction left open when its operation ends is rolled back
+  # and reported (§22.3).
+  - op: operation
+    steps:
+      - op: begin_write
+        steps:
+          - op: tenants.insert
+            input: { name: leaked }
+    expect:
+      events:
+        - { tx: begin }
+        - { query: tenant.insert }
+        - { tx: leaked }
+        - { tx: end, outcome: rollback }
+  - op: tenants.count
+    expect: { value: 0 }
+  # One that commits, or rolls back, before the operation ends is not.
+  - op: operation
+    steps:
+      - op: begin_write
+        end: commit
+        steps:
+          - op: tenants.insert
+            input: { name: kept }
+      - op: begin_read
+        end: rollback
+        steps:
+          - op: tenants.count
+            expect: { value: 1 }
+    expect:
+      events:
+        - { tx: begin }
+        - { query: tenant.insert }
+        - { tx: end, outcome: commit }
+        - { tx: begin, readonly: true }
+        - { query: tenant.count }
+        - { tx: end, outcome: rollback }
+  - op: tenants.count
+    expect: { value: 1 }

@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package dql.ir.v1;
+
+import "dql/ir/v1/annotations.proto";
+import "dql/ir/v1/names.proto";
+import "dql/ir/v1/objects.proto";
+import "dql/ir/v1/types.proto";
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/thec1oud/dql/proto/dql/ir/v1;irv1";
+
+// A public function or procedure and its overloads (§4.6, §6.5).
+message Routine {
+  Identifier name = 1;
+  // Sorted by signature.
+  repeated Overload overloads = 2;
+}
+
+message Overload {
+  // The arguments' logical type names, which identify the overload with the
+  // routine's qualified name (§4.6).
+  repeated string signature = 1;
+  // The name for hosts without overloading (§4.6). Computed by the core;
+  // carries only words.
+  Identifier host_name = 2;
+  RoutineKind kind = 3;
+  // In the database's order.
+  repeated Argument arguments = 4;
+  Returns returns = 5;
+  NullBehavior null_behavior = 6;
+  Volatility volatility = 7;
+  repeated Annotation annotations = 8;
+  repeated google.protobuf.Any extensions = 9;
+}
+
+enum RoutineKind {
+  ROUTINE_KIND_UNSPECIFIED = 0;
+  ROUTINE_KIND_FUNCTION = 1;
+  ROUTINE_KIND_PROCEDURE = 2;
+}
+
+message Argument {
+  Identifier name = 1;
+  Type type = 2;
+  ArgMode mode = 3;
+  bool has_default = 4;
+}
+
+enum ArgMode {
+  ARG_MODE_UNSPECIFIED = 0;
+  ARG_MODE_IN = 1;
+  ARG_MODE_OUT = 2;
+  ARG_MODE_INOUT = 3;
+  ARG_MODE_VARIADIC = 4;
+}
+
+// What a routine returns (§6.5). A result is nullable unless the source
+// proves otherwise or an annotation asserts it; STRICT proves nothing.
+message Returns {
+  oneof kind {
+    ReturnValue scalar = 1;
+    ReturnValue set_of = 2;
+    ReturnTable table = 3;
+    Empty nothing = 4;
+  }
+}
+
+message ReturnValue {
+  Type type = 1;
+  bool nullable = 2;
+}
+
+message ReturnTable {
+  // In the database's order.
+  repeated Column columns = 1;
+}
+
+// How a function or operator treats NULL inputs (§6.5, §9.1).
+enum NullBehavior {
+  NULL_BEHAVIOR_UNSPECIFIED = 0;
+  // A NULL argument gives a NULL result.
+  NULL_BEHAVIOR_STRICT = 1;
+  // The routine runs on NULL arguments too.
+  NULL_BEHAVIOR_CALLED_ON_NULL_INPUT = 2;
+  // The result is never NULL.
+  NULL_BEHAVIOR_NEVER_NULL = 3;
+}
+
+// Recorded for the query layer, which decides what may run on a replica (§16).
+enum Volatility {
+  VOLATILITY_UNSPECIFIED = 0;
+  VOLATILITY_IMMUTABLE = 1;
+  VOLATILITY_STABLE = 2;
+  VOLATILITY_VOLATILE = 3;
+}

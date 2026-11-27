@@ -1,0 +1,24 @@
+scenario: serialization-retries
+schema: shop
+requires: [serialization-failure]
+# A serialization failure reruns the closure as a deadlock does
+# (retries.yaml), which then commits once (§22.4), and after the policy's
+# attempts the last failure is reported.
+steps:
+  - op: write
+    inject: { class: SerializationFailure, times: 1 }
+    steps:
+      - op: tenants.insert
+        input: { name: acme }
+    expect: { attempts: 2 }
+  - op: write
+    retry: { attempts: 2 }
+    inject: { class: SerializationFailure, times: 5 }
+    steps:
+      - op: tenants.insert
+        input: { name: initech }
+    expect:
+      attempts: 2
+      error: { class: SerializationFailure }
+  - op: tenants.count
+    expect: { value: 1 }

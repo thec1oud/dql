@@ -1,0 +1,31 @@
+scenario: length-facts
+schema: shop
+# A varchar(n) column's length is a structured fact (§10.1), checked on the
+# client in the unit the dialect counts in (§10.3) before any statement.
+# users.display_name is varchar(80) on every dialect (nvarchar(80) on SQL
+# Server, a length check on SQLite). Eighty two-byte characters fit, as the
+# database counts characters or UTF-16 units, never the host's bytes.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x, display_name: éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé }
+    expect:
+      row: { display_name: éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé }
+    save: ann
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: b@acme.com, password_hash: x, display_name: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa }
+    expect:
+      error: { class: ValidationErrors, kind: length, field: display_name }
+  - op: users.patch
+    scope: { tenant_id: $acme.id }
+    key: { id: $ann.id, version: 1 }
+    input: { display_name: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa }
+    expect:
+      error: { class: ValidationErrors, kind: length, field: display_name }
+  - op: users.count
+    scope: { tenant_id: $acme.id }
+    expect: { value: 1 }

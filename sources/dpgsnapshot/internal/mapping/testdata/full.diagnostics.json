@@ -1,0 +1,207 @@
+{
+  "diagnostics": [
+    {
+      "severity": "SEVERITY_ERROR",
+      "code": "dpgsnapshot-annotation-unclosed",
+      "target": {
+        "catalog": "full",
+        "namespace": "public",
+        "object": "thing"
+      },
+      "message": "COMMENT ON TABLE public.thing: the value of @name has no closing parenthesis, so it is not read; close it"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-annotation-ignored",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "hidden_set"
+      },
+      "message": "COMMENT ON FUNCTION app.hidden_set(): the routine is not exposed, so dpg-snapshot reads no annotations on it, so @x.go.name is ignored; remove the annotation tokens from the comment"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-annotation-ignored",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "items",
+        "member": "items_id_key"
+      },
+      "message": "COMMENT ON INDEX app.items_id_key: dpg-snapshot reads no annotations on indexes, so @bound is ignored; remove the annotation tokens from the comment"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-annotation-ignored",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "span"
+      },
+      "message": "COMMENT ON TYPE app.span: dpg-snapshot reads no annotations on range types, so @x.y is ignored; remove the annotation tokens from the comment"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-annotation-ignored",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "texts",
+        "member": "texts_pub"
+      },
+      "message": "COMMENT ON POLICY texts_pub ON app.texts: dpg-snapshot reads no annotations on policies, so @bound is ignored; remove the annotation tokens from the comment"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-annotation-ignored",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "texts",
+        "member": "texts_t"
+      },
+      "message": "COMMENT ON TRIGGER texts_t ON app.texts: dpg-snapshot reads no annotations on triggers, so @x is ignored; remove the annotation tokens from the comment"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_ambig"
+      },
+      "message": "the columns of view app.v_ambig are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_const"
+      },
+      "message": "the columns of view app.v_const are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_cte"
+      },
+      "message": "the columns of view app.v_cte are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_expr"
+      },
+      "message": "the columns of view app.v_expr are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_func"
+      },
+      "message": "the columns of view app.v_func are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_join_alias"
+      },
+      "message": "the columns of view app.v_join_alias are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_left_unknown"
+      },
+      "message": "the columns of view app.v_left_unknown are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_missing"
+      },
+      "message": "the columns of view app.v_missing are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_nested_join"
+      },
+      "message": "the columns of view app.v_nested_join are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_right_unknown"
+      },
+      "message": "the columns of view app.v_right_unknown are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_union"
+      },
+      "message": "the columns of view app.v_union are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_unknown_source"
+      },
+      "message": "the columns of view app.v_unknown_source are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_using"
+      },
+      "message": "the columns of view app.v_using are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    },
+    {
+      "severity": "SEVERITY_WARNING",
+      "code": "dpgsnapshot-view-columns-unknown",
+      "target": {
+        "catalog": "full",
+        "namespace": "app",
+        "object": "v_values"
+      },
+      "message": "the columns of view app.v_values are not known: a dpg snapshot records a view's query, and only a query whose output columns are plain columns of the snapshot's tables and views is read; read the catalog with pg-live"
+    }
+  ]
+}

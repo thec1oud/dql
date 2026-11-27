@@ -1,0 +1,403 @@
+package dql
+
+import (
+	"context"
+	"iter"
+	"maps"
+	"slices"
+	"strconv"
+
+	"github.com/thec1oud/dql/runtime/go/opt"
+)
+
+// Pred is a predicate on the rows of the entity E stands for (§18.2):
+// generated column and relation handles make them, so a predicate on one
+// entity cannot filter another.
+type Pred[E any] struct {
+	node Node
+	// all marks AllRows, which keeps every row.
+	all bool
+}
+
+// NewPred wraps a plan node as a predicate on E; generated code calls it.
+func NewPred[E any](n Node) Pred[E] { return Pred[E]{node: n} }
+
+// Node returns the predicate's plan node.
+func (p Pred[E]) Node() Node { return p.node }
+
+// And holds when every predicate holds.
+func And[E any](p Pred[E], more ...Pred[E]) Pred[E] {
+	for _, q := range more {
+		p = Pred[E]{node: Use{Fragment: "bool.and", Holes: map[string]Node{"0": p.node, "1": q.node}}}
+	}
+	return p
+}
+
+// Or holds when any predicate holds.
+func Or[E any](p Pred[E], more ...Pred[E]) Pred[E] {
+	for _, q := range more {
+		p = Pred[E]{node: Use{Fragment: "bool.or", Holes: map[string]Node{"0": p.node, "1": q.node}}}
+	}
+	return p
+}
+
+// Not holds when p does not.
+func Not[E any](p Pred[E]) Pred[E] {
+	return Pred[E]{node: Use{Fragment: "bool.not", Holes: map[string]Node{"0": p.node}}}
+}
+
+// Compare is the predicate operator fragment op makes of column fragment
+// col and args (§9.4); generated column handles call it.
+func Compare[E any](op, col string, args ...Node) Pred[E] {
+	holes := map[string]Node{"0": Use{Fragment: col}}
+	for i, a := range args {
+		holes[strconv.Itoa(i+1)] = a
+	}
+	return Pred[E]{node: Use{Fragment: op, Holes: holes}}
+}
+
+// Related holds for a row of E with a row of R through relation fragment
+// rel that every predicate holds for (§18.2); generated relation handles
+// call it.
+func Related[E, R any](rel string, ps ...Pred[R]) Pred[E] {
+	u := Use{Fragment: rel}
+	if len(ps) > 0 {
+		u.Holes = map[string]Node{"and": Use{Fragment: "clause.and", Holes: map[string]Node{"0": And(ps[0], ps[1:]...).node}}}
+	}
+	return Pred[E]{node: u}
+}
+
+// Order is one key of an ordering of E's rows.
+type Order[E any] struct{ node Node }
+
+// NewOrder wraps a plan node as an ordering key of E; generated code calls
+// it.
+func NewOrder[E any](n Node) Order[E] { return Order[E]{node: n} }
+
+// Ordered is the order key fragment dir, order.asc or order.desc, makes of
+// column fragment col; generated column handles call it.
+func Ordered[E any](dir, col string) Order[E] {
+	return Order[E]{node: Use{Fragment: dir, Holes: map[string]Node{"0": Use{Fragment: col}}}}
+}
+
+// Shape is a read shape of the entity E stands for, as a builder read
+// returns it (§18.2): the fragments that select it, and its decoder.
+type Shape[T, E any] struct {
+	// The shape's dotted name, which names the builder's reads of it.
+	Name    string
+	Catalog string
+	// The fragments selecting the shape, its table, and its columns in
+	// order, which Distinct selects from the table.
+	Select  string
+	From    string
+	Columns []string
+	// The entity's count and exists fragments, and their queries' names.
+	Count, Exists         string
+	CountName, ExistsName string
+	Decode                func(Row) (T, error)
+}
+
+// From is where a builder read runs: a handle that reads, the scope filter
+// every read through it gets (§21.1), and, for a soft-delete entity, the
+// predicate its rows hold while not deleted, which reads get unless they
+// ask for deleted rows (§21.3).
+type From struct {
+	H       Reader
+	Scope   []Node
+	Visible Node
+}
+
+// deleted is which rows a read of a soft-delete entity keeps.
+type deleted int
+
+const (
+	liveRows deleted = iota
+	withDeleted
+	onlyDeleted
+)
+
+// Builder composes a read of a shape from the fragment table (§16.2, §18).
+// Each method returns a new builder, so a builder can be reused.
+type Builder[T, E any] struct {
+	t           *Fragments
+	from        From
+	shape       Shape[T, E]
+	where       []Node
+	order       []Node
+	limit       Node
+	offset      Node
+	distinct    bool
+	locks       []string
+	noLog       bool
+	consistency Consistency
+	deleted     deleted
+}
+
+// NewBuilder starts a read of shape on from; generated code calls it.
+func NewBuilder[T, E any](t *Fragments, from From, shape Shape[T, E]) Builder[T, E] {
+	return Builder[T, E]{t: t, from: from, shape: shape}
+}
+
+// Where keeps the rows every predicate holds for, and those of earlier
+// calls.
+func (b Builder[T, E]) Where(ps ...Pred[E]) Builder[T, E] {
+	b.where = slices.Clone(b.where)
+	for _, p := range ps {
+		b.where = append(b.where, p.node)
+	}
+	return b
+}
+
+// OrderBy orders the rows by keys, after those of earlier calls.
+func (b Builder[T, E]) OrderBy(keys ...Order[E]) Builder[T, E] {
+	b.order = slices.Clone(b.order)
+	for _, k := range keys {
+		b.order = append(b.order, k.node)
+	}
+	return b
+}
+
+// Limit returns at most n rows.
+func (b Builder[T, E]) Limit(n int64) Builder[T, E] {
+	b.limit = Arg{Value: n}
+	return b
+}
+
+// Offset skips the first n rows.
+func (b Builder[T, E]) Offset(n int64) Builder[T, E] {
+	b.offset = Arg{Value: n}
+	return b
+}
+
+// Distinct returns each distinct row once.
+func (b Builder[T, E]) Distinct() Builder[T, E] {
+	b.distinct = true
+	return b
+}
+
+// ForUpdate locks the rows read for update, ForShare for share; SkipLocked
+// skips rows another transaction locked, and NoWait fails on them. A
+// locking read runs on the primary.
+func (b Builder[T, E]) ForUpdate() Builder[T, E]  { return b.lock("lock.update") }
+func (b Builder[T, E]) ForShare() Builder[T, E]   { return b.lock("lock.share") }
+func (b Builder[T, E]) SkipLocked() Builder[T, E] { return b.lock("lock.skip_locked") }
+func (b Builder[T, E]) NoWait() Builder[T, E]     { return b.lock("lock.nowait") }
+
+func (b Builder[T, E]) lock(f string) Builder[T, E] {
+	b.locks = append(slices.Clone(b.locks), f)
+	return b
+}
+
+// WithDeleted keeps soft-deleted rows too (§21.3).
+func (b Builder[T, E]) WithDeleted() Builder[T, E] {
+	b.deleted = withDeleted
+	return b
+}
+
+// OnlyDeleted keeps only soft-deleted rows; an entity without soft delete
+// has none (§21.3).
+func (b Builder[T, E]) OnlyDeleted() Builder[T, E] {
+	b.deleted = onlyDeleted
+	return b
+}
+
+// NoLog turns this read's events off, its pool wait included (§24).
+func (b Builder[T, E]) NoLog() Builder[T, E] {
+	b.noLog = true
+	return b
+}
+
+// Consistency sets how fresh the read must be, over the executor's default
+// (§22.5).
+func (b Builder[T, E]) Consistency(c Consistency) Builder[T, E] {
+	b.consistency = c
+	return b
+}
+
+// filter is the WHERE clause: the scope's predicates, the soft delete's,
+// then the call's.
+func (b Builder[T, E]) filter() Node {
+	ps := slices.Clone(b.from.Scope)
+	visible := b.from.Visible
+	switch {
+	case b.deleted == withDeleted:
+	case b.deleted == onlyDeleted && visible == nil:
+		ps = append(ps, Use{Fragment: "bool.not", Holes: map[string]Node{"0": Use{Fragment: "value.true"}}})
+	case b.deleted == onlyDeleted:
+		ps = append(ps, Use{Fragment: "bool.not", Holes: map[string]Node{"0": visible}})
+	case visible != nil:
+		ps = append(ps, visible)
+	}
+	ps = append(ps, b.where...)
+	if len(ps) == 0 {
+		return nil
+	}
+	p := ps[0]
+	for _, q := range ps[1:] {
+		p = Use{Fragment: "bool.and", Holes: map[string]Node{"0": p, "1": q}}
+	}
+	return Use{Fragment: "clause.where", Holes: map[string]Node{"0": p}}
+}
+
+// rows assembles the read of the shape's rows.
+func (b Builder[T, E]) rows() (Statement, error) {
+	var plan []Node
+	var cols []Node
+	if b.distinct {
+		for _, c := range b.shape.Columns {
+			cols = append(cols, Use{Fragment: c})
+		}
+		plan = append(plan, b.locked(Use{Fragment: "select.distinct", Holes: map[string]Node{
+			"cols": List{Items: cols, Separator: ", "}, "from": Use{Fragment: b.shape.From},
+		}}))
+	} else {
+		plan = append(plan, b.locked(Use{Fragment: b.shape.Select}))
+	}
+	if w := b.filter(); w != nil {
+		plan = append(plan, w)
+	}
+	if _, ok := b.t.Templates["clause.distinct"]; ok && b.distinct {
+		// A dialect that orders a distinct read only by its selected
+		// columns, and so not by an expression of them, groups by them.
+		plan = append(plan, Use{Fragment: "clause.distinct", Holes: map[string]Node{"cols": List{Items: cols, Separator: ", "}}})
+	}
+	_, page := b.t.Templates["clause.page"]
+	paged := page && (b.limit != nil || b.offset != nil)
+	if len(b.order) > 0 {
+		plan = append(plan, Use{Fragment: "clause.order", Holes: map[string]Node{"0": List{Items: b.order, Separator: ", "}}})
+	} else if _, ok := b.t.Templates["order.none"]; ok && paged {
+		// A dialect whose page needs an ORDER BY orders an unordered one by
+		// nothing.
+		plan = append(plan, Use{Fragment: "order.none"})
+	}
+	limit := b.limit
+	if _, ok := b.t.Templates["value.no_limit"]; ok && limit == nil && b.offset != nil {
+		// A dialect without OFFSET alone limits to every row (§18.2).
+		limit = Use{Fragment: "value.no_limit"}
+	}
+	switch {
+	case page && limit != nil:
+		// A dialect whose limit follows its offset pages with one clause,
+		// from the first row unless the call skips some.
+		offset := b.offset
+		if offset == nil {
+			offset = Use{Fragment: "value.zero"}
+		}
+		plan = append(plan, Use{Fragment: "clause.page", Holes: map[string]Node{"offset": offset, "limit": limit}})
+	default:
+		if limit != nil {
+			plan = append(plan, Use{Fragment: "clause.limit", Holes: map[string]Node{"0": limit}})
+		}
+		if b.offset != nil {
+			plan = append(plan, Use{Fragment: "clause.offset", Holes: map[string]Node{"0": b.offset}})
+		}
+	}
+	if !b.hinted() {
+		for _, l := range b.locks {
+			plan = append(plan, Use{Fragment: l})
+		}
+	}
+	return b.statement(b.shape.Name, "select", plan)
+}
+
+// hinted reports whether the dialect locks through table hints: its
+// lock.hints fragment fills the select's {locks} hole in place of lock
+// clauses after the statement.
+func (b Builder[T, E]) hinted() bool {
+	_, ok := b.t.Templates["lock.hints"]
+	return ok && len(b.locks) > 0
+}
+
+// locked fills sel's {locks} hole with the read's locks, joined, as table
+// hints, on a dialect that has them.
+func (b Builder[T, E]) locked(sel Use) Use {
+	if !b.hinted() {
+		return sel
+	}
+	locks := make([]Node, len(b.locks))
+	for i, l := range b.locks {
+		locks[i] = Use{Fragment: l}
+	}
+	holes := maps.Clone(sel.Holes)
+	if holes == nil {
+		holes = map[string]Node{}
+	}
+	holes["locks"] = Use{Fragment: "lock.hints", Holes: map[string]Node{"0": List{Items: locks, Separator: ", "}}}
+	sel.Holes = holes
+	return sel
+}
+
+// aggregate assembles a count or exists read of the rows the filter keeps.
+func (b Builder[T, E]) aggregate(name, kind, fragment string) (Statement, error) {
+	u := Use{Fragment: fragment}
+	if w := b.filter(); w != nil {
+		u.Holes = map[string]Node{"where": w}
+	}
+	return b.statement(name, kind, []Node{u})
+}
+
+func (b Builder[T, E]) statement(name, kind string, plan []Node) (Statement, error) {
+	q := Query{Name: name, Catalog: b.shape.Catalog, Kind: kind, Plan: plan, Writes: len(b.locks) > 0, Consistency: b.consistency}
+	s, err := q.Statement(b.t, nil)
+	s.NoLog = b.noLog
+	return s, err
+}
+
+// One returns the one row: NotFound for none and TooManyRows for more (§19).
+func (b Builder[T, E]) One(ctx context.Context) (T, error) {
+	s, err := b.rows()
+	if err != nil {
+		var zero T
+		return zero, err
+	}
+	return OneOf(ctx, b.from.H, s, b.shape.Decode)
+}
+
+// OptionalOne returns the row, if any: TooManyRows for more than one (§19).
+func (b Builder[T, E]) OptionalOne(ctx context.Context) (opt.Opt[T], error) {
+	s, err := b.rows()
+	if err != nil {
+		return opt.None[T](), err
+	}
+	return OptionalOf(ctx, b.from.H, s, b.shape.Decode)
+}
+
+// All returns every row, an empty slice for none (§19).
+func (b Builder[T, E]) All(ctx context.Context) ([]T, error) {
+	s, err := b.rows()
+	if err != nil {
+		return nil, err
+	}
+	return AllOf(ctx, b.from.H, s, b.shape.Decode)
+}
+
+// Iter streams the rows, holding a connection until iteration ends (§25.1).
+func (b Builder[T, E]) Iter(ctx context.Context) iter.Seq2[T, error] {
+	s, err := b.rows()
+	if err != nil {
+		return func(yield func(T, error) bool) {
+			var zero T
+			yield(zero, err)
+		}
+	}
+	return IterOf(ctx, b.from.H, s, b.shape.Decode)
+}
+
+// Count returns how many rows the filter keeps; order, limit and offset do
+// not apply.
+func (b Builder[T, E]) Count(ctx context.Context) (int64, error) {
+	s, err := b.aggregate(b.shape.CountName, "count", b.shape.Count)
+	if err != nil {
+		return 0, err
+	}
+	return Count(ctx, b.from.H, s)
+}
+
+// Exists reports whether the filter keeps any row.
+func (b Builder[T, E]) Exists(ctx context.Context) (bool, error) {
+	s, err := b.aggregate(b.shape.ExistsName, "exists", b.shape.Exists)
+	if err != nil {
+		return false, err
+	}
+	return Exists(ctx, b.from.H, s)
+}

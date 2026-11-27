@@ -1,0 +1,242 @@
+package shapes
+
+import (
+	"slices"
+	"strings"
+	"testing"
+
+	"google.golang.org/protobuf/proto"
+
+	"github.com/thec1oud/dql/core/bundle"
+	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
+	"github.com/thec1oud/dql/testkit/determinism"
+)
+
+// layerOf builds the shape layer of the running example with the custom
+// shapes of §14.8, failing on any diagnostic.
+func layerOf(t *testing.T, catalogs []*irv1.Catalog) *irv1.ShapeLayer {
+	t.Helper()
+	layer, ds, err := Layer(catalogs, customRecord(), Options{})
+	if err != nil || len(ds) != 0 {
+		t.Fatalf("Layer: %v %v", err, ds)
+	}
+	return layer
+}
+
+// spellings are the dotted spellings of layer's shapes, in order.
+func spellings(catalogs []*irv1.Catalog, layer *irv1.ShapeLayer) []string {
+	n := NewNester(catalogs, nil)
+	var out []string
+	for _, s := range layer.GetShapes() {
+		out = append(out, n.spell(s.GetId()))
+	}
+	return out
+}
+
+func TestLayer(t *testing.T) {
+	catalogs := shop(t)
+	layer := layerOf(t, catalogs)
+	got := spellings(catalogs, layer)
+	if !slices.IsSorted(got) || len(slices.Compact(slices.Clone(got))) != len(got) {
+		t.Errorf("shapes are not sorted once each: %v", got)
+	}
+	for _, want := range []string{
+		"user.full.flat", "user.draft.nested", "user.key", "user.scope", "published_post.full.nests",
+		"post.draft.flat.for.author", "post.partial.flat.for.editor",
+		"post_with_tags", "quick_invite", "signup", "user_summary", "user_summary_named",
+	} {
+		if !slices.Contains(got, want) {
+			t.Errorf("no shape %s in %v", want, got)
+		}
+	}
+	// A view gets only Full and Key (§6.4, §14.3).
+	if slices.Contains(got, "published_post.draft.flat") {
+		t.Error("published_post has a Draft")
+	}
+	var unions []string
+	for _, u := range layer.GetUnions() {
+		unions = append(unions, strings.Join(u.GetHostName().GetWords(), "_"))
+	}
+	if !slices.IsSorted(unions) || !slices.Contains(unions, "user_ref") {
+		t.Errorf("unions %v", unions)
+	}
+	if len(layer.GetUpserts()) == 0 || layer.GetConversions() != nil || layer.GetMerges() != nil {
+		t.Errorf("upserts %d, conversions %v, merges %v", len(layer.GetUpserts()), layer.GetConversions(), layer.GetMerges())
+	}
+}
+
+// A custom write shape nesting a preset adds the Ref and Link unions the
+// forms already have; the layer lists each once.
+func TestLayerListsSharedUnionsOnce(t *testing.T) {
+	catalogs := shop(t)
+	plain, _, err := Layer(catalogs, nil, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	nested, ds, err := Layer(catalogs, []Custom{{Name: "post_by_author", From: "post.draft", Nest: map[string]string{"author": "user.draft"}}}, Options{})
+	if err != nil || len(ds) != 0 {
+		t.Fatalf("Layer: %v %v", err, ds)
+	}
+	if len(nested.GetShapes()) != len(plain.GetShapes())+1 {
+		t.Errorf("%d shapes, want %d", len(nested.GetShapes()), len(plain.GetShapes())+1)
+	}
+	if !proto.Equal(&irv1.ShapeLayer{Unions: nested.GetUnions()}, &irv1.ShapeLayer{Unions: plain.GetUnions()}) {
+		t.Errorf("unions differ:\n%v\n%v", nested.GetUnions(), plain.GetUnions())
+	}
+}
+
+func TestLayerReportsCustomShapes(t *testing.T) {
+	layer, ds, err := Layer(shop(t), []Custom{{Name: "quick_invite", From: "user.draft", Pick: []string{"email"}}}, Options{})
+	if err != nil || len(ds) != 1 || ds[0].GetCode() != CodeWriteShapeIncomplete {
+		t.Fatalf("%v %v", err, ds)
+	}
+	if slices.Contains(spellings(shop(t), layer), "quick_invite") {
+		t.Error("the failed shape is in the layer")
+	}
+}
+
+func TestLayerFailsOnUnassembledCatalogs(t *testing.T) {
+	catalogs := customCatalogs()
+	// posts' relations name users, which these catalogs lack.
+	catalogs[0].Namespaces[0].Tables = catalogs[0].Namespaces[0].Tables[1:2]
+	if _, _, err := Layer(catalogs, nil, Options{}); err == nil || !strings.Contains(err.Error(), "without a flat Full") {
+		t.Errorf("err %v", err)
+	}
+}
+
+// TestLayerDeterministic builds the layer repeatedly, and from catalogs
+// whose tables, relations and uniqueness facts come in shuffled order, and
+// checks the bytes stay the same (guide §6.2).
+func TestLayerDeterministic(t *testing.T) {
+	gen := func(seed uint64) func() ([]byte, error) {
+		return func() ([]byte, error) {
+			catalogs := shop(t)
+			if seed != 0 {
+				for _, ns := range catalogs[0].GetNamespaces() {
+					ns.Tables = determinism.Shuffled(seed, ns.Tables)
+					for _, tb := range ns.Tables {
+						tb.Relations = determinism.Shuffled(seed+1, tb.Relations)
+						tb.Uniqueness = determinism.Shuffled(seed+2, tb.Uniqueness)
+					}
+				}
+			}
+			return bundle.MarshalJSON(layerOf(t, catalogs))
+		}
+	}
+	if err := determinism.Repeat(3, gen(0)); err != nil {
+		t.Error(err)
+	}
+	want, _ := gen(0)()
+	for seed := uint64(1); seed <= 5; seed++ {
+		if got, _ := gen(seed)(); string(got) != string(want) {
+			t.Errorf("seed %d: the layer depends on input order", seed)
+		}
+	}
+}
+
+// TestRef resolves references as dql.yaml writes them; one that names no
+// shape comes back as written, in a custom id that is in no layer.
+func TestRef(t *testing.T) {
+	catalogs := shop(t)
+	layer := layerOf(t, catalogs)
+	n := NewNester(catalogs, nil)
+	for _, c := range []struct {
+		ref, want string
+		found     bool
+	}{
+		{"user.full", "user.full.flat", true},
+		{"user.draft.nested", "user.draft.nested", true},
+		{"user.key", "user.key", true},
+		{"post.draft.for.author", "post.draft.flat.for.author", true},
+		{"user_summary", "user_summary", true},
+		{"user.fulll", "user.fulll", false},
+		{"published_post.draft", "published_post.draft", false},
+		{"nobody.full", "nobody.full", false},
+	} {
+		id := Ref(catalogs, layer, c.ref)
+		if got := n.spell(id); got != c.want {
+			t.Errorf("Ref(%s) = %s, want %s", c.ref, got, c.want)
+		}
+		found := slices.ContainsFunc(layer.GetShapes(), func(s *irv1.Shape) bool { return s.GetId() == id })
+		if found != c.found {
+			t.Errorf("Ref(%s) found %v", c.ref, found)
+		}
+	}
+}
+
+// §4.3: shapes, unions and their constructors share the generated package
+// with enums, domains and composite types, so equal words fail.
+func TestLayerHostNameCollisions(t *testing.T) {
+	catalogs := shop(t)
+	ns := catalogs[0].GetNamespaces()[0]
+	ns.Enums = append(ns.Enums, &irv1.Enum{Name: &irv1.Identifier{Stored: "user_full"}, HostName: &irv1.Identifier{Words: []string{"user", "full"}}})
+	ns.Domains = append(ns.Domains, &irv1.Domain{Name: &irv1.Identifier{Stored: "tlk"}, HostName: &irv1.Identifier{Words: []string{"tag", "link", "key"}}})
+	ns.Composites = append(ns.Composites, &irv1.Composite{Name: &irv1.Identifier{Stored: "pr"}, HostName: &irv1.Identifier{Words: []string{"post", "ref"}}})
+	_, ds, err := Layer(catalogs, nil, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, d := range ds {
+		got = append(got, d.GetCode()+" "+d.GetMessage())
+	}
+	want := []string{
+		"host-name-collision composite type shop.app.pr gets the host name [post ref], the same as relation union post ref, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision relation union post ref gets the host name [post ref], the same as composite type shop.app.pr, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision enum shop.app.user_full gets the host name [user full], the same as shape user.full.flat, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision domain shop.app.tlk gets the host name [tag link key], the same as constructor tag link key of relation union tag link, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision constructor tag link key of relation union tag link gets the host name [tag link key], the same as domain shop.app.tlk, and both generate into one package (§4.3); rename one of them",
+		"host-name-collision shape user.full.flat gets the host name [user full], the same as enum shop.app.user_full, and both generate into one package (§4.3); rename one of them",
+	}
+	slices.Sort(got)
+	slices.Sort(want)
+	if !slices.Equal(got, want) {
+		t.Errorf("diagnostics:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+// On a dialect that reads written rows back by key, a Draft must set each
+// key column the database fills, except an auto-increment identity, whose
+// value comes back as the last insert ID (§20.1).
+func TestLayerReadBack(t *testing.T) {
+	presence := func(layer *irv1.ShapeLayer, entity, column string) irv1.Presence {
+		for _, s := range layer.GetShapes() {
+			id := s.GetId()
+			if id.GetEntity().GetObject() == entity && id.GetPreset() == irv1.Preset_PRESET_DRAFT && id.GetForm() == irv1.Form_FORM_FLAT && id.GetForRelation() == "" {
+				for _, f := range s.GetFields() {
+					if f.GetColumn() == column {
+						return f.GetPresence()
+					}
+				}
+			}
+		}
+		return irv1.Presence_PRESENCE_UNSPECIFIED
+	}
+	catalogs := shop(t)
+	plain, _, err := Layer(catalogs, nil, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, _, err := Layer(catalogs, nil, Options{ReadBack: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		entity, column  string
+		plain, readBack irv1.Presence
+	}{
+		// tenants.id defaults to gen_random_uuid().
+		{"tenants", "id", irv1.Presence_PRESENCE_OPTIONAL, irv1.Presence_PRESENCE_REQUIRED},
+		// posts.id is an identity by default.
+		{"posts", "id", irv1.Presence_PRESENCE_OPTIONAL, irv1.Presence_PRESENCE_OPTIONAL},
+		// A column outside the key keeps its presence.
+		{"users", "created_at", irv1.Presence_PRESENCE_OPTIONAL, irv1.Presence_PRESENCE_OPTIONAL},
+	} {
+		if got := presence(plain, c.entity, c.column); got != c.plain {
+			t.Errorf("%s.%s: %v, want %v", c.entity, c.column, got, c.plain)
+		}
+		if got := presence(back, c.entity, c.column); got != c.readBack {
+			t.Errorf("%s.%s read back: %v, want %v", c.entity, c.column, got, c.readBack)
+		}
+	}
+}

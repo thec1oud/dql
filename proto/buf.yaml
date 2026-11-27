@@ -1,0 +1,14 @@
+version: v2
+modules:
+  - path: .
+lint:
+  use:
+    - STANDARD
+  except:
+    # The design record fixes enum value names that do not carry the enum's
+    # own name as prefix (ORIGIN_DB_COMMENT on OriginKind, STORAGE_TEXT on
+    # StorageClass); golden IR must match them exactly (design record §6.1).
+    - ENUM_VALUE_PREFIX
+breaking:
+  use:
+    - FILE

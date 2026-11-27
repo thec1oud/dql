@@ -1,0 +1,222 @@
+package sqlite_test
+
+import (
+	"context"
+	"slices"
+	"strings"
+	"testing"
+
+	"github.com/thec1oud/dql/dialects/sqlite"
+	irv1 "github.com/thec1oud/dql/proto/dql/ir/v1"
+)
+
+func ident(stored string, words ...string) *irv1.Identifier {
+	if len(words) == 0 {
+		words = strings.Split(stored, "_")
+	}
+	return &irv1.Identifier{Stored: stored, Words: words}
+}
+
+func qn(cat, obj string) *irv1.QualifiedName {
+	return &irv1.QualifiedName{Catalog: cat, Object: obj}
+}
+
+func columns(names ...string) []*irv1.Column {
+	var out []*irv1.Column
+	for _, n := range names {
+		out = append(out, &irv1.Column{Name: ident(n)})
+	}
+	return out
+}
+
+func fullShape(entity *irv1.QualifiedName, custom string, form irv1.Form, cols ...string) *irv1.Shape {
+	id := &irv1.ShapeId{Base: &irv1.ShapeId_Entity{Entity: entity}, Preset: irv1.Preset_PRESET_FULL, Form: form}
+	if custom != "" {
+		id = &irv1.ShapeId{Base: &irv1.ShapeId_Custom{Custom: custom}}
+	}
+	s := &irv1.Shape{Id: id, Entity: entity, Lineage: []*irv1.LineageStep{{Op: irv1.ShapeOp_PRESET, Preset: irv1.Preset_PRESET_FULL}}}
+	for _, c := range cols {
+		s.Fields = append(s.Fields, &irv1.Field{Column: c})
+	}
+	return s
+}
+
+// A bundle of two catalogs, each a database with its one namespace: shop,
+// and a second catalog whose table shares a name with shop's.
+func fixture() *irv1.Bundle {
+	people := qn("shop", "people")
+	pets := qn("shop", "pets")
+	links := qn("shop", "people_pets")
+	return &irv1.Bundle{
+		Dialect: irv1.Dialect_DIALECT_SQLITE,
+		Catalogs: []*irv1.Catalog{
+			{
+				Name: ident("shop"),
+				Namespaces: []*irv1.Namespace{{
+					Name: &irv1.Identifier{},
+					Tables: []*irv1.Table{
+						{
+							Name: ident("people"), HostName: ident("", "person"), Kind: irv1.TableKind_RELATION_KIND_TABLE,
+							Columns: columns("id", "manager_id", "email"),
+							Uniqueness: []*irv1.Uniqueness{
+								{Name: "people_pkey", Columns: []string{"id"}},
+								{Name: "people_lower_email", Expressions: []*irv1.IndexExpression{{Position: 0, Native: "lower(email)"}}},
+							},
+							Relations: []*irv1.Relation{
+								{Name: ident("manager"), To: &irv1.ColumnSet{Table: people, Columns: []string{"id"}}, From: &irv1.ColumnSet{Columns: []string{"manager_id"}}},
+								{Name: ident("pets"), To: &irv1.ColumnSet{Table: pets, Columns: []string{"id"}}, From: &irv1.ColumnSet{Columns: []string{"id"}}, Through: links},
+								{Name: ident("remote"), CrossCatalog: true, To: &irv1.ColumnSet{Table: qn("other", "people")}},
+							},
+						},
+						{
+							Name: ident("people_pets"), Kind: irv1.TableKind_RELATION_KIND_TABLE, Columns: columns("person_id", "pet_id"),
+							ForeignKeys: []*irv1.ForeignKey{
+								{Name: ident("people_pets_person"), Columns: []string{"person_id"}, References: &irv1.ColumnSet{Table: people, Columns: []string{"id"}}},
+								{Name: ident("people_pets_pet"), Columns: []string{"pet_id"}, References: &irv1.ColumnSet{Table: pets, Columns: []string{"id"}}},
+							},
+						},
+						{
+							Name: ident("pets"), Kind: irv1.TableKind_RELATION_KIND_TABLE, Columns: columns("id", "we`ird"),
+							Uniqueness: []*irv1.Uniqueness{
+								{Name: "pets_pkey", Columns: []string{"id"}},
+								{Name: "pets_live", Columns: []string{"we`ird", "id"}, Expressions: []*irv1.IndexExpression{{Position: 1, Native: "abs(id)"}},
+									Predicate: &irv1.NativeText{Native: "id > 0"}},
+							},
+						},
+						{Name: ident("pet_view"), Kind: irv1.TableKind_RELATION_KIND_VIEW, Columns: columns("id")},
+					},
+				}},
+			},
+			{
+				Name:       ident("other"),
+				Namespaces: []*irv1.Namespace{{Name: &irv1.Identifier{}, Tables: []*irv1.Table{{Name: ident("people"), Kind: irv1.TableKind_RELATION_KIND_TABLE, Columns: columns("id")}}}},
+			},
+		},
+		Shapes: &irv1.ShapeLayer{
+			Shapes: []*irv1.Shape{
+				fullShape(people, "", irv1.Form_FORM_FLAT, "id", "email"),
+				fullShape(people, "", irv1.Form_FORM_NESTED, "id", "email"),
+				fullShape(people, "person_brief", irv1.Form_FORM_UNSPECIFIED, "email"),
+				fullShape(pets, "", irv1.Form_FORM_FLAT, "we`ird"),
+				{Id: &irv1.ShapeId{Base: &irv1.ShapeId_Entity{Entity: pets}, Preset: irv1.Preset_PRESET_DRAFT, Form: irv1.Form_FORM_FLAT}, Entity: pets,
+					Lineage: []*irv1.LineageStep{{Op: irv1.ShapeOp_PRESET, Preset: irv1.Preset_PRESET_DRAFT}}},
+				{Id: &irv1.ShapeId{Base: &irv1.ShapeId_Entity{Entity: pets}, Preset: irv1.Preset_PRESET_FULL, Form: irv1.Form_FORM_FLAT, ForRelation: "owner"}, Entity: pets,
+					Lineage: []*irv1.LineageStep{{Op: irv1.ShapeOp_PRESET, Preset: irv1.Preset_PRESET_FULL}}},
+				{Id: &irv1.ShapeId{Base: &irv1.ShapeId_Custom{Custom: "lineless"}}, Entity: pets},
+			},
+			Upserts: []*irv1.Upsert{
+				{Entity: people, ConflictTarget: "people_lower_email"},
+				{Entity: pets, ConflictTarget: "pets_pkey"},
+				{Entity: pets, ConflictTarget: "pets_live"},
+			},
+		},
+	}
+}
+
+func table(t *testing.T, b *irv1.Bundle) map[string]*irv1.Fragment {
+	t.Helper()
+	res, err := sqlite.New().Invoke(context.Background(), &irv1.Invoke{Bundle: b})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ft := res.GetBundle().GetQueries().GetFragments()
+	if ft.GetDialect() != irv1.Dialect_DIALECT_SQLITE || ft.GetPlaceholder() != irv1.Placeholder_PLACEHOLDER_QUESTION {
+		t.Errorf("table %v", ft)
+	}
+	got := map[string]*irv1.Fragment{}
+	var ids []string
+	for _, f := range ft.GetFragments() {
+		got[f.GetId()] = f
+		ids = append(ids, f.GetId())
+	}
+	if !slices.IsSorted(ids) {
+		t.Error("fragments are not sorted by id")
+	}
+	return got
+}
+
+func TestFragments(t *testing.T) {
+	b := fixture()
+	for _, tb := range b.GetCatalogs()[0].GetNamespaces()[0].GetTables() {
+		for _, c := range tb.GetColumns() {
+			if tb.GetName().GetStored() == "people" && c.GetName().GetStored() == "email" {
+				c.Default = &irv1.Default{Class: irv1.DefaultClass_DEFAULT_CONSTANT, Native: "''"}
+			}
+		}
+	}
+	got := table(t, b)
+	for id, want := range map[string]string{
+		// Ids carry the catalog, as the bundle has two. Tables go
+		// unqualified and are their own aliases.
+		"from.shop.people":           `"people"`,
+		"from.other.people":          `"people"`,
+		"col.shop.people.email":      `"people"."email"`,
+		"col.shop.pets.we`ird":       `"pets"."we` + "`" + `ird"`,
+		"count.shop.pets":            `SELECT count(*) FROM "pets"{where}`,
+		"exists.shop.pets":           `SELECT EXISTS (SELECT 1 FROM "pets"{where})`,
+		"rel.shop.people.manager":    `EXISTS (SELECT 1 FROM "people" AS "people_r" WHERE "people_r"."id" = "people"."manager_id"{and})`,
+		"col_r.shop.people.email":    `"people_r"."email"`,
+		"rel.shop.people.pets":       `EXISTS (SELECT 1 FROM "people_pets" JOIN "pets" ON "pets"."id" = "people_pets"."pet_id" WHERE "people_pets"."person_id" = "people"."id"{and})`,
+		"select.person.full.flat":    `SELECT "people"."id", "people"."email" FROM "people"`,
+		"returning.person.full.flat": ` RETURNING "people"."id", "people"."email"`,
+		"select.person_brief":        `SELECT "people"."email" FROM "people"`,
+		"insert.shop.pets":           `INSERT INTO "pets" ({cols}) VALUES {rows}{returning}`,
+		"update.shop.pets":           `UPDATE "pets" SET {sets}{where}{returning}`,
+		"delete.shop.pets":           `DELETE FROM "pets"{where}{returning}`,
+		"set.shop.pets.id":           `"id" = {0}`,
+		"name.shop.pets.id":          `"id"`,
+		"excluded.shop.pets.id":      `excluded."id"`,
+		// SQLite has no SET column = DEFAULT, so DEFAULT is the column's
+		// default, or NULL.
+		"default.shop.pets.id":                  "NULL",
+		"default.shop.people.email":             "('')",
+		"upsert.shop.pets.pets_pkey":            `INSERT INTO "pets" ({cols}) VALUES {rows} ON CONFLICT ("id") DO UPDATE SET {sets}{returning}`,
+		"ignore.shop.pets.pets_pkey":            `INSERT INTO "pets" ({cols}) VALUES {rows} ON CONFLICT ("id") DO NOTHING{returning}`,
+		"upsert.shop.pets.pets_live":            `INSERT INTO "pets" ({cols}) VALUES {rows} ON CONFLICT ("we` + "`" + `ird", abs(id), "id") WHERE id > 0 DO UPDATE SET {sets}{returning}`,
+		"upsert.shop.people.people_lower_email": `INSERT INTO "people" ({cols}) VALUES {rows} ON CONFLICT (lower(email)) DO UPDATE SET {sets}{returning}`,
+		"value.no_limit":                        "-1",
+		"value.now":                             "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')",
+		"op.in":                                 "{0} IN (SELECT value FROM json_each({1}))",
+		"op.like":                               `{0} LIKE {1} ESCAPE '\'`,
+		"op.starts_with":                        "instr({0}, {1}) = 1",
+	} {
+		if got[id].GetTemplate() != want {
+			t.Errorf("%s\n got %q\nwant %q", id, got[id].GetTemplate(), want)
+		}
+	}
+	for _, id := range []string{
+		"rel.shop.people.remote",    // crosses catalogs
+		"col_r.shop.pets.id",        // pets has no self-relation
+		"insert.shop.pet_view",      // a view takes no writes
+		"select.person.full.nested", // the Flat select serves it
+		"select.pet.draft.flat",     // a write shape
+		"select.pet.full.flat.for.owner",
+		"select.lineless",
+		"lock.update", "lock.share", // SQLite locks the whole database
+		"value.default", // SQLite takes no DEFAULT in VALUES
+		"select.distinct_on",
+	} {
+		if got[id] != nil {
+			t.Errorf("unexpected %s: %q", id, got[id].GetTemplate())
+		}
+	}
+	if got["clause.where"].GetFidelity() != irv1.Fidelity_FIDELITY_UNSPECIFIED {
+		t.Error("a clause has a fidelity")
+	}
+	for _, s := range sqlite.Profile().GetOperators() {
+		if f := got["op."+s.GetName()]; f == nil || f.GetFidelity() != s.GetFidelity() {
+			t.Errorf("fragment for %s: %v", s.GetName(), f)
+		}
+	}
+}
+
+// An operator the profile lists that the plugin cannot render gets no
+// fragment.
+func TestFragmentsSkipUnknownOperators(t *testing.T) {
+	p := &irv1.CapabilityProfile{Operators: []*irv1.OperatorSupport{{Name: "sqlite.glob", Fidelity: irv1.Fidelity_FIDELITY_EXACT}}}
+	for _, f := range sqlite.Fragments(&irv1.Bundle{}, p).GetFragments() {
+		if strings.HasPrefix(f.GetId(), "op.") {
+			t.Errorf("fragment %s", f.GetId())
+		}
+	}
+}

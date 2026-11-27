@@ -1,0 +1,24 @@
+{
+  "version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "dialect": "DIALECT_POSTGRES",
+  "catalogs": [
+    {
+      "name": {
+        "stored": "shop",
+        "words": [
+          "shop"
+        ]
+      },
+      "provenance": {
+        "source": "pg-live",
+        "sourceVersion": "1.0.0",
+        "inputFingerprint": "sha256:0000",
+        "fidelity": "SOURCE_FIDELITY_FULL"
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "dql-runtime-ts",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "dql",
+    "dqlpg",
+    "dqlmysql",
+    "dqlsqlite",
+    "dqlsqlserver",
+    "dqlotel"
+  ],
+  "scripts": {
+    "build": "bun run --filter '*' build",
+    "typecheck": "tsc -p dql/tsconfig.test.json && tsc -p dqlpg/tsconfig.test.json && tsc -p dqlmysql/tsconfig.test.json && tsc -p dqlsqlite/tsconfig.test.json && tsc -p dqlsqlserver/tsconfig.test.json && tsc -p dqlotel/tsconfig.test.json",
+    "test": "bun test",
+    "coverage": "bun test --coverage"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "typescript": "7.0.2"
+  }
+}

@@ -1,0 +1,400 @@
+{
+  "dpg_version": "0.2.0",
+  "cluster": "local",
+  "database": "shop",
+  "applied_at": "2026-10-23T03:14:26Z",
+  "source_revision": "",
+  "migration": "20261023T031426Z-4f7e46f1690e",
+  "objects": {
+    "app": {
+      "kind": "schema",
+      "schema": {
+        "name": "app"
+      }
+    },
+    "app.email_address": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "email_address",
+        "variant": "DOMAIN",
+        "domain_base_type": "text",
+        "domain_constraints": [
+          {
+            "name": "",
+            "type": "CHECK",
+            "expr": "CHECK (char_length(value) \u003c= 320)"
+          }
+        ]
+      }
+    },
+    "app.money_amount": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "money_amount",
+        "variant": "COMPOSITE",
+        "composite_attrs": [
+          {
+            "name": "amount",
+            "type": "numeric(12,2)"
+          },
+          {
+            "name": "currency",
+            "type": "character(3)"
+          }
+        ]
+      }
+    },
+    "app.post_score(bigint)": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "post_score",
+        "args": "bigint",
+        "return_type": "numeric",
+        "language": "sql",
+        "volatility": "STABLE",
+        "parallel": "UNSAFE",
+        "body_hash": "3d29508cdbd30f563e903aaa2659152b4330c0baa7dc01bdd9c7aa9c41ea8c3b",
+        "comment": "@public",
+        "strict": true
+      }
+    },
+    "app.post_score(bigint, integer)": {
+      "kind": "function",
+      "function": {
+        "schema": "app",
+        "name": "post_score",
+        "args": "bigint, integer",
+        "return_type": "numeric",
+        "language": "sql",
+        "volatility": "STABLE",
+        "parallel": "UNSAFE",
+        "body_hash": "3d29508cdbd30f563e903aaa2659152b4330c0baa7dc01bdd9c7aa9c41ea8c3b",
+        "comment": "@public",
+        "strict": true
+      }
+    },
+    "app.post_status": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "post_status",
+        "variant": "ENUM",
+        "values": [
+          "draft",
+          "published",
+          "archived"
+        ]
+      }
+    },
+    "app.post_tags": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "post_tags",
+        "columns": [
+          {
+            "name": "post_id",
+            "type": "bigint",
+            "not_null": true
+          },
+          {
+            "name": "tag_id",
+            "type": "bigint",
+            "not_null": true
+          }
+        ],
+        "constraints": [
+          {
+            "name": "",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (\"post_id\") REFERENCES \"app\".\"posts\" (\"id\")"
+          },
+          {
+            "name": "",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (\"tag_id\") REFERENCES \"app\".\"tags\" (\"id\")"
+          },
+          {
+            "name": "",
+            "type": "PRIMARY KEY",
+            "expr": "PRIMARY KEY (\"post_id\", \"tag_id\")"
+          }
+        ]
+      }
+    },
+    "app.posts": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "posts",
+        "columns": [
+          {
+            "name": "id",
+            "type": "bigint",
+            "not_null": true,
+            "identity": "BY DEFAULT"
+          },
+          {
+            "name": "author_id",
+            "type": "bigint",
+            "not_null": true
+          },
+          {
+            "name": "editor_id",
+            "type": "bigint"
+          },
+          {
+            "name": "title",
+            "type": "text",
+            "not_null": true
+          },
+          {
+            "name": "slug",
+            "type": "text",
+            "generated": "lower(replace(title, ' ', '-'))"
+          },
+          {
+            "name": "status",
+            "type": "app.post_status",
+            "not_null": true,
+            "default": "'draft'"
+          },
+          {
+            "name": "price",
+            "type": "app.money_amount"
+          },
+          {
+            "name": "labels",
+            "type": "text[]"
+          },
+          {
+            "name": "published_at",
+            "type": "timestamp with time zone"
+          }
+        ],
+        "constraints": [
+          {
+            "name": "",
+            "type": "PRIMARY KEY",
+            "expr": "PRIMARY KEY (\"id\")"
+          },
+          {
+            "name": "",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (\"author_id\") REFERENCES \"app\".\"users\" (\"id\")"
+          },
+          {
+            "name": "",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (\"editor_id\") REFERENCES \"app\".\"users\" (\"id\")"
+          },
+          {
+            "name": "",
+            "type": "CHECK",
+            "expr": "CHECK (char_length(title) BETWEEN 1 AND 200)"
+          },
+          {
+            "name": "posts_published_check",
+            "type": "CHECK",
+            "expr": "CHECK (published_at IS NULL OR status \u003c\u003e 'draft')"
+          }
+        ]
+      }
+    },
+    "app.profiles": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "profiles",
+        "columns": [
+          {
+            "name": "user_id",
+            "type": "bigint",
+            "not_null": true
+          },
+          {
+            "name": "bio",
+            "type": "text"
+          },
+          {
+            "name": "birthday",
+            "type": "date"
+          }
+        ],
+        "constraints": [
+          {
+            "name": "",
+            "type": "PRIMARY KEY",
+            "expr": "PRIMARY KEY (\"user_id\")"
+          },
+          {
+            "name": "",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (\"user_id\") REFERENCES \"app\".\"users\" (\"id\")"
+          }
+        ]
+      }
+    },
+    "app.published_posts": {
+      "kind": "view",
+      "view": {
+        "schema": "app",
+        "name": "published_posts",
+        "query": "SELECT id, title, author_id, published_at FROM app.posts WHERE status = 'published'",
+        "comment": "@logical-key(id)"
+      }
+    },
+    "app.slug_text": {
+      "kind": "type",
+      "type": {
+        "schema": "app",
+        "name": "slug_text",
+        "variant": "DOMAIN",
+        "domain_base_type": "text",
+        "domain_constraints": [
+          {
+            "name": "",
+            "type": "CHECK",
+            "expr": "CHECK (value ~ '^[a-z0-9]+(-[a-z0-9]+)*$')"
+          }
+        ]
+      }
+    },
+    "app.tags": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "tags",
+        "columns": [
+          {
+            "name": "id",
+            "type": "bigint",
+            "not_null": true,
+            "identity": "ALWAYS"
+          },
+          {
+            "name": "name",
+            "type": "app.slug_text",
+            "not_null": true
+          }
+        ],
+        "constraints": [
+          {
+            "name": "",
+            "type": "PRIMARY KEY",
+            "expr": "PRIMARY KEY (\"id\")"
+          },
+          {
+            "name": "",
+            "type": "UNIQUE",
+            "expr": "UNIQUE (\"name\")"
+          }
+        ]
+      }
+    },
+    "app.tenants": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "tenants",
+        "columns": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "not_null": true,
+            "default": "gen_random_uuid()"
+          },
+          {
+            "name": "name",
+            "type": "text",
+            "not_null": true
+          }
+        ],
+        "constraints": [
+          {
+            "name": "",
+            "type": "PRIMARY KEY",
+            "expr": "PRIMARY KEY (\"id\")"
+          }
+        ]
+      }
+    },
+    "app.users": {
+      "kind": "table",
+      "table": {
+        "schema": "app",
+        "name": "users",
+        "columns": [
+          {
+            "name": "id",
+            "type": "bigint",
+            "not_null": true,
+            "identity": "ALWAYS"
+          },
+          {
+            "name": "tenant_id",
+            "type": "uuid",
+            "not_null": true,
+            "comment": "@bound"
+          },
+          {
+            "name": "email",
+            "type": "app.email_address",
+            "not_null": true
+          },
+          {
+            "name": "display_name",
+            "type": "character varying(80)"
+          },
+          {
+            "name": "password_hash",
+            "type": "text",
+            "not_null": true,
+            "comment": "@write-only @sensitive"
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp with time zone",
+            "not_null": true,
+            "default": "now()",
+            "comment": "@immutable"
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamp with time zone",
+            "not_null": true,
+            "default": "now()",
+            "comment": "@db-updated"
+          },
+          {
+            "name": "version",
+            "type": "integer",
+            "not_null": true,
+            "default": "1",
+            "comment": "@version"
+          }
+        ],
+        "constraints": [
+          {
+            "name": "",
+            "type": "PRIMARY KEY",
+            "expr": "PRIMARY KEY (\"id\")"
+          },
+          {
+            "name": "",
+            "type": "FOREIGN KEY",
+            "expr": "FOREIGN KEY (\"tenant_id\") REFERENCES \"app\".\"tenants\" (\"id\")"
+          },
+          {
+            "name": "users_tenant_email_key",
+            "type": "UNIQUE",
+            "expr": "UNIQUE (\"tenant_id\", \"email\")"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,349 @@
+{
+  "database": {
+    "version": "3.50.4",
+    "encoding": "UTF-8"
+  },
+  "tables": [
+    {
+      "name": "post_tags",
+      "sql": "CREATE TABLE post_tags (\n  post_id INTEGER NOT NULL,\n  tag_id  INTEGER NOT NULL,\n  PRIMARY KEY (post_id, tag_id),\n  CONSTRAINT post_tags_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts (id),\n  CONSTRAINT post_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES tags (id)\n) STRICT",
+      "strict": true,
+      "columns": [
+        {
+          "name": "post_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "tag_id",
+          "type": "INTEGER",
+          "notNull": true,
+          "primaryKey": 2
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_post_tags_1",
+          "unique": true,
+          "origin": "pk",
+          "parts": [
+            {
+              "column": "post_id",
+              "collation": "BINARY"
+            },
+            {
+              "column": "tag_id",
+              "collation": "BINARY"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": [
+            "post_id"
+          ],
+          "refTable": "posts",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        },
+        {
+          "columns": [
+            "tag_id"
+          ],
+          "refTable": "tags",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ]
+    },
+    {
+      "name": "posts",
+      "sql": "CREATE TABLE posts (\n  id           INTEGER PRIMARY KEY,\n  author_id    INTEGER NOT NULL,\n  editor_id    INTEGER,\n  title        TEXT NOT NULL,\n  slug         TEXT GENERATED ALWAYS AS (lower(replace(title, ' ', '-'))) STORED,\n  status       TEXT NOT NULL DEFAULT 'draft',\n  published_at TEXT, -- @as(instant)\n  CONSTRAINT posts_status_check CHECK (status IN ('draft', 'published', 'archived')), -- @enum(post_status)\n  CONSTRAINT posts_title_check CHECK (length(title) BETWEEN 1 AND 200),\n  CONSTRAINT posts_published_check CHECK (published_at IS NULL OR status \u003c\u003e 'draft'),\n  CONSTRAINT posts_author_id_fkey FOREIGN KEY (author_id) REFERENCES users (id),\n  CONSTRAINT posts_editor_id_fkey FOREIGN KEY (editor_id) REFERENCES users (id)\n) STRICT",
+      "strict": true,
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primaryKey": 1
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "notNull": true
+        },
+        {
+          "name": "editor_id",
+          "type": "INTEGER"
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "notNull": true
+        },
+        {
+          "name": "slug",
+          "type": "TEXT",
+          "hidden": 3
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "'draft'"
+        },
+        {
+          "name": "published_at",
+          "type": "TEXT"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": [
+            "author_id"
+          ],
+          "refTable": "users",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        },
+        {
+          "columns": [
+            "editor_id"
+          ],
+          "refTable": "users",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ]
+    },
+    {
+      "name": "profiles",
+      "sql": "CREATE TABLE profiles (\n  user_id  INT NOT NULL PRIMARY KEY,\n  bio      TEXT,\n  birthday TEXT, -- @as(date)\n  CONSTRAINT profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES users (id)\n) STRICT",
+      "strict": true,
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "INT",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "bio",
+          "type": "TEXT"
+        },
+        {
+          "name": "birthday",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_profiles_1",
+          "unique": true,
+          "origin": "pk",
+          "parts": [
+            {
+              "column": "user_id",
+              "collation": "BINARY"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "refTable": "users",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ]
+    },
+    {
+      "name": "published_posts",
+      "view": true,
+      "sql": "CREATE VIEW published_posts AS\n  SELECT id, title, author_id, published_at\n  FROM posts WHERE status = 'published'",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER"
+        },
+        {
+          "name": "title",
+          "type": "TEXT"
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER"
+        },
+        {
+          "name": "published_at",
+          "type": "TEXT"
+        }
+      ]
+    },
+    {
+      "name": "tags",
+      "sql": "CREATE TABLE tags (\n  id   INTEGER PRIMARY KEY,\n  name TEXT NOT NULL,\n  CONSTRAINT tags_name_key UNIQUE (name),\n  CONSTRAINT tags_name_check CHECK (length(name) \u003c= 200)\n) STRICT",
+      "strict": true,
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tags_1",
+          "unique": true,
+          "origin": "u",
+          "parts": [
+            {
+              "column": "name",
+              "collation": "BINARY"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenants",
+      "sql": "CREATE TABLE tenants (\n  id   TEXT NOT NULL PRIMARY KEY, -- @as(uuid)\n  name TEXT NOT NULL\n) STRICT",
+      "strict": true,
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notNull": true,
+          "primaryKey": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notNull": true
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_tenants_1",
+          "unique": true,
+          "origin": "pk",
+          "parts": [
+            {
+              "column": "id",
+              "collation": "BINARY"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "users",
+      "sql": "CREATE TABLE users (\n  id            INTEGER PRIMARY KEY,\n  tenant_id     TEXT NOT NULL, -- @bound @as(uuid)\n  email         TEXT NOT NULL,\n  display_name  TEXT,\n  password_hash TEXT NOT NULL, -- @write-only @sensitive\n  created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), -- @immutable @as(instant)\n  updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), -- @db-updated @as(instant)\n  version       INTEGER NOT NULL DEFAULT 1, -- @version\n  CONSTRAINT users_email_check CHECK (length(email) \u003c= 320),\n  CONSTRAINT users_display_name_check CHECK (length(display_name) \u003c= 80),\n  CONSTRAINT users_tenant_email_key UNIQUE (tenant_id, email),\n  CONSTRAINT users_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants (id)\n) STRICT",
+      "strict": true,
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primaryKey": 1
+        },
+        {
+          "name": "tenant_id",
+          "type": "TEXT",
+          "notNull": true
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "notNull": true
+        },
+        {
+          "name": "display_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "notNull": true
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notNull": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+        },
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notNull": true,
+          "default": "1"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_users_1",
+          "unique": true,
+          "origin": "u",
+          "parts": [
+            {
+              "column": "tenant_id",
+              "collation": "BINARY"
+            },
+            {
+              "column": "email",
+              "collation": "BINARY"
+            }
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": [
+            "tenant_id"
+          ],
+          "refTable": "tenants",
+          "refColumns": [
+            "id"
+          ],
+          "onUpdate": "NO ACTION",
+          "onDelete": "NO ACTION"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "users_updated_at",
+          "sql": "CREATE TRIGGER users_updated_at AFTER UPDATE ON users FOR EACH ROW\n  WHEN NEW.updated_at = OLD.updated_at\nBEGIN\n  UPDATE users SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = NEW.id;\nEND"
+        }
+      ]
+    }
+  ]
+}

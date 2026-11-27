@@ -1,0 +1,1110 @@
+{
+  "bundle": {
+    "catalogs": [
+      {
+        "extensions": [
+          {
+            "@type": "type.dql.dev/dql.ext.sqlite.v1.Database",
+            "encoding": "UTF-8",
+            "version": "3.50.4"
+          }
+        ],
+        "name": {
+          "stored": "shop"
+        },
+        "namespaces": [
+          {
+            "name": {},
+            "tables": [
+              {
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "x"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 1,
+                    "type": {
+                      "native": {
+                        "name": {}
+                      },
+                      "weak": {
+                        "affinity": {
+                          "bytes": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.TableDefinition",
+                    "sql": "CREATE TABLE bare (x)"
+                  }
+                ],
+                "kind": "RELATION_KIND_TABLE",
+                "name": {
+                  "stored": "bare"
+                }
+              },
+              {
+                "annotations": [
+                  {
+                    "key": "core.name",
+                    "origin": {
+                      "kind": "ORIGIN_DB_COMMENT",
+                      "location": "the comment of table loose",
+                      "plugin": "sqlite-live"
+                    },
+                    "value": {
+                      "string": "Loose"
+                    }
+                  }
+                ],
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 1,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "integer"
+                        },
+                        "raw": "INTEGER"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "int64": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "7",
+                      "value": {
+                        "int": "7"
+                      }
+                    },
+                    "name": {
+                      "stored": "n"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 2,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "INT"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "int64": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_FALSE",
+                      "clientFold": "CLIENT_FOLD_ASCII_LOWER",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "NOCASE",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "'x'",
+                      "value": {
+                        "string": "x"
+                      }
+                    },
+                    "name": {
+                      "stored": "label"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 3,
+                    "type": {
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 40
+                          }
+                        ],
+                        "name": {
+                          "object": "varchar"
+                        },
+                        "raw": "VARCHAR(40)"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "text": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "deterministic": "TRISTATE_FALSE",
+                      "name": "RTRIM",
+                      "padSpace": "TRISTATE_TRUE"
+                    },
+                    "name": {
+                      "stored": "padded"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 4,
+                    "type": {
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 8
+                          }
+                        ],
+                        "name": {
+                          "object": "char"
+                        },
+                        "raw": "CHAR(8)"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "text": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "1.5",
+                      "value": {
+                        "decimal": "1.5"
+                      }
+                    },
+                    "name": {
+                      "stored": "price"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 5,
+                    "type": {
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 10
+                          },
+                          {
+                            "int": 2
+                          }
+                        ],
+                        "name": {
+                          "object": "numeric"
+                        },
+                        "raw": "NUMERIC(10, 2)"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "decimal": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "default": {
+                      "class": "DEFAULT_CONSTANT",
+                      "native": "-2.5",
+                      "value": {
+                        "float": -2.5
+                      }
+                    },
+                    "name": {
+                      "stored": "ratio"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 6,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "double"
+                        },
+                        "raw": "DOUBLE"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "float64": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "blob"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 7,
+                    "type": {
+                      "native": {
+                        "name": {}
+                      },
+                      "weak": {
+                        "affinity": {
+                          "bytes": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "clientFold": "CLIENT_FOLD_NONE",
+                      "deterministic": "TRISTATE_TRUE",
+                      "name": "BINARY",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "default": {
+                      "class": "DEFAULT_EXPRESSION",
+                      "native": "CURRENT_TIMESTAMP"
+                    },
+                    "name": {
+                      "stored": "made"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 8,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "text"
+                        },
+                        "raw": "TEXT"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "text": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "generation": {
+                      "kind": "GENERATION_VIRTUAL",
+                      "native": "n * 2"
+                    },
+                    "name": {
+                      "stored": "twice"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 9,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "int"
+                        },
+                        "raw": "INT"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "int64": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "constraints": [
+                  {
+                    "columns": [
+                      "label"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "length(label) \u003c= 40"
+                      }
+                    ],
+                    "kind": "CONSTRAINT_KIND_CHECK",
+                    "name": "loose_label_check",
+                    "opaque": {
+                      "native": "length(label) \u003c= 40"
+                    }
+                  },
+                  {
+                    "columns": [
+                      "n"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "n \u003e 0"
+                      }
+                    ],
+                    "kind": "CONSTRAINT_KIND_CHECK",
+                    "name": "loose_n_check",
+                    "opaque": {
+                      "native": "n \u003e 0"
+                    }
+                  },
+                  {
+                    "columns": [
+                      "n"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Check",
+                        "expression": "n \u003c 100"
+                      }
+                    ],
+                    "kind": "CONSTRAINT_KIND_CHECK",
+                    "name": "loose_n_check1",
+                    "opaque": {
+                      "native": "n \u003c 100"
+                    }
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.Comment",
+                    "text": "@name(Loose)"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.TableDefinition",
+                    "sql": "CREATE TABLE loose ( -- @name(Loose)\n  id      INTEGER PRIMARY KEY DESC,\n  n       INT DEFAULT 7,\n  label   VARCHAR(40) COLLATE NOCASE DEFAULT 'x' UNIQUE,\n  padded  CHAR(8) COLLATE RTRIM,\n  price   NUMERIC(10, 2) DEFAULT 1.5,\n  ratio   DOUBLE DEFAULT -2.5,\n  blob,\n  made    TEXT DEFAULT CURRENT_TIMESTAMP,\n  twice   INT GENERATED ALWAYS AS (n * 2),\n  CHECK (n \u003e 0),\n  CHECK (n \u003c 100),\n  CHECK (length(label) \u003c= 40)\n)"
+                  }
+                ],
+                "kind": "RELATION_KIND_TABLE",
+                "name": {
+                  "stored": "loose"
+                },
+                "uniqueness": [
+                  {
+                    "columns": [
+                      "label"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Index",
+                        "name": "sqlite_autoindex_loose_2",
+                        "origin": "u",
+                        "parts": [
+                          {
+                            "collation": "NOCASE",
+                            "column": "label"
+                          }
+                        ],
+                        "unique": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_CONSTRAINT",
+                    "name": "loose_label_key",
+                    "nullsDistinct": true
+                  },
+                  {
+                    "columns": [
+                      "id"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Index",
+                        "name": "sqlite_autoindex_loose_1",
+                        "origin": "pk",
+                        "parts": [
+                          {
+                            "collation": "BINARY",
+                            "column": "id",
+                            "descending": true
+                          }
+                        ],
+                        "unique": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_PRIMARY_KEY",
+                    "name": "loose_pkey",
+                    "nullsDistinct": true
+                  }
+                ]
+              },
+              {
+                "columns": [
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "clientFold": "CLIENT_FOLD_NONE",
+                      "deterministic": "TRISTATE_TRUE",
+                      "name": "BINARY",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "name": {
+                      "stored": "a"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 1,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "text"
+                        },
+                        "raw": "TEXT"
+                      },
+                      "text": {}
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "clientFold": "CLIENT_FOLD_NONE",
+                      "deterministic": "TRISTATE_TRUE",
+                      "name": "BINARY",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "name": {
+                      "stored": "b"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 2,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "text"
+                        },
+                        "raw": "TEXT"
+                      },
+                      "text": {}
+                    }
+                  },
+                  {
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Comment",
+                        "text": "@name(oops"
+                      }
+                    ],
+                    "name": {
+                      "stored": "note"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 3,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "any"
+                        },
+                        "raw": "ANY"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "bytes": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.TableDefinition",
+                    "sql": "CREATE TABLE pairs (\n  a TEXT,\n  b TEXT,\n  note ANY, -- @name(oops\n  PRIMARY KEY (a, b),\n  UNIQUE (b, a) -- @deprecated\n) STRICT, WITHOUT ROWID",
+                    "strict": true,
+                    "withoutRowid": true
+                  }
+                ],
+                "kind": "RELATION_KIND_TABLE",
+                "name": {
+                  "stored": "pairs"
+                },
+                "uniqueness": [
+                  {
+                    "columns": [
+                      "b",
+                      "a"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Index",
+                        "name": "sqlite_autoindex_pairs_2",
+                        "origin": "u",
+                        "parts": [
+                          {
+                            "collation": "BINARY",
+                            "column": "b"
+                          },
+                          {
+                            "collation": "BINARY",
+                            "column": "a"
+                          }
+                        ],
+                        "unique": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_CONSTRAINT",
+                    "name": "pairs_b_a_key",
+                    "nullsDistinct": true
+                  },
+                  {
+                    "columns": [
+                      "a",
+                      "b"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Index",
+                        "name": "sqlite_autoindex_pairs_1",
+                        "origin": "pk",
+                        "parts": [
+                          {
+                            "collation": "BINARY",
+                            "column": "a"
+                          },
+                          {
+                            "collation": "BINARY",
+                            "column": "b"
+                          }
+                        ],
+                        "unique": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_PRIMARY_KEY",
+                    "name": "pairs_pkey",
+                    "nullsDistinct": true
+                  }
+                ]
+              },
+              {
+                "columns": [
+                  {
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 1,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "integer"
+                        },
+                        "raw": "INTEGER"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "int64": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "label"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 2,
+                    "type": {
+                      "native": {
+                        "modifiers": [
+                          {
+                            "int": 40
+                          }
+                        ],
+                        "name": {
+                          "object": "varchar"
+                        },
+                        "raw": "VARCHAR(40)"
+                      },
+                      "weak": {
+                        "affinity": {
+                          "text": {}
+                        },
+                        "storageClasses": [
+                          "STORAGE_INTEGER",
+                          "STORAGE_REAL",
+                          "STORAGE_TEXT",
+                          "STORAGE_BLOB"
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "dependsOn": [
+                  {
+                    "catalog": "shop",
+                    "object": "loose"
+                  },
+                  {
+                    "catalog": "shop",
+                    "object": "refs"
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.ViewDefinition",
+                    "sql": "CREATE VIEW recent AS\n  WITH r AS (SELECT * FROM refs)\n  SELECT r.id, l.label FROM r JOIN loose AS l ON l.id = r.loose"
+                  }
+                ],
+                "kind": "RELATION_KIND_VIEW",
+                "name": {
+                  "stored": "recent"
+                }
+              },
+              {
+                "columns": [
+                  {
+                    "default": {
+                      "class": "DEFAULT_IDENTITY_BY_DEFAULT"
+                    },
+                    "name": {
+                      "stored": "id"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_DATABASE",
+                    "ordinal": 1,
+                    "type": {
+                      "int64": {},
+                      "native": {
+                        "name": {
+                          "object": "integer"
+                        },
+                        "raw": "INTEGER"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "loose"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 2,
+                    "type": {
+                      "int64": {},
+                      "native": {
+                        "name": {
+                          "object": "integer"
+                        },
+                        "raw": "INTEGER"
+                      }
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "clientFold": "CLIENT_FOLD_NONE",
+                      "deterministic": "TRISTATE_TRUE",
+                      "name": "BINARY",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "name": {
+                      "stored": "pa"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 3,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "text"
+                        },
+                        "raw": "TEXT"
+                      },
+                      "text": {}
+                    }
+                  },
+                  {
+                    "collation": {
+                      "accentSensitive": "TRISTATE_TRUE",
+                      "caseSensitive": "TRISTATE_TRUE",
+                      "clientFold": "CLIENT_FOLD_NONE",
+                      "deterministic": "TRISTATE_TRUE",
+                      "name": "BINARY",
+                      "padSpace": "TRISTATE_FALSE"
+                    },
+                    "name": {
+                      "stored": "pb"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 4,
+                    "type": {
+                      "native": {
+                        "name": {
+                          "object": "text"
+                        },
+                        "raw": "TEXT"
+                      },
+                      "text": {}
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "deleted"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 5,
+                    "type": {
+                      "int64": {},
+                      "native": {
+                        "name": {
+                          "object": "integer"
+                        },
+                        "raw": "INTEGER"
+                      }
+                    }
+                  },
+                  {
+                    "name": {
+                      "stored": "ghost"
+                    },
+                    "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
+                    "nullable": true,
+                    "ordinal": 6,
+                    "type": {
+                      "int64": {},
+                      "native": {
+                        "name": {
+                          "object": "integer"
+                        },
+                        "raw": "INTEGER"
+                      }
+                    }
+                  }
+                ],
+                "extensions": [
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.Index",
+                    "name": "refs_pb",
+                    "origin": "c",
+                    "parts": [
+                      {
+                        "collation": "NOCASE",
+                        "column": "pb"
+                      }
+                    ],
+                    "sql": "CREATE INDEX refs_pb ON refs (pb COLLATE NOCASE)"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.TableDefinition",
+                    "sql": "CREATE TABLE refs (\n  id      INTEGER NOT NULL PRIMARY KEY,\n  loose   INTEGER REFERENCES loose ON DELETE CASCADE ON UPDATE SET NULL,\n  pa      TEXT,\n  pb      TEXT,\n  deleted INTEGER,\n  ghost   INTEGER REFERENCES Ghosts (id),\n  FOREIGN KEY (pa, pb) REFERENCES pairs (a, b), /* @name(Pair) */\n  CONSTRAINT refs_custom_key UNIQUE (pb)\n) STRICT",
+                    "strict": true
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.Trigger",
+                    "name": "refs_also",
+                    "sql": "CREATE TRIGGER refs_also AFTER DELETE ON refs BEGIN SELECT 1; END"
+                  },
+                  {
+                    "@type": "type.dql.dev/dql.ext.sqlite.v1.Trigger",
+                    "name": "refs_noop",
+                    "sql": "CREATE TRIGGER refs_noop AFTER INSERT ON refs BEGIN SELECT 1; END"
+                  }
+                ],
+                "foreignKeys": [
+                  {
+                    "columns": [
+                      "ghost"
+                    ],
+                    "match": "FOREIGN_KEY_MATCH_SIMPLE",
+                    "name": {
+                      "stored": "refs_ghost_fkey"
+                    },
+                    "onDelete": "FOREIGN_KEY_ACTION_NO_ACTION",
+                    "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+                    "references": {
+                      "columns": [
+                        "id"
+                      ],
+                      "table": {
+                        "catalog": "shop",
+                        "object": "Ghosts"
+                      }
+                    }
+                  },
+                  {
+                    "columns": [
+                      "loose"
+                    ],
+                    "match": "FOREIGN_KEY_MATCH_SIMPLE",
+                    "name": {
+                      "stored": "refs_loose_fkey"
+                    },
+                    "onDelete": "FOREIGN_KEY_ACTION_CASCADE",
+                    "onUpdate": "FOREIGN_KEY_ACTION_SET_NULL",
+                    "references": {
+                      "columns": [
+                        "id"
+                      ],
+                      "table": {
+                        "catalog": "shop",
+                        "object": "loose"
+                      }
+                    }
+                  },
+                  {
+                    "annotations": [
+                      {
+                        "key": "core.name",
+                        "origin": {
+                          "kind": "ORIGIN_DB_COMMENT",
+                          "location": "the comment of foreign key refs_pa_pb_fkey",
+                          "plugin": "sqlite-live"
+                        },
+                        "value": {
+                          "string": "Pair"
+                        }
+                      }
+                    ],
+                    "columns": [
+                      "pa",
+                      "pb"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Comment",
+                        "text": "@name(Pair)"
+                      }
+                    ],
+                    "match": "FOREIGN_KEY_MATCH_SIMPLE",
+                    "name": {
+                      "stored": "refs_pa_pb_fkey"
+                    },
+                    "onDelete": "FOREIGN_KEY_ACTION_NO_ACTION",
+                    "onUpdate": "FOREIGN_KEY_ACTION_NO_ACTION",
+                    "references": {
+                      "columns": [
+                        "a",
+                        "b"
+                      ],
+                      "table": {
+                        "catalog": "shop",
+                        "object": "pairs"
+                      }
+                    }
+                  }
+                ],
+                "kind": "RELATION_KIND_TABLE",
+                "name": {
+                  "stored": "refs"
+                },
+                "uniqueness": [
+                  {
+                    "columns": [
+                      "pb"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Index",
+                        "name": "sqlite_autoindex_refs_1",
+                        "origin": "u",
+                        "parts": [
+                          {
+                            "collation": "BINARY",
+                            "column": "pb"
+                          }
+                        ],
+                        "unique": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_CONSTRAINT",
+                    "name": "refs_custom_key",
+                    "nullsDistinct": true
+                  },
+                  {
+                    "columns": [
+                      "pa"
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Index",
+                        "name": "refs_live",
+                        "origin": "c",
+                        "parts": [
+                          {
+                            "collation": "BINARY",
+                            "column": "pa"
+                          }
+                        ],
+                        "sql": "CREATE UNIQUE INDEX refs_live ON refs (pa) WHERE deleted IS NULL AND NOT deleted",
+                        "unique": true,
+                        "where": "deleted IS NULL AND NOT deleted"
+                      }
+                    ],
+                    "kind": "UNIQUENESS_INDEX",
+                    "name": "refs_live",
+                    "nullsDistinct": true,
+                    "predicate": {
+                      "native": "deleted IS NULL AND NOT deleted"
+                    },
+                    "predicateNotTrueColumns": [
+                      "deleted"
+                    ],
+                    "predicateNullColumns": [
+                      "deleted"
+                    ]
+                  },
+                  {
+                    "columns": [
+                      "pb"
+                    ],
+                    "expressions": [
+                      {
+                        "native": "lower(pa)"
+                      }
+                    ],
+                    "extensions": [
+                      {
+                        "@type": "type.dql.dev/dql.ext.sqlite.v1.Index",
+                        "name": "refs_lower",
+                        "origin": "c",
+                        "parts": [
+                          {
+                            "collation": "BINARY",
+                            "expression": "lower(pa)"
+                          },
+                          {
+                            "collation": "BINARY",
+                            "column": "pb",
+                            "descending": true
+                          }
+                        ],
+                        "sql": "CREATE UNIQUE INDEX refs_lower ON refs (lower(pa), pb DESC)",
+                        "unique": true
+                      }
+                    ],
+                    "kind": "UNIQUENESS_INDEX",
+                    "name": "refs_lower",
+                    "nullsDistinct": true
+                  },
+                  {
+                    "columns": [
+                      "id"
+                    ],
+                    "kind": "UNIQUENESS_PRIMARY_KEY",
+                    "name": "refs_pkey",
+                    "nullsDistinct": true
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "provenance": {
+          "fidelity": "SOURCE_FIDELITY_FULL",
+          "inputFingerprint": "sha256:f62a6e88a6df8a3c048c70ff4f57d07f55f8188c9858bd79a749f1dc9494ebbe",
+          "source": "sqlite-live",
+          "sourceVersion": "1.0.0"
+        }
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "code": "sqlitelive-annotation-ignored",
+      "message": "the comment of key pairs_b_a_key of pairs: sqlite-live reads no annotations on keys, so @deprecated is ignored; remove the annotation tokens from the comment",
+      "severity": "SEVERITY_WARNING",
+      "target": {
+        "catalog": "shop",
+        "member": "pairs_b_a_key",
+        "object": "pairs"
+      }
+    },
+    {
+      "code": "sqlitelive-annotation-unclosed",
+      "message": "the comment of column pairs.note: the value of @name has no closing parenthesis, so it is not read; close it",
+      "severity": "SEVERITY_ERROR",
+      "target": {
+        "catalog": "shop",
+        "member": "note",
+        "object": "pairs"
+      }
+    }
+  ]
+}
