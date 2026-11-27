@@ -24,7 +24,7 @@ var SQLiteSchemas = map[string]Schema{
 		Dialect:  "sqlite",
 		Database: databaseSQLite,
 		Modes:    []dql.StatementMode{dql.ModePrepare},
-		Features: []string{"params-32766", "returning"},
+		Features: []string{"params-32766", "returning", "settable-identity"},
 		Exec:     runSQLite,
 		Open:     opener(func() dql.Driver { return dqlsqlite.New() }, sqliteshopdb.NewExecutor, sqliteshopdb.New),
 		Tables: map[string]any{

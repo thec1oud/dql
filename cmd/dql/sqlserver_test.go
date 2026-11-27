@@ -17,7 +17,8 @@ import (
 // sqlserver-live and the sqlserver dialect, and queries.sql through
 // sqlserver-queries: the bundle holds SQL Server's profile and fragment
 // table, with @p placeholders and a MERGE for each upsert, and the query
-// file's queries. Its catalog layer is testdata/sqlservershop/catalog.json,
+// file's queries, and the go and ts emitters write the conformance
+// harnesses' sqlservershopdb packages. Its catalog layer is testdata/sqlservershop/catalog.json,
 // which the SQL Server query source's tests type against.
 func TestGenerateSQLServer(t *testing.T) {
 	ctx := context.Background()
@@ -27,14 +28,25 @@ func TestGenerateSQLServer(t *testing.T) {
 	}
 	defer db.Drop(ctx)
 	t.Setenv("SHOP_SQLSERVER_URL", db.URL)
-	dir := t.TempDir()
-	config := filepath.Join("..", "..", "conformance", "schemas", "sqlserver", "shop.yaml")
-	out := filepath.Join(dir, "bundle.json")
-	if code, _, stderr := dql("generate", "-config", config, "-bundle", out); code != 0 {
+	schemas := filepath.Join("..", "..", "conformance", "schemas", "sqlserver")
+	raw, err := os.ReadFile(filepath.Join(schemas, "shop.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := write(t, "dql.yaml", string(raw))
+	queries, err := os.ReadFile(filepath.Join(schemas, "queries.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(filepath.Dir(cfg), "queries.sql"), queries, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "bundle.json")
+	if code, _, stderr := dql("generate", "-config", cfg, "-bundle", out); code != 0 || stderr != "dql generate: wrote the bundle to "+out+"\n" {
 		t.Fatalf("%d %q", code, stderr)
 	}
 	b := &irv1.Bundle{}
-	raw, _ := os.ReadFile(out)
+	raw, _ = os.ReadFile(out)
 	if err := bundle.UnmarshalJSON(raw, b); err != nil {
 		t.Fatal(err)
 	}
@@ -61,4 +73,29 @@ func TestGenerateSQLServer(t *testing.T) {
 	if q := slices.IndexFunc(b.GetQueries().GetQueries(), func(q *irv1.Query) bool { return q.GetName().GetStored() == "user.upsert.by_tenant_id_and_email" }); q < 0 {
 		t.Error("no query user.upsert.by_tenant_id_and_email")
 	}
+	for _, pkg := range []struct{ out, glob, golden string }{
+		{"sqlservershopdb", "*.dql.go", goldenSqlservershopdb},
+		{filepath.Join("ts", "sqlservershopdb"), "*.dql.ts", goldenSqlservershopdbTS},
+	} {
+		files, _ := filepath.Glob(filepath.Join(filepath.Dir(cfg), pkg.out, pkg.glob))
+		want, _ := filepath.Glob(filepath.Join(pkg.golden, pkg.glob))
+		if os.Getenv(golden.UpdateEnv) != "1" && len(want) != len(files) {
+			t.Errorf("%s: %d files, golden has %d", pkg.out, len(files), len(want))
+		}
+		for _, f := range files {
+			got, err := os.ReadFile(f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			golden.Assert(t, filepath.Join(pkg.golden, filepath.Base(f)), got, inputDigest)
+		}
+	}
 }
+
+// goldenSqlservershopdb and goldenSqlservershopdbTS are the go and ts
+// emitters' golden output for the running example on SQL Server, which the
+// conformance harnesses run.
+var (
+	goldenSqlservershopdb   = filepath.Join("..", "..", "conformance", "harness", "go", "testdata", "sqlservershopdb")
+	goldenSqlservershopdbTS = filepath.Join("..", "..", "conformance", "harness", "ts", "sqlservershopdb")
+)

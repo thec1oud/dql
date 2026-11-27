@@ -179,12 +179,14 @@ var Schemas = map[string]Schema{
 }
 
 // Matrix holds each dialect's schemas, which every scenario runs on.
-var Matrix = map[string]map[string]Schema{"postgres": Schemas, "mysql": MySQLSchemas, "mariadb": MariaDBSchemas, "sqlite": SQLiteSchemas}
+var Matrix = map[string]map[string]Schema{
+	"postgres": Schemas, "mysql": MySQLSchemas, "mariadb": MariaDBSchemas, "sqlite": SQLiteSchemas, "sqlserver": SQLServerSchemas,
+}
 
 // postgresFeatures are the features Postgres's schemas hold: every one a
-// scenario requires but tinyint-bool, a MySQL type, and params-32766,
-// SQLite's parameter limit.
-var postgresFeatures = []string{"arrays", "composites", "named-foreign-keys", "params-65535", "pattern-checks", "regex-match", "replica", "returning", "serialization-failure", "stall"}
+// scenario requires but tinyint-bool, a MySQL type, and params-32766 and
+// params-2100, SQLite's and SQL Server's parameter limits.
+var postgresFeatures = []string{"arrays", "composites", "named-foreign-keys", "params-65535", "pattern-checks", "regex-match", "replica", "returning", "serialization-failure", "settable-identity", "stall"}
 
 // opener opens a schema's handle, made by newDB on the executor newExec
 // makes: on the database at dsn with its replicas, at most maxConns

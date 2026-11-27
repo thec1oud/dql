@@ -30,7 +30,7 @@ var MySQLSchemas = map[string]Schema{
 		URLEnv:   "DQL_TEST_MYSQL_URL",
 		Database: databaseMySQL,
 		Modes:    []dql.StatementMode{dql.ModePrepare, dql.ModeSimple},
-		Features: []string{"named-foreign-keys", "params-65535", "pattern-checks", "replica", "stall", "tinyint-bool"},
+		Features: []string{"named-foreign-keys", "params-65535", "pattern-checks", "replica", "settable-identity", "stall", "tinyint-bool"},
 		Exec:     runMySQL,
 		Open:     opener(func() dql.Driver { return dqlmysql.New() }, mysqlshopdb.NewExecutor, mysqlshopdb.New),
 		Tables: map[string]any{
@@ -108,7 +108,7 @@ var MySQLSchemas = map[string]Schema{
 		URLEnv:   "DQL_TEST_MYSQL_URL",
 		Database: databaseMySQL,
 		Modes:    []dql.StatementMode{dql.ModePrepare, dql.ModeSimple},
-		Features: []string{"named-foreign-keys", "params-65535", "pattern-checks", "replica", "stall", "tinyint-bool"},
+		Features: []string{"named-foreign-keys", "params-65535", "pattern-checks", "replica", "settable-identity", "stall", "tinyint-bool"},
 		Exec:     runMySQL,
 		Open:     opener(func() dql.Driver { return dqlmysql.New() }, mysqlvariantdb.NewExecutor, mysqlvariantdb.New),
 		Tables: map[string]any{

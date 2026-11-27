@@ -76,6 +76,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -93,6 +97,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -161,6 +169,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -178,6 +190,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -386,7 +402,7 @@
                   "origin": {
                     "kind": "ORIGIN_CONFIG",
                     "plugin": "sqlserver-live",
-                    "location": "shop.yaml#annotations.shop.app.post_tags"
+                    "location": "dql.yaml#annotations.shop.app.post_tags"
                   }
                 }
               ]
@@ -445,6 +461,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -462,6 +482,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -530,6 +554,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -547,6 +575,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -616,6 +648,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -633,6 +669,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -713,6 +753,10 @@
                   },
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -726,6 +770,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -787,6 +835,10 @@
                   },
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -800,6 +852,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -877,6 +933,10 @@
                   ],
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -890,6 +950,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -941,6 +1005,10 @@
                   "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -954,6 +1022,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -1136,7 +1208,7 @@
                       "origin": {
                         "kind": "ORIGIN_CONFIG",
                         "plugin": "sqlserver-live",
-                        "location": "shop.yaml#annotations.shop.app.posts.posts_author_id_fkey"
+                        "location": "dql.yaml#annotations.shop.app.posts.posts_author_id_fkey"
                       }
                     },
                     {
@@ -1147,7 +1219,7 @@
                       "origin": {
                         "kind": "ORIGIN_CONFIG",
                         "plugin": "sqlserver-live",
-                        "location": "shop.yaml#annotations.shop.app.posts.posts_author_id_fkey"
+                        "location": "dql.yaml#annotations.shop.app.posts.posts_author_id_fkey"
                       }
                     }
                   ]
@@ -1346,7 +1418,7 @@
                   "origin": {
                     "kind": "ORIGIN_CONFIG",
                     "plugin": "sqlserver-live",
-                    "location": "shop.yaml#annotations.shop.app.posts"
+                    "location": "dql.yaml#annotations.shop.app.posts"
                   }
                 }
               ]
@@ -1397,6 +1469,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -1414,6 +1490,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -1484,6 +1564,10 @@
                   },
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -1497,6 +1581,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -1552,6 +1640,10 @@
                   "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -1565,6 +1657,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -1655,7 +1751,7 @@
                       "origin": {
                         "kind": "ORIGIN_CONFIG",
                         "plugin": "sqlserver-live",
-                        "location": "shop.yaml#annotations.shop.app.profiles.profiles_user_id_fkey"
+                        "location": "dql.yaml#annotations.shop.app.profiles.profiles_user_id_fkey"
                       },
                       "superseded": [
                         {
@@ -1732,7 +1828,7 @@
                   "origin": {
                     "kind": "ORIGIN_CONFIG",
                     "plugin": "sqlserver-live",
-                    "location": "shop.yaml#annotations.shop.app.profiles"
+                    "location": "dql.yaml#annotations.shop.app.profiles"
                   }
                 }
               ]
@@ -1799,6 +1895,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -1816,6 +1916,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -1904,6 +2008,10 @@
                   ],
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -1917,6 +2025,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -1970,6 +2082,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -1987,6 +2103,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2062,6 +2182,10 @@
                   "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN",
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -2075,6 +2199,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2142,7 +2270,7 @@
                   "origin": {
                     "kind": "ORIGIN_CONFIG",
                     "plugin": "sqlserver-live",
-                    "location": "shop.yaml#annotations.shop.app.published_posts"
+                    "location": "dql.yaml#annotations.shop.app.published_posts"
                   }
                 }
               ],
@@ -2211,6 +2339,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -2228,6 +2360,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2300,6 +2436,10 @@
                   },
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -2313,6 +2453,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2471,7 +2615,7 @@
                   "origin": {
                     "kind": "ORIGIN_CONFIG",
                     "plugin": "sqlserver-live",
-                    "location": "shop.yaml#annotations.shop.app.tags"
+                    "location": "dql.yaml#annotations.shop.app.tags"
                   }
                 }
               ]
@@ -2526,6 +2670,10 @@
                   ],
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -2539,6 +2687,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2592,6 +2744,10 @@
                   },
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -2605,6 +2761,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2703,7 +2863,7 @@
                   "origin": {
                     "kind": "ORIGIN_CONFIG",
                     "plugin": "sqlserver-live",
-                    "location": "shop.yaml#annotations.shop.app.tenants"
+                    "location": "dql.yaml#annotations.shop.app.tenants"
                   }
                 }
               ]
@@ -2762,6 +2922,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -2779,6 +2943,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2859,6 +3027,10 @@
                   ],
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -2872,6 +3044,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -2928,6 +3104,10 @@
                   },
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -2941,6 +3121,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -3000,6 +3184,10 @@
                   },
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -3013,6 +3201,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -3100,6 +3292,10 @@
                   ],
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -3113,6 +3309,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -3187,6 +3387,10 @@
                   ],
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -3200,6 +3404,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -3274,6 +3482,10 @@
                   ],
                   "operators": [
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -3287,6 +3499,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -3364,6 +3580,10 @@
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
+                      "name": "any",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
                       "name": "between",
                       "fidelity": "FIDELITY_EXACT"
                     },
@@ -3381,6 +3601,10 @@
                     },
                     {
                       "name": "gt",
+                      "fidelity": "FIDELITY_EXACT"
+                    },
+                    {
+                      "name": "in",
                       "fidelity": "FIDELITY_EXACT"
                     },
                     {
@@ -3563,7 +3787,7 @@
                       "origin": {
                         "kind": "ORIGIN_CONFIG",
                         "plugin": "sqlserver-live",
-                        "location": "shop.yaml#annotations.shop.app.posts.posts_author_id_fkey"
+                        "location": "dql.yaml#annotations.shop.app.posts.posts_author_id_fkey"
                       }
                     },
                     {
@@ -3574,7 +3798,7 @@
                       "origin": {
                         "kind": "ORIGIN_CONFIG",
                         "plugin": "sqlserver-live",
-                        "location": "shop.yaml#annotations.shop.app.posts.posts_author_id_fkey"
+                        "location": "dql.yaml#annotations.shop.app.posts.posts_author_id_fkey"
                       }
                     }
                   ]
@@ -3674,7 +3898,7 @@
                       "origin": {
                         "kind": "ORIGIN_CONFIG",
                         "plugin": "sqlserver-live",
-                        "location": "shop.yaml#annotations.shop.app.profiles.profiles_user_id_fkey"
+                        "location": "dql.yaml#annotations.shop.app.profiles.profiles_user_id_fkey"
                       },
                       "superseded": [
                         {
@@ -3743,7 +3967,7 @@
                   "origin": {
                     "kind": "ORIGIN_CONFIG",
                     "plugin": "sqlserver-live",
-                    "location": "shop.yaml#annotations.shop.app.users"
+                    "location": "dql.yaml#annotations.shop.app.users"
                   }
                 }
               ],
@@ -3878,7 +4102,7 @@
       },
       {
         "name": "any",
-        "fidelity": "FIDELITY_APPROXIMATE"
+        "fidelity": "FIDELITY_EXACT"
       },
       {
         "name": "between",
@@ -3920,7 +4144,7 @@
       },
       {
         "name": "in",
-        "fidelity": "FIDELITY_APPROXIMATE"
+        "fidelity": "FIDELITY_EXACT"
       },
       {
         "name": "is_distinct_from",
@@ -4034,6 +4258,10 @@
       {
         "code": "547/CHECK",
         "kind": "ERROR_KIND_CHECK_VIOLATION"
+      },
+      {
+        "code": "596",
+        "kind": "ERROR_KIND_CONNECTION"
       }
     ],
     "violations": [
@@ -13084,7 +13312,7 @@
         {
           "id": "op.any",
           "template": "{0} IN (SELECT [value] FROM OPENJSON({1}))",
-          "fidelity": "FIDELITY_APPROXIMATE"
+          "fidelity": "FIDELITY_EXACT"
         },
         {
           "id": "op.any.post_tags.post_id",
@@ -13236,7 +13464,7 @@
         {
           "id": "op.in",
           "template": "{0} IN (SELECT [value] FROM OPENJSON({1}))",
-          "fidelity": "FIDELITY_APPROXIMATE"
+          "fidelity": "FIDELITY_EXACT"
         },
         {
           "id": "op.in.post_tags.post_id",

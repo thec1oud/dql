@@ -134,7 +134,7 @@ func TestScenarios(t *testing.T) {
 	if len(scs) == 0 {
 		t.Fatal("no scenarios")
 	}
-	for _, dialect := range []string{"postgres", "mysql", "mariadb", "sqlite"} {
+	for _, dialect := range []string{"postgres", "mysql", "mariadb", "sqlite", "sqlserver"} {
 		for _, mode := range []dql.StatementMode{dql.ModePrepare, dql.ModeDescribe, dql.ModeSimple} {
 			for _, sc := range scs {
 				name := mode.String() + "/" + sc.Name

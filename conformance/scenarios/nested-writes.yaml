@@ -19,19 +19,16 @@ steps:
         profile: { bio: Hi, user_id: present }
         posts_to_author: [{ title: Hello, author_id: present }, { title: Again }]
         posts_to_editor: []
-  # A failing child rolls the whole graph back.
-  - op: posts.insert
-    scope: { tenant_id: $acme.id }
-    input: { author_id: $ann.id, title: First }
-    save: first
+  # A failing child, here one naming an editor who does not exist, rolls
+  # the whole graph back.
   - op: users.insert_nested
     scope: { tenant_id: $acme.id }
     input:
       email: cid@acme.com
       password_hash: x
-      posts_to_author: [{ id: $first.id, title: Dup }]
+      posts_to_author: [{ editor_id: 999999, title: Orphan }]
     expect:
-      error: { class: UniqueViolation }
+      error: { class: ForeignKeyViolation }
   - op: users.count
     scope: { tenant_id: $acme.id }
     expect: { value: 1 }

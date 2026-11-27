@@ -1,0 +1,48 @@
+scenario: bulk-limits-2100
+schema: shop
+requires: [returning, params-2100]
+steps:
+  # SQL Server binds at most 2100 parameters in a request, two of them
+  # sp_executesql's own (§25.2). A tenant row binds 2, so 1049 rows are the
+  # most one statement writes. Inserts are a MERGE, whose source rows have
+  # no limit of their own, unlike an INSERT's VALUES at 1000.
+  - op: tenants.insert_many
+    input: { generate: { count: 1049, row: { name: "at-$i" } } }
+    expect: { count: 1049, statements: 1 }
+  # One row more splits the write into two statements in one transaction.
+  - op: tenants.insert_many
+    input: { generate: { count: 1050, row: { name: "above-$i" } } }
+    expect:
+      count: 1050
+      events:
+        - { tx: begin, propagation: join }
+        - { query: tenant.insert, rows: 1049 }
+        - { query: tenant.insert, rows: 1 }
+        - { tx: end, outcome: commit }
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  # A user row holds 7 placeholders, its tenant and each column a Draft may
+  # set, so 299 rows are the most one statement writes.
+  - op: users.insert_many
+    scope: { tenant_id: $acme.id }
+    input: { generate: { count: 299, row: { email: "at-$i@acme.com", password_hash: x } } }
+    expect: { count: 299, statements: 1 }
+  - op: users.insert_many
+    scope: { tenant_id: $acme.id }
+    input: { generate: { count: 300, row: { email: "above-$i@acme.com", password_hash: x } } }
+    expect:
+      count: 300
+      events:
+        - { tx: begin, propagation: join }
+        - { query: user.insert, rows: 299 }
+        - { query: user.insert, rows: 1 }
+        - { tx: end, outcome: commit }
+  - op: tenants.count
+    expect: { value: 2100 }
+  - op: users.count
+    scope: { tenant_id: $acme.id }
+    expect: { value: 599 }
+  - op: tenants.insert_many
+    input: []
+    expect: { count: 0, statements: 0 }

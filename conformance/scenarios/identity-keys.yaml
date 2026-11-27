@@ -1,0 +1,31 @@
+scenario: identity-keys
+schema: shop
+requires: [settable-identity]
+# posts.id is an identity by default, which a Draft may set (design record
+# §20.1, §25.2). Where rows are re-read (MySQL), a Draft that sets its key
+# is inserted and read on its own. SQL Server's identity is always
+# generated, so no Draft sets it there.
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x }
+    save: ann
+  # A Draft that sets its key keeps it, beside keys the database generates.
+  # A Draft that sets its key keeps it, beside keys the database generates.
+  - op: posts.insert_many
+    scope: { tenant_id: $acme.id }
+    input:
+      - { author_id: $ann.id, title: d }
+      - { id: 900000, author_id: $ann.id, title: e }
+      - { author_id: $ann.id, title: f }
+    expect:
+      rows:
+        - { title: d }
+        - { id: 900000, title: e }
+        - { title: f }
+  - op: posts.count
+    scope: { tenant_id: $acme.id }
+    expect: { value: 3 }
