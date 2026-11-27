@@ -107,7 +107,9 @@ test("SQLite", async () => {
 
 test("SQL Server", async () => {
   await expect(sqlserver.inject(sqlserverBase, { delay: "soon", times: 1 })).rejects.toThrow("delay: ");
-  await expect(sqlserver.inject(sqlserverBase, { class: "Deadlock", times: 1 })).rejects.toThrow("no injected failure of class Deadlock on SQL Server");
+  await expect(sqlserver.inject(sqlserverBase, { class: "SerializationFailure", times: 1 })).rejects.toThrow("no injected failure of class SerializationFailure on SQL Server");
+  // A plan of no times, or of a stall, needs no session of the harness's.
+  expect([sqlserver.helper("deadlock", 0), sqlserver.helper("lock_timeout", 0), sqlserver.helper("stall", 1)]).toEqual(["", "", ""]);
   // A database whose DDL fails is dropped.
   const ddl = join(await mkdtemp(join(tmpdir(), "ddl-")), "bad.sql");
   await writeFile(ddl, "NOT SQL");
