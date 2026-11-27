@@ -289,52 +289,61 @@ func (g *gen) text(lo, hi int) string {
 // keys. A row whose key or unique value repeats is left out, as is one
 // that must reference a table with no rows.
 func (g *gen) rows(t *Table) {
-	seen := map[string]bool{}
-	id := int64(0)
 	for range g.r.IntN(21) {
-		row := make([]any, len(t.Columns))
-		ok := true
-		for i, c := range t.Columns {
-			if fk := slices.IndexFunc(t.Foreign, func(f ForeignKey) bool { return f.Column == c.Name }); fk >= 0 {
-				p := g.c.Table(t.Foreign[fk].Table)
-				if c.Null && g.chance(5) || len(p.Rows) == 0 {
-					ok = ok && c.Null
-					continue
-				}
-				row[i] = p.Rows[g.r.IntN(len(p.Rows))][0]
-				continue
-			}
-			if c.Name == "id" {
-				id += 1 + g.r.Int64N(3)
-				row[i] = id
-				continue
-			}
-			if c.Null && g.chance(5) {
-				continue
-			}
-			row[i] = g.value(t, c)
+		if row, ok := g.fresh(t); ok {
+			t.Rows = append(t.Rows, row)
 		}
-		if !ok || g.repeats(t, seen, row) {
-			continue
-		}
-		t.Rows = append(t.Rows, row)
 	}
 }
 
-// repeats reports whether row repeats a key or unique value of the rows
-// before it, and records its own.
-func (g *gen) repeats(t *Table, seen map[string]bool, row []any) bool {
-	keys := []string{"key " + fmt.Sprint(t.pick(row, t.Key)...)}
-	for _, u := range t.Uniques {
-		keys = append(keys, u+" "+fmt.Sprint(t.pick(row, []string{u})...))
-	}
-	for _, k := range keys {
-		if seen[k] {
-			return true
+// fresh returns a new row of t that holds its checks and foreign keys, and
+// whether it also holds its keys against t's rows: an entity's id is above
+// every other. It fails when it must reference a table with no rows.
+func (g *gen) fresh(t *Table) ([]any, bool) {
+	row := make([]any, len(t.Columns))
+	for i, c := range t.Columns {
+		fk := slices.IndexFunc(t.Foreign, func(f ForeignKey) bool { return f.Column == c.Name })
+		switch {
+		case fk >= 0:
+			p := g.c.Table(t.Foreign[fk].Table)
+			if c.Null && g.chance(5) || len(p.Rows) == 0 {
+				if !c.Null {
+					return nil, false
+				}
+				continue
+			}
+			row[i] = p.Rows[g.r.IntN(len(p.Rows))][0]
+		case c.Name == "id":
+			row[i] = t.maxID() + 1 + g.r.Int64N(3)
+		case c.Null && g.chance(5):
+		default:
+			row[i] = g.value(t, c)
 		}
 	}
-	for _, k := range keys {
-		seen[k] = true
+	return row, !t.conflicts(row)
+}
+
+// maxID is the highest id of t's rows, or 0.
+func (t *Table) maxID() int64 {
+	m := int64(0)
+	for _, r := range t.Rows {
+		m = max(m, r[0].(int64))
+	}
+	return m
+}
+
+// conflicts reports whether row repeats the key or a unique value of a row
+// of t.
+func (t *Table) conflicts(row []any) bool {
+	for _, r := range t.Rows {
+		if slices.Equal(t.pick(r, t.Key), t.pick(row, t.Key)) {
+			return true
+		}
+		for _, u := range t.Uniques {
+			if t.pick(r, []string{u})[0] == t.pick(row, []string{u})[0] {
+				return true
+			}
+		}
 	}
 	return false
 }
