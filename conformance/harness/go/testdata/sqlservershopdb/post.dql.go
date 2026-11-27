@@ -1700,12 +1700,12 @@ func (postsEditorIDColumn) Sub(v int64) dql.Update[PostsTable] {
 
 // Asc orders by editor_id, ascending.
 func (postsEditorIDColumn) Asc() dql.Order[PostsTable] {
-	return dql.Ordered[PostsTable]("order.asc", "col.posts.editor_id")
+	return dql.Ordered[PostsTable]("order.asc_nullable", "col.posts.editor_id")
 }
 
 // Desc orders by editor_id, descending.
 func (postsEditorIDColumn) Desc() dql.Order[PostsTable] {
-	return dql.Ordered[PostsTable]("order.desc", "col.posts.editor_id")
+	return dql.Ordered[PostsTable]("order.desc_nullable", "col.posts.editor_id")
 }
 
 // postsTitleColumn is column title in builder reads (§9.4).
@@ -1841,12 +1841,12 @@ func (postsSlugColumn) Ne(v string) dql.Pred[PostsTable] {
 
 // Asc orders by slug, ascending.
 func (postsSlugColumn) Asc() dql.Order[PostsTable] {
-	return dql.Ordered[PostsTable]("order.asc", "col.posts.slug")
+	return dql.Ordered[PostsTable]("order.asc_nullable", "col.posts.slug")
 }
 
 // Desc orders by slug, descending.
 func (postsSlugColumn) Desc() dql.Order[PostsTable] {
-	return dql.Ordered[PostsTable]("order.desc", "col.posts.slug")
+	return dql.Ordered[PostsTable]("order.desc_nullable", "col.posts.slug")
 }
 
 // postsStatusColumn is column status in builder reads (§9.4).
@@ -1987,12 +1987,12 @@ func (postsPublishedAtColumn) Set(e dql.TimeExpr) dql.Assignment[PostsTable] {
 
 // Asc orders by published_at, ascending.
 func (postsPublishedAtColumn) Asc() dql.Order[PostsTable] {
-	return dql.Ordered[PostsTable]("order.asc", "col.posts.published_at")
+	return dql.Ordered[PostsTable]("order.asc_nullable", "col.posts.published_at")
 }
 
 // Desc orders by published_at, descending.
 func (postsPublishedAtColumn) Desc() dql.Order[PostsTable] {
-	return dql.Ordered[PostsTable]("order.desc", "col.posts.published_at")
+	return dql.Ordered[PostsTable]("order.desc_nullable", "col.posts.published_at")
 }
 
 // postsAuthorRelation is relation author in builder reads (§18.2).

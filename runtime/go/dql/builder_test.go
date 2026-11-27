@@ -55,7 +55,8 @@ func noLimitTable() *Fragments {
 // needs an ORDER BY and whose locks are table hints.
 var pageTable = &Fragments{Placeholder: AtNumbered, Templates: map[string]string{
 	"select.user":      `SELECT u.[id] FROM [app].[users] AS u{locks}`,
-	"select.distinct":  `SELECT DISTINCT {cols} FROM {from}{locks}`,
+	"select.distinct":  `SELECT {cols} FROM {from}{locks}`,
+	"clause.distinct":  ` GROUP BY {cols}`,
 	"from.users":       `[app].[users] AS u`,
 	"col.users.id":     `u.[id]`,
 	"clause.order":     ` ORDER BY {0}`,
@@ -126,7 +127,9 @@ func TestBuilderStatements(t *testing.T) {
 		{name: "hinted locks", b: NewBuilder(pageTable, From{}, userShape).ForUpdate().SkipLocked(),
 			want: `SELECT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK, READPAST)`, args: "[]"},
 		{name: "hinted distinct", b: NewBuilder(pageTable, From{}, userShape).Distinct().ForUpdate(),
-			want: `SELECT DISTINCT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK)`, args: "[]"},
+			want: `SELECT u.[id] FROM [app].[users] AS u WITH (UPDLOCK, ROWLOCK) GROUP BY u.[id]`, args: "[]"},
+		{name: "grouped distinct", b: NewBuilder(pageTable, From{}, userShape).Distinct().OrderBy(asc),
+			want: `SELECT u.[id] FROM [app].[users] AS u GROUP BY u.[id] ORDER BY u.[id] ASC`, args: "[]"},
 		{name: "count", b: where.OrderBy(asc).Limit(1), agg: "count",
 			want: `SELECT count(*) FROM "app"."users" u WHERE ((u."email" = $1 OR u."email" = $2) OR NOT (u."id" > $3))`, args: "[a b 1]"},
 		{name: "exists", b: b, agg: "exists", want: `SELECT EXISTS (SELECT FROM "app"."users" u)`, args: "[]"},

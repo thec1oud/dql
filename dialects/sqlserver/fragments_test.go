@@ -186,16 +186,18 @@ func TestFragments(t *testing.T) {
 		"op.like":            `{0} LIKE {1} ESCAPE '\'`,
 		// CHARINDEX finds no empty text; every text contains it, as
 		// Postgres's strpos has it.
-		"op.contains":     "(CHARINDEX({1}, {0}) > 0 OR (DATALENGTH({1}) = 0 AND {0} IS NOT NULL))",
-		"clause.page":     " OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY",
-		"clause.offset":   " OFFSET {0} ROWS",
-		"order.none":      " ORDER BY (SELECT NULL)",
-		"lock.hints":      " WITH ({0})",
-		"lock.update":     "UPDLOCK, ROWLOCK",
-		"lock.share":      "HOLDLOCK, ROWLOCK",
-		"select.distinct": "SELECT DISTINCT {cols} FROM {from}{locks}",
-		"value.true":      "1 = 1",
-		"value.now":       "TODATETIMEOFFSET(SYSUTCDATETIME(), 0)",
+		"op.contains":        "(CHARINDEX({1}, {0}) > 0 OR (DATALENGTH({1}) = 0 AND {0} IS NOT NULL))",
+		"clause.page":        " OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY",
+		"clause.offset":      " OFFSET {0} ROWS",
+		"order.none":         " ORDER BY (SELECT NULL)",
+		"lock.hints":         " WITH ({0})",
+		"lock.update":        "UPDLOCK, ROWLOCK",
+		"lock.share":         "HOLDLOCK, ROWLOCK",
+		"select.distinct":    "SELECT {cols} FROM {from}{locks}",
+		"clause.distinct":    " GROUP BY {cols}",
+		"order.asc_nullable": "CASE WHEN {0} IS NULL THEN 1 ELSE 0 END, {0} ASC",
+		"value.true":         "1 = 1",
+		"value.now":          "TODATETIMEOFFSET(SYSUTCDATETIME(), 0)",
 	} {
 		if got[id].GetTemplate() != want {
 			t.Errorf("%s\n got %q\nwant %q", id, got[id].GetTemplate(), want)

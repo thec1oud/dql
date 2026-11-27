@@ -132,15 +132,22 @@ func (f *fragments) static() {
 		"lock.share":       "HOLDLOCK, ROWLOCK",
 		"lock.skip_locked": "READPAST",
 		"lock.update":      "UPDLOCK, ROWLOCK",
-		"order.asc":        "{0} ASC",
-		"order.desc":       "{0} DESC",
-		"order.none":       " ORDER BY (SELECT NULL)",
-		"select.distinct":  "SELECT DISTINCT {cols} FROM {from}{locks}",
-		"value.now":        "TODATETIMEOFFSET(SYSUTCDATETIME(), 0)",
-		"value.one":        "1",
-		"value.true":       "1 = 1",
-		"value.zero":       "0",
-		"values.row":       "({0})",
+		// A nullable column sorts its NULLs last ascending and first
+		// descending, as on Postgres; SQL Server sorts them first ascending.
+		"order.asc_nullable":  "CASE WHEN {0} IS NULL THEN 1 ELSE 0 END, {0} ASC",
+		"order.desc_nullable": "CASE WHEN {0} IS NULL THEN 0 ELSE 1 END, {0} DESC",
+		"order.asc":           "{0} ASC",
+		"order.desc":          "{0} DESC",
+		"order.none":          " ORDER BY (SELECT NULL)",
+		// A distinct read groups by its columns, so that its order may take
+		// expressions of them, as order.asc and order.desc do.
+		"select.distinct": "SELECT {cols} FROM {from}{locks}",
+		"clause.distinct": " GROUP BY {cols}",
+		"value.now":       "TODATETIMEOFFSET(SYSUTCDATETIME(), 0)",
+		"value.one":       "1",
+		"value.true":      "1 = 1",
+		"value.zero":      "0",
+		"values.row":      "({0})",
 	} {
 		f.add(id, t)
 	}

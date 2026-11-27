@@ -1,0 +1,41 @@
+scenario: null-order
+schema: shop
+steps:
+  - op: tenants.insert
+    input: { name: acme }
+    save: acme
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: a@acme.com, password_hash: x, display_name: bo }
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: b@acme.com, password_hash: x }
+  - op: users.insert
+    scope: { tenant_id: $acme.id }
+    input: { email: c@acme.com, password_hash: x, display_name: al }
+  # NULLs sort last ascending and first descending on every dialect, as on
+  # Postgres.
+  - op: select
+    from: users
+    scope: { tenant_id: $acme.id }
+    shape: user_full
+    order: [{ column: display_name }]
+    expect:
+      rows: [{ email: c@acme.com }, { email: a@acme.com }, { email: b@acme.com }]
+  - op: select
+    from: users
+    scope: { tenant_id: $acme.id }
+    shape: user_full
+    order: [{ column: display_name, desc: true }]
+    expect:
+      rows: [{ email: b@acme.com }, { email: a@acme.com }, { email: c@acme.com }]
+  # A distinct read orders the same way.
+  - op: select
+    from: users
+    scope: { tenant_id: $acme.id }
+    shape: user_full
+    distinct: true
+    order: [{ column: display_name }]
+    limit: 2
+    expect:
+      rows: [{ email: c@acme.com }, { email: a@acme.com }]

@@ -146,11 +146,11 @@ export const publishedPosts = {
     },
     /** asc orders by id, ascending. */
     asc(): Order<PublishedPostsTable> {
-      return ordered<PublishedPostsTable>("order.asc", "col.published_posts.id");
+      return ordered<PublishedPostsTable>("order.asc_nullable", "col.published_posts.id");
     },
     /** desc orders by id, descending. */
     desc(): Order<PublishedPostsTable> {
-      return ordered<PublishedPostsTable>("order.desc", "col.published_posts.id");
+      return ordered<PublishedPostsTable>("order.desc_nullable", "col.published_posts.id");
     },
   },
   /** title is column title in builder reads (§9.4). */
@@ -205,11 +205,11 @@ export const publishedPosts = {
     },
     /** asc orders by title, ascending. */
     asc(): Order<PublishedPostsTable> {
-      return ordered<PublishedPostsTable>("order.asc", "col.published_posts.title");
+      return ordered<PublishedPostsTable>("order.asc_nullable", "col.published_posts.title");
     },
     /** desc orders by title, descending. */
     desc(): Order<PublishedPostsTable> {
-      return ordered<PublishedPostsTable>("order.desc", "col.published_posts.title");
+      return ordered<PublishedPostsTable>("order.desc_nullable", "col.published_posts.title");
     },
   },
   /** authorId is column author_id in builder reads (§9.4). */
@@ -264,11 +264,11 @@ export const publishedPosts = {
     },
     /** asc orders by author_id, ascending. */
     asc(): Order<PublishedPostsTable> {
-      return ordered<PublishedPostsTable>("order.asc", "col.published_posts.author_id");
+      return ordered<PublishedPostsTable>("order.asc_nullable", "col.published_posts.author_id");
     },
     /** desc orders by author_id, descending. */
     desc(): Order<PublishedPostsTable> {
-      return ordered<PublishedPostsTable>("order.desc", "col.published_posts.author_id");
+      return ordered<PublishedPostsTable>("order.desc_nullable", "col.published_posts.author_id");
     },
   },
   /** publishedAt is column published_at in builder reads (§9.4). */
@@ -323,11 +323,11 @@ export const publishedPosts = {
     },
     /** asc orders by published_at, ascending. */
     asc(): Order<PublishedPostsTable> {
-      return ordered<PublishedPostsTable>("order.asc", "col.published_posts.published_at");
+      return ordered<PublishedPostsTable>("order.asc_nullable", "col.published_posts.published_at");
     },
     /** desc orders by published_at, descending. */
     desc(): Order<PublishedPostsTable> {
-      return ordered<PublishedPostsTable>("order.desc", "col.published_posts.published_at");
+      return ordered<PublishedPostsTable>("order.desc_nullable", "col.published_posts.published_at");
     },
   },
 } as const;

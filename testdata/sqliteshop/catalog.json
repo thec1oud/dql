@@ -15142,8 +15142,16 @@
           "template": "{0} ASC"
         },
         {
+          "id": "order.asc_nullable",
+          "template": "{0} ASC NULLS LAST"
+        },
+        {
           "id": "order.desc",
           "template": "{0} DESC"
+        },
+        {
+          "id": "order.desc_nullable",
+          "template": "{0} DESC NULLS FIRST"
         },
         {
           "id": "rel.post_tags.post",

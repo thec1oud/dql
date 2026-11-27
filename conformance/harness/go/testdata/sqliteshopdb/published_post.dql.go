@@ -208,12 +208,12 @@ func (publishedPostsIDColumn) Ne(v int64) dql.Pred[PublishedPostsTable] {
 
 // Asc orders by id, ascending.
 func (publishedPostsIDColumn) Asc() dql.Order[PublishedPostsTable] {
-	return dql.Ordered[PublishedPostsTable]("order.asc", "col.published_posts.id")
+	return dql.Ordered[PublishedPostsTable]("order.asc_nullable", "col.published_posts.id")
 }
 
 // Desc orders by id, descending.
 func (publishedPostsIDColumn) Desc() dql.Order[PublishedPostsTable] {
-	return dql.Ordered[PublishedPostsTable]("order.desc", "col.published_posts.id")
+	return dql.Ordered[PublishedPostsTable]("order.desc_nullable", "col.published_posts.id")
 }
 
 // publishedPostsTitleColumn is column title in builder reads (§9.4).
@@ -281,12 +281,12 @@ func (publishedPostsTitleColumn) Ne(v string) dql.Pred[PublishedPostsTable] {
 
 // Asc orders by title, ascending.
 func (publishedPostsTitleColumn) Asc() dql.Order[PublishedPostsTable] {
-	return dql.Ordered[PublishedPostsTable]("order.asc", "col.published_posts.title")
+	return dql.Ordered[PublishedPostsTable]("order.asc_nullable", "col.published_posts.title")
 }
 
 // Desc orders by title, descending.
 func (publishedPostsTitleColumn) Desc() dql.Order[PublishedPostsTable] {
-	return dql.Ordered[PublishedPostsTable]("order.desc", "col.published_posts.title")
+	return dql.Ordered[PublishedPostsTable]("order.desc_nullable", "col.published_posts.title")
 }
 
 // publishedPostsAuthorIDColumn is column author_id in builder reads (§9.4).
@@ -354,12 +354,12 @@ func (publishedPostsAuthorIDColumn) Ne(v int64) dql.Pred[PublishedPostsTable] {
 
 // Asc orders by author_id, ascending.
 func (publishedPostsAuthorIDColumn) Asc() dql.Order[PublishedPostsTable] {
-	return dql.Ordered[PublishedPostsTable]("order.asc", "col.published_posts.author_id")
+	return dql.Ordered[PublishedPostsTable]("order.asc_nullable", "col.published_posts.author_id")
 }
 
 // Desc orders by author_id, descending.
 func (publishedPostsAuthorIDColumn) Desc() dql.Order[PublishedPostsTable] {
-	return dql.Ordered[PublishedPostsTable]("order.desc", "col.published_posts.author_id")
+	return dql.Ordered[PublishedPostsTable]("order.desc_nullable", "col.published_posts.author_id")
 }
 
 // publishedPostsPublishedAtColumn is column published_at in builder reads (§9.4).
@@ -427,12 +427,12 @@ func (publishedPostsPublishedAtColumn) Ne(v string) dql.Pred[PublishedPostsTable
 
 // Asc orders by published_at, ascending.
 func (publishedPostsPublishedAtColumn) Asc() dql.Order[PublishedPostsTable] {
-	return dql.Ordered[PublishedPostsTable]("order.asc", "col.published_posts.published_at")
+	return dql.Ordered[PublishedPostsTable]("order.asc_nullable", "col.published_posts.published_at")
 }
 
 // Desc orders by published_at, descending.
 func (publishedPostsPublishedAtColumn) Desc() dql.Order[PublishedPostsTable] {
-	return dql.Ordered[PublishedPostsTable]("order.desc", "col.published_posts.published_at")
+	return dql.Ordered[PublishedPostsTable]("order.desc_nullable", "col.published_posts.published_at")
 }
 
 func (s publishedPostsReads) from(PublishedPostsTable) dql.From { return dql.From{H: s.h} }

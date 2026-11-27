@@ -1135,12 +1135,12 @@ func (profilesBioColumn) Set(e dql.DefaultExpr) dql.Assignment[ProfilesTable] {
 
 // Asc orders by bio, ascending.
 func (profilesBioColumn) Asc() dql.Order[ProfilesTable] {
-	return dql.Ordered[ProfilesTable]("order.asc", "col.profiles.bio")
+	return dql.Ordered[ProfilesTable]("order.asc_nullable", "col.profiles.bio")
 }
 
 // Desc orders by bio, descending.
 func (profilesBioColumn) Desc() dql.Order[ProfilesTable] {
-	return dql.Ordered[ProfilesTable]("order.desc", "col.profiles.bio")
+	return dql.Ordered[ProfilesTable]("order.desc_nullable", "col.profiles.bio")
 }
 
 // profilesBirthdayColumn is column birthday in builder reads (§9.4).
@@ -1213,12 +1213,12 @@ func (profilesBirthdayColumn) Set(e dql.TimeExpr) dql.Assignment[ProfilesTable] 
 
 // Asc orders by birthday, ascending.
 func (profilesBirthdayColumn) Asc() dql.Order[ProfilesTable] {
-	return dql.Ordered[ProfilesTable]("order.asc", "col.profiles.birthday")
+	return dql.Ordered[ProfilesTable]("order.asc_nullable", "col.profiles.birthday")
 }
 
 // Desc orders by birthday, descending.
 func (profilesBirthdayColumn) Desc() dql.Order[ProfilesTable] {
-	return dql.Ordered[ProfilesTable]("order.desc", "col.profiles.birthday")
+	return dql.Ordered[ProfilesTable]("order.desc_nullable", "col.profiles.birthday")
 }
 
 // profilesUserRelation is relation user in builder reads (§18.2).
