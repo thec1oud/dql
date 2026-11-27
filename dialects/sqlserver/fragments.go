@@ -63,7 +63,7 @@ var operatorTemplates = map[string]string{
 	"add":              "({0} + {1})",
 	"any":              "{0} IN (SELECT [value] FROM OPENJSON({1}))",
 	"between":          "{0} BETWEEN {1} AND {2}",
-	"contains":         "CHARINDEX({1}, {0}) > 0",
+	"contains":         "(CHARINDEX({1}, {0}) > 0 OR (DATALENGTH({1}) = 0 AND {0} IS NOT NULL))",
 	"div":              "({0} / {1})",
 	"eq":               "{0} = {1}",
 	"ge":               "{0} >= {1}",

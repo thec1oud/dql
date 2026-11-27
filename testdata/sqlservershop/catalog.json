@@ -13433,7 +13433,7 @@
         },
         {
           "id": "op.contains",
-          "template": "CHARINDEX({1}, {0}) > 0",
+          "template": "(CHARINDEX({1}, {0}) > 0 OR (DATALENGTH({1}) = 0 AND {0} IS NOT NULL))",
           "fidelity": "FIDELITY_EXACT"
         },
         {
