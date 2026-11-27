@@ -111,6 +111,9 @@ func (f *fragments) add(id, template string) *irv1.Fragment {
 // unordered. Locks are table hints, which lock.hints writes into a select's
 // {locks} hole. T-SQL has no boolean literal, so value.true is a
 // comparison, nor row values, so no keyset fragments, nor DISTINCT ON.
+// A MERGE's source rows take no DEFAULT, so there is no value.default: the
+// runtime leaves a write's unset columns out, and a SET to DEFAULT renders
+// default.<t>.<c>, which is DEFAULT.
 func (f *fragments) static() {
 	for id, t := range map[string]string{
 		"bool.and":         "{0} AND {1}",
@@ -131,7 +134,6 @@ func (f *fragments) static() {
 		"order.desc":       "{0} DESC",
 		"order.none":       " ORDER BY (SELECT NULL)",
 		"select.distinct":  "SELECT DISTINCT {cols} FROM {from}{locks}",
-		"value.default":    "DEFAULT",
 		"value.now":        "TODATETIMEOFFSET(SYSUTCDATETIME(), 0)",
 		"value.one":        "1",
 		"value.true":       "1 = 1",
@@ -209,6 +211,7 @@ func (f *fragments) table(tb *table) {
 		f.add("name."+suffix, col)
 		f.add("set."+suffix, col+" = {0}")
 		f.add("excluded."+suffix, "[dql_new]."+col)
+		f.add("default."+suffix, "DEFAULT")
 	}
 }
 

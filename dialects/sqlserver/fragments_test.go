@@ -173,6 +173,7 @@ func TestFragments(t *testing.T) {
 		"set.pets.id":                "[id] = {0}",
 		"name.pets.id":               "[id]",
 		"excluded.pets.id":           "[dql_new].[id]",
+		"default.pets.id":            "DEFAULT",
 		"upsert.pets.pets_pkey":      petsOut + petsMerge + " WHEN MATCHED THEN UPDATE SET {sets}" + insertBranch,
 		"ignore.pets.pets_pkey":      petsOut + petsMerge + insertBranch,
 		"upsert.pets.pets_live":      petsOut + "WITH [dql_target] AS (SELECT * FROM [app].[pets] WHERE ([id]>(0))) MERGE INTO [dql_target] WITH (HOLDLOCK) AS [pets] USING (VALUES {rows}) AS [dql_new] ({cols}) ON [pets].[we]]ird] = [dql_new].[we]]ird] AND [pets].[id] = [dql_new].[id] WHEN MATCHED THEN UPDATE SET {sets}" + insertBranch,
@@ -210,8 +211,9 @@ func TestFragments(t *testing.T) {
 		"upsert.pets.pets_slug", // a computed key
 		"op.in.people.photo",    // OPENJSON reads no binary
 		"op.in.people.rv",
-		"clause.limit", // a page is one clause
-		"keyset.after", // no row values
+		"clause.limit",  // a page is one clause
+		"keyset.after",  // no row values
+		"value.default", // a MERGE's rows take no DEFAULT
 		"select.distinct_on",
 	} {
 		if got[id] != nil {
