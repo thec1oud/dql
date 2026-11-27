@@ -760,7 +760,7 @@ func (g *generator) boundChecks(e *entity, x entry) []string {
 	for _, p := range x.q.GetParams() {
 		col := p.GetName()
 		fld := shapeField(base, col)
-		if !slices.Contains(x.shape.GetBind(), col) || len(fld.GetValidation()) == 0 {
+		if !slices.Contains(x.shape.GetBind(), col) {
 			continue
 		}
 		at := &irv1.QualifiedName{Catalog: e.q.GetCatalog(), Namespace: e.q.GetNamespace(), Object: e.q.GetObject(), Member: col}
