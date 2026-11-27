@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/thec1oud/dql/conformance/harness/go/testdata/sqliteshopdb"
+	"github.com/thec1oud/dql/conformance/harness/go/testdata/sqlitevariantdb"
 	"github.com/thec1oud/dql/runtime/go/dql"
 	"github.com/thec1oud/dql/runtime/go/dqlsqlite"
 	"github.com/thec1oud/dql/runtime/go/opt"
@@ -15,7 +16,10 @@ import (
 
 // SQLiteSchemas are the schemas scenarios name on SQLite: shop is the
 // running example on SQLite (conformance/schemas/sqlite/shop.sql), generated
-// by shop.yaml into testdata/sqliteshopdb. SQLite runs in the process, so it
+// by shop.yaml into testdata/sqliteshopdb, and shop_variants the running
+// example with the design record's variants of it
+// (conformance/schemas/sqlite/variants.yaml), generated into
+// testdata/sqlitevariantdb. SQLite runs in the process, so it
 // needs no server, and it has no injected failures, stalls or replicas; its
 // statements are always prepared.
 var SQLiteSchemas = map[string]Schema{
@@ -94,6 +98,85 @@ var SQLiteSchemas = map[string]Schema{
 			"tag_full":            sqliteshopdb.Select[sqliteshopdb.TagFull, sqliteshopdb.TagsTable],
 			"tenant_full":         sqliteshopdb.Select[sqliteshopdb.TenantFull, sqliteshopdb.TenantsTable],
 			"user_full":           sqliteshopdb.Select[sqliteshopdb.UserFull, sqliteshopdb.UsersTable],
+		},
+	},
+	"shop_variants": {
+		DDL:      []string{"conformance/schemas/sqlite/shop.sql", "conformance/schemas/sqlite/variants.sql"},
+		Dialect:  "sqlite",
+		Database: databaseSQLite,
+		Modes:    []dql.StatementMode{dql.ModePrepare},
+		Features: []string{"params-32766", "returning", "settable-identity"},
+		Exec:     runSQLite,
+		Open:     opener(func() dql.Driver { return dqlsqlite.New() }, sqlitevariantdb.NewExecutor, sqlitevariantdb.New),
+		Tables: map[string]any{
+			"tenants": sqlitevariantdb.Tenants, "users": sqlitevariantdb.Users, "profiles": sqlitevariantdb.Profiles,
+			"posts": sqlitevariantdb.Posts, "tags": sqlitevariantdb.Tags, "post_tags": sqlitevariantdb.PostTags,
+		},
+		Changes: []any{
+			sqlitevariantdb.PostAuthorCreate, sqlitevariantdb.PostAuthorLink, sqlitevariantdb.PostAuthorUpdate,
+			sqlitevariantdb.PostCreateForAuthor, sqlitevariantdb.PostDeleteForAuthor, sqlitevariantdb.PostUpdateForAuthor,
+			sqlitevariantdb.PostCreateForEditor, sqlitevariantdb.PostDeleteForEditor, sqlitevariantdb.PostUpdateForEditor,
+			sqlitevariantdb.PostEditorCreate, sqlitevariantdb.PostEditorLink, sqlitevariantdb.PostEditorUpdate,
+			sqlitevariantdb.PostLinkCreate, sqlitevariantdb.PostLinkKey, sqlitevariantdb.PostRefCreate, sqlitevariantdb.PostRefLink,
+			sqlitevariantdb.PostTagCreateForPost, sqlitevariantdb.PostTagDeleteForPost, sqlitevariantdb.PostTagUpdateForPost,
+			sqlitevariantdb.PostTagCreateForTag, sqlitevariantdb.PostTagDeleteForTag, sqlitevariantdb.PostTagUpdateForTag,
+			sqlitevariantdb.PostTagPostUpdate, sqlitevariantdb.PostTagTagUpdate,
+			sqlitevariantdb.PostTagsCreate, sqlitevariantdb.PostTagsLink, sqlitevariantdb.PostTagsUnlink,
+			sqlitevariantdb.ProfileCreateForUser, sqlitevariantdb.ProfileDeleteForUser, sqlitevariantdb.ProfileUpdateForUser,
+			sqlitevariantdb.ProfileUserUpdate,
+			sqlitevariantdb.TagLinkCreate, sqlitevariantdb.TagLinkKey, sqlitevariantdb.TagPostsCreate, sqlitevariantdb.TagPostsLink, sqlitevariantdb.TagPostsUnlink,
+			sqlitevariantdb.TagRefCreate, sqlitevariantdb.TagRefLink, sqlitevariantdb.UserRefCreate, sqlitevariantdb.UserRefLink,
+			opt.Some[sqlitevariantdb.PostAuthorChange], opt.Some[sqlitevariantdb.PostEditorChange], opt.Some[sqlitevariantdb.PostRef],
+			opt.Some[sqlitevariantdb.PostTagPostChange], opt.Some[sqlitevariantdb.PostTagTagChange],
+			opt.Some[sqlitevariantdb.ProfileChangeForUser], opt.Some[sqlitevariantdb.ProfileUserChange],
+			opt.Some[sqlitevariantdb.TagRef], opt.Some[sqlitevariantdb.UserRef],
+			opt.Some[[]sqlitevariantdb.PostChangeForAuthor], opt.Some[[]sqlitevariantdb.PostChangeForEditor],
+			opt.Some[[]sqlitevariantdb.PostTagChangeForPost], opt.Some[[]sqlitevariantdb.PostTagChangeForTag],
+			opt.Some[[]sqlitevariantdb.PostTagsChange], opt.Some[[]sqlitevariantdb.TagPostsChange],
+		},
+		Fill: map[string]map[string]func() any{
+			"TenantDraft": {"id": newUUID}, "TenantDraftNested": {"id": newUUID},
+		},
+		Inject:    injectSQLite,
+		Terminate: terminateSQLite,
+		Replay:    replaySQLite,
+		Shapes:    sqlitevariantdb.Shapes,
+		Types: []any{
+			sqlitevariantdb.PostDraft{}, sqlitevariantdb.PostDraftNested{}, sqlitevariantdb.PostDraftNests{}, sqlitevariantdb.PostFull{},
+			sqlitevariantdb.PostFullNested{}, sqlitevariantdb.PostFullNests{}, sqlitevariantdb.PostKey{}, sqlitevariantdb.PostPartial{},
+			sqlitevariantdb.PostPartialNested{}, sqlitevariantdb.PostPartialNests{}, sqlitevariantdb.PostTagDraft{},
+			sqlitevariantdb.PostTagDraftNested{}, sqlitevariantdb.PostTagDraftNests{}, sqlitevariantdb.PostTagFull{},
+			sqlitevariantdb.PostTagFullNested{}, sqlitevariantdb.PostTagFullNests{}, sqlitevariantdb.PostTagKey{}, sqlitevariantdb.PostTagPartial{},
+			sqlitevariantdb.PostTagPartialNested{}, sqlitevariantdb.PostTagPartialNests{}, sqlitevariantdb.ProfileDraft{},
+			sqlitevariantdb.ProfileDraftNested{}, sqlitevariantdb.ProfileDraftNests{}, sqlitevariantdb.ProfileFull{},
+			sqlitevariantdb.ProfileFullNested{}, sqlitevariantdb.ProfileFullNests{}, sqlitevariantdb.ProfileKey{}, sqlitevariantdb.ProfilePartial{},
+			sqlitevariantdb.ProfilePartialNested{}, sqlitevariantdb.ProfilePartialNests{}, sqlitevariantdb.PublishedPostFull{},
+			sqlitevariantdb.PublishedPostFullNested{}, sqlitevariantdb.PublishedPostFullNests{},
+			sqlitevariantdb.TagDraft{}, sqlitevariantdb.TagDraftNested{}, sqlitevariantdb.TagDraftNests{}, sqlitevariantdb.TagFull{},
+			sqlitevariantdb.TagFullNested{}, sqlitevariantdb.TagFullNests{}, sqlitevariantdb.TagKey{}, sqlitevariantdb.TagPartial{},
+			sqlitevariantdb.TagPartialNested{}, sqlitevariantdb.TagPartialNests{}, sqlitevariantdb.TenantDraft{},
+			sqlitevariantdb.TenantDraftNested{}, sqlitevariantdb.TenantDraftNests{}, sqlitevariantdb.TenantFull{},
+			sqlitevariantdb.TenantFullNested{}, sqlitevariantdb.TenantFullNests{}, sqlitevariantdb.TenantKey{}, sqlitevariantdb.TenantPartial{},
+			sqlitevariantdb.TenantPartialNested{}, sqlitevariantdb.TenantPartialNests{}, sqlitevariantdb.UserDraft{},
+			sqlitevariantdb.UserDraftNested{}, sqlitevariantdb.UserDraftNests{}, sqlitevariantdb.UserFull{}, sqlitevariantdb.UserFullNested{},
+			sqlitevariantdb.UserFullNests{}, sqlitevariantdb.UserKey{}, sqlitevariantdb.UserPartial{}, sqlitevariantdb.UserPartialNested{},
+			sqlitevariantdb.UserPartialNests{}, sqlitevariantdb.UserScope{}, sqlitevariantdb.UserSummary{}, sqlitevariantdb.UserSummaryNamed{}, sqlitevariantdb.PostWithTags{},
+		},
+		Funcs: map[string]any{
+			"merge_post_by_key": sqlitevariantdb.MergePostByKey, "merge_post_tag_by_key": sqlitevariantdb.MergePostTagByKey,
+			"merge_profile_by_key": sqlitevariantdb.MergeProfileByKey, "merge_tag_by_key": sqlitevariantdb.MergeTagByKey,
+			"merge_tenant_by_key": sqlitevariantdb.MergeTenantByKey, "merge_user_by_key": sqlitevariantdb.MergeUserByKey,
+		},
+		Selects: map[string]any{
+			"post_full":           sqlitevariantdb.Select[sqlitevariantdb.PostFull, sqlitevariantdb.PostsTable],
+			"post_tag_full":       sqlitevariantdb.Select[sqlitevariantdb.PostTagFull, sqlitevariantdb.PostTagsTable],
+			"profile_full":        sqlitevariantdb.Select[sqlitevariantdb.ProfileFull, sqlitevariantdb.ProfilesTable],
+			"published_post_full": sqlitevariantdb.Select[sqlitevariantdb.PublishedPostFull, sqlitevariantdb.PublishedPostsTable],
+			"tag_full":            sqlitevariantdb.Select[sqlitevariantdb.TagFull, sqlitevariantdb.TagsTable],
+			"tenant_full":         sqlitevariantdb.Select[sqlitevariantdb.TenantFull, sqlitevariantdb.TenantsTable],
+			"user_full":           sqlitevariantdb.Select[sqlitevariantdb.UserFull, sqlitevariantdb.UsersTable],
+			"user_summary":        sqlitevariantdb.Select[sqlitevariantdb.UserSummary, sqlitevariantdb.UsersTable],
+			"user_summary_named":  sqlitevariantdb.Select[sqlitevariantdb.UserSummaryNamed, sqlitevariantdb.UsersTable],
 		},
 	},
 }

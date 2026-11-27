@@ -80,10 +80,12 @@ steps:
     expect:
       error: { class: NotFound }
   # HardDelete removes the row, deleted or not; the link still refers to it.
+  # SQLite does not name the foreign key, so its name is checked in
+  # foreign-key-names.yaml.
   - op: posts.hard_delete
     key: { id: $gone.id }
     expect:
-      error: { class: ForeignKeyViolation, constraint: post_tags_post_id_fkey }
+      error: { class: ForeignKeyViolation }
   - op: post_tags.delete
     key: { post_id: $gone.id, tag_id: $db.id }
   - op: posts.hard_delete

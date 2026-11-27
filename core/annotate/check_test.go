@@ -226,6 +226,10 @@ func TestTargetRules(t *testing.T) {
 
 	// soft-delete on a TINYINT(1) annotated bool is a boolean (§8.7, §21.3).
 	wantCodes(t, Check(tinyint, []*irv1.Annotation{config("core.bool", nil), config("core.soft-delete", nil)}))
+	// soft-delete on text narrowed by as to a timestamp is a timestamp, and
+	// on text narrowed to another type is not (§7.2, §21.3).
+	wantCodes(t, Check(column(textType, false), []*irv1.Annotation{config("core.as", str("instant")), config("core.soft-delete", nil)}))
+	wantCodes(t, Check(column(textType, false), []*irv1.Annotation{config("core.as", str("uuid")), config("core.soft-delete", nil)}), CodeWrongTarget)
 }
 
 // §7.3: bound together with version.

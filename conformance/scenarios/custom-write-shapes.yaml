@@ -39,6 +39,13 @@ steps:
       mysql: |
         SELECT IF(EXISTS (SELECT 1 FROM users WHERE email = 'b@acme.com' AND password_hash = 'invited'),
                   1, (SELECT 1 UNION SELECT 2))
+      # SQLite raises only in triggers: abs of the smallest integer overflows.
+      sqlite: |
+        SELECT CASE WHEN EXISTS (SELECT 1 FROM users WHERE email = 'b@acme.com' AND password_hash = 'invited')
+                    THEN 1 ELSE abs(-9223372036854775808) END
+      sqlserver: |
+        IF NOT EXISTS (SELECT 1 FROM app.users WHERE email = 'b@acme.com' AND password_hash = 'invited')
+          THROW 50000, 'quick_invite did not write the bound password_hash', 1;
   # The payload is validated before anything is sent.
   - op: users.insert_quick_invite
     scope: { tenant_id: $acme.id }

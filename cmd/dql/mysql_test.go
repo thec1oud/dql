@@ -68,9 +68,10 @@ var databaseName = regexp.MustCompile(`dql_test_[0-9_]+`)
 
 // dql generate writes the conformance harnesses' mysqlshopdb packages from
 // conformance/schemas/mysql/shop.yaml on MySQL, their mariadbshopdb
-// packages from shop-mariadb.yaml on MariaDB, and their mysqlvariantdb
-// packages from variants.yaml on MySQL with variants.sql. The variants'
-// catalog layer has no golden of its own.
+// packages from shop-mariadb.yaml on MariaDB, their mysqlvariantdb
+// packages from variants.yaml on MySQL with variants.sql, and their
+// mariadbvariantdb packages from variants-mariadb.yaml on MariaDB with it.
+// The variants' catalog layer has no golden of its own.
 func TestGenerateConformanceMySQL(t *testing.T) {
 	for _, c := range []struct {
 		name, env, config, dsn, catalog string
@@ -88,6 +89,10 @@ func TestGenerateConformanceMySQL(t *testing.T) {
 		{"variants", mysqltest.URLEnv, "variants.yaml", "SHOP_MYSQL_DSN", "", []string{"shop.sql", "variants.sql"}, []struct{ out, glob, golden string }{
 			{"mysqlvariantdb", "*.dql.go", goldenMysqlvariantdb},
 			{filepath.Join("ts", "mysqlvariantdb"), "*.dql.ts", goldenMysqlvariantdbTS},
+		}},
+		{"mariadb-variants", mysqltest.MariaDBURLEnv, "variants-mariadb.yaml", "SHOP_MARIADB_DSN", "", []string{"shop.sql", "variants.sql"}, []struct{ out, glob, golden string }{
+			{"mariadbvariantdb", "*.dql.go", filepath.Join("..", "..", "conformance", "harness", "go", "testdata", "mariadbvariantdb")},
+			{filepath.Join("ts", "mariadbvariantdb"), "*.dql.ts", filepath.Join("..", "..", "conformance", "harness", "ts", "mariadbvariantdb")},
 		}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
