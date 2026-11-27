@@ -40,13 +40,15 @@ beforeAll(async () => {
   admin = await newExecutor(new PgDriver(), config(base));
 });
 
+// Dropping a database per test takes longer than a hook's default 5
+// seconds on a busy CI runner.
 afterAll(async () => {
   for (const { name, exec } of made) {
     await exec.close();
     await new Db(admin as Executor).raw("main").exec(`DROP DATABASE ${name} WITH (FORCE)`);
   }
   await admin?.close();
-});
+}, 60_000);
 
 /** database returns an executor on a fresh database holding testdata/shop/schema.sql, dropped when the tests end. */
 async function database(): Promise<Executor> {
