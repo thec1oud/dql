@@ -336,7 +336,7 @@ func (p *planner) entity(e *entity) {
 			}
 			if ok {
 				p.withReread(p.add(e, e.spelling+".insert"+suffix, irv1.Cardinality_CARDINALITY_ONE, true, params, full,
-					use("insert."+e.id, cols, row, returning)), rr)
+					use("insert."+e.id, p.withNews("insert."+e.id, cols, cols, row, returning)...)), rr)
 			}
 			if custom != "" {
 				break
@@ -585,11 +585,16 @@ func (p *planner) upsertSet(e *entity, u *irv1.Upsert, k int, s, full *irv1.Shap
 		p.merged("upsert."+e.id+"."+u.GetConflictTarget(), cols, row, list("sets", sets), p.returning(e, full))), rr)
 }
 
-// merged is a use of an upsert or insert-or-ignore fragment. Where its
-// template has a {news} hole, as a MERGE does, the hole holds the new
-// row's value of each column cols writes: its excluded fragment.
+// merged is a use of an upsert or insert-or-ignore fragment, with its
+// {news} hole where its template has one (withNews).
 func (p *planner) merged(id string, cols *irv1.HoleFill, holes ...*irv1.HoleFill) *irv1.FragmentUse {
-	holes = append(holes, cols)
+	return use(id, p.withNews(id, cols, append(holes, cols)...)...)
+}
+
+// withNews returns holes, then, where fragment id's template has a {news}
+// hole, as a MERGE does, the new row's value of each column cols writes:
+// its excluded fragment. SQL Server's inserts are such MERGEs.
+func (p *planner) withNews(id string, cols *irv1.HoleFill, holes ...*irv1.HoleFill) []*irv1.HoleFill {
 	if strings.Contains(p.fragments[id], "{news}") {
 		var news []*irv1.ListItem
 		for _, it := range cols.GetList().GetItems() {
@@ -597,7 +602,7 @@ func (p *planner) merged(id string, cols *irv1.HoleFill, holes ...*irv1.HoleFill
 		}
 		holes = append(holes, list("news", news))
 	}
-	return use(id, holes...)
+	return holes
 }
 
 func shapeEqual(a, b *irv1.ShapeId) bool {

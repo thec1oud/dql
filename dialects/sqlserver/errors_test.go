@@ -82,7 +82,7 @@ func TestViolations(t *testing.T) {
 
 func TestLimits(t *testing.T) {
 	p := sqlserver.Profile()
-	if p.GetMaxParams() != 2100 || p.GetReplication() != nil ||
+	if p.GetMaxParams() != 2098 || p.GetReplication() != nil ||
 		!slices.Equal(p.GetConsistencyLevels(), []irv1.ConsistencyLevel{irv1.ConsistencyLevel_CONSISTENCY_PRIMARY}) ||
 		!slices.Equal(p.GetStatementModes(), []irv1.StatementMode{irv1.StatementMode_STATEMENT_MODE_PREPARE}) {
 		t.Errorf("profile %v", p)
