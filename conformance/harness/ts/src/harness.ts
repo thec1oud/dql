@@ -1112,6 +1112,7 @@ interface Builder {
   withDeleted(): Builder;
   onlyDeleted(): Builder;
   limit(n: number): Builder;
+  distinct(): Builder;
   consistency(c: Consistency): Builder;
   all(): Promise<unknown>;
   count(): Promise<unknown>;
