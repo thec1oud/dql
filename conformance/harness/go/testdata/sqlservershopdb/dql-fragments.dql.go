@@ -198,7 +198,7 @@ var fragments = &dql.Fragments{
 		"op.any.users.updated_at":             `{0} IN (SELECT [v] FROM OPENJSON({1}) WITH ([v] datetimeoffset(6) '$'))`,
 		"op.any.users.version":                `{0} IN (SELECT [v] FROM OPENJSON({1}) WITH ([v] int '$'))`,
 		"op.between":                          `{0} BETWEEN {1} AND {2}`,
-		"op.contains":                         `CHARINDEX({1}, {0}) > 0`,
+		"op.contains":                         `(CHARINDEX({1}, {0}) > 0 OR (DATALENGTH({1}) = 0 AND {0} IS NOT NULL))`,
 		"op.div":                              `({0} / {1})`,
 		"op.eq":                               `{0} = {1}`,
 		"op.ge":                               `{0} >= {1}`,
