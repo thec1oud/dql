@@ -25,9 +25,11 @@ import (
 // A write's rows come back through OUTPUT, which SQL Server refuses on a
 // table with an enabled trigger unless it writes INTO a table. So every
 // write outputs its rows INTO @dql_out, a table variable of the table's
-// columns, and returning.<shape> selects the shape's columns from it. A
-// write that returns nothing leaves the variable unread. OUTPUT returns
-// rows in no promised order.
+// columns and dql_n, and returning.<shape> selects the shape's columns from
+// it. A write that returns nothing leaves the variable unread. OUTPUT
+// returns rows in no promised order, so an insert, like an upsert, is a
+// MERGE, whose OUTPUT can name its source's dql_n, the row's place in the
+// VALUES list, which returning orders by.
 func Fragments(b *irv1.Bundle, p *irv1.CapabilityProfile) *irv1.FragmentTable {
 	f := &fragments{byName: map[string]*table{}}
 	f.static()
@@ -202,9 +204,10 @@ func (f *fragments) table(tb *table) {
 		return
 	}
 	declare := "DECLARE @dql_out TABLE (" + outColumns(tb.t) + "); "
-	f.add("insert."+tb.id, declare+"INSERT INTO "+tb.quoted+" ({cols}) OUTPUT INSERTED.* INTO @dql_out VALUES {rows};{returning}")
-	f.add("update."+tb.id, declare+"UPDATE "+tb.alias+" SET {sets} OUTPUT INSERTED.* INTO @dql_out FROM "+tb.from()+"{where};{returning}")
-	f.add("delete."+tb.id, declare+"DELETE "+tb.alias+" OUTPUT DELETED.* INTO @dql_out FROM "+tb.from()+"{where};{returning}")
+	f.add("insert."+tb.id, declare+"MERGE INTO "+tb.quoted+" AS "+tb.alias+" USING "+numbered+" ON 1 = 0"+
+		" WHEN NOT MATCHED THEN INSERT ({cols}) VALUES ({news}) OUTPUT INSERTED.*, [dql_new].[dql_n] INTO @dql_out;{returning}")
+	f.add("update."+tb.id, declare+"UPDATE "+tb.alias+" SET {sets} OUTPUT INSERTED.*, NULL INTO @dql_out FROM "+tb.from()+"{where};{returning}")
+	f.add("delete."+tb.id, declare+"DELETE "+tb.alias+" OUTPUT DELETED.*, NULL INTO @dql_out FROM "+tb.from()+"{where};{returning}")
 	for _, c := range tb.t.GetColumns() {
 		col := quote(c.GetName().GetStored())
 		suffix := tb.id + "." + c.GetName().GetStored()
@@ -227,8 +230,15 @@ func outColumns(t *irv1.Table) string {
 		}
 		cols[i] = quote(c.GetName().GetStored()) + " " + typ + " NULL"
 	}
-	return strings.Join(cols, ", ")
+	return strings.Join(append(cols, "[dql_n] bigint NULL"), ", ")
 }
+
+// numbered is a write's new rows, as dql_new, each numbered dql_n in the
+// order of the VALUES list, which a scan of the list keeps. OUTPUT
+// returns rows in no promised order, and returning.<shape> orders them by
+// dql_n, so a bulk write's rows come back in its Drafts' order (§25.2). A
+// derived table's VALUES, unlike an INSERT's, holds any number of rows.
+const numbered = "(SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [dql_n] FROM (VALUES {rows}) AS [dql_v] ({cols})) AS [dql_new]"
 
 // listType is the type a list compared with column c holds its items as:
 // the column's own, in its collation, so that items compare as the
@@ -323,7 +333,7 @@ func (f *fragments) shape(s *irv1.Shape) {
 		out[i] = quote(fd.GetColumn())
 	}
 	f.add("select."+spelling, "SELECT "+strings.Join(cols, ", ")+" FROM "+tb.from()+"{locks}")
-	f.add("returning."+spelling, " SELECT "+strings.Join(out, ", ")+" FROM @dql_out;")
+	f.add("returning."+spelling, " SELECT "+strings.Join(out, ", ")+" FROM @dql_out ORDER BY [dql_n];")
 }
 
 // upsert adds the upsert and the insert-or-ignore of one conflict target
@@ -349,8 +359,8 @@ func (f *fragments) upsert(u *irv1.Upsert) {
 		target, cte = "[dql_target]", "WITH [dql_target] AS (SELECT * FROM "+tb.quoted+" WHERE "+p.GetNative()+") "
 	}
 	merge := "DECLARE @dql_out TABLE (" + outColumns(tb.t) + "); " + cte + "MERGE INTO " + target + " WITH (HOLDLOCK) AS " + tb.alias +
-		" USING (VALUES {rows}) AS [dql_new] ({cols}) ON " + equal(tb.alias, key.GetColumns(), "[dql_new]", key.GetColumns())
-	insert := " WHEN NOT MATCHED THEN INSERT ({cols}) VALUES ({news}) OUTPUT INSERTED.* INTO @dql_out;{returning}"
+		" USING " + numbered + " ON " + equal(tb.alias, key.GetColumns(), "[dql_new]", key.GetColumns())
+	insert := " WHEN NOT MATCHED THEN INSERT ({cols}) VALUES ({news}) OUTPUT INSERTED.*, [dql_new].[dql_n] INTO @dql_out;{returning}"
 	suffix := tb.id + "." + key.GetName()
 	f.add("upsert."+suffix, merge+" WHEN MATCHED THEN UPDATE SET {sets}"+insert)
 	f.add("ignore."+suffix, merge+insert)

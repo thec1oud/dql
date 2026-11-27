@@ -84,9 +84,9 @@ func Profile() *irv1.CapabilityProfile {
 		Dialect: irv1.Dialect_DIALECT_SQLSERVER, Operators: ops, SessionSetup: slices.Clone(sessionSetup), ErrorCodes: codes,
 		// A request binds at most 2100 parameters, and both drivers send a
 		// statement through sp_executesql, whose text and declarations are
-		// two of them. An INSERT's VALUES holds at most 1000 rows.
+		// two of them. Inserts are a MERGE, whose source rows have no
+		// limit, unlike an INSERT's VALUES at 1000.
 		MaxParams:         2098,
-		MaxRows:           1000,
 		ConsistencyLevels: []irv1.ConsistencyLevel{irv1.ConsistencyLevel_CONSISTENCY_PRIMARY},
 		StatementModes:    []irv1.StatementMode{irv1.StatementMode_STATEMENT_MODE_PREPARE},
 		ReturnedRows:      irv1.ReturnedRows_RETURNED_ROWS_CLAUSE,

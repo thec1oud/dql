@@ -2,7 +2,7 @@
 
 import { within } from "./context.js";
 import type { Row } from "./decode.js";
-import { type Dialect, type Reader, UsageError, type Writer, bind, writes } from "./executor.js";
+import { type Reader, UsageError, type Writer, bind, writes } from "./executor.js";
 import { type Statement, execute, executeId, observed, queryAll, queryOptional, reread, sent } from "./statement.js";
 
 /**
@@ -156,15 +156,12 @@ export interface Bulk {
   statement(from: number, to: number): Statement;
 }
 
-/** chunk returns how many rows each statement of b writes on dialect d: as many as its parameters and its VALUES rows allow. */
-export function chunk(b: Bulk, d: Pick<Dialect, "maxParams" | "maxRows">): number {
-  const maxParams = d.maxParams ?? 0;
-  const maxRows = d.maxRows ?? 0;
-  let size = Math.max(b.rows, 1);
-  if (maxParams > 0 && b.paramsPerRow > 0) {
-    size = Math.max(Math.floor(maxParams / b.paramsPerRow), 1);
+/** chunk returns how many rows each statement of b writes. */
+export function chunk(b: Bulk, maxParams: number): number {
+  if (maxParams <= 0 || b.paramsPerRow <= 0) {
+    return Math.max(b.rows, 1);
   }
-  return maxRows > 0 ? Math.min(size, maxRows) : size;
+  return Math.max(Math.floor(maxParams / b.paramsPerRow), 1);
 }
 
 /**
@@ -205,7 +202,7 @@ export async function queryBulk(h: Writer, b: Bulk): Promise<Row[]> {
 
 /** bulk runs each chunk of b with run, after start: alone when one statement does, and otherwise in a write closure, which reruns from start. No rows run nothing. */
 async function bulk(h: Writer, b: Bulk, start: () => void, run: (w: Writer, s: Statement) => Promise<void>): Promise<void> {
-  const size = chunk(b, h[bind]().executor.dialect);
+  const size = chunk(b, h[bind]().executor.dialect.maxParams ?? 0);
   const chunks = async (w: Writer) => {
     start();
     for (let from = 0; from < b.rows; from += size) {

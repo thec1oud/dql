@@ -39,7 +39,7 @@ func TestGenerateSQLServer(t *testing.T) {
 		t.Fatal(err)
 	}
 	ft := b.GetQueries().GetFragments()
-	if b.GetDialect() != irv1.Dialect_DIALECT_SQLSERVER || b.GetCapabilities().GetMaxParams() != 2098 || b.GetCapabilities().GetMaxRows() != 1000 || ft.GetPlaceholder() != irv1.Placeholder_PLACEHOLDER_AT_NUMBERED {
+	if b.GetDialect() != irv1.Dialect_DIALECT_SQLSERVER || b.GetCapabilities().GetMaxParams() != 2098 || ft.GetPlaceholder() != irv1.Placeholder_PLACEHOLDER_AT_NUMBERED {
 		t.Errorf("bundle %v %v", b.GetDialect(), b.GetCapabilities())
 	}
 	found := false

@@ -147,10 +147,10 @@ func table(t *testing.T, b *irv1.Bundle) map[string]*irv1.Fragment {
 
 func TestFragments(t *testing.T) {
 	got := table(t, fixture())
-	const peopleOut = "DECLARE @dql_out TABLE ([id] bigint NULL, [manager_id] bigint NULL, [email] nvarchar(320) NULL, [photo] varbinary(max) NULL, [rv] binary(8) NULL); "
-	const petsOut = "DECLARE @dql_out TABLE ([id] bigint NULL, [we]]ird] bigint NULL, [slug] bigint NULL); "
-	const petsMerge = "MERGE INTO [app].[pets] WITH (HOLDLOCK) AS [pets] USING (VALUES {rows}) AS [dql_new] ({cols}) ON [pets].[id] = [dql_new].[id]"
-	const insertBranch = " WHEN NOT MATCHED THEN INSERT ({cols}) VALUES ({news}) OUTPUT INSERTED.* INTO @dql_out;{returning}"
+	const peopleOut = "DECLARE @dql_out TABLE ([id] bigint NULL, [manager_id] bigint NULL, [email] nvarchar(320) NULL, [photo] varbinary(max) NULL, [rv] binary(8) NULL, [dql_n] bigint NULL); "
+	const petsOut = "DECLARE @dql_out TABLE ([id] bigint NULL, [we]]ird] bigint NULL, [slug] bigint NULL, [dql_n] bigint NULL); "
+	const petsMerge = "MERGE INTO [app].[pets] WITH (HOLDLOCK) AS [pets] USING (SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [dql_n] FROM (VALUES {rows}) AS [dql_v] ({cols})) AS [dql_new] ON [pets].[id] = [dql_new].[id]"
+	const insertBranch = " WHEN NOT MATCHED THEN INSERT ({cols}) VALUES ({news}) OUTPUT INSERTED.*, [dql_new].[dql_n] INTO @dql_out;{returning}"
 	for id, want := range map[string]string{
 		// Ids leave out the default schema. Tables are schema.name, each
 		// aliased by its name, or schema_name where two share a name.
@@ -165,19 +165,19 @@ func TestFragments(t *testing.T) {
 		"col_r.people.email":         "[people_r].[email]",
 		"rel.people.pets":            "EXISTS (SELECT 1 FROM [app].[people_pets] AS [people_pets] JOIN [app].[pets] AS [pets] ON [pets].[id] = [people_pets].[pet_id] WHERE [people_pets].[person_id] = [app_people].[id]{and})",
 		"select.person.full.flat":    "SELECT [app_people].[id], [app_people].[email] FROM [app].[people] AS [app_people]{locks}",
-		"returning.person.full.flat": " SELECT [id], [email] FROM @dql_out;",
+		"returning.person.full.flat": " SELECT [id], [email] FROM @dql_out ORDER BY [dql_n];",
 		"select.person_brief":        "SELECT [app_people].[email] FROM [app].[people] AS [app_people]{locks}",
-		"insert.people":              peopleOut + "INSERT INTO [app].[people] ({cols}) OUTPUT INSERTED.* INTO @dql_out VALUES {rows};{returning}",
-		"update.pets":                petsOut + "UPDATE [pets] SET {sets} OUTPUT INSERTED.* INTO @dql_out FROM [app].[pets] AS [pets]{where};{returning}",
-		"delete.pets":                petsOut + "DELETE [pets] OUTPUT DELETED.* INTO @dql_out FROM [app].[pets] AS [pets]{where};{returning}",
+		"insert.people":              peopleOut + "MERGE INTO [app].[people] AS [app_people] USING (SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [dql_n] FROM (VALUES {rows}) AS [dql_v] ({cols})) AS [dql_new] ON 1 = 0" + insertBranch,
+		"update.pets":                petsOut + "UPDATE [pets] SET {sets} OUTPUT INSERTED.*, NULL INTO @dql_out FROM [app].[pets] AS [pets]{where};{returning}",
+		"delete.pets":                petsOut + "DELETE [pets] OUTPUT DELETED.*, NULL INTO @dql_out FROM [app].[pets] AS [pets]{where};{returning}",
 		"set.pets.id":                "[id] = {0}",
 		"name.pets.id":               "[id]",
 		"excluded.pets.id":           "[dql_new].[id]",
 		"default.pets.id":            "DEFAULT",
 		"upsert.pets.pets_pkey":      petsOut + petsMerge + " WHEN MATCHED THEN UPDATE SET {sets}" + insertBranch,
 		"ignore.pets.pets_pkey":      petsOut + petsMerge + insertBranch,
-		"upsert.pets.pets_live":      petsOut + "WITH [dql_target] AS (SELECT * FROM [app].[pets] WHERE ([id]>(0))) MERGE INTO [dql_target] WITH (HOLDLOCK) AS [pets] USING (VALUES {rows}) AS [dql_new] ({cols}) ON [pets].[we]]ird] = [dql_new].[we]]ird] AND [pets].[id] = [dql_new].[id] WHEN MATCHED THEN UPDATE SET {sets}" + insertBranch,
-		"upsert.people.people_email": peopleOut + "MERGE INTO [app].[people] WITH (HOLDLOCK) AS [app_people] USING (VALUES {rows}) AS [dql_new] ({cols}) ON [app_people].[email] = [dql_new].[email] WHEN MATCHED THEN UPDATE SET {sets}" + insertBranch,
+		"upsert.pets.pets_live":      petsOut + "WITH [dql_target] AS (SELECT * FROM [app].[pets] WHERE ([id]>(0))) MERGE INTO [dql_target] WITH (HOLDLOCK) AS [pets] USING (SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [dql_n] FROM (VALUES {rows}) AS [dql_v] ({cols})) AS [dql_new] ON [pets].[we]]ird] = [dql_new].[we]]ird] AND [pets].[id] = [dql_new].[id] WHEN MATCHED THEN UPDATE SET {sets}" + insertBranch,
+		"upsert.people.people_email": peopleOut + "MERGE INTO [app].[people] WITH (HOLDLOCK) AS [app_people] USING (SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [dql_n] FROM (VALUES {rows}) AS [dql_v] ({cols})) AS [dql_new] ON [app_people].[email] = [dql_new].[email] WHEN MATCHED THEN UPDATE SET {sets}" + insertBranch,
 		// A list compared with a column reads as the column's type, in its
 		// collation.
 		"op.in.people.email": "{0} IN (SELECT [v] FROM OPENJSON({1}) WITH ([v] nvarchar(320) COLLATE Latin1_General_100_BIN2 '$'))",

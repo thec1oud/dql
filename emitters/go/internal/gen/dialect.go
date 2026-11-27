@@ -103,9 +103,6 @@ func (g *generator) dialect() {
 	if p.GetMaxParams() > 0 {
 		f.printf("\tMaxParams: %d,\n", p.GetMaxParams())
 	}
-	if p.GetMaxRows() > 0 {
-		f.printf("\tMaxRows: %d,\n", p.GetMaxRows())
-	}
 	// The statement modes a source may choose (§26.4). A mode this runtime
 	// does not know is left out, so a source cannot choose it.
 	var modes []string

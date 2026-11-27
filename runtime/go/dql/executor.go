@@ -49,8 +49,7 @@ type ConnConfig struct {
 // Dialect is the generated description of the target dialect: its name,
 // the statements every new connection runs (§22.7), its error map (§23),
 // how it reads replica positions (§22.5), how many parameters one
-// statement may bind and how many rows one INSERT's VALUES may hold, or 0
-// for no limit (§25.2), and the statement modes
+// statement may bind, or 0 for no limit (§25.2), and the statement modes
 // its drivers support, or nil to allow every mode (§26.4).
 type Dialect struct {
 	Name           string
@@ -58,7 +57,6 @@ type Dialect struct {
 	Errors         ErrorMap
 	Replication    *Replication
 	MaxParams      int
-	MaxRows        int
 	StatementModes []StatementMode
 }
 

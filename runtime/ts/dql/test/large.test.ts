@@ -136,16 +136,6 @@ describe("bulk writes (§25.2)", () => {
     expect(d.calls()).toBe("pg#3 begin; pg#3 query INSERT 0-1 []; pg#3 query INSERT 1-2 []; pg#3 commit; pg#3 put back");
   });
 
-  test("a write splits at the dialect's VALUES rows too", async () => {
-    const d = new FakeDriver();
-    // The row limit binds first, as SQL Server's 1000 rows do for small rows.
-    const e = await newExec(d, { ...pg, maxParams: 8, maxRows: 2 });
-    expect(await executeBulk(e, insert(5))).toBe(3);
-    expect(d.calls()).toBe("pg#2 begin; pg#2 exec INSERT 0-2 []; pg#2 exec INSERT 2-4 []; pg#2 exec INSERT 4-5 []; pg#2 commit; pg#2 put back");
-    // Rows that bind nothing split at the row limit alone.
-    expect(await executeBulk(await newExec(new FakeDriver(), { ...pg, maxRows: 2 }), insert(3, 0))).toBe(2);
-  });
-
   test("a failing chunk rolls back every chunk, and a rerun starts over", async () => {
     const d = new FakeDriver();
     const e = await newExec(d, limited);
