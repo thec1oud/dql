@@ -6,7 +6,7 @@
 
 import "./dql-version.dql.ts";
 import { DecodeError, Decoder, type Row, Temporal, type ValidationIssue, array, asEnum, asInstanceOf, asInt64, asString, elem, nest } from "@dql/runtime";
-import { dqlEmailAddressCheck } from "./dql-checks.dql.ts";
+import { dqlEmailAddressCheck, dqlUsersDisplayNameLength } from "./dql-checks.dql.ts";
 import { dqlDecodeEmailAddress, dqlDecodeMoneyAmount } from "./dql-decoders.dql.ts";
 import { type EmailAddress, PostStatus } from "./dql-types.dql.ts";
 import type { PostFull } from "./post.dql.ts";
@@ -90,6 +90,9 @@ export function validateQuickInvite(i: QuickInvite): ValidationIssue[] {
  */
 export function validateRename(r: Rename): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  if (r.displayName !== undefined && r.displayName !== null) {
+    dqlUsersDisplayNameLength.check(v, "rename", "display_name", r.displayName);
+  }
   return v;
 }
 

@@ -6,7 +6,7 @@
 
 import "./dql-version.dql.ts";
 import { DecodeError, Decoder, type Row, Temporal, type ValidationIssue, asBoolean, asEnum, asInstanceOf, asInt64, asString, asserted, nest } from "@dql/runtime";
-import { dqlUsersEmailCheck } from "./dql-checks.dql.ts";
+import { dqlUsersDisplayNameLength, dqlUsersEmailCheck, dqlUsersEmailLength } from "./dql-checks.dql.ts";
 import { PostsStatus } from "./dql-types.dql.ts";
 import type { PostFull } from "./post.dql.ts";
 import { type TagFull, decodeTagFull } from "./tag.dql.ts";
@@ -78,6 +78,7 @@ export function validateEmailInvite(i: EmailInvite): ValidationIssue[] {
  */
 export function validateQuickInvite(i: QuickInvite): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlUsersEmailLength.check(v, "quick_invite", "email", i.email);
   dqlUsersEmailCheck.check(v, "quick_invite", "email", i.email);
   return v;
 }
@@ -89,6 +90,9 @@ export function validateQuickInvite(i: QuickInvite): ValidationIssue[] {
  */
 export function validateRename(r: Rename): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  if (r.displayName !== undefined && r.displayName !== null) {
+    dqlUsersDisplayNameLength.check(v, "rename", "display_name", r.displayName);
+  }
   return v;
 }
 
@@ -99,6 +103,7 @@ export function validateRename(r: Rename): ValidationIssue[] {
  */
 export function validateSignup(s: Signup): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlUsersEmailLength.check(v, "signup", "email", s.email);
   dqlUsersEmailCheck.check(v, "signup", "email", s.email);
   return v;
 }

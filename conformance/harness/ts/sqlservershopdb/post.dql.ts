@@ -6,7 +6,7 @@
 
 import "./dql-version.dql.ts";
 import { type Assignment, type Builder, Decoder, type Expr, type Keyed, type Order, type Pred, type Row, type Shape, Temporal, type Update, type ValidationIssue, allRows, arg, arith, asInstanceOf, asInt64, asString, compare, issuesAt, nest, not, ordered, related, set } from "@dql/runtime";
-import { dqlPostsStatusCheck, dqlPostsTitleCheck } from "./dql-checks.dql.ts";
+import { dqlPostsStatusCheck, dqlPostsStatusLength, dqlPostsTitleCheck, dqlPostsTitleLength } from "./dql-checks.dql.ts";
 import { type PostTagChangeForPost, type PostTagDraftForPost, type PostTagFull, type PostTagsTable, decodePostTagFull, validatePostTagChangeForPost, validatePostTagDraftForPost } from "./post_tag.dql.ts";
 import { type TagDraft, type TagFull, type TagKey, type TagLink, type TagsTable, decodeTagFull, validateTagDraft, validateTagLink } from "./tag.dql.ts";
 import { type UserDraft, type UserFull, type UserKey, type UserPartial, type UserRef, type UsersTable, decodeUserFull, redactUserDraft, redactUserPartial, redactUserRef, validateUserDraft, validateUserPartial, validateUserRef } from "./user.dql.ts";
@@ -168,8 +168,10 @@ export type PostTagsChange =
  */
 export function validatePostDraft(d: PostDraft): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlPostsTitleLength.check(v, "post.draft.flat", "title", d.title);
   dqlPostsTitleCheck.check(v, "post.draft.flat", "title", d.title);
   if (d.status !== undefined) {
+    dqlPostsStatusLength.check(v, "post.draft.flat", "status", d.status);
     dqlPostsStatusCheck.check(v, "post.draft.flat", "status", d.status);
   }
   return v;
@@ -182,8 +184,10 @@ export function validatePostDraft(d: PostDraft): ValidationIssue[] {
  */
 export function validatePostDraftForAuthor(a: PostDraftForAuthor): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlPostsTitleLength.check(v, "post.draft.flat.for.author", "title", a.title);
   dqlPostsTitleCheck.check(v, "post.draft.flat.for.author", "title", a.title);
   if (a.status !== undefined) {
+    dqlPostsStatusLength.check(v, "post.draft.flat.for.author", "status", a.status);
     dqlPostsStatusCheck.check(v, "post.draft.flat.for.author", "status", a.status);
   }
   return v;
@@ -196,8 +200,10 @@ export function validatePostDraftForAuthor(a: PostDraftForAuthor): ValidationIss
  */
 export function validatePostDraftForEditor(e: PostDraftForEditor): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlPostsTitleLength.check(v, "post.draft.flat.for.editor", "title", e.title);
   dqlPostsTitleCheck.check(v, "post.draft.flat.for.editor", "title", e.title);
   if (e.status !== undefined) {
+    dqlPostsStatusLength.check(v, "post.draft.flat.for.editor", "status", e.status);
     dqlPostsStatusCheck.check(v, "post.draft.flat.for.editor", "status", e.status);
   }
   return v;
@@ -210,8 +216,10 @@ export function validatePostDraftForEditor(e: PostDraftForEditor): ValidationIss
  */
 export function validatePostDraftNested(n: PostDraftNested): ValidationIssue[] {
   const v: ValidationIssue[] = [];
+  dqlPostsTitleLength.check(v, "post.draft.nested", "title", n.title);
   dqlPostsTitleCheck.check(v, "post.draft.nested", "title", n.title);
   if (n.status !== undefined) {
+    dqlPostsStatusLength.check(v, "post.draft.nested", "status", n.status);
     dqlPostsStatusCheck.check(v, "post.draft.nested", "status", n.status);
   }
   if (n.author !== undefined) {
@@ -267,9 +275,11 @@ export function validatePostDraftNests(n: PostDraftNests): ValidationIssue[] {
 export function validatePostPartial(p: PostPartial): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   if (p.title !== undefined) {
+    dqlPostsTitleLength.check(v, "post.partial.flat", "title", p.title);
     dqlPostsTitleCheck.check(v, "post.partial.flat", "title", p.title);
   }
   if (p.status !== undefined) {
+    dqlPostsStatusLength.check(v, "post.partial.flat", "status", p.status);
     dqlPostsStatusCheck.check(v, "post.partial.flat", "status", p.status);
   }
   return v;
@@ -283,9 +293,11 @@ export function validatePostPartial(p: PostPartial): ValidationIssue[] {
 export function validatePostPartialForAuthor(a: PostPartialForAuthor): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   if (a.title !== undefined) {
+    dqlPostsTitleLength.check(v, "post.partial.flat.for.author", "title", a.title);
     dqlPostsTitleCheck.check(v, "post.partial.flat.for.author", "title", a.title);
   }
   if (a.status !== undefined) {
+    dqlPostsStatusLength.check(v, "post.partial.flat.for.author", "status", a.status);
     dqlPostsStatusCheck.check(v, "post.partial.flat.for.author", "status", a.status);
   }
   return v;
@@ -299,9 +311,11 @@ export function validatePostPartialForAuthor(a: PostPartialForAuthor): Validatio
 export function validatePostPartialForEditor(e: PostPartialForEditor): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   if (e.title !== undefined) {
+    dqlPostsTitleLength.check(v, "post.partial.flat.for.editor", "title", e.title);
     dqlPostsTitleCheck.check(v, "post.partial.flat.for.editor", "title", e.title);
   }
   if (e.status !== undefined) {
+    dqlPostsStatusLength.check(v, "post.partial.flat.for.editor", "status", e.status);
     dqlPostsStatusCheck.check(v, "post.partial.flat.for.editor", "status", e.status);
   }
   return v;
@@ -315,9 +329,11 @@ export function validatePostPartialForEditor(e: PostPartialForEditor): Validatio
 export function validatePostPartialNested(n: PostPartialNested): ValidationIssue[] {
   const v: ValidationIssue[] = [];
   if (n.title !== undefined) {
+    dqlPostsTitleLength.check(v, "post.partial.nested", "title", n.title);
     dqlPostsTitleCheck.check(v, "post.partial.nested", "title", n.title);
   }
   if (n.status !== undefined) {
+    dqlPostsStatusLength.check(v, "post.partial.nested", "status", n.status);
     dqlPostsStatusCheck.check(v, "post.partial.nested", "status", n.status);
   }
   if (n.author !== undefined) {

@@ -6,7 +6,7 @@
 
 import "./dql-version.dql.ts";
 import { type Args, type Assignment, type Builder, NotFound, type Pred, type Query, type Reader, type Shape, type Update, type Writer, and, arg, assign, atomic, count, execByKey, execute, exists, filtered, insertMany, list, newBuilder, not, oneOf, optionalOf, param, statementOf, throwIfIssues, use, versionedExec, versionedOne } from "@dql/runtime";
-import { dqlUsersEmailCheck } from "./dql-checks.dql.ts";
+import { dqlUsersEmailCheck, dqlUsersEmailLength } from "./dql-checks.dql.ts";
 import { fragments } from "./dql-fragments.dql.ts";
 import { shapes } from "./dql-select.dql.ts";
 import { type EmailInvite, type QuickInvite, type Rename, type Signup, validateEmailInvite, validateQuickInvite, validateRename, validateSignup } from "./dql-shapes.dql.ts";
@@ -2389,6 +2389,7 @@ export class UsersWrites extends UsersReads implements UsersStore {
   /** insertEmailInvite runs user.insert.email_invite (§20.1). */
   async insertEmailInvite(d: EmailInvite, email: string, ...as: Assignment<UsersTable>[]): Promise<UserFull> {
     const issues = validateEmailInvite(d);
+    dqlUsersEmailLength.check(issues, "email_invite", "email", email);
     dqlUsersEmailCheck.check(issues, "email_invite", "email", email);
     throwIfIssues(issues);
     const args: Args = { "password_hash": d.passwordHash, "email": email, "scope.tenant_id": this.scope.tenantId };

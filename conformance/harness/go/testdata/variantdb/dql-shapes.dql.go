@@ -149,6 +149,9 @@ func (r Rename) Validate() error { return r.validate().Err() }
 
 func (r Rename) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	if x, ok := r.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "rename", "display_name", *x)
+	}
 	return v
 }
 

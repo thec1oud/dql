@@ -506,8 +506,10 @@ func (d PostDraft) Validate() error { return d.validate().Err() }
 
 func (d PostDraft) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlPostsTitleLength.Check(&v, "post.draft.flat", "title", d.Title)
 	dqlPostsTitleCheck.Check(&v, "post.draft.flat", "title", d.Title)
 	if x, ok := d.Status.Get(); ok {
+		dqlPostsStatusLength.Check(&v, "post.draft.flat", "status", x)
 		dqlPostsStatusCheck.Check(&v, "post.draft.flat", "status", x)
 	}
 	return v
@@ -520,8 +522,10 @@ func (a PostDraftForAuthor) Validate() error { return a.validate().Err() }
 
 func (a PostDraftForAuthor) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlPostsTitleLength.Check(&v, "post.draft.flat.for.author", "title", a.Title)
 	dqlPostsTitleCheck.Check(&v, "post.draft.flat.for.author", "title", a.Title)
 	if x, ok := a.Status.Get(); ok {
+		dqlPostsStatusLength.Check(&v, "post.draft.flat.for.author", "status", x)
 		dqlPostsStatusCheck.Check(&v, "post.draft.flat.for.author", "status", x)
 	}
 	return v
@@ -534,8 +538,10 @@ func (e PostDraftForEditor) Validate() error { return e.validate().Err() }
 
 func (e PostDraftForEditor) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlPostsTitleLength.Check(&v, "post.draft.flat.for.editor", "title", e.Title)
 	dqlPostsTitleCheck.Check(&v, "post.draft.flat.for.editor", "title", e.Title)
 	if x, ok := e.Status.Get(); ok {
+		dqlPostsStatusLength.Check(&v, "post.draft.flat.for.editor", "status", x)
 		dqlPostsStatusCheck.Check(&v, "post.draft.flat.for.editor", "status", x)
 	}
 	return v
@@ -548,8 +554,10 @@ func (n PostDraftNested) Validate() error { return n.validate().Err() }
 
 func (n PostDraftNested) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlPostsTitleLength.Check(&v, "post.draft.nested", "title", n.Title)
 	dqlPostsTitleCheck.Check(&v, "post.draft.nested", "title", n.Title)
 	if x, ok := n.Status.Get(); ok {
+		dqlPostsStatusLength.Check(&v, "post.draft.nested", "status", x)
 		dqlPostsStatusCheck.Check(&v, "post.draft.nested", "status", x)
 	}
 	if x, ok := n.Author.Get(); ok {
@@ -597,9 +605,11 @@ func (p PostPartial) Validate() error { return p.validate().Err() }
 func (p PostPartial) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	if x, ok := p.Title.Get(); ok {
+		dqlPostsTitleLength.Check(&v, "post.partial.flat", "title", x)
 		dqlPostsTitleCheck.Check(&v, "post.partial.flat", "title", x)
 	}
 	if x, ok := p.Status.Get(); ok {
+		dqlPostsStatusLength.Check(&v, "post.partial.flat", "status", x)
 		dqlPostsStatusCheck.Check(&v, "post.partial.flat", "status", x)
 	}
 	return v
@@ -613,9 +623,11 @@ func (a PostPartialForAuthor) Validate() error { return a.validate().Err() }
 func (a PostPartialForAuthor) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	if x, ok := a.Title.Get(); ok {
+		dqlPostsTitleLength.Check(&v, "post.partial.flat.for.author", "title", x)
 		dqlPostsTitleCheck.Check(&v, "post.partial.flat.for.author", "title", x)
 	}
 	if x, ok := a.Status.Get(); ok {
+		dqlPostsStatusLength.Check(&v, "post.partial.flat.for.author", "status", x)
 		dqlPostsStatusCheck.Check(&v, "post.partial.flat.for.author", "status", x)
 	}
 	return v
@@ -629,9 +641,11 @@ func (e PostPartialForEditor) Validate() error { return e.validate().Err() }
 func (e PostPartialForEditor) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	if x, ok := e.Title.Get(); ok {
+		dqlPostsTitleLength.Check(&v, "post.partial.flat.for.editor", "title", x)
 		dqlPostsTitleCheck.Check(&v, "post.partial.flat.for.editor", "title", x)
 	}
 	if x, ok := e.Status.Get(); ok {
+		dqlPostsStatusLength.Check(&v, "post.partial.flat.for.editor", "status", x)
 		dqlPostsStatusCheck.Check(&v, "post.partial.flat.for.editor", "status", x)
 	}
 	return v
@@ -645,9 +659,11 @@ func (n PostPartialNested) Validate() error { return n.validate().Err() }
 func (n PostPartialNested) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
 	if x, ok := n.Title.Get(); ok {
+		dqlPostsTitleLength.Check(&v, "post.partial.nested", "title", x)
 		dqlPostsTitleCheck.Check(&v, "post.partial.nested", "title", x)
 	}
 	if x, ok := n.Status.Get(); ok {
+		dqlPostsStatusLength.Check(&v, "post.partial.nested", "status", x)
 		dqlPostsStatusCheck.Check(&v, "post.partial.nested", "status", x)
 	}
 	if x, ok := n.Author.Get(); ok {

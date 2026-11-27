@@ -138,6 +138,7 @@ func (i QuickInvite) Validate() error { return i.validate().Err() }
 
 func (i QuickInvite) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlUsersEmailLength.Check(&v, "quick_invite", "email", i.Email)
 	dqlUsersEmailCheck.Check(&v, "quick_invite", "email", i.Email)
 	return v
 }
@@ -149,6 +150,9 @@ func (r Rename) Validate() error { return r.validate().Err() }
 
 func (r Rename) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	if x, ok := r.DisplayName.Get(); ok && x != nil {
+		dqlUsersDisplayNameLength.Check(&v, "rename", "display_name", *x)
+	}
 	return v
 }
 
@@ -159,6 +163,7 @@ func (s Signup) Validate() error { return s.validate().Err() }
 
 func (s Signup) validate() dql.ValidationErrors {
 	var v dql.ValidationErrors
+	dqlUsersEmailLength.Check(&v, "signup", "email", s.Email)
 	dqlUsersEmailCheck.Check(&v, "signup", "email", s.Email)
 	return v
 }
