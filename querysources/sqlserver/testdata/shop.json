@@ -1,0 +1,524 @@
+{
+  "queries": {
+    "queries": [
+      {
+        "name": {
+          "stored": "AuthorPostCounts",
+          "words": [
+            "author",
+            "post",
+            "counts"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_MANY",
+        "result": {
+          "anonymous": {
+            "fields": [
+              {
+                "name": "author_id",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "bigint"
+                    },
+                    "raw": "bigint"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "display_name",
+                "type": {
+                  "varchar": {
+                    "length": 80,
+                    "unit": "LENGTH_UNIT_UTF16_CODE_UNITS"
+                  },
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "nvarchar"
+                    },
+                    "raw": "nvarchar(80)"
+                  }
+                },
+                "nullable": true,
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "display_name"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+              },
+              {
+                "name": "posts",
+                "type": {
+                  "int32": {}
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              }
+            ]
+          }
+        },
+        "consistency": {
+          "level": "CONSISTENCY_ANY"
+        },
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "SELECT u.id AS author_id, u.display_name, count(p.id) AS posts\nFROM app.users u\nLEFT JOIN app.posts p ON p.author_id = u.id\nWHERE u.tenant_id = @p1\nGROUP BY u.id, u.display_name",
+        "location": "q.sql:13",
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "posts"
+          },
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "GetUserByEmail",
+          "words": [
+            "get",
+            "user",
+            "by",
+            "email"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_ONE",
+        "params": [
+          {
+            "name": "email",
+            "type": {
+              "varchar": {
+                "length": 320,
+                "unit": "LENGTH_UNIT_UTF16_CODE_UNITS"
+              }
+            }
+          }
+        ],
+        "result": {
+          "anonymous": {
+            "fields": [
+              {
+                "name": "id",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "bigint"
+                    },
+                    "raw": "bigint"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "tenant_id",
+                "type": {
+                  "uuid": {},
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "uniqueidentifier"
+                    },
+                    "raw": "uniqueidentifier"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "tenant_id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "email",
+                "type": {
+                  "varchar": {
+                    "length": 320,
+                    "unit": "LENGTH_UNIT_UTF16_CODE_UNITS"
+                  },
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "nvarchar"
+                    },
+                    "raw": "nvarchar(320)"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "email"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "display_name",
+                "type": {
+                  "varchar": {
+                    "length": 80,
+                    "unit": "LENGTH_UNIT_UTF16_CODE_UNITS"
+                  },
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "nvarchar"
+                    },
+                    "raw": "nvarchar(80)"
+                  }
+                },
+                "nullable": true,
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "display_name"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+              },
+              {
+                "name": "created_at",
+                "type": {
+                  "instantWithOffset": {
+                    "precision": 6
+                  },
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "datetimeoffset"
+                    },
+                    "raw": "datetimeoffset(6)"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "created_at"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "updated_at",
+                "type": {
+                  "instantWithOffset": {
+                    "precision": 6
+                  },
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "datetimeoffset"
+                    },
+                    "raw": "datetimeoffset(6)"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "updated_at"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "version",
+                "type": {
+                  "int32": {},
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "int"
+                    },
+                    "raw": "int"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "version"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              }
+            ]
+          }
+        },
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "SELECT id, tenant_id, email, display_name, created_at, updated_at, version\nFROM app.users\nWHERE tenant_id = @p2 AND email = @p1",
+        "location": "q.sql:7",
+        "returns": "user.full",
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "RenameUser",
+          "words": [
+            "rename",
+            "user"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_EXEC_ROWS",
+        "params": [
+          {
+            "name": "display_name",
+            "type": {
+              "varchar": {
+                "length": 80,
+                "unit": "LENGTH_UNIT_UTF16_CODE_UNITS"
+              }
+            },
+            "nullable": true
+          },
+          {
+            "name": "id",
+            "type": {
+              "int64": {}
+            }
+          },
+          {
+            "name": "version",
+            "type": {
+              "int32": {}
+            }
+          }
+        ],
+        "writes": true,
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "UPDATE app.users\nSET display_name = @p1, version = version + 1\nWHERE tenant_id = @p4 AND id = @p2 AND version = @p3",
+        "location": "q.sql:33",
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "SearchUsers",
+          "words": [
+            "search",
+            "users"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_MANY",
+        "params": [
+          {
+            "name": "lim",
+            "type": {
+              "int64": {}
+            }
+          },
+          {
+            "name": "name",
+            "type": {
+              "text": {}
+            }
+          }
+        ],
+        "result": {
+          "anonymous": {
+            "fields": [
+              {
+                "name": "id",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "bigint"
+                    },
+                    "raw": "bigint"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "display_name",
+                "type": {
+                  "varchar": {
+                    "length": 80,
+                    "unit": "LENGTH_UNIT_UTF16_CODE_UNITS"
+                  },
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "nvarchar"
+                    },
+                    "raw": "nvarchar(80)"
+                  }
+                },
+                "nullable": true,
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "display_name"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_UNPROVEN"
+              }
+            ]
+          }
+        },
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "SELECT TOP (@p1) id, display_name\nFROM app.users\nWHERE tenant_id = @p3 AND (@p2 = N'' OR display_name LIKE N'%' + @p2 + N'%')\nORDER BY id",
+        "location": "q.sql:27",
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
+      },
+      {
+        "name": {
+          "stored": "UsersByEmail",
+          "words": [
+            "users",
+            "by",
+            "email"
+          ]
+        },
+        "source": "QUERY_SOURCE_FILE",
+        "cardinality": "CARDINALITY_MANY",
+        "params": [
+          {
+            "name": "emails",
+            "type": {
+              "varchar": {
+                "length": 320,
+                "unit": "LENGTH_UNIT_UTF16_CODE_UNITS"
+              }
+            },
+            "list": true
+          }
+        ],
+        "result": {
+          "anonymous": {
+            "fields": [
+              {
+                "name": "id",
+                "type": {
+                  "int64": {},
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "bigint"
+                    },
+                    "raw": "bigint"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "id"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              },
+              {
+                "name": "email",
+                "type": {
+                  "varchar": {
+                    "length": 320,
+                    "unit": "LENGTH_UNIT_UTF16_CODE_UNITS"
+                  },
+                  "native": {
+                    "name": {
+                      "namespace": "sys",
+                      "object": "nvarchar"
+                    },
+                    "raw": "nvarchar(320)"
+                  }
+                },
+                "origin": {
+                  "catalog": "shop",
+                  "namespace": "app",
+                  "object": "users",
+                  "member": "email"
+                },
+                "nullabilitySource": "NULLABILITY_SOURCE_PROVEN"
+              }
+            ]
+          }
+        },
+        "scope": {
+          "columns": [
+            "tenant_id"
+          ]
+        },
+        "catalog": "shop",
+        "text": "SELECT id, email\nFROM app.users\nWHERE tenant_id = @p2 AND email IN (SELECT [v] FROM OPENJSON(@p1) WITH ([v] nvarchar(320) COLLATE SQL_Latin1_General_CP1_CI_AS '$'))\nORDER BY id",
+        "location": "q.sql:21",
+        "tables": [
+          {
+            "catalog": "shop",
+            "namespace": "app",
+            "object": "users"
+          }
+        ]
+      }
+    ]
+  }
+}
