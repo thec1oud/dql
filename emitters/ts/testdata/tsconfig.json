@@ -15,9 +15,10 @@
     "skipLibCheck": true,
     "paths": {
       "@dql/runtime": ["../../../runtime/ts/dql/dist/index"],
+      "@dql/runtime/fake": ["../../../runtime/ts/dql/dist/fake"],
       "@dql/pg": ["../../../runtime/ts/dqlpg/dist/index"]
     }
   },
   "include": ["shopdb"],
-  "exclude": ["shopdb/*.test.ts"]
+  "exclude": ["shopdb/*.test.ts", "shopdb/bench.ts"]
 }
