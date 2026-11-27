@@ -12,6 +12,7 @@ use (
 	./querysources
 	./querysources/mysql
 	./querysources/sqlite
+	./querysources/sqlserver
 	./runtime/go
 	./runtime/go/dqlmysql
 	./runtime/go/dqlotel
