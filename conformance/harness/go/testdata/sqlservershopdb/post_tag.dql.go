@@ -515,7 +515,7 @@ var (
 		Writes:  true,
 		Types:   map[string]string{"post_id": "sys.bigint", "tag_id": "sys.bigint"},
 		Plan: []dql.Node{
-			dql.Use{Fragment: "insert.post_tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}}},
+			dql.Use{Fragment: "insert.post_tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.post_tags.post_id"}, dql.Use{Fragment: "name.post_tags.tag_id"}}, Separator: ", "}, "news": dql.List{Items: []dql.Node{dql.Use{Fragment: "excluded.post_tags.post_id"}, dql.Use{Fragment: "excluded.post_tags.tag_id"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.post_tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("post_id"), dql.Param("tag_id")}, Separator: ", "}}}}},
 		},
 	}
 	postTagInsertOrIgnoreByPrimary = &dql.Query{

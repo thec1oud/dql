@@ -315,7 +315,7 @@ var (
 		Writes:  true,
 		Types:   map[string]string{"id": "sys.uniqueidentifier", "name": "sys.nvarchar"},
 		Plan: []dql.Node{
-			dql.Use{Fragment: "insert.tenants", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}}},
+			dql.Use{Fragment: "insert.tenants", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tenants.id"}, dql.Use{Fragment: "name.tenants.name"}}, Separator: ", "}, "news": dql.List{Items: []dql.Node{dql.Use{Fragment: "excluded.tenants.id"}, dql.Use{Fragment: "excluded.tenants.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tenant.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("id"), dql.Param("name")}, Separator: ", "}}}}},
 		},
 	}
 	tenantInsertOrIgnoreByPrimary = &dql.Query{

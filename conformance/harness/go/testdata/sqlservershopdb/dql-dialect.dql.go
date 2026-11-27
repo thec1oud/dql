@@ -78,7 +78,6 @@ var Dialect = dql.Dialect{
 		},
 	},
 	MaxParams:      2098,
-	MaxRows:        1000,
 	StatementModes: []dql.StatementMode{dql.ModePrepare},
 }
 

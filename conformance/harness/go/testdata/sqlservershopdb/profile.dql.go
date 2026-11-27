@@ -508,7 +508,7 @@ var (
 		Writes:  true,
 		Types:   map[string]string{"user_id": "sys.bigint", "bio": "sys.nvarchar", "birthday": "sys.date"},
 		Plan: []dql.Node{
-			dql.Use{Fragment: "insert.profiles", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}}},
+			dql.Use{Fragment: "insert.profiles", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.profiles.user_id"}, dql.Use{Fragment: "name.profiles.bio"}, dql.Use{Fragment: "name.profiles.birthday"}}, Separator: ", "}, "news": dql.List{Items: []dql.Node{dql.Use{Fragment: "excluded.profiles.user_id"}, dql.Use{Fragment: "excluded.profiles.bio"}, dql.Use{Fragment: "excluded.profiles.birthday"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.profile.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("user_id"), dql.Param("bio"), dql.Param("birthday")}, Separator: ", "}}}}},
 		},
 	}
 	profileInsertOrIgnoreByPrimary = &dql.Query{

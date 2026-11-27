@@ -68,7 +68,7 @@ const postTagInsert: Query = {
   writes: true,
   types: { "post_id": "sys.bigint", "tag_id": "sys.bigint" },
   plan: [
-    use("insert.post_tags", { "cols": list([use("name.post_tags.post_id"), use("name.post_tags.tag_id")], ", "), "returning": use("returning.post_tag.full.flat"), "rows": use("values.row", { "0": list([param("post_id"), param("tag_id")], ", ") }) }),
+    use("insert.post_tags", { "cols": list([use("name.post_tags.post_id"), use("name.post_tags.tag_id")], ", "), "news": list([use("excluded.post_tags.post_id"), use("excluded.post_tags.tag_id")], ", "), "returning": use("returning.post_tag.full.flat"), "rows": use("values.row", { "0": list([param("post_id"), param("tag_id")], ", ") }) }),
   ],
 };
 
@@ -326,7 +326,7 @@ const postInsert: Query = {
   writes: true,
   types: { "author_id": "sys.bigint", "editor_id": "sys.bigint", "title": "sys.nvarchar", "status": "sys.nvarchar", "published_at": "sys.datetimeoffset" },
   plan: [
-    use("insert.posts", { "cols": list([use("name.posts.author_id"), use("name.posts.editor_id"), use("name.posts.title"), use("name.posts.status"), use("name.posts.published_at")], ", "), "returning": use("returning.post.full.flat"), "rows": use("values.row", { "0": list([param("author_id"), param("editor_id"), param("title"), param("status"), param("published_at")], ", ") }) }),
+    use("insert.posts", { "cols": list([use("name.posts.author_id"), use("name.posts.editor_id"), use("name.posts.title"), use("name.posts.status"), use("name.posts.published_at")], ", "), "news": list([use("excluded.posts.author_id"), use("excluded.posts.editor_id"), use("excluded.posts.title"), use("excluded.posts.status"), use("excluded.posts.published_at")], ", "), "returning": use("returning.post.full.flat"), "rows": use("values.row", { "0": list([param("author_id"), param("editor_id"), param("title"), param("status"), param("published_at")], ", ") }) }),
   ],
 };
 
@@ -587,7 +587,7 @@ const profileInsert: Query = {
   writes: true,
   types: { "user_id": "sys.bigint", "bio": "sys.nvarchar", "birthday": "sys.date" },
   plan: [
-    use("insert.profiles", { "cols": list([use("name.profiles.user_id"), use("name.profiles.bio"), use("name.profiles.birthday")], ", "), "returning": use("returning.profile.full.flat"), "rows": use("values.row", { "0": list([param("user_id"), param("bio"), param("birthday")], ", ") }) }),
+    use("insert.profiles", { "cols": list([use("name.profiles.user_id"), use("name.profiles.bio"), use("name.profiles.birthday")], ", "), "news": list([use("excluded.profiles.user_id"), use("excluded.profiles.bio"), use("excluded.profiles.birthday")], ", "), "returning": use("returning.profile.full.flat"), "rows": use("values.row", { "0": list([param("user_id"), param("bio"), param("birthday")], ", ") }) }),
   ],
 };
 
@@ -1002,7 +1002,7 @@ const tagInsert: Query = {
   writes: true,
   types: { "name": "sys.nvarchar" },
   plan: [
-    use("insert.tags", { "cols": list([use("name.tags.name")], ", "), "returning": use("returning.tag.full.flat"), "rows": use("values.row", { "0": list([param("name")], ", ") }) }),
+    use("insert.tags", { "cols": list([use("name.tags.name")], ", "), "news": list([use("excluded.tags.name")], ", "), "returning": use("returning.tag.full.flat"), "rows": use("values.row", { "0": list([param("name")], ", ") }) }),
   ],
 };
 
@@ -1357,7 +1357,7 @@ const tenantInsert: Query = {
   writes: true,
   types: { "id": "sys.uniqueidentifier", "name": "sys.nvarchar" },
   plan: [
-    use("insert.tenants", { "cols": list([use("name.tenants.id"), use("name.tenants.name")], ", "), "returning": use("returning.tenant.full.flat"), "rows": use("values.row", { "0": list([param("id"), param("name")], ", ") }) }),
+    use("insert.tenants", { "cols": list([use("name.tenants.id"), use("name.tenants.name")], ", "), "news": list([use("excluded.tenants.id"), use("excluded.tenants.name")], ", "), "returning": use("returning.tenant.full.flat"), "rows": use("values.row", { "0": list([param("id"), param("name")], ", ") }) }),
   ],
 };
 
@@ -1671,7 +1671,7 @@ const userInsert: Query = {
   sensitive: { "password_hash": true },
   types: { "email": "sys.nvarchar", "display_name": "sys.nvarchar", "password_hash": "sys.nvarchar", "created_at": "sys.datetimeoffset", "updated_at": "sys.datetimeoffset", "version": "sys.int", "scope.tenant_id": "sys.uniqueidentifier" },
   plan: [
-    use("insert.users", { "cols": list([use("name.users.email"), use("name.users.display_name"), use("name.users.password_hash"), use("name.users.created_at"), use("name.users.updated_at"), use("name.users.version"), use("name.users.tenant_id")], ", "), "returning": use("returning.user.full.flat"), "rows": use("values.row", { "0": list([param("email"), param("display_name"), param("password_hash"), param("created_at"), param("updated_at"), param("version"), param("scope.tenant_id")], ", ") }) }),
+    use("insert.users", { "cols": list([use("name.users.email"), use("name.users.display_name"), use("name.users.password_hash"), use("name.users.created_at"), use("name.users.updated_at"), use("name.users.version"), use("name.users.tenant_id")], ", "), "news": list([use("excluded.users.email"), use("excluded.users.display_name"), use("excluded.users.password_hash"), use("excluded.users.created_at"), use("excluded.users.updated_at"), use("excluded.users.version"), use("excluded.users.tenant_id")], ", "), "returning": use("returning.user.full.flat"), "rows": use("values.row", { "0": list([param("email"), param("display_name"), param("password_hash"), param("created_at"), param("updated_at"), param("version"), param("scope.tenant_id")], ", ") }) }),
   ],
 };
 

@@ -75,7 +75,6 @@ export const dialect: Dialect = {
     ],
   },
   maxParams: 2098,
-  maxRows: 1000,
   statementModes: ["prepare"],
 };
 

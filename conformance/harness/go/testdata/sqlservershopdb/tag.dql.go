@@ -460,7 +460,7 @@ var (
 		Writes:  true,
 		Types:   map[string]string{"name": "sys.nvarchar"},
 		Plan: []dql.Node{
-			dql.Use{Fragment: "insert.tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
+			dql.Use{Fragment: "insert.tags", Holes: map[string]dql.Node{"cols": dql.List{Items: []dql.Node{dql.Use{Fragment: "name.tags.name"}}, Separator: ", "}, "news": dql.List{Items: []dql.Node{dql.Use{Fragment: "excluded.tags.name"}}, Separator: ", "}, "returning": dql.Use{Fragment: "returning.tag.full.flat"}, "rows": dql.Use{Fragment: "values.row", Holes: map[string]dql.Node{"0": dql.List{Items: []dql.Node{dql.Param("name")}, Separator: ", "}}}}},
 		},
 	}
 	tagInsertOrIgnoreByName = &dql.Query{
