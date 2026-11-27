@@ -97,7 +97,7 @@ type Step struct {
 
 	// A select step, op select, reads Shape through the store From of the
 	// handle Scope reaches, keeping the rows every Filter holds for, in
-	// Order, at most Limit of them. Read
+	// Order, at most Limit of them after skipping Offset. Read
 	// is all (the default), one, the only row, iter, which streams the rows
 	// and, with Stop, ends iteration after that many, or count.
 	From   string     `yaml:"from"`
@@ -105,6 +105,7 @@ type Step struct {
 	Filter []Filter   `yaml:"filter"`
 	Order  []OrderKey `yaml:"order"`
 	Limit  int64      `yaml:"limit"`
+	Offset int64      `yaml:"offset"`
 	Read   string     `yaml:"read"`
 	Stop   int        `yaml:"stop"`
 	// Deleted is with to keep soft-deleted rows too, or only to keep only
@@ -152,8 +153,9 @@ type Step struct {
 }
 
 // Filter is a predicate of a select step: the column's operator Op, as eq
-// or in, on Value. Column may name a relation, whose Op is any or none,
-// with no Value.
+// or in, on Value, or with no Value an operator that takes none, as
+// is_null. Column may name a relation, whose Op is any or none, with no
+// Value.
 type Filter struct {
 	Column string `yaml:"column"`
 	Op     string `yaml:"op"`
@@ -846,17 +848,14 @@ func (r *runner) read(st Step) (any, error, []string) {
 		if !ok {
 			return nil, nil, []string{fmt.Sprintf("column %s has no %s", f.Column, f.Op)}
 		}
-		v, err := generate(f.Value)
+		args, err := r.filterArgs(op.Type(), f.Value)
 		if err == nil {
-			var x reflect.Value
-			if x, err = r.decode(v, op.Type().In(0)); err == nil {
-				call := op.Call
-				if op.Type().IsVariadic() {
-					call = op.CallSlice
-				}
-				b = b.MethodByName("Where").Call(call([]reflect.Value{x}))[0]
-				continue
+			call := op.Call
+			if op.Type().IsVariadic() {
+				call = op.CallSlice
 			}
+			b = b.MethodByName("Where").Call(call(args))[0]
+			continue
 		}
 		return nil, nil, []string{fmt.Sprintf("filter %s: %s", f.Column, err)}
 	}
@@ -887,6 +886,9 @@ func (r *runner) read(st Step) (any, error, []string) {
 	}
 	if st.Limit > 0 {
 		b = b.MethodByName("Limit").Call([]reflect.Value{reflect.ValueOf(st.Limit)})[0]
+	}
+	if st.Offset > 0 {
+		b = b.MethodByName("Offset").Call([]reflect.Value{reflect.ValueOf(st.Offset)})[0]
 	}
 	if st.Consistency != "" {
 		c, err := consistency(st)
@@ -922,6 +924,32 @@ func (r *runner) read(st Step) (any, error, []string) {
 		return encode(rows), nil, nil
 	}
 	return nil, nil, []string{"no read " + st.Read}
+}
+
+// filterArgs decodes a filter's value into the arguments of its operator,
+// of type op: none, the value, or for an operator of several, as between,
+// each value of the list.
+func (r *runner) filterArgs(op reflect.Type, value any) ([]reflect.Value, error) {
+	v, err := generate(value)
+	if err != nil {
+		return nil, err
+	}
+	vs := []any{v}
+	if op.NumIn() != 1 {
+		vs, _ = v.([]any)
+		if len(vs) != op.NumIn() {
+			return nil, fmt.Errorf("want %d values, got %v", op.NumIn(), v)
+		}
+	}
+	var args []reflect.Value
+	for i, v := range vs {
+		x, err := r.decode(v, op.In(i))
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, x)
+	}
+	return args, nil
 }
 
 // errRollback ends a run of a transaction step's closure that rolls back.
