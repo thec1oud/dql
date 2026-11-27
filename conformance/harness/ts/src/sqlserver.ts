@@ -12,10 +12,14 @@ import { type Inject, duration } from "./harness.ts";
 /** batches splits a script at its GO lines, as sqlcmd does. */
 const batches = /^[ \t]*GO[ \t]*$/im;
 
-/** connect opens a connection of its own to dsn. */
+/** ignore drops an error a helper session meets when a plan ends it. */
+const ignore = (): void => {};
+
+/** connect opens a connection of its own to dsn. A connection's socket errors reach its requests' callbacks, so the error events are dropped: a helper session a plan ends emits one, which Deno would raise as uncaught. */
 function connect(dsn: string): Promise<Connection> {
   return new Promise((resolve, reject) => {
     const c = new Connection(config(dsn));
+    c.on("error", ignore);
     c.connect((e) => (e === undefined ? resolve(c) : reject(e)));
   });
 }
@@ -90,7 +94,7 @@ ALTER SEQUENCE conformance.injected RESTART WITH 1;`,
   if (script !== "") {
     // The helper's session ends with its script, the next plan, or the
     // database. A write the plan fails waits for it to take its locks.
-    run(dsn, script).catch(() => {});
+    run(dsn, script).catch(ignore);
   }
 }
 
